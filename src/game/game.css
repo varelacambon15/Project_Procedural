@@ -192,3 +192,30 @@ body.menu-cursor, body.menu-cursor * { cursor: none !important; }
 .cell .thumb.ready { opacity: 1; }
 .wlist .cell .thumb { height: 50px; }
 .loot-thumb { display: block; width: 100%; height: 110px; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)); }
+
+/* Arrastrar y soltar en el inventario */
+.drag-ghost { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; opacity: .9; box-shadow: 0 10px 30px rgba(0,0,0,.6); outline: 1px solid var(--amber); }
+.cell.drop-over { outline: 2px solid var(--amber) !important; background: color-mix(in srgb, var(--amber) 14%, var(--panel-2)); }
+#inv-dropzone { border: 1px dashed var(--line); color: var(--dim); font-size: 12px; text-align: center; padding: 14px; transition: border-color .15s, background .15s; }
+.inventory-dragging #inv-dropzone, #inventory.dragging #inv-dropzone { border-color: var(--amber); color: var(--ink); }
+#inv-dropzone.drop-over { background: rgba(242,165,65,.14); }
+.cell { touch-action: none; }
+
+/* Arma del suelo: ficha a la derecha de la mira */
+#pickcard { left: calc(50% + 70px); top: 50%; transform: translateY(-50%); }
+#pickcard .card { width: 290px; }
+
+/* Visor de aumento: vista a través del visor */
+#scope { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .08s; }
+#scope.on { opacity: 1; }
+#scope .lens { position: absolute; left: 50%; top: 50%; width: min(86vh, 86vw); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; box-shadow: 0 0 0 200vmax #050505, inset 0 0 60px 20px rgba(0,0,0,.85); }
+#scope .lens i { position: absolute; background: rgba(10,10,10,.9); }
+#scope .h { left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; clip-path: polygon(0 0, 46% 0, 46% 100%, 0 100%, 0 0, 54% 0, 100% 0, 100% 100%, 54% 100%); }
+#scope .v { top: 50%; bottom: 0; left: 50%; width: 2px; margin-left: -1px; clip-path: polygon(0 8%, 100% 8%, 100% 100%, 0 100%); }
+#scope .h::after { content: ""; position: absolute; left: 0; right: 0; top: -3px; height: 8px; background: linear-gradient(90deg, transparent 0 15%, #111 15% 16%, transparent 16% 25%, #111 25% 26%, transparent 26% 35%, #111 35% 36%, transparent 36% 64%, #111 64% 65%, transparent 65% 74%, #111 74% 75%, transparent 75% 84%, #111 84% 85%, transparent 85%); }
+#scope .c { left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: #e02a1e; box-shadow: 0 0 6px #ff3b2a; }
+
+/* Punto rojo y holográfica: retícula luminosa en el centro */
+#reddot { position: fixed; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: #ff3b2a; box-shadow: 0 0 8px 1px rgba(255, 50, 30, .9); pointer-events: none; opacity: 0; }
+#reddot[data-kind="holo"] { width: 34px; height: 34px; margin: -17px; background: transparent; border: 2px solid rgba(255, 60, 40, .9); box-shadow: 0 0 8px rgba(255, 50, 30, .8), inset 0 0 6px rgba(255, 50, 30, .5); }
+#reddot[data-kind="holo"]::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #ff3b2a; }

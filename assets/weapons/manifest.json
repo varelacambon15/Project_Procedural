@@ -5269,8 +5269,23 @@
    "type": "sniper",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-l115"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-l115"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-l115"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-l115"
     },
     {
@@ -5286,7 +5301,7 @@
       0.0166,
       -0.0079
      ],
-     "diameter": 0.0346
+     "diameter": 0.0207
     },
     "magazine": {
      "pos": [
@@ -5301,18 +5316,18 @@
     },
     "top": {
      "pos": [
-      0,
+      -0.2668,
       0.1299,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.048,
+      -0.2668,
       0.0936,
       0
      ],
-     "length": 0.384
+     "length": 0.3076
     }
    },
    "bounds": {
@@ -5327,8 +5342,77 @@
      0.0411
     ]
    },
-   "triangles": 2182,
+   "triangles": 2970,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.4865,
+      -0.0307,
+      0
+     ],
+     "size": [
+      0.1038,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      -0.047,
+      0.0256,
+      0
+     ],
+     "size": [
+      0.1346,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.2703,
+      -0.0197,
+      0
+     ],
+     "size": [
+      0.4024,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.4865,
+      -0.0307,
+      0
+     ],
+     "size": [
+      0.1038,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      -0.047,
+      0.0256,
+      0
+     ],
+     "size": [
+      0.1346,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.3313,
+      -0.0197,
+      0
+     ],
+     "size": [
+      0.2625,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-l115.glb",
    "label": "L115"
   },
@@ -5337,8 +5421,23 @@
    "type": "sniper",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-barrett"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-barrett"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-barrett"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-barrett"
     },
     {
@@ -5369,18 +5468,18 @@
     },
     "top": {
      "pos": [
-      0,
+      -0.2054,
       0.1579,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.048,
-      0.091,
+      -0.2054,
+      0.1351,
       0
      ],
-     "length": 0.384
+     "length": 0.2536
     }
    },
    "bounds": {
@@ -5395,8 +5494,77 @@
      0.1005
     ]
    },
-   "triangles": 6078,
+   "triangles": 6810,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.3865,
+      0.0405,
+      0
+     ],
+     "size": [
+      0.0478,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      -0.0243,
+      0.0342,
+      0
+     ],
+     "size": [
+      0.0844,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.3026,
+      0.0155,
+      0
+     ],
+     "size": [
+      0.1678,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.3865,
+      0.0405,
+      0
+     ],
+     "size": [
+      0.0478,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      -0.0243,
+      0.0352,
+      0
+     ],
+     "size": [
+      0.0824,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.2738,
+      0.0155,
+      0
+     ],
+     "size": [
+      0.0977,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-barrett.glb",
    "label": "Barrett"
   },
@@ -5405,8 +5573,23 @@
    "type": "lmg",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-m249"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-m249"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-m249"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-m249"
     },
     {
@@ -5437,18 +5620,18 @@
     },
     "top": {
      "pos": [
-      0,
-      0.1754,
+      -0.1912,
+      0.1633,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.046,
-      0.1208,
+      -0.1912,
+      0.108,
       0
      ],
-     "length": 0.368
+     "length": 0.3514
     }
    },
    "bounds": {
@@ -5463,8 +5646,77 @@
      0.09
     ]
    },
-   "triangles": 1998,
+   "triangles": 2718,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.4423,
+      0.0074,
+      0
+     ],
+     "size": [
+      0.1186,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      0.0598,
+      0.0713,
+      0
+     ],
+     "size": [
+      0.1841,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.1912,
+      0,
+      0
+     ],
+     "size": [
+      0.5021,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.4423,
+      0.0074,
+      0
+     ],
+     "size": [
+      0.1186,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      0.0598,
+      0.0736,
+      0
+     ],
+     "size": [
+      0.1887,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.2576,
+      0,
+      0
+     ],
+     "size": [
+      0.3234,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-m249.glb",
    "label": "M249"
   },
@@ -5473,8 +5725,23 @@
    "type": "lmg",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-m60"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-m60"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-m60"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-m60"
     },
     {
@@ -5505,18 +5772,18 @@
     },
     "top": {
      "pos": [
-      0,
+      -0.1857,
       0.1354,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.046,
-      0.0638,
+      -0.1857,
+      0.0624,
       0
      ],
-     "length": 0.368
+     "length": 0.1915
     }
    },
    "bounds": {
@@ -5531,8 +5798,77 @@
      0.1065
     ]
    },
-   "triangles": 2246,
+   "triangles": 2838,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.3225,
+      0.0203,
+      0
+     ],
+     "size": [
+      0.0888,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      -0.0489,
+      -0.0019,
+      0
+     ],
+     "size": [
+      0.0894,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.2108,
+      0.056,
+      0
+     ],
+     "size": [
+      0.2233,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.3225,
+      0.0217,
+      0
+     ],
+     "size": [
+      0.0915,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      -0.0489,
+      -0.0019,
+      0
+     ],
+     "size": [
+      0.0894,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.2576,
+      0.056,
+      0
+     ],
+     "size": [
+      0.0839,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-m60.glb",
    "label": "M60"
   },
@@ -5917,8 +6253,23 @@
    "type": "rifle",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-xm8"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-xm8"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-xm8"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-xm8"
     },
     {
@@ -5949,18 +6300,18 @@
     },
     "top": {
      "pos": [
-      0,
+      -0.0831,
       0.1582,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.036,
-      0.0777,
+      -0.0831,
+      0.1122,
       0
      ],
-     "length": 0.288
+     "length": 0.2632
     }
    },
    "bounds": {
@@ -5975,8 +6326,77 @@
      0.0321
     ]
    },
-   "triangles": 1312,
+   "triangles": 1788,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.2711,
+      0.0426,
+      0
+     ],
+     "size": [
+      0.0627,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      0.1048,
+      0.0563,
+      0
+     ],
+     "size": [
+      0.1139,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.1453,
+      0.0215,
+      0
+     ],
+     "size": [
+      0.2156,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.2711,
+      0.0426,
+      0
+     ],
+     "size": [
+      0.0627,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      0.1048,
+      0.0563,
+      0
+     ],
+     "size": [
+      0.1139,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.1453,
+      0.0215,
+      0
+     ],
+     "size": [
+      0.2156,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-xm8.glb",
    "label": "XM8"
   },
@@ -5985,8 +6405,23 @@
    "type": "rifle",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-scarh"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-scarh"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-scarh"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-scarh"
     },
     {
@@ -6017,18 +6452,18 @@
     },
     "top": {
      "pos": [
-      0,
+      -0.1035,
       0.1338,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.036,
+      -0.1035,
       0.0944,
       0
      ],
-     "length": 0.288
+     "length": 0.2346
     }
    },
    "bounds": {
@@ -6043,8 +6478,77 @@
      0.0239
     ]
    },
-   "triangles": 1904,
+   "triangles": 2348,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.2711,
+      0.0395,
+      0
+     ],
+     "size": [
+      0.0887,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      0.0641,
+      0.0542,
+      0
+     ],
+     "size": [
+      0.0803,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.0945,
+      0.0168,
+      0
+     ],
+     "size": [
+      0.3172,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.2711,
+      0.0395,
+      0
+     ],
+     "size": [
+      0.0887,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      0.0641,
+      0.0528,
+      0
+     ],
+     "size": [
+      0.0831,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.1734,
+      0.0168,
+      0
+     ],
+     "size": [
+      0.1594,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-scarh.glb",
    "label": "SCAR-H"
   },
@@ -6053,8 +6557,23 @@
    "type": "rifle",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-m16a4"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-m16a4"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-m16a4"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-m16a4"
     },
     {
@@ -6085,18 +6604,18 @@
     },
     "top": {
      "pos": [
-      0,
+      -0.1268,
       0.1119,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.036,
-      0.0824,
+      -0.1268,
+      0.0773,
       0
      ],
-     "length": 0.288
+     "length": 0.202
     }
    },
    "bounds": {
@@ -6111,8 +6630,77 @@
      0.0316
     ]
    },
-   "triangles": 1772,
+   "triangles": 2108,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.2711,
+      0.0343,
+      0
+     ],
+     "size": [
+      0.0628,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      0.0175,
+      0.0507,
+      0
+     ],
+     "size": [
+      0.0633,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.1178,
+      0.018,
+      0
+     ],
+     "size": [
+      0.2706,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.2711,
+      0.0343,
+      0
+     ],
+     "size": [
+      0.0628,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      0.0175,
+      0.0507,
+      0
+     ],
+     "size": [
+      0.0633,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.1828,
+      0.018,
+      0
+     ],
+     "size": [
+      0.1406,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-m16a4.glb",
    "label": "M16A4"
   },
@@ -6121,8 +6709,23 @@
    "type": "rifle",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-g36"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-g36"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-g36"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-g36"
     },
     {
@@ -6153,18 +6756,18 @@
     },
     "top": {
      "pos": [
-      0,
+      0.0167,
       0.1725,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.036,
+      0.0167,
       0.1563,
       0
      ],
-     "length": 0.288
+     "length": 0.2455
     }
    },
    "bounds": {
@@ -6179,8 +6782,77 @@
      0.0396
     ]
    },
-   "triangles": 1604,
+   "triangles": 2172,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.1586,
+      0.0204,
+      0
+     ],
+     "size": [
+      0.2012,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      0.192,
+      0.0962,
+      0
+     ],
+     "size": [
+      0.12,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      0.0167,
+      0.039,
+      0
+     ],
+     "size": [
+      0.3507,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.1586,
+      0.0204,
+      0
+     ],
+     "size": [
+      0.2012,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      0.192,
+      0.0962,
+      0
+     ],
+     "size": [
+      0.12,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.1172,
+      0.039,
+      0
+     ],
+     "size": [
+      0.0469,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-g36.glb",
    "label": "G36"
   },
@@ -6189,8 +6861,23 @@
    "type": "rifle",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-ak47"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-ak47"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-ak47"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-ak47"
     },
     {
@@ -6203,10 +6890,10 @@
     "muzzle": {
      "pos": [
       0.45,
-      0.1008,
+      0.083,
       0
      ],
-     "diameter": 0.0704
+     "diameter": 0.0208
     },
     "magazine": {
      "pos": [
@@ -6221,18 +6908,18 @@
     },
     "top": {
      "pos": [
-      0,
-      0.1364,
+      -0.0568,
+      0.1284,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.036,
-      0.0956,
+      -0.0568,
+      0.1007,
       0
      ],
-     "length": 0.288
+     "length": 0.2738
     }
    },
    "bounds": {
@@ -6247,8 +6934,77 @@
      0.0289
     ]
    },
-   "triangles": 1414,
+   "triangles": 1828,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.2524,
+      0.045,
+      0
+     ],
+     "size": [
+      0.055,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      0.1387,
+      0.091,
+      0
+     ],
+     "size": [
+      0.0692,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.0568,
+      0.0706,
+      0
+     ],
+     "size": [
+      0.3911,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.2524,
+      0.045,
+      0
+     ],
+     "size": [
+      0.055,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      0.1387,
+      0.091,
+      0
+     ],
+     "size": [
+      0.0692,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.1453,
+      0.0706,
+      0
+     ],
+     "size": [
+      0.1781,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-ak47.glb",
    "label": "AK-47"
   },
@@ -6257,8 +7013,23 @@
    "type": "shotgun",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-aa12"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-aa12"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-aa12"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-aa12"
     },
     {
@@ -6289,18 +7060,18 @@
     },
     "top": {
      "pos": [
-      0,
+      -0.112,
       0.1647,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.04,
+      -0.112,
       0.0871,
       0
      ],
-     "length": 0.32
+     "length": 0.2358
     }
    },
    "bounds": {
@@ -6315,8 +7086,77 @@
      0.087
     ]
    },
-   "triangles": 1222,
+   "triangles": 1538,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.2804,
+      0.0418,
+      0
+     ],
+     "size": [
+      0.0928,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      0.0564,
+      0.0549,
+      0
+     ],
+     "size": [
+      0.1163,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.112,
+      0.0093,
+      0
+     ],
+     "size": [
+      0.3368,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.2804,
+      0.0418,
+      0
+     ],
+     "size": [
+      0.0928,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      0.0564,
+      0.0486,
+      0
+     ],
+     "size": [
+      0.1037,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.1823,
+      0.0093,
+      0
+     ],
+     "size": [
+      0.1563,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-aa12.glb",
    "label": "AA-12"
   },
@@ -6325,8 +7165,23 @@
    "type": "smg",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-uzi"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-uzi"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-uzi"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-uzi"
     },
     {
@@ -6357,18 +7212,18 @@
     },
     "top": {
      "pos": [
-      0,
-      0.1204,
+      -0.0693,
+      0.0985,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.02,
-      0.0547,
+      -0.0693,
+      0.0294,
       0
      ],
-     "length": 0.16
+     "length": 0.0701
     }
    },
    "bounds": {
@@ -6383,8 +7238,77 @@
      0.022
     ]
    },
-   "triangles": 1766,
+   "triangles": 2402,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.1194,
+      0.0614,
+      0
+     ],
+     "size": [
+      0.0692,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      -0.0193,
+      0.0448,
+      0
+     ],
+     "size": [
+      0.1067,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.0597,
+      0.0182,
+      0
+     ],
+     "size": [
+      0.0808,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.1194,
+      0.0611,
+      0
+     ],
+     "size": [
+      0.0694,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      -0.0193,
+      0.0443,
+      0
+     ],
+     "size": [
+      0.1078,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.0917,
+      0.0182,
+      0
+     ],
+     "size": [
+      0.0167,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-uzi.glb",
    "label": "Uzi"
   },
@@ -6529,8 +7453,23 @@
    "type": "smg",
    "parts": [
     {
-     "role": "body",
-     "node": "body",
+     "role": "receiver",
+     "node": "receiver",
+     "source": "w-vector"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "w-vector"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "w-vector"
+    },
+    {
+     "role": "front",
+     "node": "front",
      "source": "w-vector"
     },
     {
@@ -6561,18 +7500,18 @@
     },
     "top": {
      "pos": [
-      0,
-      0.1238,
+      0.0423,
+      0.0985,
       0
      ]
     },
     "rail": {
      "pos": [
-      -0.02,
+      0.0423,
       0.0936,
       0
      ],
-     "length": 0.16
+     "length": 0.0952
     }
    },
    "bounds": {
@@ -6587,8 +7526,77 @@
      0.0151
     ]
    },
-   "triangles": 1502,
+   "triangles": 2118,
    "pack": "modern",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.0256,
+      0.0326,
+      0
+     ],
+     "size": [
+      0.1317,
+      0
+     ]
+    },
+    "front": {
+     "pos": [
+      0.1103,
+      0.0611,
+      0
+     ],
+     "size": [
+      0.0603,
+      0
+     ]
+    },
+    "grip": {
+     "pos": [
+      -0.0053,
+      -0.006,
+      0
+     ],
+     "size": [
+      0.0152,
+      0
+     ]
+    },
+    "stockFace": {
+     "pos": [
+      -0.0256,
+      0.0329,
+      0
+     ],
+     "size": [
+      0.1321,
+      0
+     ]
+    },
+    "frontFace": {
+     "pos": [
+      0.1103,
+      0.0623,
+      0
+     ],
+     "size": [
+      0.0627,
+      0
+     ]
+    },
+    "gripFace": {
+     "pos": [
+      -0.0064,
+      -0.006,
+      0
+     ],
+     "size": [
+      0.0129,
+      0
+     ]
+    }
+   },
+   "modular": true,
    "file": "modern/w-vector.glb",
    "label": "Vector"
   },

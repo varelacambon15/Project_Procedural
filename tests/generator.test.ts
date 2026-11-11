@@ -50,10 +50,11 @@ describe("WeaponGenerator", () => {
     expect(many(400, "smg").some((w) => w.archetype === "tactical")).toBe(true);
   });
 
-  it("modos raros: francotiradores automáticos, revólveres a ráfagas, escopetas a ráfagas", () => {
-    expect(many(600, "sniper").some((w) => w.fireMode === "auto")).toBe(true);
-    expect(many(600, "revolver").some((w) => w.fireMode === "burst")).toBe(true);
-    expect(many(600, "shotgun").some((w) => w.fireMode === "burst")).toBe(true);
+  it("modos raros (francotirador automático, revólver a ráfagas…) solo en moradas y legendarias", () => {
+    expect(many(1500, "sniper").some((w) => w.fireMode === "auto")).toBe(true);
+    expect(many(1500, "revolver").some((w) => w.fireMode === "burst")).toBe(true);
+    expect(many(1500, "shotgun").some((w) => w.fireMode === "burst")).toBe(true);
+    for (const w of many(2000)) if (w.modeShift) expect(["epica", "legendaria"]).toContain(w.rarity.id);
     for (const w of many(800)) if (w.fireMode === "burst") expect(w.burst).toBeGreaterThanOrEqual(2); else expect(w.burst).toBe(0);
   });
 
@@ -76,5 +77,22 @@ describe("WeaponGenerator", () => {
     for (const w of many(4000)) count[w.rarity.id] = (count[w.rarity.id] ?? 0) + 1;
     const total = RARITIES.reduce((a, r) => a + r.weight, 0);
     for (const r of RARITIES) expect(Math.abs(count[r.id] / 4000 - r.weight / total)).toBeLessThan(0.03);
+  });
+});
+
+describe("armas largas despiezadas", () => {
+  it("mezclan piezas de otras armas de la misma familia y pasan la puerta de calidad", async () => {
+    const { longGunOk } = await import("../src/weapons/generator");
+    let mixed = 0, total = 0;
+    for (const t of ["rifle", "smg", "shotgun", "sniper", "lmg"] as const) for (const w of many(300, t)) {
+      if (w.layout !== "modular-long") continue;
+      total++;
+      const get = (role: string) => gen.byId.get(w.parts.find((p) => p.role === role)!.from)!;
+      const [r, s, g, f] = ["receiver", "stock", "grip", "front"].map(get);
+      for (const x of [s, g, f]) expect(x.pack).toBe(r.pack);
+      if (new Set([r, s, g, f]).size > 1) { mixed++; expect(longGunOk(r, s, f, g, w.type)).toBe(true); }
+    }
+    expect(total).toBeGreaterThan(100);
+    expect(mixed / total).toBeGreaterThan(0.6);
   });
 });

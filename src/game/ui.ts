@@ -103,13 +103,53 @@ export class InventoryScreen {
   private held: Where | null = null;
   private hovered: Where | null = null;
   isOpen = false;
-  constructor(private inv: Inventory, private thumbs: Thumbnails, private onClose: () => void, private toast: (m: string) => void) {
+  constructor(private inv: Inventory, private thumbs: Thumbnails, private onClose: () => void, private toast: (m: string) => void, private onDrop: (it: Item) => void) {
     this.el.addEventListener("mouseover", (e) => this.hover(e));
     this.el.addEventListener("mouseleave", () => { this.hovered = null; $("tooltip").hidden = true; });
     this.el.addEventListener("mousemove", (e) => this.placeTip(e.clientX, e.clientY));
     this.el.addEventListener("click", (e) => this.click(e));
     this.el.addEventListener("contextmenu", (e) => { e.preventDefault(); this.quick(e); });
+    this.el.addEventListener("pointerdown", (e) => this.dragStart(e));
+    addEventListener("pointermove", (e) => this.dragMove(e));
+    addEventListener("pointerup", (e) => this.dragEnd(e));
     inv.onChange(() => { if (this.isOpen) this.render(); });
+  }
+
+  // ---------- Arrastrar y soltar ----------
+  private drag: { from: Where; x: number; y: number; ghost: HTMLElement | null } | null = null;
+  private justDragged = false;
+  private dragStart(e: PointerEvent) {
+    if (e.button !== 0) return;
+    const w = this.whereOf(e.target); if (!w || !this.inv.get(w)) return;
+    this.drag = { from: w, x: e.clientX, y: e.clientY, ghost: null };
+  }
+  private dragMove(e: PointerEvent) {
+    const d = this.drag; if (!d) return;
+    if (!d.ghost) {
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
+      const src = this.el.querySelector<HTMLElement>(`.cell[data-area="${d.from.area}"][data-index="${d.from.index}"]`);
+      if (!src) return;
+      d.ghost = src.cloneNode(true) as HTMLElement;
+      d.ghost.classList.add("drag-ghost"); d.ghost.style.width = `${src.offsetWidth}px`;
+      document.body.appendChild(d.ghost);
+      src.classList.add("held"); this.held = null; $("tooltip").hidden = true;
+      this.el.classList.add("dragging");
+    }
+    d.ghost.style.transform = `translate(${e.clientX - 30}px, ${e.clientY - 24}px)`;
+    const over = document.elementFromPoint(e.clientX, e.clientY);
+    this.el.querySelectorAll(".drop-over").forEach((x) => x.classList.remove("drop-over"));
+    (over?.closest(".cell") ?? over?.closest("#inv-dropzone"))?.classList.add("drop-over");
+  }
+  private dragEnd(e: PointerEvent) {
+    const d = this.drag; this.drag = null; if (!d || !d.ghost) return;
+    d.ghost.remove(); this.el.classList.remove("dragging");
+    this.el.querySelectorAll(".drop-over").forEach((x) => x.classList.remove("drop-over"));
+    this.justDragged = true; setTimeout(() => (this.justDragged = false), 0);
+    const over = document.elementFromPoint(e.clientX, e.clientY);
+    if (over?.closest("#inv-dropzone")) { const it = this.inv.remove(d.from); if (it) this.onDrop(it); return; }
+    const to = this.whereOf(over);
+    if (to && (to.area !== d.from.area || to.index !== d.from.index)) this.inv.move(d.from, to);
+    else this.render();
   }
   open() { this.isOpen = true; this.held = null; this.el.hidden = false; this.render(); }
   close() { this.isOpen = false; this.el.hidden = true; $("tooltip").hidden = true; this.onClose(); }
@@ -126,6 +166,7 @@ export class InventoryScreen {
     this.thumbs.fill(this.el, i.all);
   }
   private hover(e: Event) {
+    if (this.drag?.ghost) return;
     const w = this.whereOf(e.target); this.hovered = w;
     const tip = $("tooltip");
     const it = w && this.inv.get(w);
@@ -143,6 +184,8 @@ export class InventoryScreen {
   private click(e: Event) {
     const target = e.target as HTMLElement;
     if (target.closest("[data-close]")) return this.close();
+    if (this.justDragged) return;
+    if (target.closest("#inv-dropzone") && this.held) { const it = this.inv.remove(this.held); this.held = null; if (it) this.onDrop(it); return; }
     const w = this.whereOf(target); if (!w) return;
     if (!this.held) { if (this.inv.get(w)) { this.held = w; this.render(); } return; }
     this.inv.move(this.held, w); this.held = null; this.render();
@@ -159,6 +202,14 @@ export class InventoryScreen {
       this.inv.move(w, { area: "pack", index: free });
     }
   }
+  /** Suelta al suelo el arma bajo el cursor. */
+  dropHovered() {
+    const w = this.hovered; if (!w) return;
+    const it = this.inv.get(w); if (!it) return;
+    this.inv.remove(w); $("tooltip").hidden = true;
+    this.onDrop(it);
+  }
+
   /** Desguaza el arma bajo el cursor (solo desde la mochila). */
   scrapHovered() {
     const w = this.hovered; if (!w || w.area !== "pack") return;

@@ -92,8 +92,8 @@ function normalize(parts, type, hint) {
 // Puntos de anclaje derivados de la geometría montada.
 function sockets(parts) {
   const S = {};
-  const body = parts.find((p) => p.role === "body" || p.role === "frame");
-  const front = parts.filter((p) => ["body", "slide", "barrel"].includes(p.role));
+  const body = parts.find((p) => p.role === "body" || p.role === "frame" || p.role === "receiver");
+  const front = parts.filter((p) => ["body", "slide", "barrel", "front"].includes(p.role));
   if (front.length) {
     const b = boxOf(front.map((p) => p.mesh)); const fx = b.max.x, tol = (b.max.x - b.min.x) * 0.03;
     let ys = 0, zs = 0, n = 0, ylo = Infinity, yhi = -Infinity;
@@ -107,12 +107,13 @@ function sockets(parts) {
     if (p.role === "slide") S.slide = { pos: [bb.min.x, bb.min.y, 0] };
     if (p.role === "barrel") S.barrel = { pos: [bb.min.x, (bb.min.y + bb.max.y) / 2, 0], length: bb.max.x - bb.min.x };
   }
-  if (body) { const bb = boxOf(parts.filter((p) => ["body", "slide", "frame"].includes(p.role)).map((p) => p.mesh)); S.top = { pos: [(bb.min.x + bb.max.x) / 2, bb.max.y, 0] }; }
+  if (body) { const bb = boxOf(parts.filter((p) => ["body", "slide", "frame", "receiver"].includes(p.role)).map((p) => p.mesh)); S.top = { pos: [(bb.min.x + bb.max.x) / 2, bb.max.y, 0] }; }
   // Raíl para miras: lo más alto del cuerpo en su tercio central (encima del cajón de mecanismos).
-  const bodies = parts.filter((p) => p.role === "body");
+  const recv = parts.filter((p) => p.role === "receiver");
+  const bodies = recv.length ? recv : parts.filter((p) => p.role === "body");
   if (bodies.length) {
     const bb = boxOf(bodies.map((p) => p.mesh)); const L = bb.max.x - bb.min.x;
-    const x0 = bb.min.x + L * 0.3, x1 = bb.min.x + L * 0.62;
+    const x0 = bb.min.x + L * (recv.length ? 0.15 : 0.3), x1 = bb.min.x + L * (recv.length ? 0.85 : 0.62);
     // Altura superior de cada franja; se usa la mediana para no apoyarse en asas, alzas o miras fijas.
     const N = 14, tops = new Array(N).fill(-Infinity);
     for (const p of bodies) { const a = p.mesh.geometry.attributes.position; for (let i = 0; i < a.count; i++) { const x = a.getX(i); if (x > x0 && x < x1) { const k = Math.min(N - 1, Math.floor(((x - x0) / (x1 - x0)) * N)); tops[k] = Math.max(tops[k], a.getY(i)); } } }
@@ -222,6 +223,84 @@ async function loadMultiOBJ(url) {
   }
   return objCache.get(url);
 }
+// ---------- Despiece de armas largas: culata · cajón · empuñadura · guardamanos/cañón ----------
+/** Corta una sopa de triángulos (x,y,z…) por el plano eje = valor. Devuelve [lado negativo, lado positivo]. */
+function clipByPlane(arr, axis, value) {
+  const neg = [], pos = [];
+  const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const emit = (poly, out) => { for (let i = 1; i < poly.length - 1; i++) out.push(...poly[0], ...poly[i], ...poly[i + 1]); };
+  for (let i = 0; i < arr.length; i += 9) {
+    const v = [[arr[i], arr[i + 1], arr[i + 2]], [arr[i + 3], arr[i + 4], arr[i + 5]], [arr[i + 6], arr[i + 7], arr[i + 8]]];
+    const d = v.map((p) => p[axis] - value);
+    if (d.every((x) => x <= 0)) { neg.push(...arr.slice(i, i + 9)); continue; }
+    if (d.every((x) => x >= 0)) { pos.push(...arr.slice(i, i + 9)); continue; }
+    const pn = [], pp = [];
+    for (let k = 0; k < 3; k++) {
+      const a = v[k], b = v[(k + 1) % 3], da = d[k], db = d[(k + 1) % 3];
+      if (da <= 0) pn.push(a); if (da >= 0) pp.push(a);
+      if ((da < 0 && db > 0) || (da > 0 && db < 0)) { const m = lerp(a, b, da / (da - db)); pn.push(m); pp.push(m); }
+    }
+    emit(pn, neg); emit(pp, pos);
+  }
+  return [neg, pos];
+}
+/** Cara de corte: centro y alto/ancho de los vértices que quedan sobre el plano. */
+function face(arr, axis, value, eps) {
+  let n = 0, ylo = Infinity, yhi = -Infinity, xlo = Infinity, xhi = -Infinity, zs = 0, ys = 0;
+  for (let i = 0; i < arr.length; i += 3) if (Math.abs(arr[i + axis] - value) < eps) { n++; ylo = Math.min(ylo, arr[i + 1]); yhi = Math.max(yhi, arr[i + 1]); xlo = Math.min(xlo, arr[i]); xhi = Math.max(xhi, arr[i]); ys += arr[i + 1]; zs += arr[i + 2]; }
+  if (!n) return null;
+  return axis === 0 ? { pos: [value, (ylo + yhi) / 2, 0], size: [yhi - ylo, 0] } : { pos: [(xlo + xhi) / 2, value, 0], size: [xhi - xlo, 0] };
+}
+
+/**
+ * Despieza el cuerpo de un arma larga. Busca la empuñadura (lo más bajo de la mitad trasera, sin contar el cargador)
+ * y el pozo del cargador, y corta: culata detrás de la empuñadura, guardamanos delante del pozo, empuñadura por debajo
+ * del cajón. Devuelve piezas y "juntas" (caras de unión) para montar piezas de otras armas.
+ */
+function splitLongGun(parts) {
+  const body = parts.find((p) => p.role === "body"), mag = parts.find((p) => p.role === "magazine");
+  const arr = Array.from(body.mesh.geometry.attributes.position.array);
+  const box = boxOf([body.mesh]); const x0 = box.min.x, L = box.max.x - box.min.x;
+  const N = 48, minY = new Array(N).fill(Infinity), maxY = new Array(N).fill(-Infinity);
+  const slice = (x) => Math.min(N - 1, Math.max(0, Math.floor(((x - x0) / L) * N)));
+  for (let i = 0; i < arr.length; i += 3) { const k = slice(arr[i]); minY[k] = Math.min(minY[k], arr[i + 1]); maxY[k] = Math.max(maxY[k], arr[i + 1]); }
+  const sx = (k) => x0 + ((k + 0.5) / N) * L;
+  const mb = mag ? mag.mesh.geometry.boundingBox : null;
+  const magTop = mb ? mb.max.y : null;
+  // Empuñadura: el punto más bajo entre el 15% y el pozo del cargador (o el 60%)
+  const gEnd = mb ? slice(mb.min.x) - 1 : Math.floor(N * 0.6);
+  let gk = Math.floor(N * 0.15);
+  for (let k = Math.floor(N * 0.15); k <= gEnd; k++) if (minY[k] < minY[gk]) gk = k;
+  // Parte inferior del cajón: la parte alta del cargador o la mediana de los mínimos del centro
+  const mid = minY.slice(Math.floor(N * 0.35), Math.floor(N * 0.7)).filter(Number.isFinite).sort((a, b) => a - b);
+  const yb = magTop ?? mid[Math.floor(mid.length * 0.6)];
+  if (!(minY[gk] < yb - L * 0.04)) return null; // sin empuñadura clara: no se despieza
+  let g0 = gk, g1 = gk;
+  while (g0 > 0 && minY[g0 - 1] < yb - L * 0.015) g0--;
+  while (g1 < gEnd && minY[g1 + 1] < yb - L * 0.015) g1++;
+  const gx0 = sx(g0) - L / N, gx1 = sx(g1) + L / N * 0.5;
+  const a = gx0 - L * 0.02;                               // culata | cajón
+  const b = mb ? mb.max.x + L * 0.05 : sx(g1) + L * 0.22;  // cajón | guardamanos
+  if (a < x0 + L * 0.08 || b > x0 + L * 0.85 || b - a < L * 0.15) return null;
+  const [stock, rest] = clipByPlane(arr, 0, a);
+  const [middle, front] = clipByPlane(rest, 0, b);
+  const [left, r1] = clipByPlane(middle, 0, gx0);
+  const [m2, right] = clipByPlane(r1, 0, gx1);
+  const [grip, above] = clipByPlane(m2, 1, yb);
+  const receiver = [...left, ...above, ...right];
+  const eps = L * 0.004;
+  const joints = {
+    rear: face(receiver, 0, a, eps), front: face(receiver, 0, b, eps), grip: face(receiver, 1, yb, eps),
+    stockFace: face(stock, 0, a, eps), frontFace: face(front, 0, b, eps), gripFace: face(grip, 1, yb, eps),
+  };
+  if (Object.values(joints).some((j) => !j) || stock.length < 90 || front.length < 90 || grip.length < 45) return null;
+  const mat = Array.isArray(body.mesh.material) ? body.mesh.material[0] : body.mesh.material;
+  const mk = (data, role) => { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(data, 3)); g.computeVertexNormals(); g.computeBoundingBox(); return { role, source: body.source, mesh: new THREE.Mesh(g, mat) }; };
+  const out = [mk(receiver, "receiver"), mk(stock, "stock"), mk(grip, "grip"), mk(front, "front")];
+  if (mag) out.push(mag);
+  return { parts: out, joints };
+}
+
 const OBJ_FINISH = { body: ["#33363a", 0.5, 0.55], magazine: ["#232427", 0.6, 0.4] };
 async function convertMultiOBJ(job) {
   const { V, objects } = await loadMultiOBJ(job.obj);
@@ -236,6 +315,15 @@ async function convertMultiOBJ(job) {
     parts.push({ role: rule.role, source: job.id, mesh: new THREE.Mesh(g, flatMaterial(rule.role === "body" ? "Polymer" : "Steel", fin[0], { roughness: fin[1], metalness: fin[2] })) });
   }
   normalize(parts, job.type, job.hint || {});
+  if (job.modular) {
+    const split = splitLongGun(parts);
+    if (split) {
+      const r = roundSockets({ joints: split.joints });
+      const out = await finish(job.id, job.type, split.parts, { pack: job.pack, joints: r.joints, modular: true });
+      // El raíl y la boca salen del cajón y del guardamanos
+      return out;
+    }
+  }
   return finish(job.id, job.type, parts, { pack: job.pack });
 }
 

@@ -2,7 +2,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { AssetEntry, PartRole, WeaponSpec } from "./types";
-import type { WeaponGenerator } from "./generator";
+import { jointScale, type WeaponGenerator } from "./generator";
 import { accessory, buildMuzzle, buildOptic } from "./accessories";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
@@ -91,10 +91,42 @@ export class WeaponAssembler {
       paint(slide, spec);
     } else {
       const bodyE = get(spec.parts[0].from);
-      const body = await this.nodes(bodyE, "body");
-      add(body, "body", bodyE, [0, 0, 0]);
-      paint(body, spec);
-      if (bodyE.sockets.muzzle) { muzzle = v3(bodyE.sockets.muzzle.pos); muzzleDiameter = bodyE.sockets.muzzle.diameter ?? 0.03; }
+      if (spec.layout === "modular-long") {
+        // Cajón en el origen; culata, guardamanos y empuñadura (de otras armas de la familia) en sus juntas.
+        const J = bodyE.joints!;
+        const recv = await this.nodes(bodyE, "receiver");
+        add(recv, "receiver", bodyE, [0, 0, 0]); paint(recv, spec);
+        const thick = (bodyE.bounds.max[2] - bodyE.bounds.min[2]);
+        const attach = async (role: "stock" | "front" | "grip", joint: "rear" | "front" | "grip", face: "stockFace" | "frontFace" | "gripFace", explode: [number, number, number]) => {
+          const donor = get(spec.parts.find((p) => p.role === role)!.from);
+          const node = await this.nodes(donor, role);
+          const k = donor === bodyE ? 1 : THREE.MathUtils.clamp(jointScale(bodyE, donor, joint), 0.6, 1.6);
+          node.scale.setScalar(k);
+          node.position.copy(v3(J[joint].pos).sub(v3(donor.joints![face].pos).multiplyScalar(k)));
+          add(node, role, donor, explode); paint(node, spec);
+          return { donor, k, node };
+        };
+        await attach("stock", "rear", "stockFace", [-1.2, 0, 0]);
+        const fr = await attach("front", "front", "frontFace", [1.1, 0.2, 0]);
+        await attach("grip", "grip", "gripFace", [0, -1, 0]);
+        // Remates de unión: un anillo de acero en el guardamanos y una placa en la culata, para que no se vea el corte
+        for (const [j, w] of [["front", 0.012], ["rear", 0.008]] as const) {
+          const h = J[j].size![0];
+          const collar = new THREE.Mesh(new THREE.BoxGeometry(w, h * 1.06, thick * 0.92), new THREE.MeshStandardMaterial({ name: "Steel", color: 0x1e1f21, metalness: 0.75, roughness: 0.4 }));
+          collar.position.set(J[j].pos[0], J[j].pos[1], 0);
+          recv.add(collar);
+        }
+        if (fr.donor.sockets.muzzle) {
+          const m = fr.donor.sockets.muzzle;
+          muzzle = v3(m.pos).multiplyScalar(fr.k).add(fr.node.position);
+          muzzleDiameter = (m.diameter ?? 0.02) * fr.k;
+        }
+      } else {
+        const body = await this.nodes(bodyE, "body");
+        add(body, "body", bodyE, [0, 0, 0]);
+        paint(body, spec);
+        if (bodyE.sockets.muzzle) { muzzle = v3(bodyE.sockets.muzzle.pos); muzzleDiameter = bodyE.sockets.muzzle.diameter ?? 0.03; }
+      }
       // Cargador: su parte superior encaja en el pozo del cuerpo; se escala al ancho del pozo original.
       const magPick = spec.parts.find((p) => p.role === "magazine");
       if (magPick && bodyE.sockets.magazine) {

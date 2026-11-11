@@ -58,14 +58,17 @@ const ALL = [
 const W = "raw/weapons-obj/WeaponsOBJ.obj";
 // Todo el pack comparte orientación: X lateral, Z longitud, Y arriba.
 const WHINT = { side: 0, length: 2, upSign: 1, fwdSign: 1 };
-const w = (id, label, type, body, mag) => ({ kind: "objmulti", pack: "modern", id: `w-${id}`, label, obj: W, type, hint: WHINT, objects: [{ match: body, role: "body" }, ...(mag ? [{ match: mag, role: "magazine" }] : [])] });
+// Armas largas que se despiezan en culata / cajón / empuñadura / guardamanos (las bullpup y las de forma rara, no).
+// Revisión del piloto (hoja de contacto, 100 armas): Sten, Garand y VSS no trocean limpio (piezas sueltas o huecos),
+// así que se quedan como armas enteras. Las que no se pudieron cortar (PPSh, MP5K, SPAS-12) también.
+const MODULAR = new Set(["m249", "m60", "xm8", "scarh", "m16a4", "g36", "ak47", "aa12", "uzi", "vector", "l115", "barrett"]);
+const w = (id, label, type, body, mag) => ({ kind: "objmulti", pack: "modern", id: `w-${id}`, label, obj: W, type, hint: WHINT, modular: MODULAR.has(id), objects: [{ match: body, role: "body" }, ...(mag ? [{ match: mag, role: "magazine" }] : [])] });
 ALL.push(
   w("vss", "VSS", "sniper", "^VSS_Sniper$", "^VSS_Sniper_Magazine$"),
   w("l115", "L115", "sniper", "^L115_Awp$", "^L115_Awp_Magazine$"),
   w("barrett", "Barrett", "sniper", "^Barett$", "^Barett_Magazine$"),
   w("m249", "M249", "lmg", "^M249(_Top)?$", "^M249_Magazine$"),
   w("m60", "M60", "lmg", "^M60(_Top)?$", "^M60_Magazine$"),
-  w("minigun", "Minigun", "lmg", "^Minigun(_Front)?$", null),
   w("sten", "Sten", "smg", "^Sten$", "^StenMagazine$"),
   w("ppsh", "PPSh", "smg", "^PPHS$", "^PPHS_Magazine$"),
   w("m1911", "M1911", "pistol", "^M1911$", "^Pistol_Magazine$"),

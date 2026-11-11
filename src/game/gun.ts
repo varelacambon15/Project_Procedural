@@ -45,6 +45,8 @@ export class Gun {
   private frenzyT = 0;
   private sightY = 0.03;
   zoom = 1;
+  /** Tipo de mira para apuntar: alzas, punto rojo, holográfica o visor de aumento (vista a pantalla completa). */
+  sight: "iron" | "dot" | "holo" | "scope" = "iron";
   private flashLight = new THREE.PointLight(0xffc27a, 0, 6, 2);
   private flash: THREE.Mesh;
   private tracers: { line: THREE.Line; t: number; max: number }[] = [];
@@ -92,7 +94,12 @@ export class Gun {
     });
     m.group.rotation.y = Math.PI / 2; // +X (boca) hacia -Z de la cámara
     this.sightY = m.sightY ?? new THREE.Box3().setFromObject(m.group).max.y;
-    this.zoom = m.zoom;
+    // Tipo de mira y aumentos
+    const opt = accessory(item.spec.optic);
+    if (opt) { this.sight = opt.id === "acc:reddot" ? "dot" : opt.id === "acc:holo" ? "holo" : "scope"; this.zoom = opt.zoom ?? 1; }
+    else if (item.spec.optic) { this.sight = "scope"; this.zoom = 3; }                 // mira de modelo (cosmo)
+    else if (item.spec.type === "sniper") { this.sight = "scope"; this.zoom = 4.5; }  // francotirador con visor integrado
+    else { this.sight = "iron"; this.zoom = 1; }
     this.mag = m.parts.find((p) => p.role === "magazine") ?? null;
     this.model = m;
     this.holder.add(m.group);
@@ -225,6 +232,8 @@ export class Gun {
     this.swayV.y += (THREE.MathUtils.clamp(c.lookY * 2.2, -0.06, 0.06) - this.swayV.y) * Math.min(1, dt * 10);
     this.sway.rotation.set(-this.swayV.y * swayK, this.swayV.x * swayK, this.swayV.x * 1.4 * swayK);
     this.sway.position.set(-this.swayV.x * 0.15 * swayK, this.swayV.y * 0.1 * swayK, 0);
+    // Con visor de aumento, al apuntar del todo se ve a través del visor (el arma se oculta)
+    this.viewmodel.visible = !(this.sight === "scope" && this.aimT > 0.9);
 
     // Efectos
     const fm = this.flash.material as THREE.MeshBasicMaterial;

@@ -2,7 +2,7 @@
 // Lógica pura (sin Three.js): se puede probar sin navegador. Los textos se traducen fuera, a partir de los ids.
 import { hashString, mulberry32, pick, type Rng } from "./rng";
 import { ACCESSORIES, accessory } from "./accessories";
-import type { AssetEntry, Effect, FireMode, Manifest, Paint, PartPick, Rarity, Stats, StatKey, WeaponSpec, WeaponType } from "./types";
+import type { AssetEntry, Effect, FireMode, Manifest, Paint, PartPick, PartRole, Rarity, Stats, StatKey, WeaponSpec, WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
 
@@ -72,7 +72,7 @@ export const TYPE_INFO: Record<BaseType, TypeInfo> = {
 export const PELLETS: Partial<Record<WeaponType, number>> = { shotgun: 8 };
 /**
  * Modos de disparo alternativos por tipo: dan variedad ("de todo") con su propio perfil de estadísticas.
- * Se aplican con un 28% de probabilidad sobre la variante elegida.
+ * Solo en armas moradas y legendarias (45% de ellas), sobre la variante elegida.
  */
 interface Shift { mode: FireMode; w: number; burst?: [number, number]; dano?: number; cadencia?: number; cargador?: number; precision?: number; manejo?: number }
 export const MODE_SHIFTS: Partial<Record<BaseType, Shift[]>> = {
@@ -229,10 +229,28 @@ export class WeaponGenerator {
       while (frame === slide) frame = pick(r, modular);
       parts.push({ role: "frame", from: frame.id }, { role: "slide", from: slide.id }, { role: "barrel", from: pick(r, modular).id });
     } else {
-      const bodies = pool.filter((w) => w.parts.some((p) => p.role === "body"));
+      const bodies = pool.filter((w) => w.parts.some((p) => p.role === "body" || p.role === "receiver"));
       if (!bodies.length) throw new Error(`No bodies of type ${type}`);
-      const base = weighted(r, bodies, (x) => PACK_WEIGHT[x.pack] ?? 1);
-      parts.push({ role: "body", from: base.id });
+      const base = weighted(r, bodies, (x) => (PACK_WEIGHT[x.pack] ?? 1) * (x.modular ? 2 : 1));
+      if (base.modular) {
+        // Arma larga despiezada: cajón de una, culata, empuñadura y guardamanos de otras de la misma familia,
+        // siempre que pasen la puerta de calidad (proporciones y longitud total).
+        layout = "modular-long";
+        parts.push({ role: "receiver", from: base.id });
+        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && w.pack === base.pack && ok(w) && w.parts.some((p) => p.role === role));
+        const cls = (t: WeaponType) => (t === "smg" ? "compact" : "long");
+        // Solo piezas cuya junta encaja con la del cajón (sección parecida); luego se comprueba el conjunto.
+        const fit = (joint: "rear" | "front" | "grip", lo: number, hi: number) => (w: AssetEntry) => w.id === base.id || within(jointScale(base, w, joint), lo, hi);
+        const stocks = donors("stock", (w) => cls(w.type) === cls(type)).filter(fit("rear", 0.7, 1.4));
+        const fronts = donors("front", (w) => w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front", 0.65, 1.5));
+        const grips = donors("grip", () => true).filter(fit("grip", 0.7, 1.4));
+        let chosen = { stock: base, front: base, grip: base };
+        for (let tries = 0; tries < 12; tries++) {
+          const c = { stock: r() < 0.8 ? pick(r, stocks) : base, front: r() < 0.75 ? pick(r, fronts) : base, grip: r() < 0.8 ? pick(r, grips) : base };
+          if (longGunOk(base, c.stock, c.front, c.grip, type)) { chosen = c; break; }
+        }
+        parts.push({ role: "stock", from: chosen.stock.id }, { role: "grip", from: chosen.grip.id }, { role: "front", from: chosen.front.id });
+      } else parts.push({ role: "body", from: base.id });
       if (base.sockets.magazine) {
         const mags = pool.filter((w) => w.pack === base.pack && w.parts.some((p) => p.role === "magazine"));
         parts.push({ role: "magazine", from: (r() < 0.6 ? pick(r, mags) : base).id });
@@ -245,9 +263,12 @@ export class WeaponGenerator {
     const hint = MODEL_HINTS[body.id];
     const regular = info.archetypes.filter((a) => a.w > 0);
     const arch = hint?.arch && r() < 0.7 ? info.archetypes.find((a) => a.id === hint.arch) ?? regular[0] : weighted(r, regular, (a) => a.w);
-    // Modo de disparo: el de la variante o, a veces, uno "raro" para su tipo
+    // Rareza (antes que el modo: los modos raros son exclusivos de moradas y legendarias)
+    const rarity = rollRarity(r);
+    // Modo de disparo: el de la variante o, en moradas y legendarias, a veces uno "raro" para su tipo
     const shifts = (MODE_SHIFTS[type] ?? []).filter((x) => x.mode !== arch.mode);
-    const shift = shifts.length && r() < 0.28 ? weighted(r, shifts, (x) => x.w) : null;
+    const exotic = rarity.id === "epica" || rarity.id === "legendaria";
+    const shift = exotic && shifts.length && r() < 0.45 ? weighted(r, shifts, (x) => x.w) : null;
     const fireMode: FireMode = shift?.mode ?? arch.mode;
     const burstRange = shift?.burst ?? [3, 3];
     const burst = fireMode === "burst" ? burstRange[0] + Math.floor(r() * (burstRange[1] - burstRange[0] + 1)) : 0;
@@ -259,8 +280,7 @@ export class WeaponGenerator {
     const muzzles = this.muzzleOptions(type, body.id);
     const muzzle = muzzles.length && r() < 0.3 ? pick(r, muzzles) : null;
 
-    // 4. Rareza, acabado y nivel
-    const rarity = rollRarity(r);
+    // 4. Acabado y nivel
     const paint = weighted(r, PAINTS, (p) => PAINT_WEIGHTS[PAINTS.indexOf(p)]);
     const level = 8 + Math.floor(r() * 9);
 
@@ -292,6 +312,29 @@ export class WeaponGenerator {
     if (spec.rarity.id !== "legendaria") spec.name = technicalName(spec);
     return spec;
   }
+}
+
+/** Longitud de referencia de cada tipo (m), la misma que usa el conversor. */
+export const TYPE_LENGTH: Partial<Record<WeaponType, number>> = { pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, lmg: 1.15, launcher: 1.1, flamethrower: 0.95 };
+const within = (v: number, lo: number, hi: number) => v >= lo && v <= hi;
+/** Escala con la que una pieza encaja en la junta del cajón (relación de secciones). */
+export function jointScale(recv: AssetEntry, donor: AssetEntry, joint: "rear" | "front" | "grip"): number {
+  const face = { rear: "stockFace", front: "frontFace", grip: "gripFace" }[joint] as "stockFace" | "frontFace" | "gripFace";
+  const a = recv.joints![joint].size![0], b = donor.joints![face].size![0];
+  return b > 1e-4 ? a / b : 0;
+}
+/**
+ * Puerta de calidad de un arma larga montada con piezas de varias: las secciones de cada junta deben ser parecidas
+ * (para no deformar las piezas) y la longitud total debe quedar dentro del rango del tipo.
+ */
+export function longGunOk(recv: AssetEntry, stock: AssetEntry, front: AssetEntry, grip: AssetEntry, type: WeaponType): boolean {
+  if (!recv.joints || !stock.joints || !front.joints || !grip.joints) return false;
+  const kS = jointScale(recv, stock, "rear"), kF = jointScale(recv, front, "front"), kG = jointScale(recv, grip, "grip");
+  if (!within(kS, 0.7, 1.4) || !within(kF, 0.65, 1.5) || !within(kG, 0.7, 1.4)) return false;
+  const J = recv.joints;
+  const len = (J.front.pos[0] - J.rear.pos[0]) + (stock.joints.stockFace.pos[0] - stock.bounds.min[0]) * kS + (front.bounds.max[0] - front.joints.frontFace.pos[0]) * kF;
+  const target = TYPE_LENGTH[type] ?? 0.9;
+  return within(len / target, 0.8, 1.25);
 }
 
 export function computeStats(spec: WeaponSpec): Stats {

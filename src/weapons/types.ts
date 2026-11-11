@@ -1,7 +1,7 @@
 // Tipos compartidos del sistema de armas. Los textos visibles se obtienen con i18n a partir de los ids.
 
 export type WeaponType = "pistol" | "revolver" | "smg" | "rifle" | "bullpup" | "shotgun" | "sniper" | "launcher" | "flamethrower" | "lmg" | "accessory";
-export type PartRole = "body" | "slide" | "frame" | "barrel" | "magazine" | "scope" | "muzzle";
+export type PartRole = "body" | "slide" | "frame" | "barrel" | "magazine" | "scope" | "muzzle" | "receiver" | "stock" | "grip" | "front";
 export type FireMode = "auto" | "semi" | "burst" | "pump" | "bolt";
 
 export interface Socket { pos: [number, number, number]; diameter?: number; size?: [number, number]; length?: number }
@@ -17,6 +17,9 @@ export interface AssetEntry {
   sockets: Partial<Record<"muzzle" | "magazine" | "optic" | "slide" | "barrel" | "top" | "rail", Socket>>;
   bounds: { min: [number, number, number]; max: [number, number, number] };
   triangles: number;
+  /** Armas despiezadas: juntas de unión (cajón: rear/front/grip; piezas: stockFace/frontFace/gripFace). */
+  joints?: Record<"rear" | "front" | "grip" | "stockFace" | "frontFace" | "gripFace", Socket>;
+  modular?: boolean;
 }
 export interface Manifest { convention: string; weapons: AssetEntry[] }
 
@@ -45,7 +48,7 @@ export interface WeaponSpec {
   modeShift: FireMode | null;
   /** Disparos por ráfaga (solo en modo ráfaga). */
   burst: number;
-  layout: "modular-pistol" | "body";
+  layout: "modular-pistol" | "modular-long" | "body";
   parts: PartPick[];
   barrelLength: number;
   muzzle: string | null;

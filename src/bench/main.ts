@@ -168,6 +168,36 @@ async function boot() {
   const t = q.get("type") as WeaponType | null;
   if (t && gen.types.includes(t)) { typeFilter = t; buildTypeButtons(); }
   await show(Number(q.get("seed")) || 4127);
-  (window as unknown as Record<string, unknown>).__bench = { show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+  // Hoja de contacto (revisión visual): n armas despiezadas, cada una en perfil, tres cuartos y vista de empuñadura.
+  const sheet = async (n: number, start = 1, types: string[] = ["rifle", "smg", "shotgun", "sniper", "lmg"]) => {
+    const CW = 220, CH = 110, cols = 3, rows = n;
+    const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(CW, CH); r.toneMapping = THREE.ACESFilmicToneMapping;
+    const sc = new THREE.Scene(); sc.background = new THREE.Color(0xcfc9bd);
+    sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+    sc.add(new THREE.HemisphereLight(0xffffff, 0x777777, 1.2)); const dl = new THREE.DirectionalLight(0xffffff, 1.5); dl.position.set(1, 2, 3); sc.add(dl);
+    const out = document.createElement("canvas"); out.width = CW * cols; out.height = CH * rows; const g = out.getContext("2d")!;
+    const names: string[] = [];
+    let seed = start, i = 0;
+    while (i < n) {
+      const spec = gen.generate(seed++, types[seed % types.length] as never);
+      if (spec.layout !== "modular-long") continue;
+      const built = await asm.assemble(spec); sc.add(built.group);
+      const views: [number, number][] = [[0, 0], [-0.75, 0.25], [-0.35, -0.75]];
+      views.forEach(([yaw, pitch], v) => {
+        built.group.rotation.set(pitch, yaw, 0);
+        const b = new THREE.Box3().setFromObject(built.group), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+        const half = Math.max(sz.x / 2 * CH / CW, sz.y / 2) * 1.1;
+        const cam = new THREE.OrthographicCamera(-half * CW / CH, half * CW / CH, half, -half, -10, 10); cam.position.set(c.x, c.y, c.z + 3); cam.lookAt(c);
+        r.render(sc, cam); g.drawImage(r.domElement, v * CW, i * CH);
+      });
+      sc.remove(built.group);
+      g.fillStyle = "#222"; g.font = "11px monospace";
+      const lbl = `${i + 1}. ${spec.parts.filter((p) => ["receiver", "stock", "grip", "front"].includes(p.role)).map((p) => p.role[0].toUpperCase() + ":" + p.from.replace("w-", "")).join(" ")}`;
+      g.fillText(lbl, 4, i * CH + 12); names.push(lbl);
+      i++;
+    }
+    return { url: out.toDataURL("image/png"), names };
+  };
+  (window as unknown as Record<string, unknown>).__bench = { sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
 }
 boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });

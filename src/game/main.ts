@@ -4,7 +4,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { WeaponGenerator, type BaseType } from "../weapons/generator";
 import { WeaponAssembler } from "../weapons/assembler";
 import { scrap } from "../weapons/workshop";
-import { archName, damageText, effectName, rarityName, typeName } from "../weapons/labels";
+import { archName, rarityName, typeName } from "../weapons/labels";
 import type { Manifest } from "../weapons/types";
 import { LANGS, applyStatic, getLang, onLang, setLang, t, type Lang } from "../i18n";
 import { Input } from "./input";
@@ -13,7 +13,8 @@ import { spawnDummies, DamageNumbers, type Dummy } from "./dummies";
 import { Player } from "./player";
 import { Gun } from "./gun";
 import { Inventory, makeItem, type Item } from "./inventory";
-import { InventoryScreen, WorkbenchScreen, MenuCursor, Thumbnails } from "./ui";
+import { InventoryScreen, WorkbenchScreen, MenuCursor, Thumbnails, weaponCard } from "./ui";
+import { Pickups, type Pickup } from "./pickups";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const ASSETS = "./weapons/";
@@ -52,7 +53,6 @@ onLang(() => dummies.forEach((d) => d.relabel()));
 
 let toastTimer = 0;
 function toast(msg: string) { const el = $("toast"); el.textContent = msg; el.classList.add("show"); toastTimer = 2.2; }
-let lootTimer = 0;
 
 async function boot() {
   const manifest: Manifest = await (await fetch(ASSETS + "manifest.json")).json();
@@ -69,6 +69,7 @@ async function boot() {
     onKill(d) { if (d.kind.boss) toast(t("ui.bossDown")); },
   });
   gun.env = weaponEnv;
+  const pickups = new Pickups(scene, asm, world.colliders);
 
   // Armas iniciales: pistola y fusil equipados; escopeta y subfusil en la mochila.
   const starter = (type: BaseType, seed0: number) => { for (let s = seed0; ; s++) { const w = gen.generate(s, type); if (w.rarity.id === "comun" || w.rarity.id === "poco") return w; } };
@@ -90,7 +91,7 @@ async function boot() {
   renderSlots();
 
   const thumbs = new Thumbnails(asm);
-  const invScreen = new InventoryScreen(inv, thumbs, () => resume(), toast);
+  const invScreen = new InventoryScreen(inv, thumbs, () => resume(), toast, (it) => dropItem(it));
   const bench = new WorkbenchScreen(inv, gen, asm, thumbs, () => resume(), (it: Item) => { gun.forget(it.uid); if (it === gun.item) gun.equip(it, true); renderSlots(); }, toast);
   onLang(() => { renderSlots(); if (invScreen.isOpen) invScreen.render(); if (bench.isOpen) bench.render(); });
 
@@ -114,18 +115,27 @@ async function boot() {
     if (chestT >= 0) return;
     const types = gen.types;
     const spec = gen.generate(Math.floor(Math.random() * 1e9), types[Math.floor(Math.random() * types.length)]);
-    const it = makeItem(spec);
-    if (!inv.add(it)) { toast(t("ui.packFull")); return; }
     chestT = 0;
     world.chestGlow.color.set(spec.rarity.color);
-    const l = $("loot");
-    l.style.setProperty("--c", spec.rarity.color);
-    l.innerHTML = `<div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--c)">${rarityName(spec)} · ${typeName(spec.type)} · ${archName(spec)}</div>
-      <div style="font-family:var(--display);font-weight:700;font-size:24px;color:var(--c)">${spec.name}</div>
-      <div style="color:var(--dim);font-size:12px">${damageText(spec)} ${t("label.damage")} · ${Math.round(spec.stats.cadencia)}${t("unit.rpm")} · ${spec.stats.cargador}${spec.effects.length ? " · " + spec.effects.map(effectName).join(", ") : ""}</div>
-      <div style="color:var(--dim);font-size:11px;margin-top:6px">${inv.find(it.uid)?.area === "equip" ? t("ui.equippedTo") : t("ui.storedIn")} · ${t("ui.tabToSee")}</div>`;
-    l.classList.add("show"); lootTimer = 3.5;
-    thumbs.get(it).then((url) => { const img = document.createElement("img"); img.src = url; img.className = "loot-thumb"; l.prepend(img); }).catch(() => undefined);
+    // El arma sale despedida del cofre hacia el jugador y cae al suelo, lista para recoger
+    const chestPos = world.interactables.find((i) => i.id === "chest")!.position;
+    const toward = player.pos.clone().sub(chestPos).setY(0).normalize();
+    pickups.spawn(makeItem(spec), chestPos.clone().add(new THREE.Vector3(0, 0.9, 0)).addScaledVector(toward, 0.3), toward.multiplyScalar(2.2).setY(4.2));
+  }
+
+  /** Suelta un arma delante del jugador. */
+  function dropItem(it: Item) {
+    const fwd = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+    pickups.spawn(it, player.pos.clone().add(new THREE.Vector3(0, 1.2, 0)).addScaledVector(fwd, 0.6), fwd.multiplyScalar(2.5).setY(1.5));
+    toast(t("ui.dropped", { n: it.spec.name }));
+  }
+
+  /** Recoge el arma del suelo a la que apunta el jugador. */
+  function pickUp(p: Pickup) {
+    if (!inv.add(p.item)) { toast(t("ui.packFull")); return; }
+    pickups.remove(p);
+    const where = inv.find(p.item.uid);
+    toast(`${p.item.spec.name} · ${where?.area === "equip" ? t("ui.equippedTo") : t("ui.storedIn")}`);
   }
 
   // ---------- HUD ----------
@@ -147,7 +157,7 @@ async function boot() {
     const radius = 6 + Math.tan(THREE.MathUtils.degToRad(spread)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * innerHeight / 2;
     ch.style.setProperty("--r", `${radius.toFixed(1)}px`);
     ch.dataset.type = s?.type ?? "";
-    ch.style.opacity = player.sprinting ? "0" : String(1 - gun.aimT * 0.85);
+    ch.style.opacity = player.sprinting ? "0" : String(1 - gun.aimT * (gun.sight === "iron" ? 0.85 : 1));
     ch.classList.toggle("hit", gun.hitmarker > 0); ch.classList.toggle("crit", gun.critmarker > 0); ch.classList.toggle("kill", gun.killmarker > 0);
   }
 
@@ -162,6 +172,7 @@ async function boot() {
 
   // ---------- Bucle ----------
   const clock = new THREE.Clock();
+  let shownPickup: Pickup | null = null;
   const debug = { fire: false, aim: false }; // usado por las pruebas automáticas
   function frame() {
     const dt = Math.min(clock.getDelta(), 0.05);
@@ -176,10 +187,21 @@ async function boot() {
     if (state === "play") {
       if (f.pause) input.unlock();
       if (f.inventory) openScreen("inventory");
-      const near = nearInteractable();
-      $("prompt").hidden = !near;
-      if (near) $("prompt").innerHTML = `<kbd>${input.device === "pad" ? "Ⓑ" : "E"}</kbd>${t(near.id === "chest" ? "ui.openCrate" : "ui.useBench")}`;
-      if (near && f.interact) { if (near.id === "chest") openChest(); else openScreen("workbench"); }
+      const key = `<kbd>${input.device === "pad" ? "Ⓑ" : "E"}</kbd>`;
+      const look = camera.getWorldDirection(new THREE.Vector3());
+      const ground = pickups.target(camera.position, look);
+      const near = ground ? null : nearInteractable();
+      $("prompt").hidden = !ground && !near;
+      if (ground) $("prompt").innerHTML = `${key}${t("ui.pickup")}`;
+      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.openCrate" : "ui.useBench")}`;
+      // Ficha del arma del suelo comparada con la que llevas
+      const card = $("pickcard");
+      if (ground !== shownPickup) {
+        shownPickup = ground;
+        card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : "";
+        card.hidden = !ground;
+      }
+      if (f.interact) { if (ground) pickUp(ground); else if (near) { if (near.id === "chest") openChest(); else openScreen("workbench"); } }
       if (f.slot1 && inv.equip[0]) { inv.active = 0; inv.changed(); }
       if (f.slot2 && inv.equip[1]) { inv.active = 1; inv.changed(); }
       if (f.swap && inv.equip[1 - inv.active]) { inv.active = 1 - inv.active; inv.changed(); }
@@ -192,10 +214,10 @@ async function boot() {
       }
       player.update(dt, f, gun.aimT > 0.5, 1 - gun.aimT * (1 - 1 / Math.max(1.5, gun.zoom)));
       gun.update(dt, { fire: f.fire, aim: f.aim, moving: Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5), sprinting: player.sprinting, lookX: f.lookX, lookY: f.lookY, vy: player.vel.y, grounded: player.onGround, inspect: f.inspect });
-      const aimFov = 75 / Math.max(1.35, gun.zoom * 1.1);
+      const aimFov = gun.sight === "scope" ? 75 / gun.zoom : gun.sight === "iron" ? 75 / 1.35 : 75 / 1.6;
       camera.fov = THREE.MathUtils.lerp(player.sprinting ? 82 : 75, aimFov, gun.aimT); camera.updateProjectionMatrix();
     } else {
-      $("prompt").hidden = true;
+      $("prompt").hidden = true; $("pickcard").hidden = true; shownPickup = null;
       gun.update(dt, { fire: false, aim: false, moving: 0, sprinting: false, lookX: 0, lookY: 0, vy: 0, grounded: true, inspect: false });
       if (pad) {
         cursor.update(dt, pad.axes[0] ?? 0, pad.axes[1] ?? 0);
@@ -203,6 +225,7 @@ async function boot() {
         if (edges[0]) cursor.click();
         if (edges[2]) cursor.click(true);
         if (edges[3] && state === "inventory") invScreen.scrapHovered();
+        if (edges[5] && state === "inventory") invScreen.dropHovered();
         if ((edges[1] || edges[8]) && (state === "inventory" || state === "workbench")) resume();
       }
       if (state === "inventory" && (f.inventory || f.pause)) resume();
@@ -220,8 +243,13 @@ async function boot() {
       if (chestT > 2) { chestT = -1; world.chestLid.rotation.x = 0; }
     }
     toastTimer -= dt; if (toastTimer <= 0) $("toast").classList.remove("show");
-    lootTimer -= dt; if (lootTimer <= 0) $("loot").classList.remove("show");
 
+    pickups.update(dt);
+    // Miras: visor a pantalla completa o retícula de punto rojo / holográfica
+    const scopeOn = state === "play" && gun.sight === "scope" && gun.aimT > 0.9;
+    $("scope").classList.toggle("on", scopeOn);
+    const rd = $("reddot"); rd.dataset.kind = gun.sight;
+    rd.style.opacity = state === "play" && (gun.sight === "dot" || gun.sight === "holo") ? String(Math.max(0, (gun.aimT - 0.6) / 0.4)) : "0";
     for (const d of dummies) d.update(dt, camera, innerWidth, innerHeight);
     numbers.update(dt, camera, innerWidth, innerHeight);
     bench.update(dt);
@@ -229,10 +257,10 @@ async function boot() {
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
-  addEventListener("keydown", (e) => { if (e.code === "KeyX" && state === "inventory") invScreen.scrapHovered(); });
+  addEventListener("keydown", (e) => { if (e.code === "KeyX" && state === "inventory") invScreen.scrapHovered(); if (e.code === "KeyG" && state === "inventory") invScreen.dropHovered(); });
   player.applyCamera(camera, 0);
   frame();
-  (window as unknown as Record<string, unknown>).__game = { debug, gen, inv, gun, player, dummies, openChest, openScreen, resume, setLang, get state() { return state; }, set state(v: State) { state = v; } };
+  (window as unknown as Record<string, unknown>).__game = { debug, gen, inv, gun, pickups, pickUp, player, dummies, openChest, openScreen, resume, setLang, get state() { return state; }, set state(v: State) { state = v; } };
 }
 
 boot().catch((e) => { $("start-text").textContent = t("ui.loadError", { e: e.message }); console.error(e); });
