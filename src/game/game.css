@@ -185,3 +185,10 @@ body.menu-cursor, body.menu-cursor * { cursor: none !important; }
 .card .meta { color: var(--dim); font-size: 11px; }
 @media (prefers-reduced-motion: reduce) { #toast, #loot, .hptrack i { transition: none; } }
 .cell.sel { outline: 2px solid var(--amber); }
+
+/* Fotos de las armas */
+.cell .thumb { width: 100%; height: 56px; object-fit: contain; opacity: 0; transition: opacity .2s; pointer-events: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,.5)); }
+.cell.big .thumb { height: 92px; }
+.cell .thumb.ready { opacity: 1; }
+.wlist .cell .thumb { height: 50px; }
+.loot-thumb { display: block; width: 100%; height: 110px; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)); }

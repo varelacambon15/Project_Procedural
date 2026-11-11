@@ -46,17 +46,64 @@ function cellHTML(it: Item | null, where: Where, inHand: boolean, big = false, e
   if (!it) return `<div class="cell empty ${big ? "big" : ""}" data-area="${where.area}" data-index="${where.index}">${emptyText}</div>`;
   const s = it.spec;
   return `<div class="cell ${big ? "big" : ""} ${inHand ? "active" : ""} ${extraClass}" style="--c:${s.rarity.color}" data-area="${where.area}" data-index="${where.index}" data-uid="${it.uid}" data-inhand="${t("ui.inHand")}">
+    <img class="thumb" data-thumb="${it.uid}" alt="">
     <span class="lbl">${typeName(s.type)} · ${archName(s)}</span><span class="nm">${s.name}</span>
     <span class="dm">${damageText(s)} <span class="ty">· ${t("label.level")} ${s.level}</span></span><span class="glow"></span></div>`;
 }
 
 // ---------------------------------------------------------------------------
+/** Fotos de las armas: se renderizan una vez (vista lateral) y se guardan hasta que el arma cambia. */
+export class Thumbnails {
+  private renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  private scene = new THREE.Scene();
+  private camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 20);
+  private cache = new Map<number, Promise<string>>();
+  private queue: Promise<unknown> = Promise.resolve();
+  constructor(private asm: WeaponAssembler) {
+    this.renderer.setSize(320, 140, false);
+    this.renderer.setPixelRatio(1);
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.scene.environment = new THREE.PMREMGenerator(this.renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x404040, 0.6));
+    const k = new THREE.DirectionalLight(0xfff0dd, 1.8); k.position.set(1, 2, 3); this.scene.add(k);
+  }
+  forget(uid: number) { this.cache.delete(uid); }
+  get(it: Item): Promise<string> {
+    if (!this.cache.has(it.uid)) {
+      // En cola: un solo renderizador para todas las fotos
+      const p = this.queue.then(async () => {
+        const built = await this.asm.assemble(it.spec);
+        const g = built.group; g.rotation.set(0.05, -0.32, 0);
+        this.scene.add(g);
+        const b = new THREE.Box3().setFromObject(g), size = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+        const aspect = 320 / 140, half = Math.max(size.x / 2 / aspect, size.y / 2) * 1.12;
+        Object.assign(this.camera, { left: -half * aspect, right: half * aspect, top: half, bottom: -half });
+        this.camera.position.set(c.x, c.y, c.z + 5); this.camera.lookAt(c); this.camera.updateProjectionMatrix();
+        this.renderer.render(this.scene, this.camera);
+        const url = this.renderer.domElement.toDataURL("image/png");
+        this.scene.remove(g);
+        return url;
+      });
+      this.queue = p.catch(() => undefined);
+      this.cache.set(it.uid, p);
+    }
+    return this.cache.get(it.uid)!;
+  }
+  /** Rellena las imágenes <img data-thumb="uid"> de un contenedor. */
+  fill(root: HTMLElement, items: Item[]) {
+    root.querySelectorAll<HTMLImageElement>("img[data-thumb]").forEach((img) => {
+      const it = items.find((x) => x.uid === Number(img.dataset.thumb)); if (!it) return;
+      this.get(it).then((url) => { img.src = url; img.classList.add("ready"); }).catch(() => undefined);
+    });
+  }
+}
+
 export class InventoryScreen {
   private el = $("inventory");
   private held: Where | null = null;
   private hovered: Where | null = null;
   isOpen = false;
-  constructor(private inv: Inventory, private onClose: () => void, private toast: (m: string) => void) {
+  constructor(private inv: Inventory, private thumbs: Thumbnails, private onClose: () => void, private toast: (m: string) => void) {
     this.el.addEventListener("mouseover", (e) => this.hover(e));
     this.el.addEventListener("mouseleave", () => { this.hovered = null; $("tooltip").hidden = true; });
     this.el.addEventListener("mousemove", (e) => this.placeTip(e.clientX, e.clientY));
@@ -76,6 +123,7 @@ export class InventoryScreen {
     $("inv-pack").innerHTML = i.pack.map((it, k) => cellHTML(it, { area: "pack", index: k }, false)).join("");
     $("inv-foot").innerHTML = `<span>${t("ui.packCount")} <b>${i.pack.filter(Boolean).length}/${i.pack.length}</b></span><span>${t("ui.looseParts")} <b>${i.parts.length}</b></span><span>${t("ui.scrap")} <b>${i.scrap}</b></span>`;
     if (this.held) this.el.querySelector(`.cell[data-area="${this.held.area}"][data-index="${this.held.index}"]`)?.classList.add("held");
+    this.thumbs.fill(this.el, i.all);
   }
   private hover(e: Event) {
     const w = this.whereOf(e.target); this.hovered = w;
@@ -135,7 +183,7 @@ export class WorkbenchScreen {
   private preview: WeaponSpec | null = null;
   private token = 0;
 
-  constructor(private inv: Inventory, private gen: WeaponGenerator, private asm: WeaponAssembler, private onClose: () => void, private onChanged: (it: Item) => void, private toast: (m: string) => void) {
+  constructor(private inv: Inventory, private gen: WeaponGenerator, private asm: WeaponAssembler, private thumbs: Thumbnails, private onClose: () => void, private onChanged: (it: Item) => void, private toast: (m: string) => void) {
     this.el.addEventListener("click", (e) => this.click(e));
     this.el.addEventListener("mouseover", (e) => this.hoverOpt(e));
     this.el.addEventListener("mouseout", (e) => { if ((e.target as HTMLElement).closest(".opt,.swatch")) { this.preview = null; this.renderCard(); } });
@@ -189,6 +237,7 @@ export class WorkbenchScreen {
     const all = this.inv.all;
     $("wb-list").innerHTML = all.length ? all.map((it) => cellHTML(it, this.inv.find(it.uid)!, false, false, "", it === this.sel ? "sel" : "")).join("") : `<div class="cell empty">${t("ui.noWeapons")}</div>`;
     this.renderCard(); this.renderSlots(); this.rebuild();
+    this.thumbs.fill($("wb-list"), all);
   }
 
   private renderCard() {
@@ -252,11 +301,12 @@ export class WorkbenchScreen {
       if (part) this.inv.parts.splice(this.inv.parts.indexOf(part), 1);
       if (old) this.inv.parts.push(old);
       it.ammo = Math.min(it.ammo, it.spec.stats.cargador);
+      this.thumbs.forget(it.uid);
       this.preview = null; this.onChanged(it); this.render(); this.inv.changed();
       return;
     }
     const sw = target.closest(".swatch") as HTMLElement | null;
-    if (sw) { repaint(this.gen, it.spec, paints()[Number(sw.dataset.paint)]); this.preview = null; this.onChanged(it); this.render(); return; }
+    if (sw) { repaint(this.gen, it.spec, paints()[Number(sw.dataset.paint)]); this.thumbs.forget(it.uid); this.preview = null; this.onChanged(it); this.render(); return; }
     if (target.closest("[data-scrap]")) {
       const where = this.inv.find(it.uid); if (!where) return;
       const r = scrap(it.spec);

@@ -13,7 +13,7 @@ import { spawnDummies, DamageNumbers, type Dummy } from "./dummies";
 import { Player } from "./player";
 import { Gun } from "./gun";
 import { Inventory, makeItem, type Item } from "./inventory";
-import { InventoryScreen, WorkbenchScreen, MenuCursor } from "./ui";
+import { InventoryScreen, WorkbenchScreen, MenuCursor, Thumbnails } from "./ui";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const ASSETS = "./weapons/";
@@ -89,8 +89,9 @@ async function boot() {
   await gun.equip(inv.current);
   renderSlots();
 
-  const invScreen = new InventoryScreen(inv, () => resume(), toast);
-  const bench = new WorkbenchScreen(inv, gen, asm, () => resume(), (it: Item) => { gun.forget(it.uid); if (it === gun.item) gun.equip(it, true); renderSlots(); }, toast);
+  const thumbs = new Thumbnails(asm);
+  const invScreen = new InventoryScreen(inv, thumbs, () => resume(), toast);
+  const bench = new WorkbenchScreen(inv, gen, asm, thumbs, () => resume(), (it: Item) => { gun.forget(it.uid); if (it === gun.item) gun.equip(it, true); renderSlots(); }, toast);
   onLang(() => { renderSlots(); if (invScreen.isOpen) invScreen.render(); if (bench.isOpen) bench.render(); });
 
   function openScreen(s: "inventory" | "workbench") {
@@ -124,6 +125,7 @@ async function boot() {
       <div style="color:var(--dim);font-size:12px">${damageText(spec)} ${t("label.damage")} · ${Math.round(spec.stats.cadencia)}${t("unit.rpm")} · ${spec.stats.cargador}${spec.effects.length ? " · " + spec.effects.map(effectName).join(", ") : ""}</div>
       <div style="color:var(--dim);font-size:11px;margin-top:6px">${inv.find(it.uid)?.area === "equip" ? t("ui.equippedTo") : t("ui.storedIn")} · ${t("ui.tabToSee")}</div>`;
     l.classList.add("show"); lootTimer = 3.5;
+    thumbs.get(it).then((url) => { const img = document.createElement("img"); img.src = url; img.className = "loot-thumb"; l.prepend(img); }).catch(() => undefined);
   }
 
   // ---------- HUD ----------
