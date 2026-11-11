@@ -1,0 +1,167 @@
+// Banco de armero: genera armas, las monta en 3D y muestra su ficha.
+import * as THREE from "three";
+import { WeaponGenerator, TYPE_INFO, PELLETS } from "../weapons/generator";
+import { WeaponAssembler, type AssembledWeapon } from "../weapons/assembler";
+import type { Manifest, PartRole, StatKey, WeaponSpec, WeaponType } from "../weapons/types";
+
+const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+const ASSETS = "./weapons/";
+
+const ROLE_NAME: Record<PartRole, string> = { body: "Cuerpo", frame: "Armazón", slide: "Corredera", barrel: "Cañón", magazine: "Cargador", scope: "Mira", muzzle: "Boca" };
+const STAT_DEF: [StatKey, string, (v: number, s: WeaponSpec) => string][] = [
+  ["cadencia", "Cadencia", (v) => `${Math.round(v)}/min`],
+  ["precision", "Precisión", (v) => `${Math.round(v)}`],
+  ["alcance", "Alcance", (v) => `${Math.round(v)} m`],
+  ["manejo", "Manejo", (v) => `${Math.round(v)}`],
+  ["cargador", "Cargador", (v) => `${Math.round(v)}`],
+];
+
+// ---------- Escena ----------
+const viewer = $("viewer");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+viewer.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 50);
+scene.add(new THREE.HemisphereLight(0xfff1dc, 0x2a2018, 1.4));
+const key = new THREE.DirectionalLight(0xffe6c8, 2.0); key.position.set(2, 4, 3); scene.add(key);
+const rim = new THREE.DirectionalLight(0x9fc4ff, 1.4); rim.position.set(-3, 1.5, -2.5); scene.add(rim);
+const rarityLight = new THREE.PointLight(0xffffff, 1.2, 4); rarityLight.position.set(0, -0.3, 0.8); scene.add(rarityLight);
+
+let yaw = -0.5, pitch = 0.15, dist = 1, dragging = false, lastX = 0, lastY = 0, idle = 0;
+let exploded = 0, explodeTarget = 0;
+const canvas = renderer.domElement;
+canvas.addEventListener("pointerdown", (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener("pointermove", (e) => { if (!dragging) return; yaw -= (e.clientX - lastX) * 0.008; pitch = THREE.MathUtils.clamp(pitch + (e.clientY - lastY) * 0.006, -1.2, 1.2); lastX = e.clientX; lastY = e.clientY; idle = 0; });
+canvas.addEventListener("pointerup", () => { dragging = false; });
+canvas.addEventListener("wheel", (e) => { e.preventDefault(); zoom = THREE.MathUtils.clamp(zoom + e.deltaY * 0.001, 0.5, 2.5); }, { passive: false });
+let zoom = 1;
+
+// ---------- Estado ----------
+let gen: WeaponGenerator, asm: WeaponAssembler;
+let current: { spec: WeaponSpec; built: AssembledWeapon } | null = null;
+let typeFilter: WeaponType | null = null;
+let token = 0;
+
+async function show(seed: number) {
+  const my = ++token;
+  const spec = gen.generate(seed, typeFilter ?? undefined);
+  $("loading").hidden = false;
+  const built = await asm.assemble(spec);
+  if (my !== token) return; // llegó otra petición mientras cargaba
+  if (current) scene.remove(current.built.group);
+  scene.add(built.group);
+  current = { spec, built };
+  dist = built.length * 2.9 + 0.08;
+  $("loading").hidden = true;
+  render(spec);
+}
+
+function render(s: WeaponSpec) {
+  document.documentElement.style.setProperty("--rar", s.rarity.color);
+  rarityLight.color.set(s.rarity.color);
+  $("rarity").textContent = s.rarity.name;
+  $("name").textContent = s.name;
+  $("type").textContent = TYPE_INFO[s.type as keyof typeof TYPE_INFO].name;
+  $("level").textContent = String(s.level);
+  $("seed").textContent = String(s.seed);
+  const pellets = PELLETS[s.type];
+  const twin = s.effects.some((f) => f.id === "doble");
+  $("damage").textContent = `${Math.round(s.stats.dano)}${pellets ? ` ×${pellets * (twin ? 2 : 1)}` : twin ? " ×2" : ""}`;
+  const base = TYPE_INFO[s.type as keyof typeof TYPE_INFO].base;
+  $("stats").innerHTML = STAT_DEF.map(([k, n, f]) => {
+    const pct = THREE.MathUtils.clamp((s.stats[k] / (k === "precision" || k === "manejo" ? 100 : base[k] * 1.6)) * 100, 4, 100);
+    return `<span class="k">${n}</span><span class="meter"><i style="width:${pct}%"></i></span><span class="v">${f(s.stats[k], s)}</span>`;
+  }).join("");
+  $("effects").innerHTML = s.effects.length
+    ? s.effects.map((f) => `<div class="effect"><span class="ico" style="color:${f.color}">${f.icon}</span><div><b style="color:${f.color}">${f.name}</b><small>${f.text}</small></div></div>`).join("")
+    : `<span class="none">Sin efectos especiales. Chatarra fiable.</span>`;
+  const rows = current!.built.parts.map((p) => {
+    const note = p.role === "barrel" && s.barrelLength !== 1 ? ` · longitud ×${s.barrelLength.toFixed(2)}` : (p.role === "body" || p.role === "slide") && s.paint.color ? ` · pintura ${s.paint.name.toLowerCase()}` : "";
+    return `<li><span class="slot">${ROLE_NAME[p.role]}</span><span><span class="src">${p.from.label.replace("Accessories/", "")}</span> <small>${p.from.pack}</small>${note}</span></li>`;
+  });
+  $("parts").innerHTML = rows.join("");
+  const callouts = $("callouts");
+  callouts.innerHTML = current!.built.parts.map((p, i) => `<div class="callout" data-i="${i}">${ROLE_NAME[p.role]} · <b>${p.from.label.replace("Accessories/", "")}</b></div>`).join("");
+}
+
+function placeCallouts() {
+  if (!current) return;
+  const rect = viewer.getBoundingClientRect();
+  for (const el of $("callouts").children as HTMLCollectionOf<HTMLElement>) {
+    const p = current.built.parts[Number(el.dataset.i)];
+    const b = new THREE.Box3().setFromObject(p.object), pos = b.getCenter(new THREE.Vector3());
+    pos.y = b.max.y; pos.project(camera);
+    el.style.left = `${(pos.x * 0.5 + 0.5) * rect.width}px`;
+    el.style.top = `${(-pos.y * 0.5 + 0.5) * rect.height - 4}px`;
+    el.style.opacity = exploded > 0.6 ? "1" : "0";
+  }
+}
+
+// ---------- Controles ----------
+function buildTypeButtons() {
+  const nav = $("types");
+  const opts: (WeaponType | null)[] = [null, ...gen.types];
+  nav.innerHTML = opts.map((t) => `<button type="button" data-t="${t ?? ""}" aria-pressed="${t === typeFilter}">${t ? TYPE_INFO[t as keyof typeof TYPE_INFO].name : "Todas"}</button>`).join("");
+  nav.onclick = (e) => { const b = (e.target as HTMLElement).closest("button"); if (!b) return; setType((b.dataset.t || null) as WeaponType | null); };
+}
+function setType(t: WeaponType | null) { typeFilter = t; buildTypeButtons(); newWeapon(); }
+function cycleType(d: number) { const opts: (WeaponType | null)[] = [null, ...gen.types]; setType(opts[(opts.indexOf(typeFilter) + d + opts.length) % opts.length]); }
+const newWeapon = () => show(Math.floor(Math.random() * 999999));
+function toggleExplode() { explodeTarget = explodeTarget ? 0 : 1; $("explode").firstChild!.textContent = explodeTarget ? "Montar" : "Desmontar"; }
+$("gen").addEventListener("click", newWeapon);
+$("explode").addEventListener("click", toggleExplode);
+addEventListener("keydown", (e) => { if (e.code === "KeyG") newWeapon(); if (e.code === "KeyD") toggleExplode(); });
+
+let padPrev: boolean[] = [];
+function pollPad(dt: number) {
+  const pad = [...(navigator.getGamepads?.() ?? [])].find((p) => p?.connected);
+  if (!pad) return;
+  const pressed = pad.buttons.map((b) => b.pressed);
+  const edge = (i: number) => pressed[i] && !padPrev[i];
+  if (edge(0)) newWeapon();
+  if (edge(2)) toggleExplode();
+  if (edge(4)) cycleType(-1);
+  if (edge(5)) cycleType(1);
+  const rx = pad.axes[2] ?? 0, ry = pad.axes[3] ?? 0;
+  if (Math.abs(rx) > 0.15) { yaw -= rx * dt * 2.5; idle = 0; }
+  if (Math.abs(ry) > 0.15) { pitch = THREE.MathUtils.clamp(pitch + ry * dt * 1.8, -1.2, 1.2); idle = 0; }
+  padPrev = pressed;
+}
+
+function resize() { const r = viewer.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(viewer);
+
+const clock = new THREE.Clock();
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  idle += dt;
+  pollPad(dt);
+  if (!dragging && idle > 2.5 && !reduce) yaw += dt * 0.25;
+  exploded += (explodeTarget - exploded) * Math.min(1, dt * 7);
+  if (current) for (const p of current.built.parts) p.object.position.copy(p.base).addScaledVector(p.explode, exploded);
+  const d = dist * zoom * (1 + 0.35 * exploded);
+  camera.position.set(Math.sin(yaw) * Math.cos(pitch) * d, Math.sin(pitch) * d, Math.cos(yaw) * Math.cos(pitch) * d);
+  camera.lookAt(0, (current?.built.length ?? 0) * 0.08 * exploded, 0);
+  renderer.render(scene, camera);
+  placeCallouts();
+  requestAnimationFrame(frame);
+}
+
+async function boot() {
+  const manifest: Manifest = await (await fetch(ASSETS + "manifest.json")).json();
+  gen = new WeaponGenerator(manifest);
+  asm = new WeaponAssembler(gen, ASSETS);
+  buildTypeButtons();
+  resize();
+  frame();
+  const q = new URLSearchParams(location.search);
+  const t = q.get("type") as WeaponType | null;
+  if (t && gen.types.includes(t)) { typeFilter = t; buildTypeButtons(); }
+  await show(Number(q.get("seed")) || 4127);
+  (window as unknown as Record<string, unknown>).__bench = { show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+}
+boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Banco de Chatarra</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="./src/bench/bench.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="viewer" id="viewer">
+      <span class="tag">Banco de chatarra · vista del arma</span>
+      <div class="callouts" id="callouts"></div>
+      <span class="help">Arrastra para girar · rueda para acercar</span>
+      <div class="loading" id="loading">Cargando piezas…</div>
+    </div>
+
+    <div class="card">
+      <section>
+        <nav class="types" id="types" aria-label="Tipo de arma"></nav>
+      </section>
+      <section>
+        <span class="rarity" id="rarity">—</span>
+        <h1 id="name">—</h1>
+        <div class="meta"><span id="type">—</span><span>Nivel <b id="level">0</b></span><span>Semilla <b id="seed">0</b></span></div>
+        <div class="dmg"><strong id="damage">0</strong><span>daño por disparo</span></div>
+      </section>
+      <section>
+        <h2 class="h">Estadísticas</h2>
+        <div class="stats" id="stats"></div>
+      </section>
+      <section>
+        <h2 class="h">Efectos</h2>
+        <div class="effects" id="effects"></div>
+      </section>
+      <section>
+        <h2 class="h">Piezas y procedencia</h2>
+        <ul class="parts" id="parts"></ul>
+      </section>
+      <section>
+        <div class="actions">
+          <button id="gen" type="button">Generar otra<kbd>G · Ⓐ</kbd></button>
+          <button id="explode" class="ghost" type="button">Desmontar<kbd>D · Ⓧ</kbd></button>
+        </div>
+        <p class="foot" id="foot">Mando: LB/RB cambia de tipo de arma.</p>
+      </section>
+    </div>
+  </div>
+  <script type="module" src="./src/bench/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,4624 @@
+{
+ "convention": "metros; +X hacia la boca; +Y arriba; una malla por pieza con nombre de rol",
+ "weapons": [
+  {
+   "id": "q-pistol-1",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "slide",
+     "node": "slide",
+     "source": "q-pistol-1"
+    },
+    {
+     "role": "barrel",
+     "node": "barrel",
+     "source": "q-pistol-1"
+    },
+    {
+     "role": "frame",
+     "node": "frame",
+     "source": "q-pistol-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0472,
+      0
+     ],
+     "diameter": 0.0327
+    },
+    "slide": {
+     "pos": [
+      -0.11,
+      0.0302,
+      0
+     ]
+    },
+    "barrel": {
+     "pos": [
+      0.0653,
+      0.0493,
+      0
+     ],
+     "length": 0.0447
+    },
+    "top": {
+     "pos": [
+      -0.0014,
+      0.0702,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0702,
+     -0.0195
+    ],
+    "max": [
+     0.11,
+     0.0702,
+     0.0195
+    ]
+   },
+   "triangles": 1040,
+   "pack": "quaternius",
+   "file": "quaternius/q-pistol-1.glb",
+   "label": "Pistol 1"
+  },
+  {
+   "id": "q-pistol-2",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "slide",
+     "node": "slide",
+     "source": "q-pistol-2"
+    },
+    {
+     "role": "barrel",
+     "node": "barrel",
+     "source": "q-pistol-2"
+    },
+    {
+     "role": "frame",
+     "node": "frame",
+     "source": "q-pistol-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0472,
+      0
+     ],
+     "diameter": 0.0327
+    },
+    "slide": {
+     "pos": [
+      -0.11,
+      0.0302,
+      0
+     ]
+    },
+    "barrel": {
+     "pos": [
+      0.0653,
+      0.0493,
+      0
+     ],
+     "length": 0.0447
+    },
+    "top": {
+     "pos": [
+      -0.0014,
+      0.0702,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0702,
+     -0.0195
+    ],
+    "max": [
+     0.11,
+     0.0702,
+     0.0195
+    ]
+   },
+   "triangles": 1200,
+   "pack": "quaternius",
+   "file": "quaternius/q-pistol-2.glb",
+   "label": "Pistol 2"
+  },
+  {
+   "id": "q-pistol-3",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "slide",
+     "node": "slide",
+     "source": "q-pistol-3"
+    },
+    {
+     "role": "barrel",
+     "node": "barrel",
+     "source": "q-pistol-3"
+    },
+    {
+     "role": "frame",
+     "node": "frame",
+     "source": "q-pistol-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0433,
+      0
+     ],
+     "diameter": 0.0458
+    },
+    "slide": {
+     "pos": [
+      -0.11,
+      0.0198,
+      0
+     ]
+    },
+    "barrel": {
+     "pos": [
+      0.0659,
+      0.0564,
+      0
+     ],
+     "length": 0.0441
+    },
+    "top": {
+     "pos": [
+      -0.0029,
+      0.0771,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0771,
+     -0.0196
+    ],
+    "max": [
+     0.11,
+     0.0771,
+     0.0196
+    ]
+   },
+   "triangles": 1442,
+   "pack": "quaternius",
+   "file": "quaternius/q-pistol-3.glb",
+   "label": "Pistol 3"
+  },
+  {
+   "id": "q-pistol-4",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "slide",
+     "node": "slide",
+     "source": "q-pistol-4"
+    },
+    {
+     "role": "barrel",
+     "node": "barrel",
+     "source": "q-pistol-4"
+    },
+    {
+     "role": "frame",
+     "node": "frame",
+     "source": "q-pistol-4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0637,
+      0
+     ],
+     "diameter": 0.0383
+    },
+    "slide": {
+     "pos": [
+      -0.0993,
+      0.0445,
+      0
+     ]
+    },
+    "barrel": {
+     "pos": [
+      0.0688,
+      0.0736,
+      0
+     ],
+     "length": 0.0412
+    },
+    "top": {
+     "pos": [
+      -0.0027,
+      0.0907,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0907,
+     -0.0168
+    ],
+    "max": [
+     0.11,
+     0.0907,
+     0.0168
+    ]
+   },
+   "triangles": 1320,
+   "pack": "quaternius",
+   "file": "quaternius/q-pistol-4.glb",
+   "label": "Pistol 4"
+  },
+  {
+   "id": "q-pistol-5",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "slide",
+     "node": "slide",
+     "source": "q-pistol-5"
+    },
+    {
+     "role": "barrel",
+     "node": "barrel",
+     "source": "q-pistol-5"
+    },
+    {
+     "role": "frame",
+     "node": "frame",
+     "source": "q-pistol-5"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0515,
+      0
+     ],
+     "diameter": 0.0199
+    },
+    "slide": {
+     "pos": [
+      -0.11,
+      0.0324,
+      0
+     ]
+    },
+    "barrel": {
+     "pos": [
+      0.0653,
+      0.0515,
+      0
+     ],
+     "length": 0.0447
+    },
+    "top": {
+     "pos": [
+      -0.0036,
+      0.0725,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0725,
+     -0.0166
+    ],
+    "max": [
+     0.11,
+     0.0725,
+     0.0166
+    ]
+   },
+   "triangles": 968,
+   "pack": "quaternius",
+   "file": "quaternius/q-pistol-5.glb",
+   "label": "Pistol 5"
+  },
+  {
+   "id": "q-pistol-6",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "slide",
+     "node": "slide",
+     "source": "q-pistol-6"
+    },
+    {
+     "role": "barrel",
+     "node": "barrel",
+     "source": "q-pistol-6"
+    },
+    {
+     "role": "frame",
+     "node": "frame",
+     "source": "q-pistol-6"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0352,
+      0
+     ],
+     "diameter": 0.0253
+    },
+    "slide": {
+     "pos": [
+      -0.11,
+      0.0225,
+      0
+     ]
+    },
+    "barrel": {
+     "pos": [
+      0.0768,
+      0.0366,
+      0
+     ],
+     "length": 0.0332
+    },
+    "top": {
+     "pos": [
+      -0.0018,
+      0.0522,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0522,
+     -0.0139
+    ],
+    "max": [
+     0.11,
+     0.0522,
+     0.0139
+    ]
+   },
+   "triangles": 1878,
+   "pack": "quaternius",
+   "file": "quaternius/q-pistol-6.glb",
+   "label": "Pistol 6"
+  },
+  {
+   "id": "q-revolver-1",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-revolver-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.13,
+      0.0449,
+      0
+     ],
+     "diameter": 0.0269
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0584,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.13,
+     -0.0584,
+     -0.0193
+    ],
+    "max": [
+     0.13,
+     0.0584,
+     0.0193
+    ]
+   },
+   "triangles": 1046,
+   "pack": "quaternius",
+   "file": "quaternius/q-revolver-1.glb",
+   "label": "Revolver 1"
+  },
+  {
+   "id": "q-revolver-2",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-revolver-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.13,
+      0.0433,
+      0
+     ],
+     "diameter": 0.0373
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0619,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.13,
+     -0.0619,
+     -0.0193
+    ],
+    "max": [
+     0.13,
+     0.0619,
+     0.0193
+    ]
+   },
+   "triangles": 1252,
+   "pack": "quaternius",
+   "file": "quaternius/q-revolver-2.glb",
+   "label": "Revolver 2"
+  },
+  {
+   "id": "q-revolver-3",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-revolver-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.13,
+      0.0395,
+      0
+     ],
+     "diameter": 0.0496
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0643,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.13,
+     -0.0643,
+     -0.0193
+    ],
+    "max": [
+     0.13,
+     0.0643,
+     0.0193
+    ]
+   },
+   "triangles": 1438,
+   "pack": "quaternius",
+   "file": "quaternius/q-revolver-3.glb",
+   "label": "Revolver 3"
+  },
+  {
+   "id": "q-revolver-4",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-revolver-4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.13,
+      0.0568,
+      0
+     ],
+     "diameter": 0.0244
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0808,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.13,
+     -0.0808,
+     -0.026
+    ],
+    "max": [
+     0.13,
+     0.0808,
+     0.026
+    ]
+   },
+   "triangles": 966,
+   "pack": "quaternius",
+   "file": "quaternius/q-revolver-4.glb",
+   "label": "Revolver 4"
+  },
+  {
+   "id": "q-revolver-5",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-revolver-5"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.13,
+      0.0537,
+      0
+     ],
+     "diameter": 0.0181
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0658,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.13,
+     -0.0658,
+     -0.0201
+    ],
+    "max": [
+     0.13,
+     0.0658,
+     0.0201
+    ]
+   },
+   "triangles": 1334,
+   "pack": "quaternius",
+   "file": "quaternius/q-revolver-5.glb",
+   "label": "Revolver 5"
+  },
+  {
+   "id": "q-submachinegun-1",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-submachinegun-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0934,
+      0
+     ],
+     "diameter": 0.0177
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1541,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1541,
+     -0.0287
+    ],
+    "max": [
+     0.25,
+     0.1541,
+     0.0287
+    ]
+   },
+   "triangles": 1164,
+   "pack": "quaternius",
+   "file": "quaternius/q-submachinegun-1.glb",
+   "label": "SubmachineGun 1"
+  },
+  {
+   "id": "q-submachinegun-2",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-submachinegun-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0623,
+      0
+     ],
+     "diameter": 0.0121
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1142,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1142,
+     -0.0197
+    ],
+    "max": [
+     0.25,
+     0.1142,
+     0.0197
+    ]
+   },
+   "triangles": 1374,
+   "pack": "quaternius",
+   "file": "quaternius/q-submachinegun-2.glb",
+   "label": "SubmachineGun 2"
+  },
+  {
+   "id": "q-submachinegun-3",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-submachinegun-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0579,
+      0
+     ],
+     "diameter": 0.017
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0952,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.0952,
+     -0.0199
+    ],
+    "max": [
+     0.25,
+     0.0952,
+     0.0199
+    ]
+   },
+   "triangles": 1566,
+   "pack": "quaternius",
+   "file": "quaternius/q-submachinegun-3.glb",
+   "label": "SubmachineGun 3"
+  },
+  {
+   "id": "q-submachinegun-4",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-submachinegun-4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0951,
+      0
+     ],
+     "diameter": 0.0193
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1606,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1606,
+     -0.0312
+    ],
+    "max": [
+     0.25,
+     0.1606,
+     0.0312
+    ]
+   },
+   "triangles": 1024,
+   "pack": "quaternius",
+   "file": "quaternius/q-submachinegun-4.glb",
+   "label": "SubmachineGun 4"
+  },
+  {
+   "id": "q-submachinegun-5",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-submachinegun-5"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0443,
+      0
+     ],
+     "diameter": 0.0098
+    },
+    "top": {
+     "pos": [
+      0,
+      0.086,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.086,
+     -0.0158
+    ],
+    "max": [
+     0.25,
+     0.086,
+     0.0158
+    ]
+   },
+   "triangles": 1440,
+   "pack": "quaternius",
+   "file": "quaternius/q-submachinegun-5.glb",
+   "label": "SubmachineGun 5"
+  },
+  {
+   "id": "q-assaultrifle-1",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-assaultrifle-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.1334,
+      0
+     ],
+     "diameter": 0.0985
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1826,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1826,
+     -0.0284
+    ],
+    "max": [
+     0.45,
+     0.1826,
+     0.0284
+    ]
+   },
+   "triangles": 1256,
+   "pack": "quaternius",
+   "file": "quaternius/q-assaultrifle-1.glb",
+   "label": "AssaultRifle 1"
+  },
+  {
+   "id": "q-assaultrifle-2",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-assaultrifle-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.1047,
+      0
+     ],
+     "diameter": 0.0564
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1329,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1329,
+     -0.0163
+    ],
+    "max": [
+     0.45,
+     0.1329,
+     0.0163
+    ]
+   },
+   "triangles": 1306,
+   "pack": "quaternius",
+   "file": "quaternius/q-assaultrifle-2.glb",
+   "label": "AssaultRifle 2"
+  },
+  {
+   "id": "q-assaultrifle-3",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-assaultrifle-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.1654,
+      0
+     ],
+     "diameter": 0.0891
+    },
+    "top": {
+     "pos": [
+      0,
+      0.21,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.21,
+     -0.0257
+    ],
+    "max": [
+     0.45,
+     0.21,
+     0.0257
+    ]
+   },
+   "triangles": 1220,
+   "pack": "quaternius",
+   "file": "quaternius/q-assaultrifle-3.glb",
+   "label": "AssaultRifle 3"
+  },
+  {
+   "id": "q-assaultrifle-4",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-assaultrifle-4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.1033,
+      0
+     ],
+     "diameter": 0.0557
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1312,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1312,
+     -0.0161
+    ],
+    "max": [
+     0.45,
+     0.1312,
+     0.0161
+    ]
+   },
+   "triangles": 1390,
+   "pack": "quaternius",
+   "file": "quaternius/q-assaultrifle-4.glb",
+   "label": "AssaultRifle 4"
+  },
+  {
+   "id": "q-assaultrifle-5",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-assaultrifle-5"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.1047,
+      0
+     ],
+     "diameter": 0.0564
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1329,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1329,
+     -0.0163
+    ],
+    "max": [
+     0.45,
+     0.1329,
+     0.0163
+    ]
+   },
+   "triangles": 1306,
+   "pack": "quaternius",
+   "file": "quaternius/q-assaultrifle-5.glb",
+   "label": "AssaultRifle 5"
+  },
+  {
+   "id": "q-assaultrifle2-1",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-assaultrifle2-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0803,
+      0
+     ],
+     "diameter": 0.0246
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1559,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1559,
+     -0.0302
+    ],
+    "max": [
+     0.45,
+     0.1559,
+     0.0302
+    ]
+   },
+   "triangles": 1930,
+   "pack": "quaternius",
+   "file": "quaternius/q-assaultrifle2-1.glb",
+   "label": "AssaultRifle2 1"
+  },
+  {
+   "id": "q-assaultrifle2-2",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-assaultrifle2-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.086,
+      0.0002
+     ],
+     "diameter": 0.0263
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1669,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1669,
+     -0.0251
+    ],
+    "max": [
+     0.45,
+     0.1669,
+     0.0251
+    ]
+   },
+   "triangles": 1796,
+   "pack": "quaternius",
+   "file": "quaternius/q-assaultrifle2-2.glb",
+   "label": "AssaultRifle2 2"
+  },
+  {
+   "id": "q-assaultrifle2-3",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-assaultrifle2-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0707,
+      0
+     ],
+     "diameter": 0.0338
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1748,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1748,
+     -0.0415
+    ],
+    "max": [
+     0.45,
+     0.1748,
+     0.0415
+    ]
+   },
+   "triangles": 1614,
+   "pack": "quaternius",
+   "file": "quaternius/q-assaultrifle2-3.glb",
+   "label": "AssaultRifle2 3"
+  },
+  {
+   "id": "q-assaultrifle2-4",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-assaultrifle2-4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.1155,
+      0.0005
+     ],
+     "diameter": 0.0394
+    },
+    "top": {
+     "pos": [
+      0,
+      0.2366,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.2366,
+     -0.0372
+    ],
+    "max": [
+     0.45,
+     0.2366,
+     0.0372
+    ]
+   },
+   "triangles": 1372,
+   "pack": "quaternius",
+   "file": "quaternius/q-assaultrifle2-4.glb",
+   "label": "AssaultRifle2 4"
+  },
+  {
+   "id": "q-bullpup-1",
+   "type": "bullpup",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-bullpup-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.375,
+      0.0664,
+      0
+     ],
+     "diameter": 0.019
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1101,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.375,
+     -0.1101,
+     -0.0222
+    ],
+    "max": [
+     0.375,
+     0.1101,
+     0.0222
+    ]
+   },
+   "triangles": 2782,
+   "pack": "quaternius",
+   "file": "quaternius/q-bullpup-1.glb",
+   "label": "Bullpup 1"
+  },
+  {
+   "id": "q-bullpup-2",
+   "type": "bullpup",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-bullpup-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.375,
+      0.0904,
+      0
+     ],
+     "diameter": 0.0266
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1515,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.375,
+     -0.1515,
+     -0.031
+    ],
+    "max": [
+     0.375,
+     0.1515,
+     0.031
+    ]
+   },
+   "triangles": 2536,
+   "pack": "quaternius",
+   "file": "quaternius/q-bullpup-2.glb",
+   "label": "Bullpup 2"
+  },
+  {
+   "id": "q-bullpup-3",
+   "type": "bullpup",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-bullpup-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.375,
+      0.0857,
+      0
+     ],
+     "diameter": 0.0232
+    },
+    "top": {
+     "pos": [
+      0,
+      0.139,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.375,
+     -0.139,
+     -0.027
+    ],
+    "max": [
+     0.375,
+     0.139,
+     0.027
+    ]
+   },
+   "triangles": 2390,
+   "pack": "quaternius",
+   "file": "quaternius/q-bullpup-3.glb",
+   "label": "Bullpup 3"
+  },
+  {
+   "id": "q-shotgun-1",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-shotgun-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0402,
+      0.0003
+     ],
+     "diameter": 0.0714
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0904,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.0904,
+     -0.0236
+    ],
+    "max": [
+     0.5,
+     0.0904,
+     0.0236
+    ]
+   },
+   "triangles": 1270,
+   "pack": "quaternius",
+   "file": "quaternius/q-shotgun-1.glb",
+   "label": "Shotgun 1"
+  },
+  {
+   "id": "q-shotgun-2",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-shotgun-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0537,
+      0
+     ],
+     "diameter": 0.0306
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0821,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.0821,
+     -0.0213
+    ],
+    "max": [
+     0.5,
+     0.0821,
+     0.0213
+    ]
+   },
+   "triangles": 746,
+   "pack": "quaternius",
+   "file": "quaternius/q-shotgun-2.glb",
+   "label": "Shotgun 2"
+  },
+  {
+   "id": "q-shotgun-3",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-shotgun-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0531,
+      0
+     ],
+     "diameter": 0.0306
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0815,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.0815,
+     -0.0213
+    ],
+    "max": [
+     0.5,
+     0.0815,
+     0.0213
+    ]
+   },
+   "triangles": 978,
+   "pack": "quaternius",
+   "file": "quaternius/q-shotgun-3.glb",
+   "label": "Shotgun 3"
+  },
+  {
+   "id": "q-shotgun-4",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-shotgun-4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0521,
+      0
+     ],
+     "diameter": 0.0325
+    },
+    "top": {
+     "pos": [
+      0,
+      0.085,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.085,
+     -0.0183
+    ],
+    "max": [
+     0.5,
+     0.085,
+     0.0183
+    ]
+   },
+   "triangles": 668,
+   "pack": "quaternius",
+   "file": "quaternius/q-shotgun-4.glb",
+   "label": "Shotgun 4"
+  },
+  {
+   "id": "q-shotgun-sawedoff",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-shotgun-sawedoff"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0946,
+      0
+     ],
+     "diameter": 0.0473
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1383,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.1383,
+     -0.0573
+    ],
+    "max": [
+     0.5,
+     0.1383,
+     0.0573
+    ]
+   },
+   "triangles": 956,
+   "pack": "quaternius",
+   "file": "quaternius/q-shotgun-sawedoff.glb",
+   "label": "Shotgun SawedOff"
+  },
+  {
+   "id": "q-shotgun-shortstock",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-shotgun-shortstock"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0533,
+      0.0004
+     ],
+     "diameter": 0.0861
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1081,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.1081,
+     -0.0276
+    ],
+    "max": [
+     0.5,
+     0.1081,
+     0.0276
+    ]
+   },
+   "triangles": 1612,
+   "pack": "quaternius",
+   "file": "quaternius/q-shotgun-shortstock.glb",
+   "label": "Shotgun ShortStock"
+  },
+  {
+   "id": "q-sniperrifle-1",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-sniperrifle-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0598,
+      -0.0123
+     ],
+     "diameter": 0.0381
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1221,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1221,
+     -0.0378
+    ],
+    "max": [
+     0.6,
+     0.1221,
+     0.0378
+    ]
+   },
+   "triangles": 1382,
+   "pack": "quaternius",
+   "file": "quaternius/q-sniperrifle-1.glb",
+   "label": "SniperRifle 1"
+  },
+  {
+   "id": "q-sniperrifle-2",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-sniperrifle-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0489,
+      -0.01
+     ],
+     "diameter": 0.0284
+    },
+    "top": {
+     "pos": [
+      0,
+      0.122,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.122,
+     -0.0392
+    ],
+    "max": [
+     0.6,
+     0.122,
+     0.0392
+    ]
+   },
+   "triangles": 1732,
+   "pack": "quaternius",
+   "file": "quaternius/q-sniperrifle-2.glb",
+   "label": "SniperRifle 2"
+  },
+  {
+   "id": "q-sniperrifle-3",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-sniperrifle-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0308,
+      -0.0135
+     ],
+     "diameter": 0.0284
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0994,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.0994,
+     -0.0369
+    ],
+    "max": [
+     0.6,
+     0.0994,
+     0.0369
+    ]
+   },
+   "triangles": 1722,
+   "pack": "quaternius",
+   "file": "quaternius/q-sniperrifle-3.glb",
+   "label": "SniperRifle 3"
+  },
+  {
+   "id": "q-sniperrifle-4",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-sniperrifle-4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0466,
+      -0.0141
+     ],
+     "diameter": 0.0251
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1277,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1277,
+     -0.0435
+    ],
+    "max": [
+     0.6,
+     0.1277,
+     0.0435
+    ]
+   },
+   "triangles": 1346,
+   "pack": "quaternius",
+   "file": "quaternius/q-sniperrifle-4.glb",
+   "label": "SniperRifle 4"
+  },
+  {
+   "id": "q-sniperrifle-5",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-sniperrifle-5"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0988,
+      -0.0007
+     ],
+     "diameter": 0.0251
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1799,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1799,
+     -0.1182
+    ],
+    "max": [
+     0.6,
+     0.1799,
+     0.1182
+    ]
+   },
+   "triangles": 1690,
+   "pack": "quaternius",
+   "file": "quaternius/q-sniperrifle-5.glb",
+   "label": "SniperRifle 5"
+  },
+  {
+   "id": "q-sniperrifle-6",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "q-sniperrifle-6"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0494,
+      -0.0096
+     ],
+     "diameter": 0.022
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1264,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1264,
+     -0.0411
+    ],
+    "max": [
+     0.6,
+     0.1264,
+     0.0411
+    ]
+   },
+   "triangles": 1370,
+   "pack": "quaternius",
+   "file": "quaternius/q-sniperrifle-6.glb",
+   "label": "SniperRifle 6"
+  },
+  {
+   "id": "q-acc-silencer-1",
+   "type": "accessory",
+   "parts": [
+    {
+     "role": "muzzle",
+     "node": "muzzle",
+     "source": "q-acc-silencer-1"
+    }
+   ],
+   "sockets": {},
+   "bounds": {
+    "min": [
+     -0.1064,
+     -0.0192,
+     -0.0202
+    ],
+    "max": [
+     0.1064,
+     0.0192,
+     0.0202
+    ]
+   },
+   "triangles": 248,
+   "pack": "quaternius",
+   "file": "quaternius/q-acc-silencer-1.glb",
+   "label": "Accessories/Silencer 1"
+  },
+  {
+   "id": "q-acc-silencer-2",
+   "type": "accessory",
+   "parts": [
+    {
+     "role": "muzzle",
+     "node": "muzzle",
+     "source": "q-acc-silencer-2"
+    }
+   ],
+   "sockets": {},
+   "bounds": {
+    "min": [
+     -0.1011,
+     -0.0193,
+     -0.0203
+    ],
+    "max": [
+     0.1011,
+     0.0193,
+     0.0203
+    ]
+   },
+   "triangles": 608,
+   "pack": "quaternius",
+   "file": "quaternius/q-acc-silencer-2.glb",
+   "label": "Accessories/Silencer 2"
+  },
+  {
+   "id": "q-acc-silencer-3",
+   "type": "accessory",
+   "parts": [
+    {
+     "role": "muzzle",
+     "node": "muzzle",
+     "source": "q-acc-silencer-3"
+    }
+   ],
+   "sockets": {},
+   "bounds": {
+    "min": [
+     -0.1081,
+     -0.0202,
+     -0.0213
+    ],
+    "max": [
+     0.1081,
+     0.0202,
+     0.0213
+    ]
+   },
+   "triangles": 832,
+   "pack": "quaternius",
+   "file": "quaternius/q-acc-silencer-3.glb",
+   "label": "Accessories/Silencer 3"
+  },
+  {
+   "id": "q-acc-silencer-short",
+   "type": "accessory",
+   "parts": [
+    {
+     "role": "muzzle",
+     "node": "muzzle",
+     "source": "q-acc-silencer-short"
+    }
+   ],
+   "sockets": {},
+   "bounds": {
+    "min": [
+     -0.0534,
+     -0.0192,
+     -0.0202
+    ],
+    "max": [
+     0.0534,
+     0.0192,
+     0.0202
+    ]
+   },
+   "triangles": 248,
+   "pack": "quaternius",
+   "file": "quaternius/q-acc-silencer-short.glb",
+   "label": "Accessories/Silencer Short"
+  },
+  {
+   "id": "q-acc-silencer-long",
+   "type": "accessory",
+   "parts": [
+    {
+     "role": "muzzle",
+     "node": "muzzle",
+     "source": "q-acc-silencer-long"
+    }
+   ],
+   "sockets": {},
+   "bounds": {
+    "min": [
+     -0.1623,
+     -0.0192,
+     -0.0202
+    ],
+    "max": [
+     0.1623,
+     0.0192,
+     0.0202
+    ]
+   },
+   "triangles": 248,
+   "pack": "quaternius",
+   "file": "quaternius/q-acc-silencer-long.glb",
+   "label": "Accessories/Silencer long"
+  },
+  {
+   "id": "q-acc-scope-1",
+   "type": "accessory",
+   "parts": [
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "q-acc-scope-1"
+    }
+   ],
+   "sockets": {
+    "optic": {
+     "pos": [
+      0,
+      -0.0234,
+      0
+     ],
+     "size": [
+      0.2568,
+      0.0469
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.1284,
+     -0.0234,
+     -0.0189
+    ],
+    "max": [
+     0.1284,
+     0.0234,
+     0.0189
+    ]
+   },
+   "triangles": 412,
+   "pack": "quaternius",
+   "file": "quaternius/q-acc-scope-1.glb",
+   "label": "Accessories/Scope 1"
+  },
+  {
+   "id": "q-acc-scope-2",
+   "type": "accessory",
+   "parts": [
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "q-acc-scope-2"
+    }
+   ],
+   "sockets": {
+    "optic": {
+     "pos": [
+      0,
+      -0.0243,
+      0
+     ],
+     "size": [
+      0.2537,
+      0.0486
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.1268,
+     -0.0243,
+     -0.022
+    ],
+    "max": [
+     0.1268,
+     0.0243,
+     0.022
+    ]
+   },
+   "triangles": 468,
+   "pack": "quaternius",
+   "file": "quaternius/q-acc-scope-2.glb",
+   "label": "Accessories/Scope 2"
+  },
+  {
+   "id": "q-acc-scope-3",
+   "type": "accessory",
+   "parts": [
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "q-acc-scope-3"
+    }
+   ],
+   "sockets": {
+    "optic": {
+     "pos": [
+      0,
+      -0.0255,
+      0
+     ],
+     "size": [
+      0.2346,
+      0.0511
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.1173,
+     -0.0255,
+     -0.0231
+    ],
+    "max": [
+     0.1173,
+     0.0255,
+     0.0231
+    ]
+   },
+   "triangles": 428,
+   "pack": "quaternius",
+   "file": "quaternius/q-acc-scope-3.glb",
+   "label": "Accessories/Scope 3"
+  },
+  {
+   "id": "c-pistol-1",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-pistol-1"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-pistol-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.056,
+      0.0001
+     ],
+     "diameter": 0.0278
+    },
+    "magazine": {
+     "pos": [
+      -0.0718,
+      0.0079,
+      0
+     ],
+     "size": [
+      0.0462,
+      0.0843
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0764,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0764,
+     -0.0202
+    ],
+    "max": [
+     0.11,
+     0.0764,
+     0.0202
+    ]
+   },
+   "triangles": 637,
+   "pack": "cosmo",
+   "file": "cosmo/c-pistol-1.glb",
+   "label": "Pistol 1"
+  },
+  {
+   "id": "c-pistol-2",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-pistol-2"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-pistol-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0544,
+      0
+     ],
+     "diameter": 0.0145
+    },
+    "magazine": {
+     "pos": [
+      -0.0723,
+      0.0091,
+      0
+     ],
+     "size": [
+      0.0682,
+      0.081
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0719,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0719,
+     -0.0175
+    ],
+    "max": [
+     0.11,
+     0.0719,
+     0.0175
+    ]
+   },
+   "triangles": 684,
+   "pack": "cosmo",
+   "file": "cosmo/c-pistol-2.glb",
+   "label": "Pistol 2"
+  },
+  {
+   "id": "c-pistol-3",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-pistol-3"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-pistol-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0571,
+      0
+     ],
+     "diameter": 0.0278
+    },
+    "magazine": {
+     "pos": [
+      -0.073,
+      0.0086,
+      0
+     ],
+     "size": [
+      0.0472,
+      0.0861
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0775,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0775,
+     -0.0202
+    ],
+    "max": [
+     0.11,
+     0.0775,
+     0.0202
+    ]
+   },
+   "triangles": 635,
+   "pack": "cosmo",
+   "file": "cosmo/c-pistol-3.glb",
+   "label": "Pistol 3"
+  },
+  {
+   "id": "c-pistol-4",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-pistol-4"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-pistol-4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0542,
+      0
+     ],
+     "diameter": 0.0193
+    },
+    "magazine": {
+     "pos": [
+      -0.0681,
+      0.0024,
+      0
+     ],
+     "size": [
+      0.0507,
+      0.0862
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0838,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0838,
+     -0.0276
+    ],
+    "max": [
+     0.11,
+     0.0838,
+     0.0276
+    ]
+   },
+   "triangles": 790,
+   "pack": "cosmo",
+   "file": "cosmo/c-pistol-4.glb",
+   "label": "Pistol 4"
+  },
+  {
+   "id": "c-pistol-5",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-pistol-5"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-pistol-5"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-pistol-5"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.021,
+      0.0001
+     ],
+     "diameter": 0.014
+    },
+    "optic": {
+     "pos": [
+      -0.036,
+      0.0332,
+      0
+     ],
+     "size": [
+      0.0866,
+      0.0307
+     ]
+    },
+    "magazine": {
+     "pos": [
+      -0.0594,
+      -0.0016,
+      0
+     ],
+     "size": [
+      0.0489,
+      0.0624
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0344,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0639,
+     -0.02
+    ],
+    "max": [
+     0.11,
+     0.0639,
+     0.02
+    ]
+   },
+   "triangles": 1070,
+   "pack": "cosmo",
+   "file": "cosmo/c-pistol-5.glb",
+   "label": "Pistol 5"
+  },
+  {
+   "id": "c-pistol-6",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-pistol-6"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-pistol-6"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0314,
+      0.0011
+     ],
+     "diameter": 0.0329
+    },
+    "magazine": {
+     "pos": [
+      -0.01,
+      -0.0067,
+      0
+     ],
+     "size": [
+      0.0393,
+      0.0621
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0688,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0688,
+     -0.0304
+    ],
+    "max": [
+     0.11,
+     0.0688,
+     0.0304
+    ]
+   },
+   "triangles": 466,
+   "pack": "cosmo",
+   "file": "cosmo/c-pistol-6.glb",
+   "label": "Pistol 6"
+  },
+  {
+   "id": "c-smg-1",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-1"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-smg-1"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-smg-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0356,
+      -0.0004
+     ],
+     "diameter": 0.0189
+    },
+    "magazine": {
+     "pos": [
+      -0.0138,
+      0.0326,
+      0
+     ],
+     "size": [
+      0.084,
+      0.1492
+     ]
+    },
+    "optic": {
+     "pos": [
+      -0.0502,
+      0.0594,
+      0
+     ],
+     "size": [
+      0.0858,
+      0.0572
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0933,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1165,
+     -0.0313
+    ],
+    "max": [
+     0.25,
+     0.1165,
+     0.0313
+    ]
+   },
+   "triangles": 682,
+   "pack": "cosmo",
+   "file": "cosmo/c-smg-1.glb",
+   "label": "Subfusil 1"
+  },
+  {
+   "id": "c-smg-2",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-2"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-smg-2"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-2"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-smg-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0485,
+      0.0003
+     ],
+     "diameter": 0.0692
+    },
+    "optic": {
+     "pos": [
+      0.0835,
+      0.0747,
+      0
+     ],
+     "size": [
+      0.0702,
+      0.0339
+     ]
+    },
+    "magazine": {
+     "pos": [
+      0.0043,
+      0.0306,
+      0
+     ],
+     "size": [
+      0.069,
+      0.1392
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1016,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1086,
+     -0.0348
+    ],
+    "max": [
+     0.25,
+     0.1086,
+     0.0348
+    ]
+   },
+   "triangles": 866,
+   "pack": "cosmo",
+   "file": "cosmo/c-smg-2.glb",
+   "label": "Subfusil 2"
+  },
+  {
+   "id": "c-smg-3",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-3"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-3"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-smg-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0513,
+      0.0019
+     ],
+     "diameter": 0.021
+    },
+    "magazine": {
+     "pos": [
+      0.0259,
+      0.0224,
+      0
+     ],
+     "size": [
+      0.0694,
+      0.1339
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1115,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1115,
+     -0.0373
+    ],
+    "max": [
+     0.25,
+     0.1115,
+     0.0373
+    ]
+   },
+   "triangles": 596,
+   "pack": "cosmo",
+   "file": "cosmo/c-smg-3.glb",
+   "label": "Subfusil 3"
+  },
+  {
+   "id": "c-smg-4",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-4"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-smg-4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0332,
+      -0.001
+     ],
+     "diameter": 0.0279
+    },
+    "magazine": {
+     "pos": [
+      -0.0381,
+      -0.0029,
+      0
+     ],
+     "size": [
+      0.0407,
+      0.0717
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0907,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.0907,
+     -0.0341
+    ],
+    "max": [
+     0.25,
+     0.0907,
+     0.0341
+    ]
+   },
+   "triangles": 636,
+   "pack": "cosmo",
+   "file": "cosmo/c-smg-4.glb",
+   "label": "Subfusil 4"
+  },
+  {
+   "id": "c-smg-5",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-5"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-smg-5"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-smg-5"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0533,
+      0
+     ],
+     "diameter": 0.0298
+    },
+    "magazine": {
+     "pos": [
+      -0.0514,
+      0.0056,
+      0
+     ],
+     "size": [
+      0.0531,
+      0.117
+     ]
+    },
+    "optic": {
+     "pos": [
+      -0.0155,
+      0.0656,
+      0
+     ],
+     "size": [
+      0.2504,
+      0.0458
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0739,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1114,
+     -0.0314
+    ],
+    "max": [
+     0.25,
+     0.1114,
+     0.0314
+    ]
+   },
+   "triangles": 862,
+   "pack": "cosmo",
+   "file": "cosmo/c-smg-5.glb",
+   "label": "Subfusil 5"
+  },
+  {
+   "id": "c-smg-6",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-6"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-smg-6"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-smg-6"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-6"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0472,
+      0
+     ],
+     "diameter": 0.0349
+    },
+    "magazine": {
+     "pos": [
+      -0.1213,
+      -0.0077,
+      0
+     ],
+     "size": [
+      0.0597,
+      0.1127
+     ]
+    },
+    "optic": {
+     "pos": [
+      -0.0892,
+      0.0686,
+      0
+     ],
+     "size": [
+      0.0615,
+      0.0518
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.078,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1204,
+     -0.0359
+    ],
+    "max": [
+     0.25,
+     0.1204,
+     0.0359
+    ]
+   },
+   "triangles": 520,
+   "pack": "cosmo",
+   "file": "cosmo/c-smg-6.glb",
+   "label": "Subfusil 6"
+  },
+  {
+   "id": "c-smg-7",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-7"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-smg-7"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-smg-7"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0315,
+      -0.0013
+     ],
+     "diameter": 0.0325
+    },
+    "optic": {
+     "pos": [
+      -0.0789,
+      0.0564,
+      0
+     ],
+     "size": [
+      0.0981,
+      0.0513
+     ]
+    },
+    "magazine": {
+     "pos": [
+      -0.1311,
+      -0.0112,
+      0
+     ],
+     "size": [
+      0.0583,
+      0.0964
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0585,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1077,
+     -0.029
+    ],
+    "max": [
+     0.25,
+     0.1077,
+     0.029
+    ]
+   },
+   "triangles": 664,
+   "pack": "cosmo",
+   "file": "cosmo/c-smg-7.glb",
+   "label": "Subfusil 7"
+  },
+  {
+   "id": "c-smg-8",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-8"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-smg-8"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-smg-8"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0136,
+      0.0002
+     ],
+     "diameter": 0.0225
+    },
+    "magazine": {
+     "pos": [
+      0.0106,
+      0.0154,
+      0
+     ],
+     "size": [
+      0.0671,
+      0.1214
+     ]
+    },
+    "optic": {
+     "pos": [
+      -0.0164,
+      0.0581,
+      0
+     ],
+     "size": [
+      0.0994,
+      0.0479
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0742,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.106,
+     -0.0361
+    ],
+    "max": [
+     0.25,
+     0.106,
+     0.0361
+    ]
+   },
+   "triangles": 548,
+   "pack": "cosmo",
+   "file": "cosmo/c-smg-8.glb",
+   "label": "Subfusil 8"
+  },
+  {
+   "id": "c-smg-9",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-9"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0415,
+      0
+     ],
+     "diameter": 0.0268
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1022,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1022,
+     -0.037
+    ],
+    "max": [
+     0.25,
+     0.1022,
+     0.037
+    ]
+   },
+   "triangles": 1034,
+   "pack": "cosmo",
+   "file": "cosmo/c-smg-9.glb",
+   "label": "Subfusil 9"
+  },
+  {
+   "id": "c-smg-10",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-smg-10"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-smg-10"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-smg-10"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0409,
+      0
+     ],
+     "diameter": 0.0245
+    },
+    "optic": {
+     "pos": [
+      -0.0391,
+      0.0615,
+      0
+     ],
+     "size": [
+      0.1166,
+      0.0692
+     ]
+    },
+    "magazine": {
+     "pos": [
+      -0.0109,
+      0.0003,
+      0
+     ],
+     "size": [
+      0.07,
+      0.1311
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0942,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1307,
+     -0.029
+    ],
+    "max": [
+     0.25,
+     0.1307,
+     0.029
+    ]
+   },
+   "triangles": 676,
+   "pack": "cosmo",
+   "file": "cosmo/c-smg-10.glb",
+   "label": "Subfusil 10"
+  },
+  {
+   "id": "c-flamethrower",
+   "type": "flamethrower",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-flamethrower"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-flamethrower"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-flamethrower"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-flamethrower"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.475,
+      0.0926,
+      -0.0002
+     ],
+     "diameter": 0.1058
+    },
+    "optic": {
+     "pos": [
+      -0.2033,
+      0.1306,
+      0
+     ],
+     "size": [
+      0.1046,
+      0.0892
+     ]
+    },
+    "magazine": {
+     "pos": [
+      -0.185,
+      -0.0208,
+      0
+     ],
+     "size": [
+      0.1358,
+      0.1691
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1893,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.475,
+     -0.2198,
+     -0.066
+    ],
+    "max": [
+     0.475,
+     0.2198,
+     0.066
+    ]
+   },
+   "triangles": 1258,
+   "pack": "cosmo",
+   "file": "cosmo/c-flamethrower.glb",
+   "label": "Flamethrower"
+  },
+  {
+   "id": "c-rifle-1",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-rifle-1"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-rifle-1"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-rifle-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.091,
+      0
+     ],
+     "diameter": 0.0538
+    },
+    "optic": {
+     "pos": [
+      -0.155,
+      0.1163,
+      0
+     ],
+     "size": [
+      0.1267,
+      0.1031
+     ]
+    },
+    "magazine": {
+     "pos": [
+      -0.0059,
+      0.0119,
+      0
+     ],
+     "size": [
+      0.2143,
+      0.2312
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1596,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.2194,
+     -0.0847
+    ],
+    "max": [
+     0.45,
+     0.2194,
+     0.0847
+    ]
+   },
+   "triangles": 964,
+   "pack": "cosmo",
+   "file": "cosmo/c-rifle-1.glb",
+   "label": "Fusil 1"
+  },
+  {
+   "id": "c-rifle-2",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-rifle-2"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-rifle-2"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-rifle-2"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-rifle-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0161,
+      0.0003
+     ],
+     "diameter": 0.2309
+    },
+    "magazine": {
+     "pos": [
+      -0.0968,
+      -0.0215,
+      0
+     ],
+     "size": [
+      0.119,
+      0.1869
+     ]
+    },
+    "optic": {
+     "pos": [
+      -0.0508,
+      0.1307,
+      0
+     ],
+     "size": [
+      0.2328,
+      0.0777
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1441,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.2084,
+     -0.0804
+    ],
+    "max": [
+     0.45,
+     0.2084,
+     0.0804
+    ]
+   },
+   "triangles": 922,
+   "pack": "cosmo",
+   "file": "cosmo/c-rifle-2.glb",
+   "label": "Fusil 2"
+  },
+  {
+   "id": "c-rifle-3",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-rifle-3"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-rifle-3"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0297,
+      0.0004
+     ],
+     "diameter": 0.121
+    },
+    "magazine": {
+     "pos": [
+      -0.087,
+      -0.0381,
+      0
+     ],
+     "size": [
+      0.0873,
+      0.0961
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1342,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1342,
+     -0.0438
+    ],
+    "max": [
+     0.45,
+     0.1342,
+     0.0438
+    ]
+   },
+   "triangles": 1311,
+   "pack": "cosmo",
+   "file": "cosmo/c-rifle-3.glb",
+   "label": "Fusil 3"
+  },
+  {
+   "id": "c-rifle-4",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-rifle-4"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-rifle-4"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-rifle-4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.112,
+      0.0001
+     ],
+     "diameter": 0.061
+    },
+    "optic": {
+     "pos": [
+      0.0036,
+      0.1286,
+      0
+     ],
+     "size": [
+      0.235,
+      0.0971
+     ]
+    },
+    "magazine": {
+     "pos": [
+      0.1226,
+      0.0452,
+      0
+     ],
+     "size": [
+      0.4303,
+      0.0912
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1718,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.2257,
+     -0.0763
+    ],
+    "max": [
+     0.45,
+     0.2257,
+     0.0763
+    ]
+   },
+   "triangles": 1008,
+   "pack": "cosmo",
+   "file": "cosmo/c-rifle-4.glb",
+   "label": "Fusil 4"
+  },
+  {
+   "id": "c-rifle-5",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-rifle-5"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-rifle-5"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-rifle-5"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0998,
+      0.0009
+     ],
+     "diameter": 0.066
+    },
+    "magazine": {
+     "pos": [
+      -0.0386,
+      -0.0056,
+      0
+     ],
+     "size": [
+      0.2138,
+      0.2413
+     ]
+    },
+    "optic": {
+     "pos": [
+      0.269,
+      0.1422,
+      0
+     ],
+     "size": [
+      0.2073,
+      0.1047
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1655,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.2469,
+     -0.0588
+    ],
+    "max": [
+     0.45,
+     0.2469,
+     0.0588
+    ]
+   },
+   "triangles": 1231,
+   "pack": "cosmo",
+   "file": "cosmo/c-rifle-5.glb",
+   "label": "Fusil 5"
+  },
+  {
+   "id": "c-rifle-6",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-rifle-6"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0755,
+      0.0014
+     ],
+     "diameter": 0.0265
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1234,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1234,
+     -0.0409
+    ],
+    "max": [
+     0.45,
+     0.1234,
+     0.0409
+    ]
+   },
+   "triangles": 740,
+   "pack": "cosmo",
+   "file": "cosmo/c-rifle-6.glb",
+   "label": "Fusil 6"
+  },
+  {
+   "id": "c-rifle-7",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-rifle-7"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-rifle-7"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-rifle-7"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0308,
+      -0.0005
+     ],
+     "diameter": 0.0244
+    },
+    "magazine": {
+     "pos": [
+      -0.2891,
+      0.0176,
+      0
+     ],
+     "size": [
+      0.126,
+      0.1533
+     ]
+    },
+    "optic": {
+     "pos": [
+      -0.1063,
+      0.0702,
+      0
+     ],
+     "size": [
+      0.0654,
+      0.0654
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1033,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1356,
+     -0.0496
+    ],
+    "max": [
+     0.45,
+     0.1356,
+     0.0496
+    ]
+   },
+   "triangles": 1028,
+   "pack": "cosmo",
+   "file": "cosmo/c-rifle-7.glb",
+   "label": "Fusil 7"
+  },
+  {
+   "id": "c-shotgun-1",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-shotgun-1"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-shotgun-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0913,
+      0.0006
+     ],
+     "diameter": 0.0799
+    },
+    "magazine": {
+     "pos": [
+      -0.0008,
+      0.1098,
+      0
+     ],
+     "size": [
+      0.1179,
+      0.0602
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1312,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.1312,
+     -0.0543
+    ],
+    "max": [
+     0.5,
+     0.1312,
+     0.0543
+    ]
+   },
+   "triangles": 404,
+   "pack": "cosmo",
+   "file": "cosmo/c-shotgun-1.glb",
+   "label": "Shotgun 1"
+  },
+  {
+   "id": "c-shotgun-2",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-shotgun-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0685,
+      -0.0003
+     ],
+     "diameter": 0.0361
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1353,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.1353,
+     -0.0519
+    ],
+    "max": [
+     0.5,
+     0.1353,
+     0.0519
+    ]
+   },
+   "triangles": 546,
+   "pack": "cosmo",
+   "file": "cosmo/c-shotgun-2.glb",
+   "label": "Shotgun 2"
+  },
+  {
+   "id": "c-sniper-0",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-sniper-0"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-sniper-0"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0846,
+      0.0017
+     ],
+     "diameter": 0.0106
+    },
+    "optic": {
+     "pos": [
+      -0.2759,
+      0.08,
+      0
+     ],
+     "size": [
+      0.2721,
+      0.0786
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1135,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1586,
+     -0.1273
+    ],
+    "max": [
+     0.6,
+     0.1586,
+     0.1273
+    ]
+   },
+   "triangles": 1886,
+   "pack": "cosmo",
+   "file": "cosmo/c-sniper-0.glb",
+   "label": "Sniper 0"
+  },
+  {
+   "id": "c-sniper-1",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-sniper-1"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-sniper-1"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-sniper-1"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0641,
+      0.0002
+     ],
+     "diameter": 0.0513
+    },
+    "magazine": {
+     "pos": [
+      -0.0116,
+      -0.0347,
+      0
+     ],
+     "size": [
+      0.1233,
+      0.1529
+     ]
+    },
+    "optic": {
+     "pos": [
+      -0.152,
+      0.0537,
+      0
+     ],
+     "size": [
+      0.2837,
+      0.1339
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1048,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1876,
+     -0.0654
+    ],
+    "max": [
+     0.6,
+     0.1876,
+     0.0654
+    ]
+   },
+   "triangles": 1101,
+   "pack": "cosmo",
+   "file": "cosmo/c-sniper-1.glb",
+   "label": "Sniper 1"
+  },
+  {
+   "id": "c-sniper-2",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "c-sniper-2"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "c-sniper-2"
+    },
+    {
+     "role": "scope",
+     "node": "scope",
+     "source": "c-sniper-2"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0483,
+      0.0003
+     ],
+     "diameter": 0.0528
+    },
+    "magazine": {
+     "pos": [
+      -0.1492,
+      0.0203,
+      0
+     ],
+     "size": [
+      0.1873,
+      0.196
+     ]
+    },
+    "optic": {
+     "pos": [
+      -0.2779,
+      0.0671,
+      0
+     ],
+     "size": [
+      0.4199,
+      0.1086
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.086,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1757,
+     -0.0504
+    ],
+    "max": [
+     0.6,
+     0.1757,
+     0.0504
+    ]
+   },
+   "triangles": 738,
+   "pack": "cosmo",
+   "file": "cosmo/c-sniper-2.glb",
+   "label": "Sniper 2"
+  },
+  {
+   "id": "a-pistol",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "a-pistol"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "a-pistol"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.047,
+      0
+     ],
+     "diameter": 0.0347
+    },
+    "magazine": {
+     "pos": [
+      -0.0716,
+      0.029,
+      0
+     ],
+     "size": [
+      0.0492,
+      0.0835
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0689,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0689,
+     -0.0148
+    ],
+    "max": [
+     0.11,
+     0.0689,
+     0.0148
+    ]
+   },
+   "triangles": 1382,
+   "pack": "asimov",
+   "file": "asimov/a-pistol.glb",
+   "label": "Pistol"
+  },
+  {
+   "id": "a-compact",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "a-compact"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "a-compact"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0691,
+      -0.0002
+     ],
+     "diameter": 0.0394
+    },
+    "magazine": {
+     "pos": [
+      -0.0551,
+      0.0415,
+      0
+     ],
+     "size": [
+      0.0702,
+      0.1192
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0984,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0984,
+     -0.0212
+    ],
+    "max": [
+     0.11,
+     0.0984,
+     0.0212
+    ]
+   },
+   "triangles": 1426,
+   "pack": "asimov",
+   "file": "asimov/a-compact.glb",
+   "label": "Compact"
+  },
+  {
+   "id": "a-smg",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "a-smg"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "a-smg"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0402,
+      0.0136
+     ],
+     "diameter": 0.0233
+    },
+    "magazine": {
+     "pos": [
+      -0.0749,
+      0.0231,
+      0
+     ],
+     "size": [
+      0.0375,
+      0.1108
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0877,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.0877,
+     -0.0334
+    ],
+    "max": [
+     0.25,
+     0.0877,
+     0.0334
+    ]
+   },
+   "triangles": 3254,
+   "pack": "asimov",
+   "file": "asimov/a-smg.glb",
+   "label": "SMG"
+  },
+  {
+   "id": "a-rifle",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "a-rifle"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "a-rifle"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0597,
+      0.0233
+     ],
+     "diameter": 0.0272
+    },
+    "magazine": {
+     "pos": [
+      -0.2042,
+      0.0263,
+      0
+     ],
+     "size": [
+      0.0889,
+      0.1543
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.128,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.128,
+     -0.0518
+    ],
+    "max": [
+     0.45,
+     0.128,
+     0.0518
+    ]
+   },
+   "triangles": 3208,
+   "pack": "asimov",
+   "file": "asimov/a-rifle.glb",
+   "label": "Assault Rifle"
+  },
+  {
+   "id": "a-sniper",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "a-sniper"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "a-sniper"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0737,
+      0.0292
+     ],
+     "diameter": 0.0305
+    },
+    "magazine": {
+     "pos": [
+      -0.2747,
+      -0.044,
+      0
+     ],
+     "size": [
+      0.1434,
+      0.0728
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.174,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.174,
+     -0.0669
+    ],
+    "max": [
+     0.6,
+     0.174,
+     0.0669
+    ]
+   },
+   "triangles": 4044,
+   "pack": "asimov",
+   "file": "asimov/a-sniper.glb",
+   "label": "Sniper Rifle"
+  },
+  {
+   "id": "a-shotgun",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "a-shotgun"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.065,
+      0.0001
+     ],
+     "diameter": 0.1101
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1586,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.1586,
+     -0.0528
+    ],
+    "max": [
+     0.5,
+     0.1586,
+     0.0528
+    ]
+   },
+   "triangles": 3046,
+   "pack": "asimov",
+   "file": "asimov/a-shotgun.glb",
+   "label": "Shotgun"
+  },
+  {
+   "id": "a-launcher",
+   "type": "launcher",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "a-launcher"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.55,
+      0.0329,
+      0
+     ],
+     "diameter": 0.1047
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0861,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.55,
+     -0.0861,
+     -0.0551
+    ],
+    "max": [
+     0.55,
+     0.0861,
+     0.0551
+    ]
+   },
+   "triangles": 2144,
+   "pack": "asimov",
+   "file": "asimov/a-launcher.glb",
+   "label": "Rocket Launcher"
+  },
+  {
+   "id": "m-m1911",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "m-m1911"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0456,
+      0
+     ],
+     "diameter": 0.0364
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0698,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0698,
+     -0.0168
+    ],
+    "max": [
+     0.11,
+     0.0698,
+     0.0168
+    ]
+   },
+   "triangles": 5050,
+   "pack": "misc",
+   "file": "misc/m-m1911.glb",
+   "label": "M1911"
+  },
+  {
+   "id": "m-deagle",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "m-deagle"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0491,
+      0
+     ],
+     "diameter": 0.0179
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0639,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0639,
+     -0.0156
+    ],
+    "max": [
+     0.11,
+     0.0639,
+     0.0156
+    ]
+   },
+   "triangles": 2880,
+   "pack": "misc",
+   "file": "misc/m-deagle.glb",
+   "label": "Desert Eagle"
+  }
+ ]
+}
