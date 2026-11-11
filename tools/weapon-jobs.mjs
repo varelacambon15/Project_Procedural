@@ -2,7 +2,7 @@
 const Q = "raw/quaternius-ultimate-gun-pack/OBJ";
 const C = "raw/cosmo-low-poly-guns";
 const A = "raw/asimov-weapon-pack/Asimov_Weapon_Pack.fbx";
-const CTEX = "/raw/cosmo-low-poly-guns/uv_palette.png";
+const CTEX = "/raw/cosmo-low-poly-guns/uv_palette_modern.png";
 const QSCALE = 0.122; // escala del pack de Quaternius (pistola de 1,8 u -> 0,22 m), para accesorios
 
 const q = (file, type, extra = {}) => ({ kind: "obj", pack: "quaternius", id: `q-${file.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, label: file.replace(/_/g, " "), obj: `${Q}/${file}.obj`, mtl: `${Q}/${file}.mtl`, type, ...extra });
@@ -53,5 +53,42 @@ const ALL = [
   { kind: "fbx", pack: "misc", id: "m-m1911", label: "M1911", fbx: "raw/misc/M1911.fbx", type: "pistol", palette: "misc" },
   { kind: "fbx", pack: "misc", id: "m-deagle", label: "Desert Eagle", fbx: "raw/misc/DesertEagle.fbx", type: "pistol", palette: "misc" },
 ];
+
+// --- WeaponsOBJ (Cinema 4D, origen sin confirmar, uso privado): 30 armas modernas con cargador separado ---
+const W = "raw/weapons-obj/WeaponsOBJ.obj";
+// Todo el pack comparte orientación: X lateral, Z longitud, Y arriba.
+const WHINT = { side: 0, length: 2, upSign: 1, fwdSign: 1 };
+const w = (id, label, type, body, mag) => ({ kind: "objmulti", pack: "modern", id: `w-${id}`, label, obj: W, type, hint: WHINT, objects: [{ match: body, role: "body" }, ...(mag ? [{ match: mag, role: "magazine" }] : [])] });
+ALL.push(
+  w("vss", "VSS", "sniper", "^VSS_Sniper$", "^VSS_Sniper_Magazine$"),
+  w("l115", "L115", "sniper", "^L115_Awp$", "^L115_Awp_Magazine$"),
+  w("barrett", "Barrett", "sniper", "^Barett$", "^Barett_Magazine$"),
+  w("m249", "M249", "lmg", "^M249(_Top)?$", "^M249_Magazine$"),
+  w("m60", "M60", "lmg", "^M60(_Top)?$", "^M60_Magazine$"),
+  w("minigun", "Minigun", "lmg", "^Minigun(_Front)?$", null),
+  w("sten", "Sten", "smg", "^Sten$", "^StenMagazine$"),
+  w("ppsh", "PPSh", "smg", "^PPHS$", "^PPHS_Magazine$"),
+  w("m1911", "M1911", "pistol", "^M1911$", "^Pistol_Magazine$"),
+  w("garand", "M1 Garand", "rifle", "^M1Garand$", null),
+  w("luger", "Luger P08", "pistol", "^LugerP08$", "^LugerP08_Magazine$"),
+  w("xm8", "XM8", "rifle", "^XM8$", "^XM8_Magazine$"),
+  w("scarh", "SCAR-H", "rifle", "^ScarH$", "^ScarH_Magazine$"),
+  w("m16a4", "M16A4", "rifle", "^M16A4$", "^M16A4_Magazine$"),
+  w("g36", "G36", "rifle", "^G36$", "^G36_Magazine$"),
+  w("ak47", "AK-47", "rifle", "^AK47$", "^AK47_Magazine_Out$"),
+  w("aa12", "AA-12", "shotgun", "^AA12$", "^AA12_Magazine_Out$"),
+  w("uzi", "Uzi", "smg", "^Uzi$", "^Uzi_Magazine$"),
+  w("p90", "P90", "smg", "^P90$", "^P90_Magazine$"),
+  w("mp5k", "MP5K", "smg", "^Mp5K$", "^Mp5K_Magazine$"),
+  w("vector", "Vector", "smg", "^Kriss_Vector$", "^Kriss_Vector_Magazine$"),
+  w("f2000", "F2000", "bullpup", "^FN2000$", "^FN2000_Magazine$"),
+  w("famas", "FAMAS", "bullpup", "^Famas$", "^Famas_Magazine$"),
+  w("spas12", "SPAS-12", "shotgun", "^Spas-12$", null),
+  w("sawedoff", "Sawed-off", "shotgun", "^SawedOff_(Hold|Barrel)$", null),
+  w("glock17", "Glock 17", "pistol", "^Glock17$", "^Pistol_Magazine_1$"),
+  w("revolver", "Revolver", "revolver", "^Revolver(_Magazine)?$", null),
+  w("deagle", "Desert Eagle", "pistol", "^Deagle$", "^Pistol_Magazine_2$"),
+  w("usp45", "USP .45 SD", "pistol", "^Usp45-Silenced$", "^Pistol_Magazine_3$"),
+);
 
 export const JOBS = ALL.map((j) => (BODY_ONLY[j.id] ? { ...j, pick: [{ match: BODY_ONLY[j.id], role: "body" }] } : j));

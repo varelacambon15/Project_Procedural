@@ -31,6 +31,8 @@ Se desarrolla en dos etapas que comparten el mismo núcleo:
 | Piezas | Extraíbles y montables en otras armas (banco de armero) |
 | Rarezas | Común (blanco), Poco común (verde), Rara (azul), Épica (morado), Legendaria (naranja) |
 | Nombres | Legendarias: nombre propio **en inglés**. Resto: designación técnica (`PV-45L SD Mk II`) |
+| Aspecto de las armas | Lo más parecido a armas modernas: acabados reales (negro mate, FDE, oliva, gris), metal con reflejos, paletas apagadas. Los modelos realistas salen más a menudo |
+| Mezcla de piezas | Cargadores y miras solo entre armas del mismo pack, para que el estilo encaje |
 
 ## Sistema de armas
 

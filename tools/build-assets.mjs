@@ -56,7 +56,15 @@ if (args[0] === "--list") {
     manifest.weapons.push({ ...out, file: rel, label: job.label || job.id });
     console.log(`✓ ${rel.padEnd(52)} ${String(out.triangles).padStart(6)} tris  ${out.parts.map((p) => p.role).join(",")}`);
   }
-  if (!only) await writeFile(path.join(ROOT, "assets/weapons/manifest.json"), JSON.stringify(manifest, null, 1));
+  // Conversión parcial: se actualizan solo esas entradas del manifest existente, conservando el orden.
+  let out = manifest;
+  if (only) {
+    const old = JSON.parse(await readFile(path.join(ROOT, "assets/weapons/manifest.json"), "utf8"));
+    const fresh = new Map(manifest.weapons.map((w) => [w.id, w]));
+    out = { ...old, weapons: old.weapons.map((w) => fresh.get(w.id) ?? w) };
+    for (const w of manifest.weapons) if (!old.weapons.some((o) => o.id === w.id)) out.weapons.push(w);
+  }
+  await writeFile(path.join(ROOT, "assets/weapons/manifest.json"), JSON.stringify(out, null, 1));
 }
 await browser.close();
 server.close();

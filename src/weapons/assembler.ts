@@ -27,7 +27,7 @@ export class WeaponAssembler {
     scene.traverse((o) => {
       const m = o as THREE.Mesh;
       if (m.isMesh && roleOf(m) === role) {
-        const c = new THREE.Mesh(m.geometry, Array.isArray(m.material) ? m.material.map((x) => x.clone()) : m.material.clone());
+        const c = new THREE.Mesh(m.geometry, Array.isArray(m.material) ? m.material.map(finish) : finish(m.material));
         c.castShadow = true; c.receiveShadow = true;
         g.add(c);
       }
@@ -43,6 +43,8 @@ export class WeaponAssembler {
       group.add(object); parts.push({ object, role, from, explode: new THREE.Vector3(...explode), base: object.position.clone() });
     };
     let muzzle: THREE.Vector3 | null = null;
+    const first = get(spec.parts[0].from);
+    const length0 = first.bounds.max[0] - first.bounds.min[0];
     let muzzleDiameter = 0.03;
     let opticTarget: THREE.Vector3 | null = null;
     let opticLength = 0;
@@ -106,7 +108,7 @@ export class WeaponAssembler {
       const accE = get(spec.muzzle);
       const acc = await this.nodes(accE, "muzzle");
       const h = accE.bounds.max[1] - accE.bounds.min[1];
-      const k = THREE.MathUtils.clamp((muzzleDiameter * 1.6) / h, 0.05, 4);
+      const k = THREE.MathUtils.clamp(Math.max(muzzleDiameter * 2.2, length0 * 0.04) / h, 0.05, 4);
       acc.scale.setScalar(k);
       acc.position.set(muzzle.x - accE.bounds.min[0] * k, muzzle.y - ((accE.bounds.min[1] + accE.bounds.max[1]) / 2) * k, 0);
       add(acc, "muzzle", accE, [1.2, 0.3, 0]);
@@ -119,6 +121,17 @@ export class WeaponAssembler {
     for (const p of parts) { p.object.position.sub(center); p.base.copy(p.object.position); p.explode.multiplyScalar(length * 0.18); }
     return { group, parts, length };
   }
+}
+
+/** Acabado más realista: el metal refleja el entorno; los plásticos y la madera, poco. */
+function finish(src: THREE.Material): THREE.Material {
+  const m = src.clone() as THREE.MeshStandardMaterial;
+  if (!m.isMeshStandardMaterial) return m;
+  if (/Wood|Handle/i.test(m.name)) { m.metalness = 0.0; m.roughness = 0.75; }
+  else if (/Polymer|Plastic|Black2/i.test(m.name)) { m.metalness = 0.15; m.roughness = 0.6; }
+  else { m.metalness = Math.max(m.metalness, 0.6); m.roughness = Math.min(m.roughness, 0.45); }
+  m.envMapIntensity = 0.9;
+  return m;
 }
 
 /** Rol de una malla: el primer antecesor que lo declara (las mallas multimaterial se cargan como grupo + hijos). */
@@ -134,14 +147,14 @@ function roleOf(o: THREE.Object3D): string | null {
 /** Pinta las piezas principales con la pintura del arma (las texturas de paleta se tiñen). */
 function paint(obj: THREE.Object3D, spec: WeaponSpec) {
   if (!spec.paint.color) return;
-  const tint = new THREE.Color(...spec.paint.color);
+  const tint = new THREE.Color().setRGB(...spec.paint.color, THREE.SRGBColorSpace);
   obj.traverse((o) => {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;
     for (const mat of (Array.isArray(m.material) ? m.material : [m.material]) as THREE.MeshStandardMaterial[]) {
       if (mat.map) mat.color.copy(new THREE.Color(1, 1, 1).lerp(tint, 0.3));
       else if (/Wood|Handle/i.test(mat.name)) continue;
-      else mat.color.lerp(tint, 0.55);
+      else mat.color.lerp(tint, 0.85);
     }
   });
 }

@@ -20,20 +20,31 @@ export const TYPE_INFO: Record<Exclude<WeaponType, "accessory">, { name: string;
   shotgun: { name: "Escopeta", letter: "E", base: { dano: 14, cadencia: 90, precision: 34, alcance: 14, manejo: 55, cargador: 6 }, calibers: ["12", "16", "20", "410"] },
   sniper: { name: "Francotirador", letter: "F", base: { dano: 120, cadencia: 50, precision: 88, alcance: 110, manejo: 38, cargador: 5 }, calibers: ["308", "338", "50", "762", "300"] },
   launcher: { name: "Lanzacohetes", letter: "L", base: { dano: 260, cadencia: 30, precision: 55, alcance: 70, manejo: 30, cargador: 1 }, calibers: ["40", "66", "84"] },
+  lmg: { name: "Ametralladora", letter: "M", base: { dano: 24, cadencia: 750, precision: 46, alcance: 50, manejo: 34, cargador: 100 }, calibers: ["556", "762", "308"] },
   flamethrower: { name: "Lanzallamas", letter: "Q", base: { dano: 9, cadencia: 900, precision: 30, alcance: 9, manejo: 50, cargador: 100 }, calibers: ["1", "2"] },
 };
 /** Perdigones por disparo (solo escopetas). */
 export const PELLETS: Partial<Record<WeaponType, number>> = { shotgun: 8 };
 
+// Acabados de armas modernas (cerakote, polímero, fosfatado) y uno gastado, post-apocalíptico.
 const PAINTS: Paint[] = [
-  { name: "Óxido", color: [0.55, 0.28, 0.14] },
-  { name: "Arena", color: [0.72, 0.6, 0.42] },
-  { name: "Verde militar", color: [0.36, 0.42, 0.26] },
-  { name: "Azul chatarra", color: [0.3, 0.42, 0.55] },
-  { name: "Metal desnudo", color: null },
-  { name: "Metal desnudo", color: null },
-  { name: "Rojo saqueador", color: [0.6, 0.18, 0.14] },
+  // Colores en sRGB (como se ven en pantalla).
+  { name: "Original", color: null },
+  { name: "Original", color: null },
+  { name: "Negro mate", color: [0.1, 0.1, 0.11] },
+  { name: "Tierra oscura (FDE)", color: [0.47, 0.39, 0.28] },
+  { name: "Verde oliva", color: [0.3, 0.32, 0.22] },
+  { name: "Gris tormenta", color: [0.33, 0.34, 0.36] },
+  { name: "Óxido gastado", color: [0.4, 0.24, 0.15] },
 ];
+/** Peso de cada pack al elegir el cuerpo: los modelos más realistas salen más a menudo. */
+const PACK_WEIGHT: Record<string, number> = { modern: 4, asimov: 2.5, misc: 2.5, quaternius: 1.5, cosmo: 1 };
+function weightedPick<T extends { pack: string }>(r: Rng, arr: T[]): T {
+  const total = arr.reduce((s, x) => s + (PACK_WEIGHT[x.pack] ?? 1), 0);
+  let roll = r() * total;
+  for (const x of arr) { roll -= PACK_WEIGHT[x.pack] ?? 1; if (roll < 0) return x; }
+  return arr[arr.length - 1];
+}
 
 interface EffectDef { id: string; name: string; icon: string; color: string; element?: boolean; words: string[]; text: (r: Rng) => string }
 const EFFECTS: EffectDef[] = [
@@ -113,11 +124,11 @@ export class WeaponGenerator {
       // Las pistolas modulares (corredera/armazón) no tienen "body", así que aquí se usan las demás.
       const bodies = pool.filter((w) => w.parts.some((p) => p.role === "body"));
       if (!bodies.length) throw new Error(`No hay cuerpos de tipo ${type}`);
-      const base = pick(r, bodies);
+      const base = weightedPick(r, bodies);
       parts.push({ role: "body", from: base.id });
       if (base.sockets.magazine) {
-        // Cargador de otra arma del mismo tipo (o el suyo).
-        const mags = pool.filter((w) => w.parts.some((p) => p.role === "magazine"));
+        // Cargador de otra arma del mismo tipo y del mismo pack (para que el estilo encaje), o el suyo.
+        const mags = pool.filter((w) => w.pack === base.pack && w.parts.some((p) => p.role === "magazine"));
         parts.push({ role: "magazine", from: (r() < 0.6 ? pick(r, mags) : base).id });
       }
     }
@@ -128,7 +139,7 @@ export class WeaponGenerator {
     const hasOwnScope = body.parts.some((p) => p.role === "scope");
     let optic: string | null = null;
     // Solo se cambia la mira en armas que la tienen como pieza separada (otras la llevan integrada en el cuerpo).
-    if (hasOwnScope) optic = r() < 0.55 ? pick(r, this.scopes).id : body.id;
+    if (hasOwnScope) { const same = this.scopes.filter((s) => s.pack === body.pack); optic = r() < 0.55 && same.length ? pick(r, same).id : body.id; }
     const muzzle = type !== "launcher" && type !== "flamethrower" && this.muzzles.length && r() < 0.3 ? pick(r, this.muzzles).id : null;
 
     // 3. Rareza, pintura y nivel

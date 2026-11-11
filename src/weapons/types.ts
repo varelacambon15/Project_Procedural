@@ -1,6 +1,6 @@
 // Tipos compartidos del sistema de armas.
 
-export type WeaponType = "pistol" | "revolver" | "smg" | "rifle" | "bullpup" | "shotgun" | "sniper" | "launcher" | "flamethrower" | "accessory";
+export type WeaponType = "pistol" | "revolver" | "smg" | "rifle" | "bullpup" | "shotgun" | "sniper" | "launcher" | "flamethrower" | "lmg" | "accessory";
 export type PartRole = "body" | "slide" | "frame" | "barrel" | "magazine" | "scope" | "muzzle";
 
 export interface Socket { pos: [number, number, number]; diameter?: number; size?: [number, number]; length?: number }

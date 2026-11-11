@@ -1,5 +1,6 @@
 // Banco de armero: genera armas, las monta en 3D y muestra su ficha.
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { WeaponGenerator, TYPE_INFO, PELLETS } from "../weapons/generator";
 import { WeaponAssembler, type AssembledWeapon } from "../weapons/assembler";
 import type { Manifest, PartRole, StatKey, WeaponSpec, WeaponType } from "../weapons/types";
@@ -25,10 +26,13 @@ renderer.shadowMap.enabled = true;
 viewer.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 50);
-scene.add(new THREE.HemisphereLight(0xfff1dc, 0x2a2018, 1.4));
-const key = new THREE.DirectionalLight(0xffe6c8, 2.0); key.position.set(2, 4, 3); scene.add(key);
-const rim = new THREE.DirectionalLight(0x9fc4ff, 1.4); rim.position.set(-3, 1.5, -2.5); scene.add(rim);
-const rarityLight = new THREE.PointLight(0xffffff, 1.2, 4); rarityLight.position.set(0, -0.3, 0.8); scene.add(rarityLight);
+// Entorno de estudio para los reflejos del metal + luz principal cálida y contraluz frío.
+renderer.toneMappingExposure = 0.95;
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.add(new THREE.HemisphereLight(0xfff1dc, 0x2a2018, 0.35));
+const key = new THREE.DirectionalLight(0xfff0dd, 1.6); key.position.set(2, 4, 3); scene.add(key);
+const rim = new THREE.DirectionalLight(0xa9c8ff, 1.1); rim.position.set(-3, 1.5, -2.5); scene.add(rim);
+const rarityLight = new THREE.PointLight(0xffffff, 0.5, 4); rarityLight.position.set(0, -0.3, 0.8); scene.add(rarityLight);
 
 let yaw = -0.5, pitch = 0.15, dist = 1, dragging = false, lastX = 0, lastY = 0, idle = 0;
 let exploded = 0, explodeTarget = 0;
@@ -54,7 +58,7 @@ async function show(seed: number) {
   if (current) scene.remove(current.built.group);
   scene.add(built.group);
   current = { spec, built };
-  dist = built.length * 2.9 + 0.08;
+  dist = built.length * (built.length > 0.6 ? 2.15 : 2.7) + 0.08;
   $("loading").hidden = true;
   render(spec);
 }

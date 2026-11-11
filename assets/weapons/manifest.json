@@ -4619,6 +4619,1666 @@
    "pack": "misc",
    "file": "misc/m-deagle.glb",
    "label": "Desert Eagle"
+  },
+  {
+   "id": "w-vss",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-vss"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-vss"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0222,
+      0
+     ],
+     "diameter": 0.0718
+    },
+    "magazine": {
+     "pos": [
+      0.0092,
+      0.0062,
+      0
+     ],
+     "size": [
+      0.1247,
+      0.1495
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1617,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1617,
+     -0.0366
+    ],
+    "max": [
+     0.6,
+     0.1617,
+     0.0366
+    ]
+   },
+   "triangles": 2016,
+   "pack": "modern",
+   "file": "modern/w-vss.glb",
+   "label": "VSS"
+  },
+  {
+   "id": "w-l115",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-l115"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-l115"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0166,
+      -0.0079
+     ],
+     "diameter": 0.0346
+    },
+    "magazine": {
+     "pos": [
+      -0.1465,
+      -0.0197,
+      0
+     ],
+     "size": [
+      0.0789,
+      0.0627
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1299,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1299,
+     -0.0411
+    ],
+    "max": [
+     0.6,
+     0.1299,
+     0.0411
+    ]
+   },
+   "triangles": 2182,
+   "pack": "modern",
+   "file": "modern/w-l115.glb",
+   "label": "L115"
+  },
+  {
+   "id": "w-barrett",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-barrett"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-barrett"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0503,
+      0
+     ],
+     "diameter": 0.0352
+    },
+    "magazine": {
+     "pos": [
+      -0.1462,
+      0.0155,
+      0
+     ],
+     "size": [
+      0.1237,
+      0.1151
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1579,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1579,
+     -0.1005
+    ],
+    "max": [
+     0.6,
+     0.1579,
+     0.1005
+    ]
+   },
+   "triangles": 6078,
+   "pack": "modern",
+   "file": "modern/w-barrett.glb",
+   "label": "Barrett"
+  },
+  {
+   "id": "w-m249",
+   "type": "lmg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-m249"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-m249"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.575,
+      0.0625,
+      0.0134
+     ],
+     "diameter": 0.031
+    },
+    "magazine": {
+     "pos": [
+      -0.037,
+      0,
+      0
+     ],
+     "size": [
+      0.0787,
+      0.1084
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1754,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.575,
+     -0.1754,
+     -0.09
+    ],
+    "max": [
+     0.575,
+     0.1754,
+     0.09
+    ]
+   },
+   "triangles": 1998,
+   "pack": "modern",
+   "file": "modern/w-m249.glb",
+   "label": "M249"
+  },
+  {
+   "id": "w-m60",
+   "type": "lmg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-m60"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-m60"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.575,
+      0.0213,
+      0.0761
+     ],
+     "diameter": 0.0262
+    },
+    "magazine": {
+     "pos": [
+      -0.1557,
+      0.056,
+      0
+     ],
+     "size": [
+      0.0984,
+      0.1207
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1354,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.575,
+     -0.1354,
+     -0.1065
+    ],
+    "max": [
+     0.575,
+     0.1354,
+     0.1065
+    ]
+   },
+   "triangles": 2246,
+   "pack": "modern",
+   "file": "modern/w-m60.glb",
+   "label": "M60"
+  },
+  {
+   "id": "w-minigun",
+   "type": "lmg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-minigun"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.575,
+      0.0788,
+      0.0016
+     ],
+     "diameter": 0.1415
+    },
+    "top": {
+     "pos": [
+      0,
+      0.2379,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.575,
+     -0.2379,
+     -0.1115
+    ],
+    "max": [
+     0.575,
+     0.2379,
+     0.1115
+    ]
+   },
+   "triangles": 2304,
+   "pack": "modern",
+   "file": "modern/w-minigun.glb",
+   "label": "Minigun"
+  },
+  {
+   "id": "w-sten",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-sten"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-sten"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0482,
+      0.0849
+     ],
+     "diameter": 0.0137
+    },
+    "magazine": {
+     "pos": [
+      0.106,
+      0.0557,
+      0
+     ],
+     "size": [
+      0.0291,
+      0.0151
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0677,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.0677,
+     -0.1132
+    ],
+    "max": [
+     0.25,
+     0.0677,
+     0.1132
+    ]
+   },
+   "triangles": 1844,
+   "pack": "modern",
+   "file": "modern/w-sten.glb",
+   "label": "Sten"
+  },
+  {
+   "id": "w-ppsh",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-ppsh"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-ppsh"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0371,
+      0
+     ],
+     "diameter": 0.022
+    },
+    "magazine": {
+     "pos": [
+      0.0304,
+      0.0272,
+      0
+     ],
+     "size": [
+      0.0358,
+      0.0807
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0575,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.0575,
+     -0.04
+    ],
+    "max": [
+     0.25,
+     0.0575,
+     0.04
+    ]
+   },
+   "triangles": 1524,
+   "pack": "modern",
+   "file": "modern/w-ppsh.glb",
+   "label": "PPSh"
+  },
+  {
+   "id": "w-m1911",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-m1911"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-m1911"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0513,
+      0
+     ],
+     "diameter": 0.033
+    },
+    "magazine": {
+     "pos": [
+      -0.0741,
+      0.0205,
+      0
+     ],
+     "size": [
+      0.068,
+      0.0887
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0682,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0682,
+     -0.0174
+    ],
+    "max": [
+     0.11,
+     0.0682,
+     0.0174
+    ]
+   },
+   "triangles": 830,
+   "pack": "modern",
+   "file": "modern/w-m1911.glb",
+   "label": "M1911"
+  },
+  {
+   "id": "w-garand",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-garand"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0508,
+      0
+     ],
+     "diameter": 0.0328
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0765,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.0765,
+     -0.0192
+    ],
+    "max": [
+     0.45,
+     0.0765,
+     0.0192
+    ]
+   },
+   "triangles": 714,
+   "pack": "modern",
+   "file": "modern/w-garand.glb",
+   "label": "M1 Garand"
+  },
+  {
+   "id": "w-luger",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-luger"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-luger"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0538,
+      0
+     ],
+     "diameter": 0.0223
+    },
+    "magazine": {
+     "pos": [
+      -0.0657,
+      0.0305,
+      0
+     ],
+     "size": [
+      0.0806,
+      0.0993
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0688,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0688,
+     -0.0168
+    ],
+    "max": [
+     0.11,
+     0.0688,
+     0.0168
+    ]
+   },
+   "triangles": 890,
+   "pack": "modern",
+   "file": "modern/w-luger.glb",
+   "label": "Luger P08"
+  },
+  {
+   "id": "w-xm8",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-xm8"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-xm8"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0417,
+      0.0037
+     ],
+     "diameter": 0.0235
+    },
+    "magazine": {
+     "pos": [
+      0.0114,
+      0.0215,
+      0
+     ],
+     "size": [
+      0.0969,
+      0.1797
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1582,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1582,
+     -0.0321
+    ],
+    "max": [
+     0.45,
+     0.1582,
+     0.0321
+    ]
+   },
+   "triangles": 1312,
+   "pack": "modern",
+   "file": "modern/w-xm8.glb",
+   "label": "XM8"
+  },
+  {
+   "id": "w-scarh",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-scarh"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-scarh"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0449,
+      0.0017
+     ],
+     "diameter": 0.0212
+    },
+    "magazine": {
+     "pos": [
+      -0.0216,
+      0.0168,
+      0
+     ],
+     "size": [
+      0.0813,
+      0.1505
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1338,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1338,
+     -0.0239
+    ],
+    "max": [
+     0.45,
+     0.1338,
+     0.0239
+    ]
+   },
+   "triangles": 1904,
+   "pack": "modern",
+   "file": "modern/w-scarh.glb",
+   "label": "SCAR-H"
+  },
+  {
+   "id": "w-m16a4",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-m16a4"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-m16a4"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0507,
+      0
+     ],
+     "diameter": 0.0229
+    },
+    "magazine": {
+     "pos": [
+      -0.0631,
+      0.018,
+      0
+     ],
+     "size": [
+      0.0711,
+      0.1299
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1119,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1119,
+     -0.0316
+    ],
+    "max": [
+     0.45,
+     0.1119,
+     0.0316
+    ]
+   },
+   "triangles": 1772,
+   "pack": "modern",
+   "file": "modern/w-m16a4.glb",
+   "label": "M16A4"
+  },
+  {
+   "id": "w-g36",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-g36"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-g36"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0759,
+      0
+     ],
+     "diameter": 0.026
+    },
+    "magazine": {
+     "pos": [
+      0.0843,
+      0.039,
+      0
+     ],
+     "size": [
+      0.1255,
+      0.2115
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1725,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1725,
+     -0.0396
+    ],
+    "max": [
+     0.45,
+     0.1725,
+     0.0396
+    ]
+   },
+   "triangles": 1604,
+   "pack": "modern",
+   "file": "modern/w-g36.glb",
+   "label": "G36"
+  },
+  {
+   "id": "w-ak47",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-ak47"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-ak47"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.1008,
+      0
+     ],
+     "diameter": 0.0704
+    },
+    "magazine": {
+     "pos": [
+      0.0209,
+      0.0706,
+      0
+     ],
+     "size": [
+      0.1458,
+      0.207
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1364,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1364,
+     -0.0289
+    ],
+    "max": [
+     0.45,
+     0.1364,
+     0.0289
+    ]
+   },
+   "triangles": 1414,
+   "pack": "modern",
+   "file": "modern/w-ak47.glb",
+   "label": "AK-47"
+  },
+  {
+   "id": "w-aa12",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-aa12"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-aa12"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0328,
+      0
+     ],
+     "diameter": 0.0359
+    },
+    "magazine": {
+     "pos": [
+      -0.0401,
+      0.0093,
+      0
+     ],
+     "size": [
+      0.093,
+      0.174
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1647,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.1647,
+     -0.087
+    ],
+    "max": [
+     0.5,
+     0.1647,
+     0.087
+    ]
+   },
+   "triangles": 1222,
+   "pack": "modern",
+   "file": "modern/w-aa12.glb",
+   "label": "AA-12"
+  },
+  {
+   "id": "w-uzi",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-uzi"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-uzi"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0617,
+      0
+     ],
+     "diameter": 0.018
+    },
+    "magazine": {
+     "pos": [
+      -0.0621,
+      0.0182,
+      0
+     ],
+     "size": [
+      0.0356,
+      0.1387
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1204,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1204,
+     -0.022
+    ],
+    "max": [
+     0.25,
+     0.1204,
+     0.022
+    ]
+   },
+   "triangles": 1766,
+   "pack": "modern",
+   "file": "modern/w-uzi.glb",
+   "label": "Uzi"
+  },
+  {
+   "id": "w-p90",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-p90"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-p90"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0092,
+      -0.0014
+     ],
+     "diameter": 0.0241
+    },
+    "magazine": {
+     "pos": [
+      0.0265,
+      0.05,
+      0
+     ],
+     "size": [
+      0.2797,
+      0.0253
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0932,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.0932,
+     -0.0277
+    ],
+    "max": [
+     0.25,
+     0.0932,
+     0.0277
+    ]
+   },
+   "triangles": 1236,
+   "pack": "modern",
+   "file": "modern/w-p90.glb",
+   "label": "P90"
+  },
+  {
+   "id": "w-mp5k",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-mp5k"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-mp5k"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0991,
+      0
+     ],
+     "diameter": 0.0218
+    },
+    "magazine": {
+     "pos": [
+      0.0386,
+      0.0685,
+      0
+     ],
+     "size": [
+      0.124,
+      0.2521
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1836,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1836,
+     -0.039
+    ],
+    "max": [
+     0.25,
+     0.1836,
+     0.039
+    ]
+   },
+   "triangles": 1894,
+   "pack": "modern",
+   "file": "modern/w-mp5k.glb",
+   "label": "MP5K"
+  },
+  {
+   "id": "w-vector",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-vector"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-vector"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0513,
+      0
+     ],
+     "diameter": 0.0189
+    },
+    "magazine": {
+     "pos": [
+      0.0477,
+      -0.006,
+      0
+     ],
+     "size": [
+      0.0752,
+      0.1179
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1238,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1238,
+     -0.0151
+    ],
+    "max": [
+     0.25,
+     0.1238,
+     0.0151
+    ]
+   },
+   "triangles": 1502,
+   "pack": "modern",
+   "file": "modern/w-vector.glb",
+   "label": "Vector"
+  },
+  {
+   "id": "w-f2000",
+   "type": "bullpup",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-f2000"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-f2000"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.375,
+      0.0453,
+      0.003
+     ],
+     "diameter": 0.0221
+    },
+    "magazine": {
+     "pos": [
+      -0.1406,
+      -0.0152,
+      0
+     ],
+     "size": [
+      0.0921,
+      0.1443
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1595,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.375,
+     -0.1595,
+     -0.0273
+    ],
+    "max": [
+     0.375,
+     0.1595,
+     0.0273
+    ]
+   },
+   "triangles": 1082,
+   "pack": "modern",
+   "file": "modern/w-f2000.glb",
+   "label": "F2000"
+  },
+  {
+   "id": "w-famas",
+   "type": "bullpup",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-famas"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-famas"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.375,
+      0.0466,
+      0
+     ],
+     "diameter": 0.0155
+    },
+    "magazine": {
+     "pos": [
+      -0.1668,
+      0.015,
+      0
+     ],
+     "size": [
+      0.0832,
+      0.1579
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1429,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.375,
+     -0.1429,
+     -0.0226
+    ],
+    "max": [
+     0.375,
+     0.1429,
+     0.0226
+    ]
+   },
+   "triangles": 1596,
+   "pack": "modern",
+   "file": "modern/w-famas.glb",
+   "label": "FAMAS"
+  },
+  {
+   "id": "w-spas12",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-spas12"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.057,
+      0
+     ],
+     "diameter": 0.0695
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1443,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.1443,
+     -0.037
+    ],
+    "max": [
+     0.5,
+     0.1443,
+     0.037
+    ]
+   },
+   "triangles": 2364,
+   "pack": "modern",
+   "file": "modern/w-spas12.glb",
+   "label": "SPAS-12"
+  },
+  {
+   "id": "w-sawedoff",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-sawedoff"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0806,
+      0
+     ],
+     "diameter": 0.0658
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1267,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.1267,
+     -0.0511
+    ],
+    "max": [
+     0.5,
+     0.1267,
+     0.0511
+    ]
+   },
+   "triangles": 636,
+   "pack": "modern",
+   "file": "modern/w-sawedoff.glb",
+   "label": "Sawed-off"
+  },
+  {
+   "id": "w-glock17",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-glock17"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-glock17"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0509,
+      -0.001
+     ],
+     "diameter": 0.0362
+    },
+    "magazine": {
+     "pos": [
+      -0.0698,
+      0.0263,
+      0
+     ],
+     "size": [
+      0.0739,
+      0.1033
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.077,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.077,
+     -0.0181
+    ],
+    "max": [
+     0.11,
+     0.077,
+     0.0181
+    ]
+   },
+   "triangles": 642,
+   "pack": "modern",
+   "file": "modern/w-glock17.glb",
+   "label": "Glock 17"
+  },
+  {
+   "id": "w-revolver",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-revolver"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.13,
+      0.0353,
+      0
+     ],
+     "diameter": 0.0256
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0552,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.13,
+     -0.0552,
+     -0.0163
+    ],
+    "max": [
+     0.13,
+     0.0552,
+     0.0163
+    ]
+   },
+   "triangles": 1446,
+   "pack": "modern",
+   "file": "modern/w-revolver.glb",
+   "label": "Revolver"
+  },
+  {
+   "id": "w-deagle",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-deagle"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-deagle"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0479,
+      0
+     ],
+     "diameter": 0.0207
+    },
+    "magazine": {
+     "pos": [
+      -0.0634,
+      0.007,
+      0
+     ],
+     "size": [
+      0.0521,
+      0.0728
+     ]
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0658,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0658,
+     -0.0177
+    ],
+    "max": [
+     0.11,
+     0.0658,
+     0.0177
+    ]
+   },
+   "triangles": 1040,
+   "pack": "modern",
+   "file": "modern/w-deagle.glb",
+   "label": "Desert Eagle"
+  },
+  {
+   "id": "w-usp45",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "w-usp45"
+    },
+    {
+     "role": "magazine",
+     "node": "magazine",
+     "source": "w-usp45"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0283,
+      0.0001
+     ],
+     "diameter": 0.0223
+    },
+    "magazine": {
+     "pos": [
+      -0.0893,
+      0.0141,
+      0
+     ],
+     "size": [
+      0.0413,
+      0.0578
+     ]
+    },
+    "top": {
+     "pos": [
+      0.0004,
+      0.0437,
+      0
+     ]
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0437,
+     -0.0099
+    ],
+    "max": [
+     0.11,
+     0.0437,
+     0.0099
+    ]
+   },
+   "triangles": 874,
+   "pack": "modern",
+   "file": "modern/w-usp45.glb",
+   "label": "USP .45 SD"
   }
  ]
 }

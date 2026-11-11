@@ -11,7 +11,7 @@ import * as THREE from "three";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 
-const TARGET_LENGTH = { pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, launcher: 1.1, flamethrower: 0.95, accessory: null };
+const TARGET_LENGTH = { lmg: 1.15, pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, launcher: 1.1, flamethrower: 0.95, accessory: null };
 
 // ---------- utilidades ----------
 async function fetchBuf(url) { const r = await fetch(url); if (!r.ok) throw new Error(`No se pudo leer ${url}`); return r.arrayBuffer(); }
@@ -196,6 +196,38 @@ async function convertQuaternius(job) {
   return finish(job.id, job.type, parts, { pack: job.pack });
 }
 
+// ---------- OBJ con varios objetos ("o Nombre"): un arma = varios objetos ----------
+const objCache = new Map();
+async function loadMultiOBJ(url) {
+  if (!objCache.has(url)) {
+    const V = [], objects = new Map(); let cur = "default";
+    for (const line of (await fetchText(url)).split("\n")) {
+      const c = line.charCodeAt(0);
+      if (c === 118 && line[1] === " ") { const p = line.split(/\s+/); V.push([+p[1], +p[2], +p[3]]); }
+      else if (c === 111 && line[1] === " ") { cur = line.slice(2).trim(); if (!objects.has(cur)) objects.set(cur, []); }
+      else if (c === 102 && line[1] === " ") { const p = line.trim().split(/\s+/).slice(1).map((x) => parseInt(x.split("/")[0], 10)); if (!objects.has(cur)) objects.set(cur, []); objects.get(cur).push(p.map((i) => (i < 0 ? V.length + i : i - 1))); }
+    }
+    objCache.set(url, { V, objects });
+  }
+  return objCache.get(url);
+}
+const OBJ_FINISH = { body: ["#33363a", 0.5, 0.55], magazine: ["#232427", 0.6, 0.4] };
+async function convertMultiOBJ(job) {
+  const { V, objects } = await loadMultiOBJ(job.obj);
+  const parts = [];
+  for (const rule of job.objects) {
+    const names = [...objects.keys()].filter((n) => new RegExp(rule.match).test(n));
+    if (!names.length) throw new Error(`${job.id}: no hay objeto ${rule.match}`);
+    const pos = [];
+    for (const n of names) for (const f of objects.get(n)) for (let t = 1; t < f.length - 1; t++) for (const vi of [f[0], f[t], f[t + 1]]) pos.push(...V[vi]);
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    const fin = OBJ_FINISH[rule.role] || OBJ_FINISH.body;
+    parts.push({ role: rule.role, source: job.id, mesh: new THREE.Mesh(g, flatMaterial(rule.role === "body" ? "Polymer" : "Steel", fin[0], { roughness: fin[1], metalness: fin[2] })) });
+  }
+  normalize(parts, job.type, job.hint || {});
+  return finish(job.id, job.type, parts, { pack: job.pack });
+}
+
 // ---------- FBX ----------
 const fbxCache = new Map();
 async function loadFBX(url) {
@@ -253,6 +285,6 @@ async function convertFBX(job) {
   return finish(job.id, job.type, parts, { pack: job.pack });
 }
 
-window.convertJob = async (job) => (job.kind === "obj" ? convertQuaternius(job) : convertFBX(job));
+window.convertJob = async (job) => (job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
 window.listFBX = async (url) => { const root = await loadFBX(url); const out = []; root.updateMatrixWorld(true); root.traverse((o) => { if (o.isMesh) { const b = new THREE.Box3().setFromObject(o); out.push({ name: o.name, min: b.min.toArray().map((v) => +v.toFixed(1)), max: b.max.toArray().map((v) => +v.toFixed(1)) }); } }); return out; };
 window.ready = true;
