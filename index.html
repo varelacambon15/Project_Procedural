@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Campo de Pruebas</title>
+  <title>Proving Grounds</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="./src/game/game.css">
@@ -13,8 +13,7 @@
   <div class="layer" id="bars"></div>
   <div class="layer" id="numbers"></div>
   <div id="bossbar"></div>
-  <div id="crosshair"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="dot"></i></div>
-  <div id="hitmarker"></div>
+  <div id="crosshair"><i class="dot"></i><i class="arc a1"></i><i class="arc a2"></i><i class="arc a3"></i><i class="arc a4"></i></div>
 
   <div class="hud" id="hint"></div>
   <div class="hud" id="weaponhud">
@@ -27,47 +26,50 @@
 
   <div class="screen" id="start">
     <div class="start">
-      <span class="eyebrow" style="color:var(--amber);font-size:11px;letter-spacing:.18em;text-transform:uppercase">Demo jugable · Fase 1</span>
-      <h1 id="start-title">Campo de Pruebas</h1>
-      <p id="start-text">Un campo de tiro para probar las armas procedurales. Abre el cofre para conseguir armas nuevas, personalízalas en el banco de trabajo y pruébalas contra muñecos con escudo, armadura y vida. Los muñecos reaparecen al caer.</p>
+      <div class="toprow">
+        <span class="eyebrow" data-i18n="ui.eyebrow"></span>
+        <label class="langsel"><span data-i18n="ui.language"></span> <select id="lang"></select></label>
+      </div>
+      <h1 id="start-title" data-i18n="ui.title"></h1>
+      <p id="start-text" data-i18n="ui.intro"></p>
       <div class="ctrl">
-        <dl><h3>Teclado y ratón</h3>
-          <dt>WASD</dt><dd>moverse</dd><dt>Ratón</dt><dd>apuntar</dd><dt>Clic izq. / der.</dt><dd>disparar / apuntar con mira</dd>
-          <dt>R</dt><dd>recargar</dd><dt>1 · 2 · Q · rueda</dt><dd>cambiar de arma</dd><dt>Shift · Espacio</dt><dd>correr · saltar</dd>
-          <dt>E</dt><dd>cofre / banco de trabajo</dd><dt>Tab</dt><dd>inventario</dd><dt>Esc</dt><dd>pausa</dd>
+        <dl><h3 data-i18n="ui.kbm"></h3>
+          <dt>WASD</dt><dd data-i18n="c.move"></dd><dt>Mouse</dt><dd data-i18n="c.look"></dd><dt>LMB / RMB</dt><dd data-i18n="c.fire"></dd>
+          <dt>R</dt><dd data-i18n="c.reload"></dd><dt>1 · 2 · Q · wheel</dt><dd data-i18n="c.swap"></dd><dt>Shift · Space</dt><dd data-i18n="c.sprint"></dd>
+          <dt>F</dt><dd data-i18n="c.inspect"></dd><dt>E</dt><dd data-i18n="c.use"></dd><dt>Tab</dt><dd data-i18n="c.inv"></dd><dt>Esc</dt><dd data-i18n="c.pause"></dd>
         </dl>
-        <dl><h3>Mando</h3>
-          <dt>Sticks</dt><dd>moverse · apuntar (con asistencia)</dd><dt>RT / LT</dt><dd>disparar / apuntar con mira</dd>
-          <dt>Ⓧ</dt><dd>recargar</dd><dt>Ⓨ</dt><dd>cambiar de arma</dd><dt>Ⓐ · L3</dt><dd>saltar · correr</dd>
-          <dt>Ⓑ</dt><dd>cofre / banco de trabajo</dd><dt>View</dt><dd>inventario</dd><dt>Start</dt><dd>pausa</dd>
-          <dt>En menús</dt><dd>stick izq. mueve el cursor, Ⓐ clic, Ⓑ volver</dd>
+        <dl><h3 data-i18n="ui.pad"></h3>
+          <dt>Sticks</dt><dd data-i18n="c.sticks"></dd><dt>RT / LT</dt><dd data-i18n="c.fire"></dd>
+          <dt>Ⓧ</dt><dd data-i18n="c.reload"></dd><dt>Ⓨ</dt><dd data-i18n="c.swap"></dd><dt>Ⓐ · L3</dt><dd data-i18n="c.sprint"></dd>
+          <dt>D-pad ↓</dt><dd data-i18n="c.inspect"></dd><dt>Ⓑ</dt><dd data-i18n="c.use"></dd><dt>View</dt><dd data-i18n="c.inv"></dd><dt>Start</dt><dd data-i18n="c.pause"></dd>
+          <dt data-i18n="c.menus"></dt><dd data-i18n="c.menus.d"></dd>
         </dl>
       </div>
-      <div><button class="btn" id="play" type="button">Entrar al campo</button></div>
+      <div><button class="btn" id="play" type="button" data-i18n="ui.play"></button></div>
     </div>
   </div>
 
   <div class="screen" id="inventory" hidden>
     <div class="frame">
-      <header><h1>Inventario</h1><span class="keys"><kbd>Clic</kbd> coger y soltar · <kbd>Clic der.</kbd> equipar / guardar · <kbd>X</kbd> desguazar (mochila) · <kbd>Tab</kbd> cerrar</span></header>
+      <header><h1 data-i18n="ui.inventory"></h1><span class="keys" data-i18n="ui.invKeys"></span></header>
       <div class="inv">
-        <section><h2 style="margin-bottom:10px">Equipadas</h2><div class="equip" id="inv-equip"></div></section>
-        <section><h2 style="margin-bottom:10px">Mochila</h2><div class="pack" id="inv-pack"></div></section>
+        <section><h2 style="margin-bottom:10px" data-i18n="ui.equipped"></h2><div class="equip" id="inv-equip"></div></section>
+        <section><h2 style="margin-bottom:10px" data-i18n="ui.backpack"></h2><div class="pack" id="inv-pack"></div></section>
       </div>
       <div class="inv-foot" id="inv-foot"></div>
-      <div><button class="btn ghost" data-close="1" type="button">Volver al campo</button></div>
+      <div><button class="btn ghost" data-close="1" type="button" data-i18n="ui.resume"></button></div>
     </div>
   </div>
 
   <div class="screen" id="workbench" hidden>
     <div class="frame">
-      <header><h1>Banco de trabajo</h1><span class="keys">Elige un arma · pasa el cursor por una pieza para ver el cambio · <kbd>E</kbd> cerrar</span></header>
+      <header><h1 data-i18n="ui.workbench"></h1><span class="keys" data-i18n="ui.benchKeys"></span></header>
       <div class="bench">
-        <section><h2 style="margin-bottom:10px">Tus armas</h2><div class="wlist" id="wb-list"></div></section>
-        <section style="display:grid;gap:12px"><div class="preview" id="wb-preview"><span class="tag">Arrastra para girar</span></div><div id="wb-card"></div></section>
-        <section><h2 style="margin-bottom:10px">Piezas</h2><div class="slotsbox" id="wb-slots"></div></section>
+        <section><h2 style="margin-bottom:10px" data-i18n="ui.yourWeapons"></h2><div class="wlist" id="wb-list"></div></section>
+        <section style="display:grid;gap:12px"><div class="preview" id="wb-preview"><span class="tag" data-i18n="ui.drag"></span></div><div id="wb-card"></div></section>
+        <section><h2 style="margin-bottom:10px" data-i18n="ui.parts"></h2><div class="slotsbox" id="wb-slots"></div></section>
       </div>
-      <div><button class="btn ghost" data-close="1" type="button">Volver al campo</button></div>
+      <div><button class="btn ghost" data-close="1" type="button" data-i18n="ui.resume"></button></div>
     </div>
   </div>
 

@@ -1,16 +1,17 @@
 // Muñecos de tiro con forma humana: capas de escudo / armadura / vida, estados elementales,
 // barras de vida flotantes, números de daño y reaparición.
 import * as THREE from "three";
+import { t } from "../i18n";
 
 export type Element = "fuego" | "corrosivo" | "electrico" | "radiacion" | null;
 export type Zone = "head" | "body" | "limb";
-interface Kind { name: string; shield: number; armor: number; health: number; level: number; scale?: number; boss?: boolean }
+interface Kind { key: string; shield: number; armor: number; health: number; level: number; scale?: number; boss?: boolean }
 export const KINDS: Record<string, Kind> = {
-  basic: { name: "Maniquí", shield: 0, armor: 0, health: 300, level: 10 },
-  armored: { name: "Maniquí blindado", shield: 0, armor: 350, health: 300, level: 12 },
-  shielded: { name: "Maniquí con escudo", shield: 350, armor: 0, health: 300, level: 12 },
-  elite: { name: "Élite de prueba", shield: 400, armor: 400, health: 500, level: 15, scale: 1.08 },
-  boss: { name: "Coloso de prueba", shield: 1500, armor: 2500, health: 4000, level: 20, scale: 1.7, boss: true },
+  basic: { key: "basic", shield: 0, armor: 0, health: 300, level: 10 },
+  armored: { key: "armored", shield: 0, armor: 350, health: 300, level: 12 },
+  shielded: { key: "shielded", shield: 350, armor: 0, health: 300, level: 12 },
+  elite: { key: "elite", shield: 400, armor: 400, health: 500, level: 15, scale: 1.08 },
+  boss: { key: "boss", shield: 1500, armor: 2500, health: 4000, level: 20, scale: 1.7, boss: true },
 };
 
 const ELEMENT_COLOR: Record<string, string> = { fuego: "#f07a2a", corrosivo: "#9bd23c", electrico: "#5cc8f0", radiacion: "#d8e04a" };
@@ -57,10 +58,13 @@ export class Dummy {
     this.build(kind);
     this.bar = document.createElement("div");
     this.bar.className = "hpbar" + (kind.boss ? " boss" : "");
-    this.bar.innerHTML = `<div class="hpname"><b>${kind.level}</b> ${kind.name}</div><div class="hptrack">${kind.shield ? '<i class="sh"></i>' : ""}${kind.armor ? '<i class="ar"></i>' : ""}<i class="hp"></i></div>`;
+    this.bar.innerHTML = `<div class="hpname"><b>${kind.level}</b> <span class="nm">${t(`dummy.${kind.key}`)}</span></div><div class="hptrack">${kind.shield ? '<i class="sh"></i>' : ""}${kind.armor ? '<i class="ar"></i>' : ""}<i class="hp"></i></div>`;
     (kind.boss ? document.getElementById("bossbar")! : overlay).appendChild(this.bar);
   }
   private onDamage: (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => void;
+
+  /** Vuelve a escribir el nombre (al cambiar de idioma). */
+  relabel() { this.bar.querySelector(".nm")!.textContent = t(`dummy.${this.kind.key}`); }
 
   /** Recorrido de ida y vuelta (blancos móviles). */
   setPath(a: THREE.Vector3, b: THREE.Vector3, speed: number) { this.path = { a, b, speed, t: Math.random() }; }

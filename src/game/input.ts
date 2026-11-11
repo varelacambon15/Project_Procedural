@@ -6,7 +6,7 @@ export interface Frame {
   fire: boolean; aim: boolean;           // mantenidos
   jump: boolean; reload: boolean; interact: boolean; swap: boolean; inventory: boolean; pause: boolean; // pulsados este fotograma
   sprint: boolean;
-  slot1: boolean; slot2: boolean;
+  slot1: boolean; slot2: boolean; inspect: boolean;
   device: "kbm" | "pad";
 }
 
@@ -62,7 +62,7 @@ export class Input {
       lookX: this.mouse.dx * this.sensitivity, lookY: this.mouse.dy * this.sensitivity,
       fire: this.mouse.left, aim: this.mouse.right, sprint: k("ShiftLeft"),
       jump: kp("Space"), reload: kp("KeyR"), interact: kp("KeyE"), swap: this.mouse.wheel !== 0 || kp("KeyQ"),
-      inventory: kp("Tab") || kp("KeyI"), pause: kp("Escape"), slot1: kp("Digit1"), slot2: kp("Digit2"), device: this.device,
+      inventory: kp("Tab") || kp("KeyI"), pause: kp("Escape"), slot1: kp("Digit1"), slot2: kp("Digit2"), inspect: kp("KeyF"), device: this.device,
     };
     this.mouse.dx = this.mouse.dy = 0; this.mouse.wheel = 0; this.pressed.clear();
     const p = this.pad();
@@ -75,6 +75,7 @@ export class Input {
       f.inventory ||= !!edges[8]; f.pause ||= !!edges[9];
       // Mando: Ⓐ saltar, Ⓑ interactuar, Ⓧ recargar, Ⓨ cambiar arma, View inventario, Start pausa
       f.interact ||= !!edges[1];
+      f.inspect ||= !!edges[13]; // cruceta abajo
     }
     const len = Math.hypot(f.moveX, f.moveZ); if (len > 1) { f.moveX /= len; f.moveZ /= len; }
     return f;

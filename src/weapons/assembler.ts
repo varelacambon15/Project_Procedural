@@ -3,9 +3,15 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { AssetEntry, PartRole, WeaponSpec } from "./types";
 import type { WeaponGenerator } from "./generator";
+import { accessory, buildMuzzle, buildOptic } from "./accessories";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
-export interface AssembledWeapon { group: THREE.Group; parts: AssembledPart[]; length: number; /** Punta del cañón (o del accesorio de boca), en coordenadas del grupo. */ muzzle: THREE.Vector3 }
+export interface AssembledWeapon {
+  group: THREE.Group; parts: AssembledPart[]; length: number;
+  /** Punta del cañón (o del accesorio de boca), en coordenadas del grupo. */ muzzle: THREE.Vector3;
+  /** Altura de la línea de mira (centro de la mira, si la lleva), en coordenadas del grupo. */ sightY: number | null;
+  /** Aumentos de la mira (1 = sin mira). */ zoom: number;
+}
 
 const v3 = (a: readonly number[]) => new THREE.Vector3(a[0], a[1], a[2]);
 
@@ -16,8 +22,21 @@ export class WeaponAssembler {
   constructor(private gen: WeaponGenerator, private baseUrl: string) {}
 
   private load(entry: AssetEntry): Promise<THREE.Group> {
-    if (!this.cache.has(entry.id)) this.cache.set(entry.id, this.loader.loadAsync(this.baseUrl + entry.file).then((g) => g.scene));
+    if (!this.cache.has(entry.id)) this.cache.set(entry.id, this.fetchModel(this.baseUrl + entry.file));
     return this.cache.get(entry.id)!;
+  }
+
+  /**
+   * Carga un .glb, o un .gltf en JSON con el buffer incrustado en base64. En este segundo caso el buffer se
+   * descodifica aquí y se reconstruye un .glb en memoria: algunos visores bloquean que el cargador lea URIs data:.
+   */
+  private async fetchModel(url: string): Promise<THREE.Group> {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${url}: ${res.status}`);
+    let buf = await res.arrayBuffer();
+    if (new Uint32Array(buf, 0, 1)[0] !== 0x46546c67) buf = jsonToGlb(JSON.parse(new TextDecoder().decode(buf)));
+    const gltf = await this.loader.parseAsync(buf, "");
+    return gltf.scene;
   }
 
   /** Copia las mallas de un rol de un arma (geometría compartida, material propio). */
@@ -88,10 +107,20 @@ export class WeaponAssembler {
         add(mag, "magazine", magE, [0, -1.2, 0]);
       }
       if (bodyE.sockets.optic) { opticTarget = v3(bodyE.sockets.optic.pos); opticLength = bodyE.sockets.optic.size?.[0] ?? 0; }
+      else if (bodyE.sockets.rail) { opticTarget = v3(bodyE.sockets.rail.pos); opticLength = bodyE.sockets.rail.length ?? 0.1; }
     }
+    let sight: number | null = null, zoom = 1;
 
     // Mira: la propia del arma o una de otra arma/accesorio, apoyada en el socket "optic" o en la parte superior.
-    if (spec.optic && opticTarget) {
+    const optAcc = accessory(spec.optic);
+    if (optAcc && opticTarget) {
+      // Mira propia, generada a medida del raíl
+      const { group: opt, sightHeight } = buildOptic(optAcc.id, opticLength, length0);
+      opt.position.copy(opticTarget).add(new THREE.Vector3(0, -0.002, 0));
+      group.add(opt);
+      parts.push({ object: opt, role: "scope", from: { id: optAcc.id, label: optAcc.id, pack: "acc" } as AssetEntry, explode: new THREE.Vector3(0, 1.4, 0), base: opt.position.clone() });
+      sight = opticTarget.y + sightHeight; zoom = optAcc.zoom ?? 1;
+    } else if (spec.optic && opticTarget) {
       const optE = get(spec.optic);
       const opt = await this.nodes(optE, "scope");
       if (optE.id !== spec.parts[0].from) {
@@ -101,10 +130,19 @@ export class WeaponAssembler {
         opt.position.copy(opticTarget.clone().sub(v3(src.pos).multiplyScalar(k)));
       }
       add(opt, "scope", optE, [0, 1.4, 0]);
+      const ob = new THREE.Box3().setFromObject(opt); sight = (ob.min.y + ob.max.y) / 2; zoom = 2.5;
     }
 
     // Accesorio de boca: su parte trasera en la boca del cañón, escalado al diámetro.
-    if (spec.muzzle && muzzle) {
+    const muzAcc = accessory(spec.muzzle);
+    if (muzAcc && muzzle) {
+      // Dispositivo de boca propio, del diámetro exacto del cañón
+      const { group: dev, length: dl } = buildMuzzle(muzAcc.id, muzzleDiameter, length0);
+      dev.position.copy(muzzle).add(new THREE.Vector3(-0.002, 0, 0));
+      group.add(dev);
+      parts.push({ object: dev, role: "muzzle", from: { id: muzAcc.id, label: muzAcc.id, pack: "acc" } as AssetEntry, explode: new THREE.Vector3(1.2, 0.3, 0), base: dev.position.clone() });
+      muzzle = muzzle.clone().add(new THREE.Vector3(dl, 0, 0));
+    } else if (spec.muzzle && muzzle && this.gen.byId.has(spec.muzzle)) {
       const accE = get(spec.muzzle);
       const acc = await this.nodes(accE, "muzzle");
       const h = accE.bounds.max[1] - accE.bounds.min[1];
@@ -115,20 +153,37 @@ export class WeaponAssembler {
       muzzle = new THREE.Vector3(acc.position.x + (accE.bounds.max[0] - accE.bounds.min[0]) * k, muzzle.y, 0);
     }
 
+    // Estilos igualados: los modelos más gruesos que un arma real se estrechan un poco.
+    const raw = new THREE.Box3().setFromObject(group);
+    const thick = raw.max.z - raw.min.z, long = raw.max.x - raw.min.x;
+    const maxRatio = MAX_THICKNESS[spec.type] ?? 0.1;
+    if (thick / long > maxRatio) group.scale.z = Math.max(0.6, (maxRatio * long) / thick);
+
     // Centrar y guardar posiciones base para el despiece.
     const box = new THREE.Box3().setFromObject(group);
     const center = box.getCenter(new THREE.Vector3());
     const length = box.max.x - box.min.x;
     for (const p of parts) { p.object.position.sub(center); p.base.copy(p.object.position); p.explode.multiplyScalar(length * 0.18); }
     const muzzleOut = (muzzle ?? new THREE.Vector3(box.max.x, center.y, 0)).clone().sub(center);
-    return { group, parts, length, muzzle: muzzleOut };
+    return { group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, zoom };
   }
 }
 
-/** Acabado más realista: el metal refleja el entorno; los plásticos y la madera, poco. */
+/** Grosor máximo (ancho / largo) según el tipo, como en armas reales. */
+const MAX_THICKNESS: Partial<Record<string, number>> = { pistol: 0.17, revolver: 0.2, smg: 0.12, rifle: 0.08, bullpup: 0.1, shotgun: 0.075, sniper: 0.075, lmg: 0.11, launcher: 0.16, flamethrower: 0.16 };
+
+/**
+ * Acabado común a todos los packs, para que convivan: colores poco saturados y en el rango de tonos
+ * de un arma real (acero, polímero, madera). El metal refleja el entorno; plásticos y madera, poco.
+ */
 function finish(src: THREE.Material): THREE.Material {
   const m = src.clone() as THREE.MeshStandardMaterial;
   if (!m.isMeshStandardMaterial) return m;
+  const wood = /Wood|Handle/i.test(m.name);
+  if (!m.map) {
+    const hsl = { h: 0, s: 0, l: 0 }; m.color.getHSL(hsl);
+    m.color.setHSL(hsl.h, hsl.s * (wood ? 0.6 : 0.3), THREE.MathUtils.clamp(hsl.l, 0.02, wood ? 0.3 : 0.24));
+  }
   if (/Wood|Handle/i.test(m.name)) { m.metalness = 0.0; m.roughness = 0.75; }
   else if (/Polymer|Plastic|Black2/i.test(m.name)) { m.metalness = 0.15; m.roughness = 0.6; }
   else { m.metalness = Math.max(m.metalness, 0.6); m.roughness = Math.min(m.roughness, 0.45); }
@@ -156,7 +211,29 @@ function paint(obj: THREE.Object3D, spec: WeaponSpec) {
     for (const mat of (Array.isArray(m.material) ? m.material : [m.material]) as THREE.MeshStandardMaterial[]) {
       if (mat.map) mat.color.copy(new THREE.Color(1, 1, 1).lerp(tint, 0.3));
       else if (/Wood|Handle/i.test(mat.name)) continue;
-      else mat.color.lerp(tint, 0.85);
+      else mat.color.lerp(tint, 0.7);
     }
   });
+}
+
+/** Convierte un glTF JSON con buffer en base64 en un .glb binario. */
+function jsonToGlb(json: { buffers?: { uri?: string; byteLength: number }[] }): ArrayBuffer {
+  let bin = new Uint8Array(0);
+  const uri = json.buffers?.[0]?.uri;
+  if (uri?.startsWith("data:")) {
+    const raw = atob(uri.slice(uri.indexOf(",") + 1));
+    bin = new Uint8Array(raw.length); for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+    delete json.buffers![0].uri;
+  }
+  const pad = (n: number) => (n + 3) & ~3;
+  let jsonBytes = new TextEncoder().encode(JSON.stringify(json));
+  const jLen = pad(jsonBytes.length), bLen = pad(bin.length);
+  const out = new Uint8Array(12 + 8 + jLen + (bin.length ? 8 + bLen : 0));
+  const dv = new DataView(out.buffer);
+  dv.setUint32(0, 0x46546c67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.length, true);
+  dv.setUint32(12, jLen, true); dv.setUint32(16, 0x4e4f534a, true);
+  out.fill(0x20, 20, 20 + jLen); out.set(jsonBytes, 20);
+  if (bin.length) { const o = 20 + jLen; dv.setUint32(o, bLen, true); dv.setUint32(o + 4, 0x004e4942, true); out.set(bin, o + 8); }
+  jsonBytes = new Uint8Array(0);
+  return out.buffer;
 }

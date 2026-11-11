@@ -1,14 +1,18 @@
 // Banco de armero: genera armas, las monta en 3D y muestra su ficha.
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { WeaponGenerator, TYPE_INFO, PELLETS } from "../weapons/generator";
+import { WeaponGenerator, TYPE_INFO, type BaseType } from "../weapons/generator";
+import { archName, damageText, effectDesc, effectName, paintName, partLabel, rarityName, roleName, typeName } from "../weapons/labels";
+import { setLang, getLang } from "../i18n";
 import { WeaponAssembler, type AssembledWeapon } from "../weapons/assembler";
-import type { Manifest, PartRole, StatKey, WeaponSpec, WeaponType } from "../weapons/types";
+import type { Manifest, PartRole, StatKey, WeaponSpec } from "../weapons/types";
+type WeaponType = BaseType;
+setLang(getLang());
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const ASSETS = "./weapons/";
 
-const ROLE_NAME: Record<PartRole, string> = { body: "Cuerpo", frame: "Armazón", slide: "Corredera", barrel: "Cañón", magazine: "Cargador", scope: "Mira", muzzle: "Boca" };
+const ROLE_NAME = (r: PartRole) => roleName(r);
 const STAT_DEF: [StatKey, string, (v: number, s: WeaponSpec) => string][] = [
   ["cadencia", "Cadencia", (v) => `${Math.round(v)}/min`],
   ["precision", "Precisión", (v) => `${Math.round(v)}`],
@@ -66,29 +70,27 @@ async function show(seed: number) {
 function render(s: WeaponSpec) {
   document.documentElement.style.setProperty("--rar", s.rarity.color);
   rarityLight.color.set(s.rarity.color);
-  $("rarity").textContent = s.rarity.name;
+  $("rarity").textContent = rarityName(s);
   $("name").textContent = s.name;
-  $("type").textContent = TYPE_INFO[s.type as keyof typeof TYPE_INFO].name;
+  $("type").textContent = `${typeName(s.type)} · ${archName(s)}`;
   $("level").textContent = String(s.level);
   $("seed").textContent = String(s.seed);
-  const pellets = PELLETS[s.type];
-  const twin = s.effects.some((f) => f.id === "doble");
-  $("damage").textContent = `${Math.round(s.stats.dano)}${pellets ? ` ×${pellets * (twin ? 2 : 1)}` : twin ? " ×2" : ""}`;
+  $("damage").innerHTML = damageText(s);
   const base = TYPE_INFO[s.type as keyof typeof TYPE_INFO].base;
   $("stats").innerHTML = STAT_DEF.map(([k, n, f]) => {
     const pct = THREE.MathUtils.clamp((s.stats[k] / (k === "precision" || k === "manejo" ? 100 : base[k] * 1.6)) * 100, 4, 100);
     return `<span class="k">${n}</span><span class="meter"><i style="width:${pct}%"></i></span><span class="v">${f(s.stats[k], s)}</span>`;
   }).join("");
   $("effects").innerHTML = s.effects.length
-    ? s.effects.map((f) => `<div class="effect"><span class="ico" style="color:${f.color}">${f.icon}</span><div><b style="color:${f.color}">${f.name}</b><small>${f.text}</small></div></div>`).join("")
+    ? s.effects.map((f) => `<div class="effect"><span class="ico" style="color:${f.color}">${f.icon}</span><div><b style="color:${f.color}">${effectName(f)}</b><small>${effectDesc(f)}</small></div></div>`).join("")
     : `<span class="none">Sin efectos especiales. Chatarra fiable.</span>`;
   const rows = current!.built.parts.map((p) => {
-    const note = p.role === "barrel" && s.barrelLength !== 1 ? ` · longitud ×${s.barrelLength.toFixed(2)}` : (p.role === "body" || p.role === "slide") && s.paint.color ? ` · pintura ${s.paint.name.toLowerCase()}` : "";
-    return `<li><span class="slot">${ROLE_NAME[p.role]}</span><span><span class="src">${p.from.label.replace("Accessories/", "")}</span> <small>${p.from.pack}</small>${note}</span></li>`;
+    const note = p.role === "barrel" && s.barrelLength !== 1 ? ` · longitud ×${s.barrelLength.toFixed(2)}` : (p.role === "body" || p.role === "slide") && s.paint.color ? ` · ${paintName(s.paint).toLowerCase()}` : "";
+    return `<li><span class="slot">${ROLE_NAME(p.role)}</span><span><span class="src">${partLabel(gen.byId, p.from.id)}</span> <small>${p.from.pack}</small>${note}</span></li>`;
   });
   $("parts").innerHTML = rows.join("");
   const callouts = $("callouts");
-  callouts.innerHTML = current!.built.parts.map((p, i) => `<div class="callout" data-i="${i}">${ROLE_NAME[p.role]} · <b>${p.from.label.replace("Accessories/", "")}</b></div>`).join("");
+  callouts.innerHTML = current!.built.parts.map((p, i) => `<div class="callout" data-i="${i}">${ROLE_NAME(p.role)} · <b>${partLabel(gen.byId, p.from.id)}</b></div>`).join("");
 }
 
 function placeCallouts() {
@@ -108,7 +110,7 @@ function placeCallouts() {
 function buildTypeButtons() {
   const nav = $("types");
   const opts: (WeaponType | null)[] = [null, ...gen.types];
-  nav.innerHTML = opts.map((t) => `<button type="button" data-t="${t ?? ""}" aria-pressed="${t === typeFilter}">${t ? TYPE_INFO[t as keyof typeof TYPE_INFO].name : "Todas"}</button>`).join("");
+  nav.innerHTML = opts.map((t) => `<button type="button" data-t="${t ?? ""}" aria-pressed="${t === typeFilter}">${t ? typeName(t) : "All"}</button>`).join("");
   nav.onclick = (e) => { const b = (e.target as HTMLElement).closest("button"); if (!b) return; setType((b.dataset.t || null) as WeaponType | null); };
 }
 function setType(t: WeaponType | null) { typeFilter = t; buildTypeButtons(); newWeapon(); }

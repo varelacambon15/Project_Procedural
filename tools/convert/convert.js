@@ -108,6 +108,17 @@ function sockets(parts) {
     if (p.role === "barrel") S.barrel = { pos: [bb.min.x, (bb.min.y + bb.max.y) / 2, 0], length: bb.max.x - bb.min.x };
   }
   if (body) { const bb = boxOf(parts.filter((p) => ["body", "slide", "frame"].includes(p.role)).map((p) => p.mesh)); S.top = { pos: [(bb.min.x + bb.max.x) / 2, bb.max.y, 0] }; }
+  // Raíl para miras: lo más alto del cuerpo en su tercio central (encima del cajón de mecanismos).
+  const bodies = parts.filter((p) => p.role === "body");
+  if (bodies.length) {
+    const bb = boxOf(bodies.map((p) => p.mesh)); const L = bb.max.x - bb.min.x;
+    const x0 = bb.min.x + L * 0.3, x1 = bb.min.x + L * 0.62;
+    // Altura superior de cada franja; se usa la mediana para no apoyarse en asas, alzas o miras fijas.
+    const N = 14, tops = new Array(N).fill(-Infinity);
+    for (const p of bodies) { const a = p.mesh.geometry.attributes.position; for (let i = 0; i < a.count; i++) { const x = a.getX(i); if (x > x0 && x < x1) { const k = Math.min(N - 1, Math.floor(((x - x0) / (x1 - x0)) * N)); tops[k] = Math.max(tops[k], a.getY(i)); } } }
+    const valid = tops.filter((v) => v > -Infinity).sort((p, q) => p - q);
+    if (valid.length) S.rail = { pos: [(x0 + x1) / 2, valid[Math.floor(valid.length * 0.4)], 0], length: x1 - x0 };
+  }
   const all = boxOf(parts.map((p) => p.mesh));
   return { sockets: S, bounds: { min: all.min.toArray().map((v) => +v.toFixed(4)), max: all.max.toArray().map((v) => +v.toFixed(4)) } };
 }

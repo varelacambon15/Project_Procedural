@@ -26,16 +26,22 @@ describe("banco de trabajo", () => {
   });
 
   it("quitar el silenciador cambia el nombre técnico", () => {
-    const w = Array.from({ length: 400 }, (_, s) => gen.generate(s)).find((x) => x.muzzle && x.rarity.id !== "legendaria")!;
+    const w = Array.from({ length: 400 }, (_, s) => gen.generate(s)).find((x) => x.muzzle?.startsWith("acc:suppressor") && x.rarity.id !== "legendaria")!;
     expect(w.name).toContain("SD");
     swap(gen, w, "muzzle", null);
     expect(w.name).not.toContain("SD");
+  });
+
+  it("una mira de accesorio encaja en un fusil con raíl pero no en un francotirador", () => {
+    const rifle = Array.from({ length: 300 }, (_, s) => gen.generate(s, "rifle")).find((x) => gen.opticOptions(x).length)!;
+    expect(fits(gen, rifle, "scope", newPart("scope", "acc:reddot"))).toBe(true);
+    expect(fits(gen, gen.generate(1, "sniper"), "scope", newPart("scope", "acc:reddot"))).toBe(false);
   });
 
   it("desguazar devuelve las piezas reutilizables y chatarra", () => {
     const w = gen.generate(42, "pistol");
     const r = scrap(w);
     expect(r.scrap).toBeGreaterThan(0);
-    for (const p of r.parts) expect(gen.byId.has(p.from)).toBe(true);
+    for (const p of r.parts) expect(gen.byId.has(p.from) || p.from.startsWith("acc:")).toBe(true);
   });
 });

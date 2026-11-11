@@ -33,6 +33,12 @@ Se desarrolla en dos etapas que comparten el mismo núcleo:
 | Nombres | Legendarias: nombre propio **en inglés**. Resto: designación técnica (`PV-45L SD Mk II`) |
 | Aspecto de las armas | Lo más parecido a armas modernas: acabados reales (negro mate, FDE, oliva, gris), metal con reflejos, paletas apagadas. Los modelos realistas salen más a menudo |
 | Mezcla de piezas | Cargadores y miras solo entre armas del mismo pack, para que el estilo encaje |
+| Comportamiento | Cada tipo tiene su perfil (subfusil = cadencia, revólver = potencia…) y variantes: pistola automática o pesada, subfusil táctico (lento), fusil de ráfagas o de tirador, escopeta de corredera, semi, automática o de dos cañones, francotirador de cerrojo, semi o antimaterial. El modelo decide la variante habitual (AA-12 automática, M16 por ráfagas, L115 de cerrojo) y la capacidad real del cargador, con un 30% de variantes distintas |
+| Habilidades | Blanca: ninguna. Verde: mejores estadísticas. Azul: 1 habilidad moderada. Morada: 2. Legendaria: 2 + 1 especial (rebote, doble cañón, eco, carroñero, detonador, arco en cadena, frenesí, perforador) |
+| Accesorios | Supresores, compensador, freno, apagallamas y miras (punto rojo, holográfica, 4x, 6x) generados por código a medida de cada arma |
+| Animaciones | Procedurales estilo Destiny / MW: inercia, balanceo, sprint táctico, salto, retroceso, recarga con el cargador, corredera/cerrojo, sacar e inspeccionar. Más adelante, brazos animados |
+| Interfaz | Retícula y cursor circular estilo Destiny. Inglés por defecto, español seleccionable |
+| Plataformas | Web y escritorio (.exe vía Electron, publicado en Releases). Android posible más adelante con Capacitor |
 
 ## Sistema de armas
 

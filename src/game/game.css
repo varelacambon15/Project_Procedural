@@ -42,16 +42,22 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: #0d0e0f; col
 .dmg.crit { font-size: 25px; }
 .dmg.crit::after { content: "!"; }
 
-/* Mira y marcadores */
-#crosshair { position: fixed; left: 50%; top: 50%; pointer-events: none; }
-#crosshair i { position: absolute; background: rgba(255,255,255,.9); box-shadow: 0 0 2px #000; }
-#crosshair .t, #crosshair .b { width: 2px; height: 8px; left: -1px; }
-#crosshair .l, #crosshair .r { height: 2px; width: 8px; top: -1px; }
-#crosshair .dot { width: 2px; height: 2px; left: -1px; top: -1px; }
-#hitmarker { position: fixed; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px; opacity: 0; pointer-events: none; }
-#hitmarker::before, #hitmarker::after { content: ""; position: absolute; left: 10px; top: -2px; width: 2px; height: 26px; background: #fff; transform: rotate(45deg); clip-path: polygon(0 0,100% 0,100% 35%,0 35%,0 65%,100% 65%,100% 100%,0 100%); }
-#hitmarker::after { transform: rotate(-45deg); }
-#hitmarker.crit::before, #hitmarker.crit::after { background: #ffd84a; }
+/* Retícula estilo Destiny: punto central y cuatro arcos que se abren con la dispersión */
+#crosshair { --r: 12px; --cc: rgba(255,255,255,.92); position: fixed; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; transition: opacity .12s; }
+#crosshair i { position: absolute; }
+#crosshair .dot { width: 4px; height: 4px; left: -2px; top: -2px; border-radius: 50%; background: var(--cc); box-shadow: 0 0 3px rgba(0,0,0,.8); }
+#crosshair .arc { width: calc(var(--r) * 2); height: calc(var(--r) * 2); left: calc(var(--r) * -1); top: calc(var(--r) * -1); border-radius: 50%; border: 2px solid transparent; filter: drop-shadow(0 0 1.5px rgba(0,0,0,.9)); transition: width .06s, height .06s, left .06s, top .06s; }
+#crosshair .a1 { border-top-color: var(--cc); transform: rotate(0deg); clip-path: polygon(30% 0, 70% 0, 50% 50%); }
+#crosshair .a2 { border-right-color: var(--cc); clip-path: polygon(100% 30%, 100% 70%, 50% 50%); }
+#crosshair .a3 { border-bottom-color: var(--cc); clip-path: polygon(30% 100%, 70% 100%, 50% 50%); }
+#crosshair .a4 { border-left-color: var(--cc); clip-path: polygon(0 30%, 0 70%, 50% 50%); }
+#crosshair[data-type="sniper"] .arc { display: none; }
+#crosshair[data-type="shotgun"] .arc { border-width: 2px; }
+#crosshair[data-type="pistol"] .a1, #crosshair[data-type="revolver"] .a1 { display: none; }
+#crosshair.hit { --cc: #ffffff; }
+#crosshair.hit .arc { border-width: 3px; }
+#crosshair.crit { --cc: #ffd84a; }
+#crosshair.kill { --cc: #ff5a4e; }
 
 /* HUD inferior */
 .hud { position: fixed; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,.8); }
@@ -164,7 +170,18 @@ button { font: inherit; color: inherit; }
 .ctrl dt { white-space: nowrap; } .ctrl dd { margin: 0; color: var(--dim); }
 .ctrl h3 { grid-column: 1/-1; margin: 0 0 4px; font-size: 10px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--amber); }
 
-/* Cursor virtual del mando */
-#vcursor { position: fixed; width: 18px; height: 18px; margin: -2px 0 0 -2px; z-index: 50; pointer-events: none; background: var(--amber); clip-path: polygon(0 0, 100% 60%, 55% 62%, 75% 100%, 60% 100%, 42% 66%, 0 90%); filter: drop-shadow(0 1px 1px #000); }
+/* Cursor circular de los menús (ratón y mando) */
+body.menu-cursor, body.menu-cursor * { cursor: none !important; }
+#vcursor { position: fixed; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px; z-index: 50; pointer-events: none; border-radius: 50%; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 0 0 1px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,.25); transition: width .12s, height .12s, margin .12s, background .12s; }
+#vcursor::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #fff; }
+#vcursor.over { width: 34px; height: 34px; margin: -17px 0 0 -17px; background: rgba(242,165,65,.18); border-color: var(--amber); }
+#vcursor.press { width: 20px; height: 20px; margin: -10px 0 0 -10px; }
+.toprow { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.eyebrow { color: var(--amber); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; }
+.langsel { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.langsel select { font: inherit; text-transform: none; letter-spacing: 0; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); padding: 6px 8px; }
+.cell.active::after { content: attr(data-inhand); }
+.fx.special b { text-transform: uppercase; letter-spacing: .06em; }
+.card .meta { color: var(--dim); font-size: 11px; }
 @media (prefers-reduced-motion: reduce) { #toast, #loot, .hptrack i { transition: none; } }
 .cell.sel { outline: 2px solid var(--amber); }

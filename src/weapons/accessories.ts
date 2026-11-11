@@ -1,0 +1,110 @@
+// Accesorios propios: dispositivos de boca y miras generados por código, a medida de cada arma.
+// Así encajan siempre (diámetro de la boca, largo del raíl) y comparten el mismo estilo realista.
+import * as THREE from "three";
+import type { Stats } from "./types";
+
+export interface AccessoryDef { id: string; kind: "muzzle" | "optic"; mods: Partial<Stats>; zoom?: number; quiet?: boolean; for?: string[] }
+
+export const ACCESSORIES: AccessoryDef[] = [
+  { id: "acc:suppressor-s", kind: "muzzle", mods: { precision: 3, dano: -3, alcance: 2 }, quiet: true },
+  { id: "acc:suppressor-l", kind: "muzzle", mods: { precision: 5, dano: -2, alcance: 6, manejo: -4 }, quiet: true },
+  { id: "acc:compensator", kind: "muzzle", mods: { manejo: 6, precision: 2 } },
+  { id: "acc:brake", kind: "muzzle", mods: { manejo: 9, precision: -2 } },
+  { id: "acc:flashhider", kind: "muzzle", mods: { precision: 3 } },
+  { id: "acc:reddot", kind: "optic", mods: { precision: 3 }, zoom: 1.25 },
+  { id: "acc:holo", kind: "optic", mods: { precision: 4, manejo: -1 }, zoom: 1.35, for: ["rifle", "bullpup", "lmg", "smg", "shotgun"] },
+  { id: "acc:acog", kind: "optic", mods: { precision: 8, alcance: 10, manejo: -6 }, zoom: 3, for: ["rifle", "bullpup", "lmg", "smg"] },
+  { id: "acc:scope6", kind: "optic", mods: { precision: 12, alcance: 20, manejo: -10 }, zoom: 5, for: ["rifle", "bullpup", "sniper"] },
+];
+export const accessory = (id: string | null) => (id ? ACCESSORIES.find((a) => a.id === id) ?? null : null);
+export const isAccessory = (id: string | null) => !!id && id.startsWith("acc:");
+
+const black = () => new THREE.MeshStandardMaterial({ name: "Steel", color: 0x1c1d1f, metalness: 0.75, roughness: 0.42 });
+const polymer = () => new THREE.MeshStandardMaterial({ name: "Polymer", color: 0x232426, metalness: 0.15, roughness: 0.65 });
+const glass = () => new THREE.MeshStandardMaterial({ name: "Glass", color: 0x2a4f6e, metalness: 0.9, roughness: 0.05, transparent: true, opacity: 0.55 });
+const redDot = () => new THREE.MeshBasicMaterial({ color: 0xff3020 });
+
+/** Cilindro tumbado a lo largo de +X, empezando en x=0. */
+function tube(r: number, len: number, mat: THREE.Material, x0 = 0, seg = 16) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, seg), mat);
+  m.rotation.z = -Math.PI / 2; m.position.x = x0 + len / 2; return m;
+}
+
+/**
+ * Dispositivo de boca. Origen en la parte trasera, eje +X hacia delante.
+ * `d` = diámetro de la boca del cañón; `L` = longitud del arma (para proporciones).
+ */
+export function buildMuzzle(id: string, d: number, L: number): { group: THREE.Group; length: number } {
+  const g = new THREE.Group();
+  const r = Math.max(0.006, d / 2);
+  const steel = black();
+  let len = 0;
+  switch (id) {
+    case "acc:suppressor-s":
+    case "acc:suppressor-l": {
+      const R = Math.max(r * 1.9, 0.014);
+      len = Math.max(0.09, L * (id === "acc:suppressor-s" ? 0.14 : 0.24));
+      g.add(tube(r * 1.15, len * 0.08, steel, 0));
+      g.add(tube(R * 0.92, len * 0.06, steel, len * 0.06));
+      g.add(tube(R, len * 0.82, steel, len * 0.1, 20));
+      g.add(tube(R * 0.85, len * 0.08, steel, len * 0.92, 20));
+      for (let i = 1; i < 4; i++) g.add(tube(R * 1.03, len * 0.012, steel, len * (0.1 + i * 0.2), 20));
+      break;
+    }
+    case "acc:compensator": {
+      len = Math.max(0.035, L * 0.06);
+      g.add(tube(r * 1.5, len, steel, 0));
+      for (let i = 0; i < 3; i++) { const slot = new THREE.Mesh(new THREE.BoxGeometry(len * 0.12, r * 0.8, r * 3.2), polymer()); slot.position.set(len * (0.3 + i * 0.22), r * 1.2, 0); g.add(slot); }
+      break;
+    }
+    case "acc:brake": {
+      len = Math.max(0.045, L * 0.07);
+      g.add(tube(r * 1.4, len * 0.3, steel, 0));
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(len * 0.7, r * 2.2, r * 3.6), steel)).position.set(len * 0.62, 0, 0);
+      for (let i = 0; i < 2; i++) { const s = new THREE.Mesh(new THREE.BoxGeometry(len * 0.1, r * 2.3, r * 3.7), polymer()); s.position.set(len * (0.48 + i * 0.25), 0, 0); g.add(s); }
+      break;
+    }
+    default: { // flash hider
+      len = Math.max(0.035, L * 0.055);
+      g.add(tube(r * 1.25, len * 0.35, steel, 0));
+      for (let i = 0; i < 4; i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(len * 0.65, r * 0.45, r * 0.45), steel); const a = (i / 4) * Math.PI * 2 + Math.PI / 4; p.position.set(len * 0.67, Math.sin(a) * r * 1.05, Math.cos(a) * r * 1.05); g.add(p); }
+    }
+  }
+  return { group: g, length: len };
+}
+
+/** Mira. Origen en la base (centro inferior), eje +X hacia delante. `rail` = largo disponible del raíl. */
+export function buildOptic(id: string, rail: number, L: number): { group: THREE.Group; sightHeight: number } {
+  const g = new THREE.Group();
+  const steel = black(), poly = polymer();
+  const base = (w: number) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, 0.008, 0.022), steel); b.position.y = 0.004; g.add(b); };
+  let h = 0.03;
+  if (id === "acc:reddot") {
+    base(0.05);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.03), poly); body.position.set(0, 0.023, 0); g.add(body);
+    const hood = tube(0.016, 0.03, steel, -0.015, 20); hood.position.y = 0.04; g.add(hood);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.013, 20), glass()); lens.rotation.y = Math.PI / 2; lens.position.set(0.016, 0.04, 0); g.add(lens);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.0012, 6, 4), redDot()); dot.position.set(0.01, 0.04, 0); g.add(dot);
+    h = 0.04;
+  } else if (id === "acc:holo") {
+    base(0.07);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.018, 0.034), poly); body.position.set(0, 0.017, 0); g.add(body);
+    for (const x of [-0.032, 0.032]) { const post = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.04, 0.036), steel); post.position.set(x, 0.045, 0); g.add(post); }
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.006, 0.036), steel); roof.position.set(0, 0.066, 0); g.add(roof);
+    const win = new THREE.Mesh(new THREE.PlaneGeometry(0.028, 0.034), glass()); win.rotation.y = Math.PI / 2; win.position.set(0.03, 0.045, 0); g.add(win);
+    const dot = new THREE.Mesh(new THREE.RingGeometry(0.0025, 0.0035, 16), redDot()); dot.rotation.y = Math.PI / 2; dot.position.set(0.0, 0.045, 0); g.add(dot);
+    h = 0.045;
+  } else {
+    const long = id === "acc:scope6";
+    const len = Math.min(Math.max(0.14, L * (long ? 0.36 : 0.18)), rail * 1.6 + 0.08);
+    const R = long ? 0.017 : 0.016;
+    for (const x of [-len * 0.25, len * 0.22]) { const ring = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.03, 0.026), steel); ring.position.set(x, 0.015, 0); g.add(ring); }
+    const main = tube(R, len * 0.62, steel, -len * 0.31, 20); main.position.y = 0.03 + R; g.add(main);
+    const obj = tube(R * (long ? 1.55 : 1.3), len * 0.24, steel, len * 0.26, 24); obj.position.y = 0.03 + R; g.add(obj);
+    const eye = tube(R * 1.25, len * 0.16, steel, -len * 0.48, 24); eye.position.y = 0.03 + R; g.add(eye);
+    const turret = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.55, R * 0.55, R * 1.1, 12), steel); turret.position.set(0, 0.03 + R * 2, 0); g.add(turret);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(R * (long ? 1.45 : 1.2), 24), glass()); lens.rotation.y = Math.PI / 2; lens.position.set(len * 0.5 + 0.001, 0.03 + R, 0); g.add(lens);
+    h = 0.03 + R;
+  }
+  return { group: g, sightHeight: h };
+}

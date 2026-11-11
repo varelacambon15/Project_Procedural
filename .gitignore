@@ -4,3 +4,4 @@ tools/convert/index.html
 tools/convert/sheet.html
 *.log
 .DS_Store
+release/

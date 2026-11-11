@@ -13,6 +13,13 @@ Las armas salen del generador modular (115 modelos de 5 packs).
 
 También está el banco de armero independiente (`bench.html`) para ver armas generadas.
 
+## Versiones de escritorio (.exe)
+
+Cada versión se compila sola en GitHub Actions y se publica en **Releases** del repositorio:
+`ProvingGrounds-<versión>-win-x64.exe` (portable, sin instalar) y una AppImage para Linux.
+Para sacar una versión nueva basta con subir una etiqueta: `git tag v0.2.0 && git push origin v0.2.0`.
+Dentro del juego, F11 alterna pantalla completa.
+
 ## Uso
 
 ```bash
@@ -23,8 +30,10 @@ npm run build      # versión estática en dist/
 npm run assets     # reconvierte los packs de raw/ a assets/weapons/*.glb (necesita Playwright)
 ```
 
+El juego arranca en inglés; el idioma (English / Español) se cambia en el menú principal.
+
 Controles del campo: WASD, ratón, clic izq./der. disparar/apuntar, R recargar, 1/2/Q cambiar arma,
-E cofre/banco, Tab inventario. Con mando: sticks, RT/LT, Ⓧ recargar, Ⓨ cambiar, Ⓑ usar, View inventario;
+F inspeccionar, E cofre/banco, Tab inventario. Con mando: sticks, RT/LT, Ⓧ recargar, Ⓨ cambiar, Ⓑ usar, View inventario;
 en los menús el stick izquierdo mueve un cursor y Ⓐ hace clic.
 
 ## Estructura

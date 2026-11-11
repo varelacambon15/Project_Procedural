@@ -1,0 +1,16 @@
+# Empaquetado de escritorio. Se ejecuta en GitHub Actions (ver .github/workflows/release.yml).
+appId: local.projectprocedural.game
+productName: Proving Grounds
+electronVersion: 33.2.1
+directories:
+  output: release
+files:
+  - dist/**
+  - desktop/main.cjs
+  - package.json
+win:
+  target: [portable]
+  artifactName: ProvingGrounds-${version}-win-x64.exe
+linux:
+  target: [AppImage]
+  artifactName: ProvingGrounds-${version}-linux-x64.AppImage

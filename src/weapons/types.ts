@@ -1,7 +1,8 @@
-// Tipos compartidos del sistema de armas.
+// Tipos compartidos del sistema de armas. Los textos visibles se obtienen con i18n a partir de los ids.
 
 export type WeaponType = "pistol" | "revolver" | "smg" | "rifle" | "bullpup" | "shotgun" | "sniper" | "launcher" | "flamethrower" | "lmg" | "accessory";
 export type PartRole = "body" | "slide" | "frame" | "barrel" | "magazine" | "scope" | "muzzle";
+export type FireMode = "auto" | "semi" | "burst" | "pump" | "bolt";
 
 export interface Socket { pos: [number, number, number]; diameter?: number; size?: [number, number]; length?: number }
 
@@ -13,7 +14,7 @@ export interface AssetEntry {
   type: WeaponType;
   file: string;
   parts: { role: PartRole; node: string; source: string }[];
-  sockets: Partial<Record<"muzzle" | "magazine" | "optic" | "slide" | "barrel" | "top", Socket>>;
+  sockets: Partial<Record<"muzzle" | "magazine" | "optic" | "slide" | "barrel" | "top" | "rail", Socket>>;
   bounds: { min: [number, number, number]; max: [number, number, number] };
   triangles: number;
 }
@@ -22,19 +23,24 @@ export interface Manifest { convention: string; weapons: AssetEntry[] }
 export type StatKey = "dano" | "cadencia" | "precision" | "alcance" | "manejo" | "cargador";
 export type Stats = Record<StatKey, number>;
 
-export interface Rarity { id: "comun" | "poco" | "rara" | "epica" | "legendaria"; name: string; weight: number; mult: number; effects: number; color: string }
+export type RarityId = "comun" | "poco" | "rara" | "epica" | "legendaria";
+export interface Rarity { id: RarityId; weight: number; mult: number; perks: number; special: boolean; color: string }
 
-export interface Effect { id: string; name: string; icon: string; color: string; text: string; element?: boolean; value?: number }
+/** Habilidad: "perk" o "element" (moderadas, desde azul) o "special" (solo legendarias). */
+export interface Effect { id: string; kind: "perk" | "element" | "special"; icon: string; color: string; value?: number }
 
-/** Pieza elegida: rol y arma de la que se extrae. */
+export interface Paint { id: string; color: [number, number, number] | null }
+
+/** Pieza elegida: rol y arma (o accesorio) de la que sale. */
 export interface PartPick { role: PartRole; from: string }
-
-export interface Paint { name: string; color: [number, number, number] | null }
 
 /** Descripción completa de un arma generada (todo lo necesario para montarla y mostrarla). */
 export interface WeaponSpec {
   seed: number;
   type: WeaponType;
+  /** Variante del tipo (p. ej. pistola automática, subfusil táctico). */
+  archetype: string;
+  fireMode: FireMode;
   layout: "modular-pistol" | "body";
   parts: PartPick[];
   barrelLength: number;
@@ -45,6 +51,7 @@ export interface WeaponSpec {
   level: number;
   stats: Stats;
   effects: Effect[];
+  /** Nombre propio (solo legendarias); el resto usa la designación técnica. */
   name: string;
   /** Semilla de las pequeñas variaciones de estadísticas (estable al cambiar piezas). */
   statSeed: number;
