@@ -1,5 +1,7 @@
 # Compila el juego y publica el ejecutable de Windows (y Linux) en GitHub Releases.
-# Se lanza al subir una etiqueta de versión (v0.2.0, v0.3.0…) o a mano desde la pestaña Actions.
+# Se lanza al subir una etiqueta de versión (v0.2.0…) o a mano desde la pestaña Actions
+# (entonces crea la versión v<versión de package.json>). Los archivos van directos a Releases,
+# sin pasar por el almacenamiento de artefactos de Actions.
 name: Release desktop build
 
 on:
@@ -11,8 +13,27 @@ permissions:
   contents: write
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: tag
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT";
+          else echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"; fi
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Proving Grounds ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+
   build:
+    needs: prepare
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
@@ -27,32 +48,10 @@ jobs:
       - run: npm run build
       - run: npm install --no-save electron@33.2.1 electron-builder@25.1.8
       - run: npx electron-builder --config desktop/electron-builder.yml --publish never
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build-${{ matrix.os }}
-          path: |
-            release/*.exe
-            release/*.AppImage
-          if-no-files-found: error
-
-  # Publica la versión en Releases. Si se lanza a mano, crea la etiqueta v<versión de package.json>.
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - id: ver
-        run: echo "tag=${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}" >> "$GITHUB_OUTPUT"
-      - id: pkg
-        run: echo "version=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-      - uses: actions/download-artifact@v4
-        with:
-          path: out
-          merge-multiple: true
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.ver.outputs.tag || steps.pkg.outputs.version }}
-          target_commitish: ${{ github.sha }}
-          name: Proving Grounds ${{ steps.ver.outputs.tag || steps.pkg.outputs.version }}
-          files: out/*
-          generate_release_notes: true
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          files: |
+            release/*.exe
+            release/*.AppImage
+          fail_on_unmatched_files: false
