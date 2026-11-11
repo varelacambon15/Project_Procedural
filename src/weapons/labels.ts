@@ -5,8 +5,8 @@ import type { Effect, Paint, WeaponSpec } from "./types";
 
 export const rarityName = (s: WeaponSpec) => t(`rarity.${s.rarity.id}`);
 export const typeName = (type: string) => t(`type.${type}`);
-export const archName = (s: WeaponSpec) => t(`arch.${s.archetype}`);
-export const modeName = (s: WeaponSpec) => t(`mode.${s.fireMode}`);
+export const archName = (s: WeaponSpec) => (s.modeShift ? t(`shift.${s.modeShift}`) : t(`arch.${s.archetype}`));
+export const modeName = (s: WeaponSpec) => t(`mode.${s.fireMode}`) + (s.fireMode === "burst" ? ` ×${s.burst}` : "");
 export const effectName = (e: Effect) => t(`fx.${e.id}`);
 export const effectDesc = (e: Effect) => t(`fx.${e.id}.d`, { v: e.value ?? "" });
 export const paintName = (p: Paint) => t(`paint.${p.id}`);

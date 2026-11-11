@@ -41,6 +41,10 @@ export interface WeaponSpec {
   /** Variante del tipo (p. ej. pistola automática, subfusil táctico). */
   archetype: string;
   fireMode: FireMode;
+  /** Modo de disparo "raro" para su tipo (francotirador automático, revólver a ráfagas…), o null. */
+  modeShift: FireMode | null;
+  /** Disparos por ráfaga (solo en modo ráfaga). */
+  burst: number;
   layout: "modular-pistol" | "body";
   parts: PartPick[];
   barrelLength: number;

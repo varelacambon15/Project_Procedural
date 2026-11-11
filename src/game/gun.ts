@@ -3,7 +3,7 @@
 import * as THREE from "three";
 import type { WeaponAssembler, AssembledWeapon, AssembledPart } from "../weapons/assembler";
 import type { WeaponType } from "../weapons/types";
-import { PELLETS, BURST, effectValue, hasEffect } from "../weapons/generator";
+import { PELLETS, effectValue, hasEffect } from "../weapons/generator";
 import { accessory } from "../weapons/accessories";
 import type { Item } from "./inventory";
 import type { Dummy, Element, Zone } from "./dummies";
@@ -153,7 +153,7 @@ export class Gun {
         if (it.ammo <= 0) this.burstLeft = 0;
       } else if (this.cooldown <= 0 && this.cycleT <= 0 && (mode === "auto" ? c.fire : pressed)) {
         if (it.ammo > 0) {
-          if (mode === "burst") { this.burstLeft = BURST - 1; this.burstTimer = 60 / (s.stats.cadencia * 1.6); }
+          if (mode === "burst") { this.burstLeft = (s.burst || 3) - 1; this.burstTimer = 60 / (s.stats.cadencia * 1.6); }
           this.fire(c.moving);
         } else if (pressed) { this.sfx("empty"); this.startReload(); }
       }

@@ -70,8 +70,23 @@ export const TYPE_INFO: Record<BaseType, TypeInfo> = {
 };
 /** Perdigones por disparo (solo escopetas). */
 export const PELLETS: Partial<Record<WeaponType, number>> = { shotgun: 8 };
-/** Disparos por ráfaga. */
-export const BURST = 3;
+/**
+ * Modos de disparo alternativos por tipo: dan variedad ("de todo") con su propio perfil de estadísticas.
+ * Se aplican con un 28% de probabilidad sobre la variante elegida.
+ */
+interface Shift { mode: FireMode; w: number; burst?: [number, number]; dano?: number; cadencia?: number; cargador?: number; precision?: number; manejo?: number }
+export const MODE_SHIFTS: Partial<Record<BaseType, Shift[]>> = {
+  pistol: [{ mode: "auto", w: 2, dano: 0.6, cadencia: 2.4, cargador: 1.5, precision: -10 }, { mode: "burst", w: 2, burst: [2, 3], dano: 0.85, cadencia: 1.6 }],
+  revolver: [{ mode: "burst", w: 2, burst: [2, 3], dano: 0.8, cadencia: 2.2, precision: -6 }, { mode: "auto", w: 1, dano: 0.55, cadencia: 3.5, cargador: 1.34, precision: -14 }],
+  smg: [{ mode: "semi", w: 1, dano: 1.5, cadencia: 0.5, precision: 10 }, { mode: "burst", w: 2, burst: [3, 4], cadencia: 1.15 }],
+  rifle: [{ mode: "semi", w: 2, dano: 1.6, cadencia: 0.55, precision: 8 }, { mode: "burst", w: 2, burst: [2, 4], dano: 1.05, cadencia: 1.2 }, { mode: "auto", w: 1, dano: 0.75, cadencia: 1.6 }],
+  bullpup: [{ mode: "semi", w: 1, dano: 1.6, cadencia: 0.55, precision: 8 }, { mode: "burst", w: 2, burst: [2, 4], dano: 1.05, cadencia: 1.2 }],
+  shotgun: [{ mode: "burst", w: 2, burst: [2, 3], dano: 0.8, cadencia: 2.4 }, { mode: "auto", w: 1, dano: 0.65, cadencia: 3.4 }, { mode: "semi", w: 1, dano: 0.85, cadencia: 2 }],
+  sniper: [{ mode: "auto", w: 2, dano: 0.42, cadencia: 6, cargador: 2.5, precision: -10, manejo: 6 }, { mode: "burst", w: 2, burst: [2, 3], dano: 0.6, cadencia: 3.5, cargador: 1.6 }, { mode: "semi", w: 1, dano: 0.75, cadencia: 2.4, cargador: 2 }],
+  lmg: [{ mode: "burst", w: 1, burst: [4, 5], dano: 1.1, cadencia: 1.1, precision: 8 }],
+  launcher: [{ mode: "burst", w: 1, burst: [2, 3], dano: 0.7, cadencia: 2, cargador: 3 }],
+};
+export const shiftOf = (spec: Pick<WeaponSpec, "type" | "modeShift">) => (spec.modeShift ? MODE_SHIFTS[spec.type as BaseType]?.find((x) => x.mode === spec.modeShift) ?? null : null);
 
 /**
  * El arma se comporta según el modelo: variante habitual y capacidad real del cargador.
@@ -230,6 +245,12 @@ export class WeaponGenerator {
     const hint = MODEL_HINTS[body.id];
     const regular = info.archetypes.filter((a) => a.w > 0);
     const arch = hint?.arch && r() < 0.7 ? info.archetypes.find((a) => a.id === hint.arch) ?? regular[0] : weighted(r, regular, (a) => a.w);
+    // Modo de disparo: el de la variante o, a veces, uno "raro" para su tipo
+    const shifts = (MODE_SHIFTS[type] ?? []).filter((x) => x.mode !== arch.mode);
+    const shift = shifts.length && r() < 0.28 ? weighted(r, shifts, (x) => x.w) : null;
+    const fireMode: FireMode = shift?.mode ?? arch.mode;
+    const burstRange = shift?.burst ?? [3, 3];
+    const burst = fireMode === "burst" ? burstRange[0] + Math.floor(r() * (burstRange[1] - burstRange[0] + 1)) : 0;
 
     // 3. Accesorios
     let optic: string | null = null;
@@ -261,7 +282,7 @@ export class WeaponGenerator {
       name = r() < 0.55 ? `${pick(r, sp.words)} ${pick(r, LEGEND_NOUNS)}` : pick(r, LEGEND_NAMES);
     }
     const statSeed = Math.floor(r() * 2 ** 31);
-    const spec: WeaponSpec = { seed, type, archetype: arch.id, fireMode: arch.mode, layout, parts, barrelLength, muzzle, optic, rarity, paint, level, stats: { ...info.base }, effects, name, statSeed };
+    const spec: WeaponSpec = { seed, type, archetype: arch.id, fireMode, modeShift: shift?.mode ?? null, burst, layout, parts, barrelLength, muzzle, optic, rarity, paint, level, stats: { ...info.base }, effects, name, statSeed };
     return this.refresh(spec);
   }
 
@@ -282,6 +303,9 @@ export function computeStats(spec: WeaponSpec): Stats {
   s.dano *= a.dano ?? 1; s.cadencia *= a.cadencia ?? 1; s.alcance *= a.alcance ?? 1;
   s.cargador = hint?.mag && hint.arch === a.id ? hint.mag : (hint?.mag ?? s.cargador) * (a.cargador ?? 1);
   s.precision += a.precision ?? 0; s.manejo += a.manejo ?? 0;
+  // Modo de disparo raro
+  const sh = shiftOf(spec);
+  if (sh) { s.dano *= sh.dano ?? 1; s.cadencia *= sh.cadencia ?? 1; s.cargador *= sh.cargador ?? 1; s.precision += sh.precision ?? 0; s.manejo += sh.manejo ?? 0; }
   // Nivel
   s.dano *= 1 + (spec.level - 8) * 0.06;
   // Piezas y accesorios
@@ -320,7 +344,7 @@ export function technicalName(spec: WeaponSpec): string {
   const series = info.letter + "KRVMCLDTX"[hashString(body + spec.archetype) % 9];
   const cal = info.calibers[hashString(spec.parts[1]?.from ?? body) % info.calibers.length];
   const L = spec.barrelLength;
-  const mode = spec.fireMode === "burst" ? "B" : spec.archetype === "machine" ? "A" : spec.archetype === "marksman" ? "DMR" : "";
+  const mode = spec.fireMode === "burst" ? `B${spec.burst}` : spec.modeShift === "auto" || spec.archetype === "machine" ? "A" : spec.modeShift === "semi" ? "S" : spec.archetype === "marksman" ? "DMR" : "";
   const acc = accessory(spec.muzzle);
   const suffix = (L > 1.3 ? "L" : L < 0.95 ? "C" : "") + mode + (acc?.quiet ? " SD" : "") + (spec.optic && spec.optic !== body ? " O" : "");
   const mark = spec.rarity.id === "rara" ? " Mk II" : spec.rarity.id === "epica" ? " Mk III" : "";

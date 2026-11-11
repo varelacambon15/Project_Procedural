@@ -12,6 +12,7 @@ const en: Dict = {
   "arch.tactical": "Tactical", "arch.auto": "Automatic", "arch.burst": "Burst", "arch.marksman": "Marksman", "arch.pump": "Pump-action",
   "arch.semi": "Semi-auto", "arch.double": "Double-barrel", "arch.bolt": "Bolt-action", "arch.antimateriel": "Anti-materiel", "arch.minigun": "Rotary",
   "mode.auto": "Auto", "mode.semi": "Semi", "mode.burst": "Burst", "mode.pump": "Pump", "mode.bolt": "Bolt",
+  "shift.auto": "Full-auto conversion", "shift.burst": "Burst conversion", "shift.semi": "Semi-auto conversion",
   // Estadísticas
   "stat.dano": "Damage", "stat.cadencia": "Fire rate", "stat.precision": "Accuracy", "stat.alcance": "Range", "stat.manejo": "Handling", "stat.cargador": "Magazine",
   "unit.rpm": "/min", "unit.m": "m", "label.damage": "damage", "label.level": "Lv",
@@ -73,6 +74,7 @@ const es: Dict = {
   "arch.tactical": "Táctica", "arch.auto": "Automático", "arch.burst": "Ráfagas", "arch.marksman": "Tirador", "arch.pump": "De corredera",
   "arch.semi": "Semiautomática", "arch.double": "De dos cañones", "arch.bolt": "De cerrojo", "arch.antimateriel": "Antimaterial", "arch.minigun": "Rotativa",
   "mode.auto": "Auto", "mode.semi": "Semi", "mode.burst": "Ráfaga", "mode.pump": "Corredera", "mode.bolt": "Cerrojo",
+  "shift.auto": "Conversión automática", "shift.burst": "Conversión a ráfagas", "shift.semi": "Conversión semiautomática",
   "stat.dano": "Daño", "stat.cadencia": "Cadencia", "stat.precision": "Precisión", "stat.alcance": "Alcance", "stat.manejo": "Manejo", "stat.cargador": "Cargador",
   "unit.rpm": "/min", "unit.m": "m", "label.damage": "daño", "label.level": "Nv",
   "fx.fuego": "Incendiaria", "fx.fuego.d": "{v}% de probabilidad de prender fuego al objetivo.",

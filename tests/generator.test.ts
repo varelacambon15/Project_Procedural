@@ -50,11 +50,18 @@ describe("WeaponGenerator", () => {
     expect(many(400, "smg").some((w) => w.archetype === "tactical")).toBe(true);
   });
 
+  it("modos raros: francotiradores automáticos, revólveres a ráfagas, escopetas a ráfagas", () => {
+    expect(many(600, "sniper").some((w) => w.fireMode === "auto")).toBe(true);
+    expect(many(600, "revolver").some((w) => w.fireMode === "burst")).toBe(true);
+    expect(many(600, "shotgun").some((w) => w.fireMode === "burst")).toBe(true);
+    for (const w of many(800)) if (w.fireMode === "burst") expect(w.burst).toBeGreaterThanOrEqual(2); else expect(w.burst).toBe(0);
+  });
+
   it("el modelo manda: una AA-12 suele ser automática y una L115 de cerrojo", () => {
     const aa = many(3000, "shotgun").filter((w) => w.parts[0].from === "w-aa12");
-    expect(aa.filter((w) => w.fireMode === "auto").length / aa.length).toBeGreaterThan(0.6);
+    expect(aa.filter((w) => w.fireMode === "auto").length / aa.length).toBeGreaterThan(0.5);
     const l115 = many(3000, "sniper").filter((w) => w.parts[0].from === "w-l115");
-    expect(l115.filter((w) => w.fireMode === "bolt").length / l115.length).toBeGreaterThan(0.6);
+    expect(l115.filter((w) => w.fireMode === "bolt").length / l115.length).toBeGreaterThan(0.5);
   });
 
   it("solo las legendarias tienen nombre propio; el resto, designación técnica", () => {
