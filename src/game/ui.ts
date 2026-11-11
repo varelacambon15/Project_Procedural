@@ -38,7 +38,7 @@ export function weaponCard(s: WeaponSpec, cmp?: WeaponSpec | null, title?: strin
       const pct = Math.max(4, Math.min(100, (s.stats[k] / (k === "precision" || k === "manejo" ? 100 : base[k] * 1.8)) * 100));
       return `<span class="k">${t(`stat.${k}`)}</span><span class="meter"><i style="width:${pct}%"></i></span><span class="v">${f(s.stats[k])}</span>${delta(k)}`;
     }).join("")}</div>
-    ${s.effects.map((e) => `<div class="fx ${e.kind}"><span class="ico" style="color:${e.color}">${e.icon}</span><div><b style="color:${e.color}">${effectName(e)}</b><small>${effectDesc(e)}</small></div></div>`).join("")}
+    ${s.effects.map((e) => `<div class="fx tier-${e.tier}"><span class="ico" style="color:${e.color}">${e.icon}</span><div><b style="color:${e.color}">${effectName(e)}</b><small>${effectDesc(e)}</small></div></div>`).join("")}
   </div>`;
 }
 

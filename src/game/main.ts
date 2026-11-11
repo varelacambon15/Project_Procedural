@@ -61,9 +61,9 @@ async function boot() {
 
   const gun = new Gun(camera, scene, asm, world.shootables, {
     dummies: () => dummies,
-    onHit(d, _zone, point, dmg, element, chance, crit) {
+    onHit(d, _zone, point, dmg, element, crit) {
       const dealt = d.damage(dmg, element, crit, point);
-      if (element && Math.random() * 100 < chance) d.applyStatus(element, dmg);
+      if (element === "fuego" || element === "electrico") d.applyStatus(element, dmg);
       return dealt;
     },
     onKill(d) { if (d.kind.boss) toast(t("ui.bossDown")); },

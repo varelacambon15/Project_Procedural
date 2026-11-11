@@ -27,10 +27,14 @@ export type StatKey = "dano" | "cadencia" | "precision" | "alcance" | "manejo" |
 export type Stats = Record<StatKey, number>;
 
 export type RarityId = "comun" | "poco" | "rara" | "epica" | "legendaria";
-export interface Rarity { id: RarityId; weight: number; mult: number; perks: number; special: boolean; color: string }
+/**
+ * Rareza: `budget` = mejora total de estadísticas (presupuesto de poder) sobre la base; `tiers` = niveles de efecto que
+ * recibe (A menor, B mayor, L legendario); `accessories` = accesorios ya montados [mín, máx].
+ */
+export interface Rarity { id: RarityId; weight: number; budget: number; tiers: ("A" | "B" | "L")[]; accessories: [number, number]; color: string }
 
-/** Habilidad: "perk" o "element" (moderadas, desde azul) o "special" (solo legendarias). */
-export interface Effect { id: string; kind: "perk" | "element" | "special"; icon: string; color: string; value?: number }
+/** Efecto: nivel A (menor), B (mayor; incluye fuego, eléctrico y explosivo) o L (firma de una legendaria). */
+export interface Effect { id: string; tier: "A" | "B" | "L"; family: string; element?: "fuego" | "electrico" | "explosive"; icon: string; color: string; value?: number }
 
 export interface Paint { id: string; color: [number, number, number] | null }
 
@@ -62,4 +66,6 @@ export interface WeaponSpec {
   name: string;
   /** Semilla de las pequeñas variaciones de estadísticas (estable al cambiar piezas). */
   statSeed: number;
+  /** Reparto del presupuesto de rareza entre estadísticas (fracciones que suman 1). */
+  bonus: Partial<Record<StatKey, number>>;
 }

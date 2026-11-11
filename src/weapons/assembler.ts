@@ -148,7 +148,16 @@ export class WeaponAssembler {
     if (optAcc && opticTarget) {
       // Mira propia, generada a medida del raíl
       const { group: opt, sightHeight } = buildOptic(optAcc.id, opticLength, length0);
-      opt.position.copy(opticTarget).add(new THREE.Vector3(0, -0.002, 0));
+      // Si alguna parte del arma (cajón, culata, alzas) queda por encima de la línea de mira, la mira va sobre
+      // un elevador, como en un arma real: así al apuntar siempre se ve por encima del arma.
+      const top = new THREE.Box3().setFromObject(group).max.y;
+      const riser = Math.max(0, top + 0.006 - (opticTarget.y + sightHeight));
+      opt.position.copy(opticTarget).add(new THREE.Vector3(0, riser - 0.002, 0));
+      if (riser > 0.002) {
+        const block = new THREE.Mesh(new THREE.BoxGeometry(0.05, riser + 0.004, 0.022), new THREE.MeshStandardMaterial({ name: "Steel", color: 0x1c1d1f, metalness: 0.75, roughness: 0.42 }));
+        block.position.y = -riser / 2; opt.add(block);
+      }
+      opticTarget.y += riser;
       group.add(opt);
       parts.push({ object: opt, role: "scope", from: { id: optAcc.id, label: optAcc.id, pack: "acc" } as AssetEntry, explode: new THREE.Vector3(0, 1.4, 0), base: opt.position.clone() });
       sight = opticTarget.y + sightHeight; zoom = optAcc.zoom ?? 1;

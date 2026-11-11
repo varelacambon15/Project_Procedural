@@ -35,7 +35,9 @@ Se desarrolla en dos etapas que comparten el mismo núcleo:
 | Mezcla de piezas | Cargadores y miras solo entre armas del mismo pack, para que el estilo encaje |
 | Comportamiento | Cada tipo tiene su perfil (subfusil = cadencia, revólver = potencia…) y variantes: pistola automática o pesada, subfusil táctico (lento), fusil de ráfagas o de tirador, escopeta de corredera, semi, automática o de dos cañones, francotirador de cerrojo, semi o antimaterial. El modelo decide la variante habitual (AA-12 automática, M16 por ráfagas, L115 de cerrojo) y la capacidad real del cargador, con un 30% de variantes distintas |
 | Modos raros | Exclusivos de moradas y legendarias: el 45% de ellas sale con un modo de disparo poco habitual para su tipo: pistolas y revólveres automáticos o a ráfagas, francotiradores automáticos o a ráfagas, escopetas a ráfagas, subfusiles semiautomáticos, ametralladoras a ráfagas de 4-5, lanzacohetes en salva. Ráfagas de 2 a 5 disparos |
-| Habilidades | Blanca: ninguna. Verde: mejores estadísticas. Azul: 1 habilidad moderada. Morada: 2. Legendaria: 2 + 1 especial (rebote, doble cañón, eco, carroñero, detonador, arco en cadena, frenesí, perforador) |
+| Rarezas y efectos | Blanca: base, sin efectos ni accesorios. Verde: +7,5% de poder y 1 accesorio montado. Azul: +14% y 1 efecto A. Morada: +20%, 1 efecto B y 1 A. Legendaria: +32% (tope), B + A + firma L con nombre propio. El presupuesto de poder se reparte entre 1-3 estadísticas y las pruebas comprueban la banda (±5%) |
+| Elementos | Solo fuego (quemadura que se renueva, con tope), eléctrico (salta a 1-2 enemigos y aturde, menos daño directo) y explosivo (área pequeña, menos daño directo). Solo en moradas y legendarias, como efecto B, nunca dos a la vez |
+| Enemigos | De momento solo vida (lista de capas preparada para escudo/armadura más adelante) |
 | Accesorios | Supresores, compensador, freno, apagallamas y miras (punto rojo, holográfica, 4x, 6x) generados por código a medida de cada arma |
 | Animaciones | Procedurales estilo Destiny / MW: inercia, balanceo, sprint táctico, salto, retroceso, recarga con el cargador, corredera/cerrojo, sacar e inspeccionar. Más adelante, brazos animados |
 | Interfaz | Retícula y cursor circular estilo Destiny. Inglés por defecto, español seleccionable |
@@ -64,6 +66,14 @@ y se convierten con `npm run assets` a `.glb` normalizados:
 - `assets/weapons/manifest.json` lista armas, piezas, sockets y dimensiones.
 
 ## Fases
+
+## Coherencia visual (piloto)
+
+- Las armas largas de la familia *modern* se despiezan en cajón, culata, empuñadura y guardamanos (corte por planos).
+- Se montan con piezas de otras armas de la misma familia si la sección de cada junta es parecida y la longitud total
+  queda en el rango del tipo (puerta de calidad). Las uniones llevan remates de acero.
+- Piloto revisado con hojas de contacto de 100 armas en tres vistas: ~92% correctas. Sten, Garand y VSS no trocean
+  limpio y quedan como armas enteras. ~7.600 combinaciones de forma (piezas + accesorios) en la familia modern.
 
 | Fase | Contenido | Estado |
 |---|---|---|

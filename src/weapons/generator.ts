@@ -7,15 +7,23 @@ import type { AssetEntry, Effect, FireMode, Manifest, Paint, PartPick, PartRole,
 export type BaseType = Exclude<WeaponType, "accessory">;
 
 // ---------- Rarezas ----------
-// Blancas: sin habilidades. Verdes: mejores estadísticas. Azules: +1 habilidad moderada.
-// Moradas: +2 habilidades. Legendarias: +2 habilidades y 1 especial.
+// Blanca: base, sin efectos ni accesorios. Verde: +5-10% y 1 accesorio. Azul: +10-18% y 1 efecto A.
+// Morada: +15-25%, 1 efecto B y 1 A. Legendaria: banda propia, B + A + L (firma con nombre propio).
 export const RARITIES: Rarity[] = [
-  { id: "comun", weight: 40, mult: 1.0, perks: 0, special: false, color: "#c9c6bd" },
-  { id: "poco", weight: 28, mult: 1.08, perks: 0, special: false, color: "#5fc25a" },
-  { id: "rara", weight: 18, mult: 1.14, perks: 1, special: false, color: "#4a9bf0" },
-  { id: "epica", weight: 10, mult: 1.2, perks: 2, special: false, color: "#a866f0" },
-  { id: "legendaria", weight: 4, mult: 1.28, perks: 2, special: true, color: "#f08a24" },
+  { id: "comun", weight: 40, budget: 0, tiers: [], accessories: [0, 0], color: "#c9c6bd" },
+  { id: "poco", weight: 28, budget: 0.075, tiers: [], accessories: [1, 1], color: "#5fc25a" },
+  { id: "rara", weight: 18, budget: 0.14, tiers: ["A"], accessories: [0, 1], color: "#4a9bf0" },
+  { id: "epica", weight: 10, budget: 0.2, tiers: ["B", "A"], accessories: [1, 2], color: "#a866f0" },
+  { id: "legendaria", weight: 4, budget: 0.32, tiers: ["B", "A", "L"], accessories: [1, 2], color: "#f08a24" },
 ];
+/** Peso de cada estadística en la puntuación de poder (para repartir el presupuesto y comprobar las bandas). */
+export const POWER_WEIGHTS: Record<StatKey, number> = { dano: 0.35, cadencia: 0.25, precision: 0.12, alcance: 0.1, manejo: 0.1, cargador: 0.08 };
+/** Puntuación de poder: media ponderada de cada estadística respecto a la base de su tipo. */
+export function powerScore(stats: Stats, type: WeaponType): number {
+  const base = TYPE_INFO[type as BaseType].base;
+  let p = 0; for (const k of Object.keys(POWER_WEIGHTS) as StatKey[]) p += POWER_WEIGHTS[k] * (stats[k] / base[k]);
+  return p;
+}
 
 // ---------- Tipos y variantes ----------
 /** Modificadores de una variante: multiplicadores para daño/cadencia/cargador/alcance y puntos para precisión/manejo. */
@@ -118,36 +126,49 @@ export const PAINTS: Paint[] = [
 ];
 const PAINT_WEIGHTS = [3, 1.2, 1, 1, 1, 0.6];
 
-// ---------- Habilidades ----------
-interface EffectDef { id: string; kind: Effect["kind"]; icon: string; color: string; range?: [number, number]; words: string[] }
-const PERK_COLOR = "#d8d2c4", SPECIAL_COLOR = "#f08a24";
-const PERKS: EffectDef[] = [
-  { id: "fuego", kind: "element", icon: "▲", color: "#f07a2a", range: [8, 16], words: ["Ember", "Blaze", "Pyre"] },
-  { id: "corrosivo", kind: "element", icon: "◆", color: "#9bd23c", range: [8, 16], words: ["Acid", "Rust", "Sludge"] },
-  { id: "electrico", kind: "element", icon: "ϟ", color: "#5cc8f0", range: [8, 16], words: ["Spark", "Volt", "Storm"] },
-  { id: "radiacion", kind: "element", icon: "☢", color: "#d8e04a", range: [6, 12], words: ["Isotope", "Fallout", "Ash"] },
-  { id: "extmag", kind: "perk", icon: "▤", color: PERK_COLOR, range: [20, 35], words: ["Hoarder"] },
-  { id: "quickdraw", kind: "perk", icon: "⇡", color: PERK_COLOR, words: ["Quick"] },
-  { id: "steady", kind: "perk", icon: "≡", color: PERK_COLOR, range: [20, 35], words: ["Steady"] },
-  { id: "headhunter", kind: "perk", icon: "◎", color: PERK_COLOR, range: [20, 40], words: ["Hunter"] },
-  { id: "opening", kind: "perk", icon: "①", color: PERK_COLOR, range: [25, 50], words: ["Opener"] },
-  { id: "reload", kind: "perk", icon: "↻", color: PERK_COLOR, range: [30, 50], words: ["Rush"] },
-  { id: "range", kind: "perk", icon: "⟷", color: PERK_COLOR, range: [15, 30], words: ["Far"] },
+// ---------- Efectos ----------
+// Nivel A: mejora pequeña de un aspecto. Nivel B: se nota en combate (incluye fuego, eléctrico y explosivo).
+// Nivel L: firma única de cada legendaria; da nombre al arma. Un A y un B nunca son de la misma familia.
+interface EffectDef { id: string; tier: Effect["tier"]; family: string; element?: Effect["element"]; icon: string; color: string; range?: [number, number]; name?: string }
+const A_COLOR = "#d8d2c4", B_COLOR = "#e8b25a", L_COLOR = "#f08a24";
+export const EFFECTS_A: EffectDef[] = [
+  { id: "steady", tier: "A", family: "recoil", icon: "≡", color: A_COLOR, range: [15, 25] },
+  { id: "quickdraw", tier: "A", family: "draw", icon: "⇡", color: A_COLOR },
+  { id: "headhunter", tier: "A", family: "crit", icon: "◎", color: A_COLOR, range: [15, 25] },
+  { id: "extmag", tier: "A", family: "mag", icon: "▤", color: A_COLOR, range: [15, 25] },
+  { id: "range", tier: "A", family: "range", icon: "⟷", color: A_COLOR, range: [10, 20] },
+  { id: "opening", tier: "A", family: "dmg", icon: "①", color: A_COLOR, range: [15, 30] },
+  { id: "killreload", tier: "A", family: "reload", icon: "↻", color: A_COLOR, range: [25, 40] },
+  { id: "scavenger", tier: "A", family: "ammo", icon: "✚", color: A_COLOR },
+  { id: "adsfocus", tier: "A", family: "accuracy", icon: "⌖", color: A_COLOR, range: [20, 35] },
+  { id: "pierce", tier: "A", family: "pierce", icon: "➝", color: A_COLOR },
 ];
-const SPECIALS: EffectDef[] = [
-  { id: "rebote", kind: "special", icon: "↯", color: SPECIAL_COLOR, words: ["Ricochet", "Bounce"] },
-  { id: "doble", kind: "special", icon: "Ⅱ", color: SPECIAL_COLOR, words: ["Twin", "Double"] },
-  { id: "eco", kind: "special", icon: "≋", color: SPECIAL_COLOR, words: ["Echo", "Reprise"] },
-  { id: "carronero", kind: "special", icon: "✚", color: SPECIAL_COLOR, words: ["Scavenger", "Vulture"] },
-  { id: "explosive", kind: "special", icon: "✸", color: SPECIAL_COLOR, words: ["Detonator", "Blast"] },
-  { id: "chain", kind: "special", icon: "ϟ", color: SPECIAL_COLOR, words: ["Arc", "Tesla"] },
-  { id: "frenzy", kind: "special", icon: "»", color: SPECIAL_COLOR, words: ["Frenzy", "Rampage"] },
-  { id: "piercing", kind: "special", icon: "➶", color: SPECIAL_COLOR, words: ["Lance", "Needle"] },
+export const EFFECTS_B: EffectDef[] = [
+  { id: "fuego", tier: "B", family: "element", element: "fuego", icon: "▲", color: "#f07a2a" },
+  { id: "electrico", tier: "B", family: "element", element: "electrico", icon: "ϟ", color: "#5cc8f0" },
+  { id: "explosive", tier: "B", family: "element", element: "explosive", icon: "✸", color: "#ffb060" },
+  { id: "doble", tier: "B", family: "proj", icon: "Ⅱ", color: B_COLOR },
+  { id: "rebote", tier: "B", family: "proj", icon: "↯", color: B_COLOR },
+  { id: "eco", tier: "B", family: "proj", icon: "≋", color: B_COLOR },
+  { id: "piercing", tier: "B", family: "pierce", icon: "➶", color: B_COLOR },
+  { id: "killclip", tier: "B", family: "reload", icon: "⚡", color: B_COLOR },
+  { id: "rampage", tier: "B", family: "dmg", icon: "»", color: B_COLOR },
+  { id: "frenzy", tier: "B", family: "rate", icon: "≫", color: B_COLOR },
 ];
-const LEGEND_NAMES = ["Last Will", "Black Widow", "Old Dog", "Rust Requiem", "The Scavenger", "Final Verdict", "Dead Man's Hand", "Wasteland Prayer"];
-const LEGEND_NOUNS = ["Bite", "Nail", "Widow", "Hound", "Whisper", "Verdict", "Reaper", "Howler", "Vulture", "Sermon"];
+/** Firmas legendarias: cada una tiene nombre propio, comportamiento, color y sonido propios. */
+export const EFFECTS_L: EffectDef[] = [
+  { id: "lastrounds", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Last Will" },
+  { id: "widowmark", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Black Widow" },
+  { id: "olddog", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Old Dog" },
+  { id: "requiem", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Rust Requiem" },
+  { id: "deadhand", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Dead Man's Hand" },
+  { id: "stormcaller", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Storm Caller" },
+  { id: "verdict", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Final Verdict" },
+  { id: "echochamber", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "The Echo" },
+];
 export const effectValue = (s: WeaponSpec, id: string) => s.effects.find((e) => e.id === id)?.value ?? 0;
 export const hasEffect = (s: WeaponSpec, id: string) => s.effects.some((e) => e.id === id);
+export const elementOf = (s: WeaponSpec) => s.effects.find((e) => e.element)?.element ?? null;
 
 /** Modificadores estables de una pieza: dependen solo de su procedencia y su rol. */
 export function partMods(from: string, role: string): Partial<Stats> {
@@ -197,7 +218,8 @@ export class WeaponGenerator {
     this.scopes = manifest.weapons.filter((w) => w.type !== "accessory" && w.parts.some((p) => p.role === "scope"));
   }
 
-  get types(): BaseType[] { return [...this.byType.keys()].filter((t): t is BaseType => t !== "accessory"); }
+  /** Tipos que salen en el botín. Lanzallamas y lanzacohetes quedan fuera por ahora (como la minigun). */
+  get types(): BaseType[] { return [...this.byType.keys()].filter((t): t is BaseType => t !== "accessory" && t !== "flamethrower" && t !== "launcher"); }
 
   /** Miras (accesorio) que admite un arma. Las que llevan mira integrada en el cuerpo no admiten otra. */
   opticOptions(spec: Pick<WeaponSpec, "type" | "parts">): string[] {
@@ -273,36 +295,50 @@ export class WeaponGenerator {
     const burstRange = shift?.burst ?? [3, 3];
     const burst = fireMode === "burst" ? burstRange[0] + Math.floor(r() * (burstRange[1] - burstRange[0] + 1)) : 0;
 
-    // 3. Accesorios
-    let optic: string | null = null;
-    if (body.parts.some((p) => p.role === "scope")) { const same = this.scopes.filter((s) => s.pack === body.pack); optic = r() < 0.55 && same.length ? pick(r, same).id : body.id; }
-    else { const opts = this.opticOptions({ type, parts }); if (opts.length && r() < (arch.id === "marksman" ? 0.85 : 0.35)) optic = pick(r, opts); }
-    const muzzles = this.muzzleOptions(type, body.id);
-    const muzzle = muzzles.length && r() < 0.3 ? pick(r, muzzles) : null;
+    // 3. Accesorios ya montados según la rareza (una mira de modelo integrada no cuenta como accesorio)
+    let optic: string | null = null, muzzle: string | null = null;
+    const ownScope = body.parts.some((p) => p.role === "scope");
+    if (ownScope) optic = body.id;
+    const opticOpts = ownScope ? this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id).map((x) => x.id) : this.opticOptions({ type, parts });
+    const muzzleOpts = this.muzzleOptions(type, body.id);
+    const [amin, amax] = rarity.accessories;
+    let nAcc = amin + Math.floor(r() * (amax - amin + 1));
+    const slots = [opticOpts.length ? "optic" : "", muzzleOpts.length ? "muzzle" : ""].filter(Boolean);
+    if (arch.id === "marksman" && slots.includes("optic")) slots.sort((x) => (x === "optic" ? -1 : 1)); else if (r() < 0.5) slots.reverse();
+    for (const slot of slots) {
+      if (nAcc <= 0) break;
+      if (slot === "optic") optic = pick(r, opticOpts); else muzzle = pick(r, muzzleOpts);
+      nAcc--;
+    }
 
     // 4. Acabado y nivel
     const paint = weighted(r, PAINTS, (p) => PAINT_WEIGHTS[PAINTS.indexOf(p)]);
     const level = 8 + Math.floor(r() * 9);
 
-    // 5. Habilidades: moderadas desde azul, la especial solo en legendarias. Como mucho un elemento.
+    // 5. Efectos por nivel (A, B, L). Un A y un B no comparten familia; fuego, eléctrico y explosivo son B.
     const effects: Effect[] = [];
-    if (type === "flamethrower") effects.push({ id: "fuego", kind: "element", icon: "▲", color: "#f07a2a", value: 100 });
-    for (let i = 0; i < rarity.perks; i++) {
-      const hasElement = effects.some((e) => e.kind === "element");
-      const cands = PERKS.filter((e) => !(e.kind === "element" && hasElement) && !effects.some((x) => x.id === e.id));
-      const e = pick(r, cands);
-      effects.push({ id: e.id, kind: e.kind, icon: e.icon, color: e.color, value: e.range ? e.range[0] + Math.floor(r() * (e.range[1] - e.range[0] + 1)) : undefined });
+    const take = (def: EffectDef) => effects.push({ id: def.id, tier: def.tier, family: def.family, element: def.element, icon: def.icon, color: def.color, value: def.range ? def.range[0] + Math.floor(r() * (def.range[1] - def.range[0] + 1)) : undefined });
+    for (const tier of rarity.tiers) {
+      const pool = (tier === "A" ? EFFECTS_A : tier === "B" ? EFFECTS_B : EFFECTS_L).filter((d) => !effects.some((e) => e.family === d.family));
+      take(pick(r, pool));
     }
-    if (rarity.special) { const s = pick(r, SPECIALS); effects.push({ id: s.id, kind: "special", icon: s.icon, color: s.color }); }
 
-    // 6. Nombre propio (solo legendarias, en inglés)
-    let name = "";
-    if (rarity.special) {
-      const sp = SPECIALS.find((x) => effects.some((e) => e.id === x.id))!;
-      name = r() < 0.55 ? `${pick(r, sp.words)} ${pick(r, LEGEND_NOUNS)}` : pick(r, LEGEND_NAMES);
+    // 6. Reparto del presupuesto de rareza entre 1-3 estadísticas
+    const bonus: Partial<Record<StatKey, number>> = {};
+    if (rarity.budget > 0) {
+      const keys: StatKey[] = ["dano", "cadencia", "precision", "alcance", "manejo", "cargador"];
+      const n = 1 + Math.floor(r() * 3);
+      const chosen: StatKey[] = [];
+      while (chosen.length < n) { const k = pick(r, keys); if (!chosen.includes(k)) chosen.push(k); }
+      const shares = chosen.map(() => 0.5 + r()); const sum = shares.reduce((x, y) => x + y, 0);
+      chosen.forEach((k, i) => (bonus[k] = shares[i] / sum));
     }
+
+    // 7. Nombre propio (solo legendarias, en inglés): el de su firma L
+    const sig = EFFECTS_L.find((d) => effects.some((e) => e.id === d.id));
+    const name = sig?.name ?? "";
     const statSeed = Math.floor(r() * 2 ** 31);
-    const spec: WeaponSpec = { seed, type, archetype: arch.id, fireMode, modeShift: shift?.mode ?? null, burst, layout, parts, barrelLength, muzzle, optic, rarity, paint, level, stats: { ...info.base }, effects, name, statSeed };
+    const spec: WeaponSpec = { seed, type, archetype: arch.id, fireMode, modeShift: shift?.mode ?? null, burst, layout, parts, barrelLength, muzzle, optic, rarity, paint, level, stats: { ...info.base }, effects, name, statSeed, bonus };
     return this.refresh(spec);
   }
 
@@ -363,22 +399,40 @@ export function computeStats(spec: WeaponSpec): Stats {
   if (spec.muzzle) apply(partMods(spec.muzzle, "muzzle"));
   const L = spec.barrelLength;
   if (spec.layout === "modular-pistol") { s.alcance *= 1 + (L - 1) * 0.9; s.precision += (L - 1) * 14; s.manejo -= (L - 1) * 16; }
-  // Rareza: todo mejora un poco
-  const m = spec.rarity.mult - 1;
-  s.dano *= 1 + m; s.alcance *= 1 + m * 0.8; s.precision += m * 40; s.manejo += m * 30; s.cadencia *= 1 + m * 0.3;
-  // Habilidades que cambian números
+  // Habilidades que cambian números (y penalizaciones de los elementos)
   const ev = (id: string) => spec.effects.find((e) => e.id === id)?.value ?? 0;
   if (ev("extmag")) s.cargador *= 1 + ev("extmag") / 100;
   if (ev("range")) s.alcance *= 1 + ev("range") / 100;
-  if (spec.effects.some((e) => e.id === "quickdraw")) s.manejo += 15;
+  if (spec.effects.some((e) => e.id === "quickdraw")) s.manejo += 10;
   if (spec.effects.some((e) => e.id === "doble")) s.dano *= 0.62;
+  if (spec.effects.some((e) => e.id === "electrico")) s.dano *= 0.9;   // menos daño directo
+  if (spec.effects.some((e) => e.id === "explosive")) s.dano *= 0.85;  // menos daño directo
   // Pequeña variación estable
   const v = mulberry32(spec.statSeed);
   for (const k of Object.keys(s) as StatKey[]) s[k] *= 0.97 + v() * 0.06;
-  s.precision = Math.min(100, Math.max(5, s.precision));
-  s.manejo = Math.min(100, Math.max(5, s.manejo));
+  s.precision = Math.min(95, Math.max(5, s.precision));
+  s.manejo = Math.min(95, Math.max(5, s.manejo));
+  // Rareza: el presupuesto se reparte entre las estadísticas elegidas para que el poder suba exactamente `budget`
+  applyBudget(s, spec);
+  s.precision = Math.min(100, s.precision); s.manejo = Math.min(100, s.manejo);
   s.cargador = Math.max(1, Math.round(s.cargador));
   return s;
+}
+
+/** Aplica el presupuesto de la rareza: sube las estadísticas elegidas hasta que el poder crece un `budget`. */
+function applyBudget(s: Stats, spec: WeaponSpec) {
+  const budget = spec.rarity.budget; if (!budget) return;
+  const base = TYPE_INFO[spec.type as BaseType].base;
+  const total = powerScore(s, spec.type);
+  let leftover = 0; // poder que no cabe por el tope de 100 en precisión o manejo: pasa al daño
+  for (const [k, share] of Object.entries(spec.bonus ?? {}) as [StatKey, number][]) {
+    const want = budget * share * total;
+    const contrib = POWER_WEIGHTS[k] * (s[k] / base[k]);
+    let next = s[k] * (1 + want / Math.max(1e-6, contrib));
+    if ((k === "precision" || k === "manejo") && next > 100) { leftover += (POWER_WEIGHTS[k] * (next - 100)) / base[k]; next = 100; }
+    s[k] = next;
+  }
+  if (leftover > 0) s.dano *= 1 + leftover / (POWER_WEIGHTS.dano * (s.dano / base.dano));
 }
 
 export function technicalName(spec: WeaponSpec): string {

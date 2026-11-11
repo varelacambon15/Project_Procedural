@@ -26,7 +26,7 @@ describe("banco de trabajo", () => {
   });
 
   it("quitar el silenciador cambia el nombre técnico", () => {
-    const w = Array.from({ length: 400 }, (_, s) => gen.generate(s)).find((x) => x.muzzle?.startsWith("acc:suppressor") && x.rarity.id !== "legendaria")!;
+    const w = Array.from({ length: 2000 }, (_, s) => gen.generate(s)).find((x) => x.muzzle?.startsWith("acc:suppressor") && x.rarity.id !== "legendaria")!;
     expect(w.name).toContain("SD");
     swap(gen, w, "muzzle", null);
     expect(w.name).not.toContain("SD");

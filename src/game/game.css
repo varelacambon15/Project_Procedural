@@ -181,7 +181,8 @@ body.menu-cursor, body.menu-cursor * { cursor: none !important; }
 .langsel { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
 .langsel select { font: inherit; text-transform: none; letter-spacing: 0; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); padding: 6px 8px; }
 .cell.active::after { content: attr(data-inhand); }
-.fx.special b { text-transform: uppercase; letter-spacing: .06em; }
+.fx.tier-L b { text-transform: uppercase; letter-spacing: .06em; }
+.fx .tier { font-size: 9px; letter-spacing: .14em; color: var(--dim); margin-left: 6px; }
 .card .meta { color: var(--dim); font-size: 11px; }
 @media (prefers-reduced-motion: reduce) { #toast, #loot, .hptrack i { transition: none; } }
 .cell.sel { outline: 2px solid var(--amber); }

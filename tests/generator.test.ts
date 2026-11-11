@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { WeaponGenerator, RARITIES, TYPE_INFO } from "../src/weapons/generator";
+import { WeaponGenerator, RARITIES, TYPE_INFO, powerScore, computeStats } from "../src/weapons/generator";
 import type { Manifest, WeaponSpec } from "../src/weapons/types";
 
 const manifest: Manifest = JSON.parse(readFileSync(new URL("../assets/weapons/manifest.json", import.meta.url), "utf8"));
@@ -22,22 +22,57 @@ describe("WeaponGenerator", () => {
     }
   });
 
-  it("habilidades según la rareza: blancas y verdes ninguna, azul 1, morada 2, legendaria 2 + 1 especial", () => {
-    for (const w of many(800)) {
-      const own = w.effects.filter((e) => !(w.type === "flamethrower" && e.id === "fuego"));
-      const specials = own.filter((e) => e.kind === "special").length;
-      const expected = { comun: 0, poco: 0, rara: 1, epica: 2, legendaria: 3 }[w.rarity.id];
-      expect(own.length).toBe(expected);
-      expect(specials).toBe(w.rarity.id === "legendaria" ? 1 : 0);
-      expect(w.effects.filter((e) => e.kind === "element").length).toBeLessThanOrEqual(1);
+  it("efectos por rareza: blanca 0, verde 0, azul A, morada B+A, legendaria B+A+L", () => {
+    const expected = { comun: "", poco: "", rara: "A", epica: "BA", legendaria: "BAL" };
+    for (const w of many(3000)) expect(w.effects.map((e) => e.tier).join("")).toBe(expected[w.rarity.id]);
+  });
+
+  it("verdes con 1 accesorio montado; blancas sin ninguno", () => {
+    for (const w of many(3000)) {
+      const own = w.optic === w.parts[0].from; // mira integrada del modelo: no es un accesorio
+      const n = (w.optic && !own ? 1 : 0) + (w.muzzle ? 1 : 0);
+      const can = gen.muzzleOptions(w.type, w.parts[0].from).length > 0 || gen.opticOptions(w).length > 0;
+      if (w.rarity.id === "comun") expect(n).toBe(0);
+      if (w.rarity.id === "poco" && can) expect(n).toBe(1);
     }
+  });
+
+  it("fuego, eléctrico y explosivo solo en moradas y legendarias; ningún otro elemento", () => {
+    for (const w of many(5000)) for (const e of w.effects) {
+      if (e.element) { expect(["fuego", "electrico", "explosive"]).toContain(e.element); expect(["epica", "legendaria"]).toContain(w.rarity.id); expect(e.tier).toBe("B"); }
+      expect(["corrosivo", "radiacion", "cryo", "chain"]).not.toContain(e.id);
+    }
+  });
+
+  it("bandas de poder por rareza (±5%) y tope legendario", () => {
+    for (const w of many(3000)) {
+      const flat = { ...w, rarity: { ...w.rarity, budget: 0 } };
+      const ratio = powerScore(w.stats, w.type) / powerScore(computeStats(flat), w.type);
+      if (w.rarity.id === "legendaria") expect(ratio).toBeLessThanOrEqual(1 + w.rarity.budget + 0.05);
+      else expect(Math.abs(ratio - (1 + w.rarity.budget))).toBeLessThanOrEqual(0.05);
+    }
+  });
+
+  it("cada legendaria tiene una firma L con nombre propio, distinta de sus efectos A y B", () => {
+    const names = new Map<string, string>();
+    for (const w of many(4000).filter((x) => x.rarity.id === "legendaria")) {
+      const L = w.effects.find((e) => e.tier === "L")!;
+      expect(w.effects.filter((e) => e.id === L.id).length).toBe(1);
+      if (names.has(L.id)) expect(names.get(L.id)).toBe(w.name); else names.set(L.id, w.name);
+    }
+    expect(new Set(names.values()).size).toBe(names.size); // nombre ↔ firma, uno a uno
+  });
+
+  it("un efecto A y uno B nunca son de la misma familia (10.000 armas)", () => {
+    for (const w of many(10000)) { const fam = w.effects.map((e) => e.family); expect(new Set(fam).size).toBe(fam.length); }
   });
 
   it("las rarezas altas tienen mejores estadísticas", () => {
     const rifles = many(1500, "rifle");
     const by = (id: string) => rifles.filter((w) => w.rarity.id === id);
-    expect(avg(by("poco"), "dano") / avg(by("comun"), "dano")).toBeGreaterThan(1.02);
-    expect(avg(by("epica"), "precision")).toBeGreaterThan(avg(by("comun"), "precision"));
+    const pw = (ws: WeaponSpec[]) => ws.reduce((a, w) => a + powerScore(w.stats, w.type), 0) / ws.length;
+    expect(pw(by("poco")) / pw(by("comun"))).toBeGreaterThan(1.03);
+    expect(pw(by("epica"))).toBeGreaterThan(pw(by("rara")));
   });
 
   it("los subfusiles disparan más rápido que los fusiles y los revólveres pegan más que las pistolas", () => {
