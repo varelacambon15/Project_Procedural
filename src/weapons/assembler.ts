@@ -5,7 +5,7 @@ import type { AssetEntry, PartRole, WeaponSpec } from "./types";
 import type { WeaponGenerator } from "./generator";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
-export interface AssembledWeapon { group: THREE.Group; parts: AssembledPart[]; length: number }
+export interface AssembledWeapon { group: THREE.Group; parts: AssembledPart[]; length: number; /** Punta del cañón (o del accesorio de boca), en coordenadas del grupo. */ muzzle: THREE.Vector3 }
 
 const v3 = (a: readonly number[]) => new THREE.Vector3(a[0], a[1], a[2]);
 
@@ -112,6 +112,7 @@ export class WeaponAssembler {
       acc.scale.setScalar(k);
       acc.position.set(muzzle.x - accE.bounds.min[0] * k, muzzle.y - ((accE.bounds.min[1] + accE.bounds.max[1]) / 2) * k, 0);
       add(acc, "muzzle", accE, [1.2, 0.3, 0]);
+      muzzle = new THREE.Vector3(acc.position.x + (accE.bounds.max[0] - accE.bounds.min[0]) * k, muzzle.y, 0);
     }
 
     // Centrar y guardar posiciones base para el despiece.
@@ -119,7 +120,8 @@ export class WeaponAssembler {
     const center = box.getCenter(new THREE.Vector3());
     const length = box.max.x - box.min.x;
     for (const p of parts) { p.object.position.sub(center); p.base.copy(p.object.position); p.explode.multiplyScalar(length * 0.18); }
-    return { group, parts, length };
+    const muzzleOut = (muzzle ?? new THREE.Vector3(box.max.x, center.y, 0)).clone().sub(center);
+    return { group, parts, length, muzzle: muzzleOut };
   }
 }
 

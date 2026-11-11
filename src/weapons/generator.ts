@@ -3,6 +3,7 @@
 import { hashString, mulberry32, pick, type Rng } from "./rng";
 import type { AssetEntry, Effect, Manifest, Paint, PartPick, Rarity, Stats, StatKey, WeaponSpec, WeaponType } from "./types";
 
+export { PAINTS };
 export const RARITIES: Rarity[] = [
   { id: "comun", name: "Común", weight: 40, mult: 1.0, effects: 0, color: "#c9c6bd" },
   { id: "poco", name: "Poco común", weight: 28, mult: 1.07, effects: 1, color: "#5fc25a" },
@@ -46,15 +47,15 @@ function weightedPick<T extends { pack: string }>(r: Rng, arr: T[]): T {
   return arr[arr.length - 1];
 }
 
-interface EffectDef { id: string; name: string; icon: string; color: string; element?: boolean; words: string[]; text: (r: Rng) => string }
+interface EffectDef { id: string; name: string; icon: string; color: string; element?: boolean; words: string[]; range?: [number, number]; text: (v: number) => string }
 const EFFECTS: EffectDef[] = [
-  { id: "fuego", element: true, icon: "▲", color: "#f07a2a", name: "Incendiaria", words: ["Ember", "Blaze", "Pyre"], text: (r) => `${12 + Math.floor(r() * 14)}% de probabilidad de prender fuego al objetivo.` },
-  { id: "corrosivo", element: true, icon: "◆", color: "#9bd23c", name: "Corrosiva", words: ["Acid", "Rust", "Sludge"], text: (r) => `${10 + Math.floor(r() * 12)}% de corroer armaduras. +40% de daño contra máquinas.` },
-  { id: "electrico", element: true, icon: "ϟ", color: "#5cc8f0", name: "Eléctrica", words: ["Spark", "Volt", "Storm"], text: (r) => `${14 + Math.floor(r() * 12)}% de electrocutar. Destroza escudos.` },
-  { id: "radiacion", element: true, icon: "☢", color: "#d8e04a", name: "Radiactiva", words: ["Isotope", "Fallout", "Ash"], text: () => "Los enemigos abatidos dejan un charco radiactivo durante 4 s." },
+  { id: "fuego", element: true, icon: "▲", color: "#f07a2a", name: "Incendiaria", words: ["Ember", "Blaze", "Pyre"], range: [12, 26], text: (v) => `${v}% de probabilidad de prender fuego al objetivo.` },
+  { id: "corrosivo", element: true, icon: "◆", color: "#9bd23c", name: "Corrosiva", words: ["Acid", "Rust", "Sludge"], range: [10, 22], text: (v) => `${v}% de corroer. +75% de daño contra armadura.` },
+  { id: "electrico", element: true, icon: "ϟ", color: "#5cc8f0", name: "Eléctrica", words: ["Spark", "Volt", "Storm"], range: [14, 26], text: (v) => `${v}% de electrocutar. +75% de daño contra escudos.` },
+  { id: "radiacion", element: true, icon: "☢", color: "#d8e04a", name: "Radiactiva", words: ["Isotope", "Fallout", "Ash"], range: [10, 20], text: (v) => `${v}% de irradiar: daño continuo que se contagia al morir.` },
   { id: "rebote", icon: "↯", color: "#e8e1d3", name: "Rebote", words: ["Ricochet", "Bounce"], text: () => "Las balas rebotan una vez hacia el enemigo más cercano." },
   { id: "doble", icon: "Ⅱ", color: "#e8e1d3", name: "Doble cañón improvisado", words: ["Twin", "Double"], text: () => "Dispara 2 proyectiles por disparo con un 40% más de retroceso." },
-  { id: "vampiro", icon: "♥", color: "#e05a6a", name: "Sanguijuela", words: ["Leech", "Fang"], text: (r) => `Recupera ${2 + Math.floor(r() * 3)}% del daño infligido como vida.` },
+  { id: "vampiro", icon: "♥", color: "#e05a6a", name: "Sanguijuela", words: ["Leech", "Fang"], range: [2, 5], text: (v) => `Recupera ${v}% del daño infligido como vida.` },
   { id: "recarga", icon: "↻", color: "#e8e1d3", name: "Recarga de pánico", words: ["Panic", "Rush"], text: () => "Recargar con el cargador vacío es un 50% más rápido." },
 ];
 const LEGENDARY_EFFECTS: Omit<EffectDef, "words">[] = [
@@ -147,55 +148,76 @@ export class WeaponGenerator {
     const paint = pick(r, PAINTS);
     const level = 8 + Math.floor(r() * 9);
 
-    // 4. Estadísticas: base del tipo + piezas + accesorios + rareza
-    const info = TYPE_INFO[type as Exclude<WeaponType, "accessory">];
-    const stats: Stats = { ...info.base };
-    stats.dano *= 1 + (level - 8) * 0.06;
-    const apply = (mods: Partial<Stats>, k = 1) => {
-      for (const [key, v] of Object.entries(mods) as [StatKey, number][]) {
-        // dano/cadencia/cargador en %, el resto en puntos
-        if (key === "dano" || key === "cadencia" || key === "cargador") stats[key] *= 1 + (v * k) / 100;
-        else stats[key] += v * k;
-      }
-    };
-    for (const p of parts) apply(partMods(p.from, p.role));
-    if (optic) apply(partMods(optic, "scope"));
-    if (muzzle) { apply(partMods(muzzle, "muzzle")); stats.precision += 5; stats.dano *= 0.95; }
-    if (layout === "modular-pistol") { stats.alcance += (barrelLength - 1) * 22; stats.precision += (barrelLength - 1) * 14; stats.manejo -= (barrelLength - 1) * 16; }
-    stats.dano *= rarity.mult;
-    stats.precision += (rarity.mult - 1) * 30;
-    for (const k of Object.keys(stats) as StatKey[]) stats[k] *= 0.96 + r() * 0.08;
-    stats.precision = Math.min(100, stats.precision);
-    stats.cargador = Math.max(1, Math.round(stats.cargador));
-
     // 5. Efectos
     const effects: Effect[] = [];
     const pool2 = EFFECTS.slice();
     let hasElement = false;
-    if (type === "flamethrower") { const f = EFFECTS[0]; effects.push({ ...f, text: "Daño de fuego continuo." }); hasElement = true; pool2.splice(0, 1); }
+    if (type === "flamethrower") { const f = EFFECTS[0]; effects.push({ id: f.id, name: f.name, icon: f.icon, color: f.color, element: true, value: 100, text: "Daño de fuego continuo." }); hasElement = true; pool2.splice(0, 1); }
     for (let i = 0; i < rarity.effects; i++) {
       const candidates = pool2.filter((e) => !(e.element && hasElement));
       const e = candidates[Math.floor(r() * candidates.length)];
       pool2.splice(pool2.indexOf(e), 1);
       if (e.element) hasElement = true;
-      effects.push({ id: e.id, name: e.name, icon: e.icon, color: e.color, element: e.element, text: e.text(r) });
+      const value = e.range ? e.range[0] + Math.floor(r() * (e.range[1] - e.range[0] + 1)) : undefined;
+      effects.push({ id: e.id, name: e.name, icon: e.icon, color: e.color, element: e.element, value, text: e.text(value ?? 0) });
     }
-    if (rarity.id === "legendaria") { const l = pick(r, LEGENDARY_EFFECTS); effects.push({ id: l.id, name: l.name, icon: l.icon, color: l.color, text: l.text(r) }); }
-    if (effects.some((f) => f.id === "doble")) stats.dano *= 0.62;
+    if (rarity.id === "legendaria") { const l = pick(r, LEGENDARY_EFFECTS); effects.push({ id: l.id, name: l.name, icon: l.icon, color: l.color, text: l.text(0) }); }
 
-    // 6. Nombre
-    let name: string;
+    // 6. Nombre (las legendarias, nombre propio; el resto se recalcula si cambian las piezas)
+    let name = "";
     if (rarity.id === "legendaria") {
       const lead = EFFECTS.find((e) => effects.some((f) => f.id === e.id));
       name = lead && r() < 0.5 ? `${pick(r, lead.words)} ${pick(r, LEGEND_NOUNS)}` : pick(r, LEGEND_NAMES);
-    } else {
-      const series = info.letter + "KRVMCLDTX"[hashString(body.id) % 9];
-      const cal = info.calibers[hashString(parts[1]?.from ?? body.id) % info.calibers.length];
-      const suffix = (barrelLength > 1.3 ? "L" : barrelLength < 0.95 ? "C" : "") + (muzzle ? " SD" : "") + (optic && optic !== body.id ? " O" : "");
-      const mark = rarity.id === "rara" ? " Mk II" : rarity.id === "epica" ? " Mk III" : "";
-      name = `${series}-${cal}${suffix}${mark}`;
     }
-
-    return { seed, type, layout, parts, barrelLength, muzzle, optic, rarity, paint, level, stats, effects, name };
+    const statSeed = Math.floor(r() * 2 ** 31);
+    const spec: WeaponSpec = { seed, type, layout, parts, barrelLength, muzzle, optic, rarity, paint, level, stats: { ...TYPE_INFO[type as BaseType].base }, effects, name, statSeed };
+    return this.refresh(spec);
   }
+
+  /** Recalcula estadísticas y nombre técnico (tras generar o tras cambiar piezas en el banco). */
+  refresh(spec: WeaponSpec): WeaponSpec {
+    spec.stats = computeStats(spec);
+    if (spec.rarity.id !== "legendaria") spec.name = technicalName(spec);
+    return spec;
+  }
+}
+
+type BaseType = Exclude<WeaponType, "accessory">;
+
+export function computeStats(spec: WeaponSpec): Stats {
+  const info = TYPE_INFO[spec.type as BaseType];
+  const stats: Stats = { ...info.base };
+  stats.dano *= 1 + (spec.level - 8) * 0.06;
+  const apply = (mods: Partial<Stats>) => {
+    for (const [key, v] of Object.entries(mods) as [StatKey, number][]) {
+      // dano/cadencia/cargador en %, el resto en puntos
+      if (key === "dano" || key === "cadencia" || key === "cargador") stats[key] *= 1 + v / 100;
+      else stats[key] += v;
+    }
+  };
+  for (const p of spec.parts) apply(partMods(p.from, p.role));
+  if (spec.optic) apply(partMods(spec.optic, "scope"));
+  if (spec.muzzle) { apply(partMods(spec.muzzle, "muzzle")); stats.precision += 5; stats.dano *= 0.95; }
+  const L = spec.barrelLength;
+  if (spec.layout === "modular-pistol") { stats.alcance += (L - 1) * 22; stats.precision += (L - 1) * 14; stats.manejo -= (L - 1) * 16; }
+  stats.dano *= spec.rarity.mult;
+  stats.precision += (spec.rarity.mult - 1) * 30;
+  const v = mulberry32(spec.statSeed);
+  for (const k of Object.keys(stats) as StatKey[]) stats[k] *= 0.96 + v() * 0.08;
+  if (spec.effects.some((f) => f.id === "doble")) stats.dano *= 0.62;
+  stats.precision = Math.min(100, Math.max(5, stats.precision));
+  stats.manejo = Math.min(100, Math.max(5, stats.manejo));
+  stats.cargador = Math.max(1, Math.round(stats.cargador));
+  return stats;
+}
+
+export function technicalName(spec: WeaponSpec): string {
+  const info = TYPE_INFO[spec.type as BaseType];
+  const body = spec.parts[0].from;
+  const series = info.letter + "KRVMCLDTX"[hashString(body) % 9];
+  const cal = info.calibers[hashString(spec.parts[1]?.from ?? body) % info.calibers.length];
+  const L = spec.barrelLength;
+  const suffix = (L > 1.3 ? "L" : L < 0.95 ? "C" : "") + (spec.muzzle ? " SD" : "") + (spec.optic && spec.optic !== body ? " O" : "");
+  const mark = spec.rarity.id === "rara" ? " Mk II" : spec.rarity.id === "epica" ? " Mk III" : "";
+  return `${series}-${cal}${suffix}${mark}`;
 }

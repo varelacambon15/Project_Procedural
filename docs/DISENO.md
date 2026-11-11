@@ -60,7 +60,7 @@ y se convierten con `npm run assets` a `.glb` normalizados:
 
 | Fase | Contenido | Estado |
 |---|---|---|
-| 1 | Generador de armas + banco de armero con cursor | En curso |
+| 1 | Campo de Pruebas: generador de armas, cofre, banco de trabajo, inventario y muñecos con barras de vida | En curso (demo jugable) |
 | 2 | Terreno procedural con biomas y vegetación | Pendiente |
 | 3 | Movimiento de shooter + disparo con armas generadas | Pendiente |
 | 4 | Enemigos, IA, barras de vida y botín | Pendiente |

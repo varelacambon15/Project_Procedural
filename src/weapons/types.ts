@@ -24,7 +24,7 @@ export type Stats = Record<StatKey, number>;
 
 export interface Rarity { id: "comun" | "poco" | "rara" | "epica" | "legendaria"; name: string; weight: number; mult: number; effects: number; color: string }
 
-export interface Effect { id: string; name: string; icon: string; color: string; text: string; element?: boolean }
+export interface Effect { id: string; name: string; icon: string; color: string; text: string; element?: boolean; value?: number }
 
 /** Pieza elegida: rol y arma de la que se extrae. */
 export interface PartPick { role: PartRole; from: string }
@@ -46,4 +46,6 @@ export interface WeaponSpec {
   stats: Stats;
   effects: Effect[];
   name: string;
+  /** Semilla de las pequeñas variaciones de estadísticas (estable al cambiar piezas). */
+  statSeed: number;
 }

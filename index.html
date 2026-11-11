@@ -3,51 +3,76 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Banco de Chatarra</title>
+  <title>Campo de Pruebas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="./src/bench/bench.css">
+  <link rel="stylesheet" href="./src/game/game.css">
 </head>
 <body>
-  <div class="wrap">
-    <div class="viewer" id="viewer">
-      <span class="tag">Banco de chatarra · vista del arma</span>
-      <div class="callouts" id="callouts"></div>
-      <span class="help">Arrastra para girar · rueda para acercar</span>
-      <div class="loading" id="loading">Cargando piezas…</div>
-    </div>
+  <div id="game"></div>
+  <div class="layer" id="bars"></div>
+  <div class="layer" id="numbers"></div>
+  <div id="bossbar"></div>
+  <div id="crosshair"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="dot"></i></div>
+  <div id="hitmarker"></div>
 
-    <div class="card">
-      <section>
-        <nav class="types" id="types" aria-label="Tipo de arma"></nav>
-      </section>
-      <section>
-        <span class="rarity" id="rarity">—</span>
-        <h1 id="name">—</h1>
-        <div class="meta"><span id="type">—</span><span>Nivel <b id="level">0</b></span><span>Semilla <b id="seed">0</b></span></div>
-        <div class="dmg"><strong id="damage">0</strong><span>daño por disparo</span></div>
-      </section>
-      <section>
-        <h2 class="h">Estadísticas</h2>
-        <div class="stats" id="stats"></div>
-      </section>
-      <section>
-        <h2 class="h">Efectos</h2>
-        <div class="effects" id="effects"></div>
-      </section>
-      <section>
-        <h2 class="h">Piezas y procedencia</h2>
-        <ul class="parts" id="parts"></ul>
-      </section>
-      <section>
-        <div class="actions">
-          <button id="gen" type="button">Generar otra<kbd>G · Ⓐ</kbd></button>
-          <button id="explode" class="ghost" type="button">Desmontar<kbd>D · Ⓧ</kbd></button>
-        </div>
-        <p class="foot" id="foot">Mando: LB/RB cambia de tipo de arma.</p>
-      </section>
+  <div class="hud" id="hint"></div>
+  <div class="hud" id="weaponhud">
+    <span id="wtype"></span><span id="wname"></span><span id="ammo"></span>
+    <div id="slots"></div>
+  </div>
+  <div class="hud" id="prompt" hidden></div>
+  <div class="hud" id="toast"></div>
+  <div class="hud" id="loot"></div>
+
+  <div class="screen" id="start">
+    <div class="start">
+      <span class="eyebrow" style="color:var(--amber);font-size:11px;letter-spacing:.18em;text-transform:uppercase">Demo jugable · Fase 1</span>
+      <h1 id="start-title">Campo de Pruebas</h1>
+      <p id="start-text">Un campo de tiro para probar las armas procedurales. Abre el cofre para conseguir armas nuevas, personalízalas en el banco de trabajo y pruébalas contra muñecos con escudo, armadura y vida. Los muñecos reaparecen al caer.</p>
+      <div class="ctrl">
+        <dl><h3>Teclado y ratón</h3>
+          <dt>WASD</dt><dd>moverse</dd><dt>Ratón</dt><dd>apuntar</dd><dt>Clic izq. / der.</dt><dd>disparar / apuntar con mira</dd>
+          <dt>R</dt><dd>recargar</dd><dt>1 · 2 · Q · rueda</dt><dd>cambiar de arma</dd><dt>Shift · Espacio</dt><dd>correr · saltar</dd>
+          <dt>E</dt><dd>cofre / banco de trabajo</dd><dt>Tab</dt><dd>inventario</dd><dt>Esc</dt><dd>pausa</dd>
+        </dl>
+        <dl><h3>Mando</h3>
+          <dt>Sticks</dt><dd>moverse · apuntar (con asistencia)</dd><dt>RT / LT</dt><dd>disparar / apuntar con mira</dd>
+          <dt>Ⓧ</dt><dd>recargar</dd><dt>Ⓨ</dt><dd>cambiar de arma</dd><dt>Ⓐ · L3</dt><dd>saltar · correr</dd>
+          <dt>Ⓑ</dt><dd>cofre / banco de trabajo</dd><dt>View</dt><dd>inventario</dd><dt>Start</dt><dd>pausa</dd>
+          <dt>En menús</dt><dd>stick izq. mueve el cursor, Ⓐ clic, Ⓑ volver</dd>
+        </dl>
+      </div>
+      <div><button class="btn" id="play" type="button">Entrar al campo</button></div>
     </div>
   </div>
-  <script type="module" src="./src/bench/main.ts"></script>
+
+  <div class="screen" id="inventory" hidden>
+    <div class="frame">
+      <header><h1>Inventario</h1><span class="keys"><kbd>Clic</kbd> coger y soltar · <kbd>Clic der.</kbd> equipar / guardar · <kbd>X</kbd> desguazar (mochila) · <kbd>Tab</kbd> cerrar</span></header>
+      <div class="inv">
+        <section><h2 style="margin-bottom:10px">Equipadas</h2><div class="equip" id="inv-equip"></div></section>
+        <section><h2 style="margin-bottom:10px">Mochila</h2><div class="pack" id="inv-pack"></div></section>
+      </div>
+      <div class="inv-foot" id="inv-foot"></div>
+      <div><button class="btn ghost" data-close="1" type="button">Volver al campo</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="workbench" hidden>
+    <div class="frame">
+      <header><h1>Banco de trabajo</h1><span class="keys">Elige un arma · pasa el cursor por una pieza para ver el cambio · <kbd>E</kbd> cerrar</span></header>
+      <div class="bench">
+        <section><h2 style="margin-bottom:10px">Tus armas</h2><div class="wlist" id="wb-list"></div></section>
+        <section style="display:grid;gap:12px"><div class="preview" id="wb-preview"><span class="tag">Arrastra para girar</span></div><div id="wb-card"></div></section>
+        <section><h2 style="margin-bottom:10px">Piezas</h2><div class="slotsbox" id="wb-slots"></div></section>
+      </div>
+      <div><button class="btn ghost" data-close="1" type="button">Volver al campo</button></div>
+    </div>
+  </div>
+
+  <div id="tooltip" hidden></div>
+  <div id="vcursor" hidden></div>
+  <script type="module" src="./src/game/main.ts"></script>
 </body>
 </html>
