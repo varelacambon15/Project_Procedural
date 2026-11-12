@@ -1,0 +1,13 @@
+{
+  "_doc": "[C] Propuesta de economía de la máquina expendedora (punto de decisión: ajústalo jugando). Precios en créditos; 'floor' = rareza mínima del nivel (suelo relativo: por encima del suelo se reparten los pesos normales de rareza); 'unlock' = créditos gastados en la máquina para desbloquear el nivel (progreso de la máquina). Ingresos: créditos por baja en las oleadas y por fin de oleada; al desguazar se cobra el valor de chatarra del arma.",
+  "startCredits": 150,
+  "tiers": [
+    { "id": "t1", "price": 60, "floor": "comun", "unlock": 0 },
+    { "id": "t2", "price": 160, "floor": "poco", "unlock": 200 },
+    { "id": "t3", "price": 420, "floor": "rara", "unlock": 700 },
+    { "id": "t4", "price": 950, "floor": "epica", "unlock": 1800 }
+  ],
+  "income": { "small": 3, "normal": 5, "big": 15, "boss": 40, "waveEnd": 25 },
+  "historySize": 8,
+  "revealSeconds": 1.4
+}
