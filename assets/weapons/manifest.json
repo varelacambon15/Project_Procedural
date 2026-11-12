@@ -28,14 +28,16 @@
       0.0472,
       0
      ],
-     "diameter": 0.0327
+     "diameter": 0.0327,
+     "type": "barrel_thread"
     },
     "slide": {
      "pos": [
       -0.11,
       0.0302,
       0
-     ]
+     ],
+     "type": "slide_rails"
     },
     "barrel": {
      "pos": [
@@ -43,14 +45,16 @@
       0.0493,
       0
      ],
-     "length": 0.0447
+     "length": 0.0447,
+     "type": "barrel_seat"
     },
     "top": {
      "pos": [
       -0.0014,
       0.0702,
       0
-     ]
+     ],
+     "type": "top_surface"
     }
    },
    "bounds": {
@@ -67,6 +71,11 @@
    },
    "triangles": 1040,
    "pack": "quaternius",
+   "approved": [
+    "slide",
+    "barrel",
+    "frame"
+   ],
    "file": "quaternius/q-pistol-1.glb",
    "label": "Pistol 1"
   },
@@ -97,14 +106,16 @@
       0.0472,
       0
      ],
-     "diameter": 0.0327
+     "diameter": 0.0327,
+     "type": "barrel_thread"
     },
     "slide": {
      "pos": [
       -0.11,
       0.0302,
       0
-     ]
+     ],
+     "type": "slide_rails"
     },
     "barrel": {
      "pos": [
@@ -112,14 +123,16 @@
       0.0493,
       0
      ],
-     "length": 0.0447
+     "length": 0.0447,
+     "type": "barrel_seat"
     },
     "top": {
      "pos": [
       -0.0014,
       0.0702,
       0
-     ]
+     ],
+     "type": "top_surface"
     }
    },
    "bounds": {
@@ -136,6 +149,11 @@
    },
    "triangles": 1200,
    "pack": "quaternius",
+   "approved": [
+    "slide",
+    "barrel",
+    "frame"
+   ],
    "file": "quaternius/q-pistol-2.glb",
    "label": "Pistol 2"
   },
@@ -166,14 +184,16 @@
       0.0433,
       0
      ],
-     "diameter": 0.0458
+     "diameter": 0.0458,
+     "type": "barrel_thread"
     },
     "slide": {
      "pos": [
       -0.11,
       0.0198,
       0
-     ]
+     ],
+     "type": "slide_rails"
     },
     "barrel": {
      "pos": [
@@ -181,14 +201,16 @@
       0.0564,
       0
      ],
-     "length": 0.0441
+     "length": 0.0441,
+     "type": "barrel_seat"
     },
     "top": {
      "pos": [
       -0.0029,
       0.0771,
       0
-     ]
+     ],
+     "type": "top_surface"
     }
    },
    "bounds": {
@@ -205,6 +227,11 @@
    },
    "triangles": 1442,
    "pack": "quaternius",
+   "approved": [
+    "slide",
+    "barrel",
+    "frame"
+   ],
    "file": "quaternius/q-pistol-3.glb",
    "label": "Pistol 3"
   },
@@ -235,14 +262,16 @@
       0.0637,
       0
      ],
-     "diameter": 0.0383
+     "diameter": 0.0383,
+     "type": "barrel_thread"
     },
     "slide": {
      "pos": [
       -0.0993,
       0.0445,
       0
-     ]
+     ],
+     "type": "slide_rails"
     },
     "barrel": {
      "pos": [
@@ -250,14 +279,16 @@
       0.0736,
       0
      ],
-     "length": 0.0412
+     "length": 0.0412,
+     "type": "barrel_seat"
     },
     "top": {
      "pos": [
       -0.0027,
       0.0907,
       0
-     ]
+     ],
+     "type": "top_surface"
     }
    },
    "bounds": {
@@ -274,6 +305,11 @@
    },
    "triangles": 1320,
    "pack": "quaternius",
+   "approved": [
+    "slide",
+    "barrel",
+    "frame"
+   ],
    "file": "quaternius/q-pistol-4.glb",
    "label": "Pistol 4"
   },
@@ -304,14 +340,16 @@
       0.0515,
       0
      ],
-     "diameter": 0.0199
+     "diameter": 0.0199,
+     "type": "barrel_thread"
     },
     "slide": {
      "pos": [
       -0.11,
       0.0324,
       0
-     ]
+     ],
+     "type": "slide_rails"
     },
     "barrel": {
      "pos": [
@@ -319,14 +357,16 @@
       0.0515,
       0
      ],
-     "length": 0.0447
+     "length": 0.0447,
+     "type": "barrel_seat"
     },
     "top": {
      "pos": [
       -0.0036,
       0.0725,
       0
-     ]
+     ],
+     "type": "top_surface"
     }
    },
    "bounds": {
@@ -343,6 +383,11 @@
    },
    "triangles": 968,
    "pack": "quaternius",
+   "approved": [
+    "slide",
+    "barrel",
+    "frame"
+   ],
    "file": "quaternius/q-pistol-5.glb",
    "label": "Pistol 5"
   },
@@ -373,14 +418,16 @@
       0.0352,
       0
      ],
-     "diameter": 0.0253
+     "diameter": 0.0253,
+     "type": "barrel_thread"
     },
     "slide": {
      "pos": [
       -0.11,
       0.0225,
       0
-     ]
+     ],
+     "type": "slide_rails"
     },
     "barrel": {
      "pos": [
@@ -388,14 +435,16 @@
       0.0366,
       0
      ],
-     "length": 0.0332
+     "length": 0.0332,
+     "type": "barrel_seat"
     },
     "top": {
      "pos": [
       -0.0018,
       0.0522,
       0
-     ]
+     ],
+     "type": "top_surface"
     }
    },
    "bounds": {
@@ -412,6 +461,11 @@
    },
    "triangles": 1878,
    "pack": "quaternius",
+   "approved": [
+    "slide",
+    "barrel",
+    "frame"
+   ],
    "file": "quaternius/q-pistol-6.glb",
    "label": "Pistol 6"
   },
@@ -432,14 +486,16 @@
       0.0449,
       0
      ],
-     "diameter": 0.0269
+     "diameter": 0.0269,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0584,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -447,7 +503,8 @@
       0.0125,
       0
      ],
-     "length": 0.0832
+     "length": 0.0832,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -464,6 +521,7 @@
    },
    "triangles": 1046,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-revolver-1.glb",
    "label": "Revolver 1"
   },
@@ -484,14 +542,16 @@
       0.0433,
       0
      ],
-     "diameter": 0.0373
+     "diameter": 0.0373,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0619,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -499,7 +559,8 @@
       -0.0003,
       0
      ],
-     "length": 0.0832
+     "length": 0.0832,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -516,6 +577,7 @@
    },
    "triangles": 1252,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-revolver-2.glb",
    "label": "Revolver 2"
   },
@@ -536,14 +598,16 @@
       0.0395,
       0
      ],
-     "diameter": 0.0496
+     "diameter": 0.0496,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0643,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -551,7 +615,8 @@
       0.0559,
       0
      ],
-     "length": 0.0832
+     "length": 0.0832,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -568,6 +633,7 @@
    },
    "triangles": 1438,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-revolver-3.glb",
    "label": "Revolver 3"
   },
@@ -588,14 +654,16 @@
       0.0568,
       0
      ],
-     "diameter": 0.0244
+     "diameter": 0.0244,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0808,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -603,7 +671,8 @@
       -0.0034,
       0
      ],
-     "length": 0.0832
+     "length": 0.0832,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -620,6 +689,7 @@
    },
    "triangles": 966,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-revolver-4.glb",
    "label": "Revolver 4"
   },
@@ -640,14 +710,16 @@
       0.0537,
       0
      ],
-     "diameter": 0.0181
+     "diameter": 0.0181,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0658,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -655,7 +727,8 @@
       0.052,
       0
      ],
-     "length": 0.0832
+     "length": 0.0832,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -672,6 +745,7 @@
    },
    "triangles": 1334,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-revolver-5.glb",
    "label": "Revolver 5"
   },
@@ -692,14 +766,16 @@
       0.0934,
       0
      ],
-     "diameter": 0.0177
+     "diameter": 0.0177,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1541,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -707,7 +783,8 @@
       0.1541,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -724,6 +801,7 @@
    },
    "triangles": 1164,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-submachinegun-1.glb",
    "label": "SubmachineGun 1"
   },
@@ -744,14 +822,16 @@
       0.0623,
       0
      ],
-     "diameter": 0.0121
+     "diameter": 0.0121,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1142,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -759,7 +839,8 @@
       0.104,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -776,6 +857,7 @@
    },
    "triangles": 1374,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-submachinegun-2.glb",
    "label": "SubmachineGun 2"
   },
@@ -796,14 +878,16 @@
       0.0579,
       0
      ],
-     "diameter": 0.017
+     "diameter": 0.017,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0952,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -811,7 +895,8 @@
       0.0458,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -828,6 +913,7 @@
    },
    "triangles": 1566,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-submachinegun-3.glb",
    "label": "SubmachineGun 3"
   },
@@ -848,14 +934,16 @@
       0.0951,
       0
      ],
-     "diameter": 0.0193
+     "diameter": 0.0193,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1606,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -863,7 +951,8 @@
       0.0476,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -880,6 +969,7 @@
    },
    "triangles": 1024,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-submachinegun-4.glb",
    "label": "SubmachineGun 4"
   },
@@ -900,14 +990,16 @@
       0.0443,
       0
      ],
-     "diameter": 0.0098
+     "diameter": 0.0098,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.086,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -915,7 +1007,8 @@
       0.0778,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -932,6 +1025,7 @@
    },
    "triangles": 1440,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-submachinegun-5.glb",
    "label": "SubmachineGun 5"
   },
@@ -952,14 +1046,16 @@
       0.1334,
       0
      ],
-     "diameter": 0.0985
+     "diameter": 0.0985,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1826,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -967,7 +1063,8 @@
       0.1818,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -984,6 +1081,7 @@
    },
    "triangles": 1256,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-assaultrifle-1.glb",
    "label": "AssaultRifle 1"
   },
@@ -1004,14 +1102,16 @@
       0.1047,
       0
      ],
-     "diameter": 0.0564
+     "diameter": 0.0564,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1329,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1019,7 +1119,8 @@
       0.0486,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1036,6 +1137,7 @@
    },
    "triangles": 1306,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-assaultrifle-2.glb",
    "label": "AssaultRifle 2"
   },
@@ -1056,14 +1158,16 @@
       0.1654,
       0
      ],
-     "diameter": 0.0891
+     "diameter": 0.0891,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.21,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1071,7 +1175,8 @@
       0.093,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1088,6 +1193,7 @@
    },
    "triangles": 1220,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-assaultrifle-3.glb",
    "label": "AssaultRifle 3"
   },
@@ -1108,14 +1214,16 @@
       0.1033,
       0
      ],
-     "diameter": 0.0557
+     "diameter": 0.0557,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1312,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1123,7 +1231,8 @@
       0.0496,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1140,6 +1249,7 @@
    },
    "triangles": 1390,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-assaultrifle-4.glb",
    "label": "AssaultRifle 4"
   },
@@ -1160,14 +1270,16 @@
       0.1047,
       0
      ],
-     "diameter": 0.0564
+     "diameter": 0.0564,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1329,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1175,7 +1287,8 @@
       0.0486,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1192,6 +1305,7 @@
    },
    "triangles": 1306,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-assaultrifle-5.glb",
    "label": "AssaultRifle 5"
   },
@@ -1212,14 +1326,16 @@
       0.0803,
       0
      ],
-     "diameter": 0.0246
+     "diameter": 0.0246,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1559,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1227,7 +1343,8 @@
       0.1105,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1244,6 +1361,7 @@
    },
    "triangles": 1930,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-assaultrifle2-1.glb",
    "label": "AssaultRifle2 1"
   },
@@ -1264,14 +1382,16 @@
       0.086,
       0.0002
      ],
-     "diameter": 0.0263
+     "diameter": 0.0263,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1669,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1279,7 +1399,8 @@
       0.1189,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1296,6 +1417,7 @@
    },
    "triangles": 1796,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-assaultrifle2-2.glb",
    "label": "AssaultRifle2 2"
   },
@@ -1316,14 +1438,16 @@
       0.0707,
       0
      ],
-     "diameter": 0.0338
+     "diameter": 0.0338,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1748,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1331,7 +1455,8 @@
       0.1123,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1348,6 +1473,7 @@
    },
    "triangles": 1614,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-assaultrifle2-3.glb",
    "label": "AssaultRifle2 3"
   },
@@ -1368,14 +1494,16 @@
       0.1155,
       0.0005
      ],
-     "diameter": 0.0394
+     "diameter": 0.0394,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.2366,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1383,7 +1511,8 @@
       0.1619,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1400,6 +1529,7 @@
    },
    "triangles": 1372,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-assaultrifle2-4.glb",
    "label": "AssaultRifle2 4"
   },
@@ -1420,14 +1550,16 @@
       0.0664,
       0
      ],
-     "diameter": 0.019
+     "diameter": 0.019,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1101,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1435,7 +1567,8 @@
       0.1101,
       0
      ],
-     "length": 0.24
+     "length": 0.24,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1452,6 +1585,7 @@
    },
    "triangles": 2782,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-bullpup-1.glb",
    "label": "Bullpup 1"
   },
@@ -1472,14 +1606,16 @@
       0.0904,
       0
      ],
-     "diameter": 0.0266
+     "diameter": 0.0266,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1515,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1487,7 +1623,8 @@
       0.1515,
       0
      ],
-     "length": 0.24
+     "length": 0.24,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1504,6 +1641,7 @@
    },
    "triangles": 2536,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-bullpup-2.glb",
    "label": "Bullpup 2"
   },
@@ -1524,14 +1662,16 @@
       0.0857,
       0
      ],
-     "diameter": 0.0232
+     "diameter": 0.0232,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.139,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1539,7 +1679,8 @@
       0.139,
       0
      ],
-     "length": 0.24
+     "length": 0.24,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1556,6 +1697,7 @@
    },
    "triangles": 2390,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-bullpup-3.glb",
    "label": "Bullpup 3"
   },
@@ -1576,14 +1718,16 @@
       0.0402,
       0.0003
      ],
-     "diameter": 0.0714
+     "diameter": 0.0714,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0904,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1591,7 +1735,8 @@
       0.0557,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1608,6 +1753,7 @@
    },
    "triangles": 1270,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-shotgun-1.glb",
    "label": "Shotgun 1"
   },
@@ -1628,14 +1774,16 @@
       0.0537,
       0
      ],
-     "diameter": 0.0306
+     "diameter": 0.0306,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0821,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1643,7 +1791,8 @@
       0.063,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1660,6 +1809,7 @@
    },
    "triangles": 746,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-shotgun-2.glb",
    "label": "Shotgun 2"
   },
@@ -1680,14 +1830,16 @@
       0.0531,
       0
      ],
-     "diameter": 0.0306
+     "diameter": 0.0306,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0815,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1695,7 +1847,8 @@
       0.0498,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1712,6 +1865,7 @@
    },
    "triangles": 978,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-shotgun-3.glb",
    "label": "Shotgun 3"
   },
@@ -1732,14 +1886,16 @@
       0.0521,
       0
      ],
-     "diameter": 0.0325
+     "diameter": 0.0325,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.085,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1747,7 +1903,8 @@
       0.0665,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1764,6 +1921,7 @@
    },
    "triangles": 668,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-shotgun-4.glb",
    "label": "Shotgun 4"
   },
@@ -1784,14 +1942,16 @@
       0.0946,
       0
      ],
-     "diameter": 0.0473
+     "diameter": 0.0473,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1383,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1799,7 +1959,8 @@
       0.1262,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1816,6 +1977,7 @@
    },
    "triangles": 956,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-shotgun-sawedoff.glb",
    "label": "Shotgun SawedOff"
   },
@@ -1836,14 +1998,16 @@
       0.0533,
       0.0004
      ],
-     "diameter": 0.0861
+     "diameter": 0.0861,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1081,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1851,7 +2015,8 @@
       0.098,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1868,6 +2033,7 @@
    },
    "triangles": 1612,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-shotgun-shortstock.glb",
    "label": "Shotgun ShortStock"
   },
@@ -1888,14 +2054,16 @@
       0.0598,
       -0.0123
      ],
-     "diameter": 0.0381
+     "diameter": 0.0381,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1221,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1903,7 +2071,8 @@
       0.107,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1920,6 +2089,7 @@
    },
    "triangles": 1382,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-sniperrifle-1.glb",
    "label": "SniperRifle 1"
   },
@@ -1940,14 +2110,16 @@
       0.0489,
       -0.01
      ],
-     "diameter": 0.0284
+     "diameter": 0.0284,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.122,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -1955,7 +2127,8 @@
       0.11,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -1972,6 +2145,7 @@
    },
    "triangles": 1732,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-sniperrifle-2.glb",
    "label": "SniperRifle 2"
   },
@@ -1992,14 +2166,16 @@
       0.0308,
       -0.0135
      ],
-     "diameter": 0.0284
+     "diameter": 0.0284,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0994,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2007,7 +2183,8 @@
       0.0519,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2024,6 +2201,7 @@
    },
    "triangles": 1722,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-sniperrifle-3.glb",
    "label": "SniperRifle 3"
   },
@@ -2044,14 +2222,16 @@
       0.0466,
       -0.0141
      ],
-     "diameter": 0.0251
+     "diameter": 0.0251,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1277,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2059,7 +2239,8 @@
       0.1103,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2076,6 +2257,7 @@
    },
    "triangles": 1346,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-sniperrifle-4.glb",
    "label": "SniperRifle 4"
   },
@@ -2096,14 +2278,16 @@
       0.0988,
       -0.0007
      ],
-     "diameter": 0.0251
+     "diameter": 0.0251,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1799,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2111,7 +2295,8 @@
       0.1625,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2128,6 +2313,7 @@
    },
    "triangles": 1690,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-sniperrifle-5.glb",
    "label": "SniperRifle 5"
   },
@@ -2148,14 +2334,16 @@
       0.0494,
       -0.0096
      ],
-     "diameter": 0.022
+     "diameter": 0.022,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1264,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2163,7 +2351,8 @@
       0.1055,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2180,6 +2369,7 @@
    },
    "triangles": 1370,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-sniperrifle-6.glb",
    "label": "SniperRifle 6"
   },
@@ -2208,6 +2398,7 @@
    },
    "triangles": 248,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-acc-silencer-1.glb",
    "label": "Accessories/Silencer 1"
   },
@@ -2236,6 +2427,7 @@
    },
    "triangles": 608,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-acc-silencer-2.glb",
    "label": "Accessories/Silencer 2"
   },
@@ -2264,6 +2456,7 @@
    },
    "triangles": 832,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-acc-silencer-3.glb",
    "label": "Accessories/Silencer 3"
   },
@@ -2292,6 +2485,7 @@
    },
    "triangles": 248,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-acc-silencer-short.glb",
    "label": "Accessories/Silencer Short"
   },
@@ -2320,6 +2514,7 @@
    },
    "triangles": 248,
    "pack": "quaternius",
+   "approved": [],
    "file": "quaternius/q-acc-silencer-long.glb",
    "label": "Accessories/Silencer long"
   },
@@ -2343,7 +2538,8 @@
      "size": [
       0.2568,
       0.0469
-     ]
+     ],
+     "type": "optic_mount"
     }
    },
    "bounds": {
@@ -2360,6 +2556,9 @@
    },
    "triangles": 412,
    "pack": "quaternius",
+   "approved": [
+    "scope"
+   ],
    "file": "quaternius/q-acc-scope-1.glb",
    "label": "Accessories/Scope 1"
   },
@@ -2383,7 +2582,8 @@
      "size": [
       0.2537,
       0.0486
-     ]
+     ],
+     "type": "optic_mount"
     }
    },
    "bounds": {
@@ -2400,6 +2600,9 @@
    },
    "triangles": 468,
    "pack": "quaternius",
+   "approved": [
+    "scope"
+   ],
    "file": "quaternius/q-acc-scope-2.glb",
    "label": "Accessories/Scope 2"
   },
@@ -2423,7 +2626,8 @@
      "size": [
       0.2346,
       0.0511
-     ]
+     ],
+     "type": "optic_mount"
     }
    },
    "bounds": {
@@ -2440,6 +2644,9 @@
    },
    "triangles": 428,
    "pack": "quaternius",
+   "approved": [
+    "scope"
+   ],
    "file": "quaternius/q-acc-scope-3.glb",
    "label": "Accessories/Scope 3"
   },
@@ -2465,7 +2672,8 @@
       0.056,
       0.0001
      ],
-     "diameter": 0.0278
+     "diameter": 0.0278,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -2476,14 +2684,16 @@
      "size": [
       0.0462,
       0.0843
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0764,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2491,7 +2701,8 @@
       0.0209,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2508,6 +2719,9 @@
    },
    "triangles": 637,
    "pack": "cosmo",
+   "approved": [
+    "magazine"
+   ],
    "file": "cosmo/c-pistol-1.glb",
    "label": "Pistol 1"
   },
@@ -2533,7 +2747,8 @@
       0.0544,
       0
      ],
-     "diameter": 0.0145
+     "diameter": 0.0145,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -2544,14 +2759,16 @@
      "size": [
       0.0682,
       0.081
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0719,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2559,7 +2776,8 @@
       0.0255,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2576,6 +2794,9 @@
    },
    "triangles": 684,
    "pack": "cosmo",
+   "approved": [
+    "magazine"
+   ],
    "file": "cosmo/c-pistol-2.glb",
    "label": "Pistol 2"
   },
@@ -2601,7 +2822,8 @@
       0.0571,
       0
      ],
-     "diameter": 0.0278
+     "diameter": 0.0278,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -2612,14 +2834,16 @@
      "size": [
       0.0472,
       0.0861
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0775,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2627,7 +2851,8 @@
       0.022,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2644,6 +2869,9 @@
    },
    "triangles": 635,
    "pack": "cosmo",
+   "approved": [
+    "magazine"
+   ],
    "file": "cosmo/c-pistol-3.glb",
    "label": "Pistol 3"
   },
@@ -2669,7 +2897,8 @@
       0.0542,
       0
      ],
-     "diameter": 0.0193
+     "diameter": 0.0193,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -2680,14 +2909,16 @@
      "size": [
       0.0507,
       0.0862
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0838,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2695,7 +2926,8 @@
       0.0561,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2712,6 +2944,9 @@
    },
    "triangles": 790,
    "pack": "cosmo",
+   "approved": [
+    "magazine"
+   ],
    "file": "cosmo/c-pistol-4.glb",
    "label": "Pistol 4"
   },
@@ -2742,7 +2977,8 @@
       0.021,
       0.0001
      ],
-     "diameter": 0.014
+     "diameter": 0.014,
+     "type": "barrel_thread"
     },
     "optic": {
      "pos": [
@@ -2753,7 +2989,8 @@
      "size": [
       0.0866,
       0.0307
-     ]
+     ],
+     "type": "optic_mount"
     },
     "magazine": {
      "pos": [
@@ -2764,14 +3001,16 @@
      "size": [
       0.0489,
       0.0624
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0344,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2779,7 +3018,8 @@
       0.032,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2796,6 +3036,10 @@
    },
    "triangles": 1070,
    "pack": "cosmo",
+   "approved": [
+    "scope",
+    "magazine"
+   ],
    "file": "cosmo/c-pistol-5.glb",
    "label": "Pistol 5"
   },
@@ -2821,7 +3065,8 @@
       0.0314,
       0.0011
      ],
-     "diameter": 0.0329
+     "diameter": 0.0329,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -2832,14 +3077,16 @@
      "size": [
       0.0393,
       0.0621
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0688,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2847,7 +3094,8 @@
       0.0432,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2864,6 +3112,9 @@
    },
    "triangles": 466,
    "pack": "cosmo",
+   "approved": [
+    "magazine"
+   ],
    "file": "cosmo/c-pistol-6.glb",
    "label": "Pistol 6"
   },
@@ -2894,7 +3145,8 @@
       0.0356,
       -0.0004
      ],
-     "diameter": 0.0189
+     "diameter": 0.0189,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -2905,7 +3157,8 @@
      "size": [
       0.084,
       0.1492
-     ]
+     ],
+     "type": "mag_well"
     },
     "optic": {
      "pos": [
@@ -2916,14 +3169,16 @@
      "size": [
       0.0858,
       0.0572
-     ]
+     ],
+     "type": "optic_mount"
     },
     "top": {
      "pos": [
       0,
       0.0933,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -2931,7 +3186,8 @@
       0.0197,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -2948,6 +3204,10 @@
    },
    "triangles": 682,
    "pack": "cosmo",
+   "approved": [
+    "magazine",
+    "scope"
+   ],
    "file": "cosmo/c-smg-1.glb",
    "label": "Subfusil 1"
   },
@@ -2983,7 +3243,8 @@
       0.0485,
       0.0003
      ],
-     "diameter": 0.0692
+     "diameter": 0.0692,
+     "type": "barrel_thread"
     },
     "optic": {
      "pos": [
@@ -2994,7 +3255,8 @@
      "size": [
       0.0702,
       0.0339
-     ]
+     ],
+     "type": "optic_mount"
     },
     "magazine": {
      "pos": [
@@ -3005,14 +3267,16 @@
      "size": [
       0.069,
       0.1392
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1016,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3020,7 +3284,8 @@
       0.0932,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3037,6 +3302,10 @@
    },
    "triangles": 866,
    "pack": "cosmo",
+   "approved": [
+    "scope",
+    "magazine"
+   ],
    "file": "cosmo/c-smg-2.glb",
    "label": "Subfusil 2"
   },
@@ -3067,7 +3336,8 @@
       0.0513,
       0.0019
      ],
-     "diameter": 0.021
+     "diameter": 0.021,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -3078,14 +3348,16 @@
      "size": [
       0.0694,
       0.1339
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1115,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3093,7 +3365,8 @@
       0.0234,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3110,6 +3383,9 @@
    },
    "triangles": 596,
    "pack": "cosmo",
+   "approved": [
+    "magazine"
+   ],
    "file": "cosmo/c-smg-3.glb",
    "label": "Subfusil 3"
   },
@@ -3135,7 +3411,8 @@
       0.0332,
       -0.001
      ],
-     "diameter": 0.0279
+     "diameter": 0.0279,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -3146,14 +3423,16 @@
      "size": [
       0.0407,
       0.0717
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0907,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3161,7 +3440,8 @@
       0.0434,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3178,6 +3458,9 @@
    },
    "triangles": 636,
    "pack": "cosmo",
+   "approved": [
+    "magazine"
+   ],
    "file": "cosmo/c-smg-4.glb",
    "label": "Subfusil 4"
   },
@@ -3208,7 +3491,8 @@
       0.0533,
       0
      ],
-     "diameter": 0.0298
+     "diameter": 0.0298,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -3219,7 +3503,8 @@
      "size": [
       0.0531,
       0.117
-     ]
+     ],
+     "type": "mag_well"
     },
     "optic": {
      "pos": [
@@ -3230,14 +3515,16 @@
      "size": [
       0.2504,
       0.0458
-     ]
+     ],
+     "type": "optic_mount"
     },
     "top": {
      "pos": [
       0,
       0.0739,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3245,7 +3532,8 @@
       0.0286,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3262,6 +3550,10 @@
    },
    "triangles": 862,
    "pack": "cosmo",
+   "approved": [
+    "magazine",
+    "scope"
+   ],
    "file": "cosmo/c-smg-5.glb",
    "label": "Subfusil 5"
   },
@@ -3297,7 +3589,8 @@
       0.0472,
       0
      ],
-     "diameter": 0.0349
+     "diameter": 0.0349,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -3308,7 +3601,8 @@
      "size": [
       0.0597,
       0.1127
-     ]
+     ],
+     "type": "mag_well"
     },
     "optic": {
      "pos": [
@@ -3319,14 +3613,16 @@
      "size": [
       0.0615,
       0.0518
-     ]
+     ],
+     "type": "optic_mount"
     },
     "top": {
      "pos": [
       0,
       0.078,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3334,7 +3630,8 @@
       0.0199,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3351,6 +3648,10 @@
    },
    "triangles": 520,
    "pack": "cosmo",
+   "approved": [
+    "magazine",
+    "scope"
+   ],
    "file": "cosmo/c-smg-6.glb",
    "label": "Subfusil 6"
   },
@@ -3381,7 +3682,8 @@
       0.0315,
       -0.0013
      ],
-     "diameter": 0.0325
+     "diameter": 0.0325,
+     "type": "barrel_thread"
     },
     "optic": {
      "pos": [
@@ -3392,7 +3694,8 @@
      "size": [
       0.0981,
       0.0513
-     ]
+     ],
+     "type": "optic_mount"
     },
     "magazine": {
      "pos": [
@@ -3403,14 +3706,16 @@
      "size": [
       0.0583,
       0.0964
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0585,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3418,7 +3723,8 @@
       0.0004,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3435,6 +3741,10 @@
    },
    "triangles": 664,
    "pack": "cosmo",
+   "approved": [
+    "scope",
+    "magazine"
+   ],
    "file": "cosmo/c-smg-7.glb",
    "label": "Subfusil 7"
   },
@@ -3465,7 +3775,8 @@
       0.0136,
       0.0002
      ],
-     "diameter": 0.0225
+     "diameter": 0.0225,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -3476,7 +3787,8 @@
      "size": [
       0.0671,
       0.1214
-     ]
+     ],
+     "type": "mag_well"
     },
     "optic": {
      "pos": [
@@ -3487,14 +3799,16 @@
      "size": [
       0.0994,
       0.0479
-     ]
+     ],
+     "type": "optic_mount"
     },
     "top": {
      "pos": [
       0,
       0.0742,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3502,7 +3816,8 @@
       -0.0144,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3519,6 +3834,10 @@
    },
    "triangles": 548,
    "pack": "cosmo",
+   "approved": [
+    "magazine",
+    "scope"
+   ],
    "file": "cosmo/c-smg-8.glb",
    "label": "Subfusil 8"
   },
@@ -3539,14 +3858,16 @@
       0.0415,
       0
      ],
-     "diameter": 0.0268
+     "diameter": 0.0268,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1022,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3554,7 +3875,8 @@
       0.0474,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3571,6 +3893,7 @@
    },
    "triangles": 1034,
    "pack": "cosmo",
+   "approved": [],
    "file": "cosmo/c-smg-9.glb",
    "label": "Subfusil 9"
   },
@@ -3601,7 +3924,8 @@
       0.0409,
       0
      ],
-     "diameter": 0.0245
+     "diameter": 0.0245,
+     "type": "barrel_thread"
     },
     "optic": {
      "pos": [
@@ -3612,7 +3936,8 @@
      "size": [
       0.1166,
       0.0692
-     ]
+     ],
+     "type": "optic_mount"
     },
     "magazine": {
      "pos": [
@@ -3623,14 +3948,16 @@
      "size": [
       0.07,
       0.1311
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0942,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3638,7 +3965,8 @@
       0.0575,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3655,6 +3983,10 @@
    },
    "triangles": 676,
    "pack": "cosmo",
+   "approved": [
+    "scope",
+    "magazine"
+   ],
    "file": "cosmo/c-smg-10.glb",
    "label": "Subfusil 10"
   },
@@ -3690,7 +4022,8 @@
       0.0926,
       -0.0002
      ],
-     "diameter": 0.1058
+     "diameter": 0.1058,
+     "type": "barrel_thread"
     },
     "optic": {
      "pos": [
@@ -3701,7 +4034,8 @@
      "size": [
       0.1046,
       0.0892
-     ]
+     ],
+     "type": "optic_mount"
     },
     "magazine": {
      "pos": [
@@ -3712,14 +4046,16 @@
      "size": [
       0.1358,
       0.1691
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1893,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3727,7 +4063,8 @@
       0.1366,
       0
      ],
-     "length": 0.304
+     "length": 0.304,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3744,6 +4081,11 @@
    },
    "triangles": 1258,
    "pack": "cosmo",
+   "approved": [
+    "scope",
+    "magazine",
+    "magazine"
+   ],
    "file": "cosmo/c-flamethrower.glb",
    "label": "Flamethrower"
   },
@@ -3774,7 +4116,8 @@
       0.091,
       0
      ],
-     "diameter": 0.0538
+     "diameter": 0.0538,
+     "type": "barrel_thread"
     },
     "optic": {
      "pos": [
@@ -3785,7 +4128,8 @@
      "size": [
       0.1267,
       0.1031
-     ]
+     ],
+     "type": "optic_mount"
     },
     "magazine": {
      "pos": [
@@ -3796,14 +4140,16 @@
      "size": [
       0.2143,
       0.2312
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1596,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3811,7 +4157,8 @@
       0.0353,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3828,6 +4175,10 @@
    },
    "triangles": 964,
    "pack": "cosmo",
+   "approved": [
+    "scope",
+    "magazine"
+   ],
    "file": "cosmo/c-rifle-1.glb",
    "label": "Fusil 1"
   },
@@ -3863,7 +4214,8 @@
       0.0161,
       0.0003
      ],
-     "diameter": 0.2309
+     "diameter": 0.2309,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -3874,7 +4226,8 @@
      "size": [
       0.119,
       0.1869
-     ]
+     ],
+     "type": "mag_well"
     },
     "optic": {
      "pos": [
@@ -3885,14 +4238,16 @@
      "size": [
       0.2328,
       0.0777
-     ]
+     ],
+     "type": "optic_mount"
     },
     "top": {
      "pos": [
       0,
       0.1441,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3900,7 +4255,8 @@
       -0.0258,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3917,6 +4273,10 @@
    },
    "triangles": 922,
    "pack": "cosmo",
+   "approved": [
+    "magazine",
+    "scope"
+   ],
    "file": "cosmo/c-rifle-2.glb",
    "label": "Fusil 2"
   },
@@ -3942,7 +4302,8 @@
       0.0297,
       0.0004
      ],
-     "diameter": 0.121
+     "diameter": 0.121,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -3953,14 +4314,16 @@
      "size": [
       0.0873,
       0.0961
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1342,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -3968,7 +4331,8 @@
       0.1147,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -3985,6 +4349,9 @@
    },
    "triangles": 1311,
    "pack": "cosmo",
+   "approved": [
+    "magazine"
+   ],
    "file": "cosmo/c-rifle-3.glb",
    "label": "Fusil 3"
   },
@@ -4015,7 +4382,8 @@
       0.112,
       0.0001
      ],
-     "diameter": 0.061
+     "diameter": 0.061,
+     "type": "barrel_thread"
     },
     "optic": {
      "pos": [
@@ -4026,7 +4394,8 @@
      "size": [
       0.235,
       0.0971
-     ]
+     ],
+     "type": "optic_mount"
     },
     "magazine": {
      "pos": [
@@ -4037,14 +4406,16 @@
      "size": [
       0.4303,
       0.0912
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1718,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4052,7 +4423,8 @@
       0.1084,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4069,6 +4441,10 @@
    },
    "triangles": 1008,
    "pack": "cosmo",
+   "approved": [
+    "scope",
+    "magazine"
+   ],
    "file": "cosmo/c-rifle-4.glb",
    "label": "Fusil 4"
   },
@@ -4099,7 +4475,8 @@
       0.0998,
       0.0009
      ],
-     "diameter": 0.066
+     "diameter": 0.066,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -4110,7 +4487,8 @@
      "size": [
       0.2138,
       0.2413
-     ]
+     ],
+     "type": "mag_well"
     },
     "optic": {
      "pos": [
@@ -4121,14 +4499,16 @@
      "size": [
       0.2073,
       0.1047
-     ]
+     ],
+     "type": "optic_mount"
     },
     "top": {
      "pos": [
       0,
       0.1655,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4136,7 +4516,8 @@
       0.1506,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4153,6 +4534,10 @@
    },
    "triangles": 1231,
    "pack": "cosmo",
+   "approved": [
+    "magazine",
+    "scope"
+   ],
    "file": "cosmo/c-rifle-5.glb",
    "label": "Fusil 5"
   },
@@ -4173,14 +4558,16 @@
       0.0755,
       0.0014
      ],
-     "diameter": 0.0265
+     "diameter": 0.0265,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1234,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4188,7 +4575,8 @@
       0.0552,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4205,6 +4593,7 @@
    },
    "triangles": 740,
    "pack": "cosmo",
+   "approved": [],
    "file": "cosmo/c-rifle-6.glb",
    "label": "Fusil 6"
   },
@@ -4235,7 +4624,8 @@
       0.0308,
       -0.0005
      ],
-     "diameter": 0.0244
+     "diameter": 0.0244,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -4246,7 +4636,8 @@
      "size": [
       0.126,
       0.1533
-     ]
+     ],
+     "type": "mag_well"
     },
     "optic": {
      "pos": [
@@ -4257,14 +4648,16 @@
      "size": [
       0.0654,
       0.0654
-     ]
+     ],
+     "type": "optic_mount"
     },
     "top": {
      "pos": [
       0,
       0.1033,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4272,7 +4665,8 @@
       0.1033,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4289,6 +4683,10 @@
    },
    "triangles": 1028,
    "pack": "cosmo",
+   "approved": [
+    "magazine",
+    "scope"
+   ],
    "file": "cosmo/c-rifle-7.glb",
    "label": "Fusil 7"
   },
@@ -4314,7 +4712,8 @@
       0.0913,
       0.0006
      ],
-     "diameter": 0.0799
+     "diameter": 0.0799,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -4325,14 +4724,16 @@
      "size": [
       0.1179,
       0.0602
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1312,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4340,7 +4741,8 @@
       0.0359,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4357,6 +4759,9 @@
    },
    "triangles": 404,
    "pack": "cosmo",
+   "approved": [
+    "magazine"
+   ],
    "file": "cosmo/c-shotgun-1.glb",
    "label": "Shotgun 1"
   },
@@ -4377,14 +4782,16 @@
       0.0685,
       -0.0003
      ],
-     "diameter": 0.0361
+     "diameter": 0.0361,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1353,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4392,7 +4799,8 @@
       0.0744,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4409,6 +4817,7 @@
    },
    "triangles": 546,
    "pack": "cosmo",
+   "approved": [],
    "file": "cosmo/c-shotgun-2.glb",
    "label": "Shotgun 2"
   },
@@ -4434,7 +4843,8 @@
       0.0846,
       0.0017
      ],
-     "diameter": 0.0106
+     "diameter": 0.0106,
+     "type": "barrel_thread"
     },
     "optic": {
      "pos": [
@@ -4445,14 +4855,16 @@
      "size": [
       0.2721,
       0.0786
-     ]
+     ],
+     "type": "optic_mount"
     },
     "top": {
      "pos": [
       0,
       0.1135,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4460,7 +4872,8 @@
       0.0975,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4477,6 +4890,9 @@
    },
    "triangles": 1886,
    "pack": "cosmo",
+   "approved": [
+    "scope"
+   ],
    "file": "cosmo/c-sniper-0.glb",
    "label": "Sniper 0"
   },
@@ -4507,7 +4923,8 @@
       0.0641,
       0.0002
      ],
-     "diameter": 0.0513
+     "diameter": 0.0513,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -4518,7 +4935,8 @@
      "size": [
       0.1233,
       0.1529
-     ]
+     ],
+     "type": "mag_well"
     },
     "optic": {
      "pos": [
@@ -4529,14 +4947,16 @@
      "size": [
       0.2837,
       0.1339
-     ]
+     ],
+     "type": "optic_mount"
     },
     "top": {
      "pos": [
       0,
       0.1048,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4544,7 +4964,8 @@
       0.067,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4561,6 +4982,10 @@
    },
    "triangles": 1101,
    "pack": "cosmo",
+   "approved": [
+    "magazine",
+    "scope"
+   ],
    "file": "cosmo/c-sniper-1.glb",
    "label": "Sniper 1"
   },
@@ -4591,7 +5016,8 @@
       0.0483,
       0.0003
      ],
-     "diameter": 0.0528
+     "diameter": 0.0528,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -4602,7 +5028,8 @@
      "size": [
       0.1873,
       0.196
-     ]
+     ],
+     "type": "mag_well"
     },
     "optic": {
      "pos": [
@@ -4613,14 +5040,16 @@
      "size": [
       0.4199,
       0.1086
-     ]
+     ],
+     "type": "optic_mount"
     },
     "top": {
      "pos": [
       0,
       0.086,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4628,7 +5057,8 @@
       -0.003,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4645,6 +5075,10 @@
    },
    "triangles": 738,
    "pack": "cosmo",
+   "approved": [
+    "magazine",
+    "scope"
+   ],
    "file": "cosmo/c-sniper-2.glb",
    "label": "Sniper 2"
   },
@@ -4670,7 +5104,8 @@
       0.047,
       0
      ],
-     "diameter": 0.0347
+     "diameter": 0.0347,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -4681,14 +5116,16 @@
      "size": [
       0.0492,
       0.0835
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0689,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4696,7 +5133,8 @@
       0.0303,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4713,6 +5151,9 @@
    },
    "triangles": 1382,
    "pack": "asimov",
+   "approved": [
+    "magazine"
+   ],
    "file": "asimov/a-pistol.glb",
    "label": "Pistol"
   },
@@ -4738,7 +5179,8 @@
       0.0691,
       -0.0002
      ],
-     "diameter": 0.0394
+     "diameter": 0.0394,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -4749,14 +5191,16 @@
      "size": [
       0.0702,
       0.1192
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0984,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4764,7 +5208,8 @@
       0.0456,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4781,6 +5226,9 @@
    },
    "triangles": 1426,
    "pack": "asimov",
+   "approved": [
+    "magazine"
+   ],
    "file": "asimov/a-compact.glb",
    "label": "Compact"
   },
@@ -4806,7 +5254,8 @@
       0.0402,
       0.0136
      ],
-     "diameter": 0.0233
+     "diameter": 0.0233,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -4817,14 +5266,16 @@
      "size": [
       0.0375,
       0.1108
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0877,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4832,7 +5283,8 @@
       0.0741,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4849,6 +5301,9 @@
    },
    "triangles": 3254,
    "pack": "asimov",
+   "approved": [
+    "magazine"
+   ],
    "file": "asimov/a-smg.glb",
    "label": "SMG"
   },
@@ -4874,7 +5329,8 @@
       0.0597,
       0.0233
      ],
-     "diameter": 0.0272
+     "diameter": 0.0272,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -4885,14 +5341,16 @@
      "size": [
       0.0889,
       0.1543
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.128,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4900,7 +5358,8 @@
       0.1085,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4917,6 +5376,9 @@
    },
    "triangles": 3208,
    "pack": "asimov",
+   "approved": [
+    "magazine"
+   ],
    "file": "asimov/a-rifle.glb",
    "label": "Assault Rifle"
   },
@@ -4942,7 +5404,8 @@
       0.0737,
       0.0292
      ],
-     "diameter": 0.0305
+     "diameter": 0.0305,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -4953,14 +5416,16 @@
      "size": [
       0.1434,
       0.0728
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.174,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -4968,7 +5433,8 @@
       0.1169,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -4985,6 +5451,9 @@
    },
    "triangles": 4044,
    "pack": "asimov",
+   "approved": [
+    "magazine"
+   ],
    "file": "asimov/a-sniper.glb",
    "label": "Sniper Rifle"
   },
@@ -5005,14 +5474,16 @@
       0.065,
       0.0001
      ],
-     "diameter": 0.1101
+     "diameter": 0.1101,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1586,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -5020,7 +5491,8 @@
       0.1325,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -5037,6 +5509,7 @@
    },
    "triangles": 3046,
    "pack": "asimov",
+   "approved": [],
    "file": "asimov/a-shotgun.glb",
    "label": "Shotgun"
   },
@@ -5057,14 +5530,16 @@
       0.0329,
       0
      ],
-     "diameter": 0.1047
+     "diameter": 0.1047,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0861,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -5072,7 +5547,8 @@
       0.0562,
       0
      ],
-     "length": 0.352
+     "length": 0.352,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -5089,6 +5565,7 @@
    },
    "triangles": 2144,
    "pack": "asimov",
+   "approved": [],
    "file": "asimov/a-launcher.glb",
    "label": "Rocket Launcher"
   },
@@ -5109,14 +5586,16 @@
       0.0456,
       0
      ],
-     "diameter": 0.0364
+     "diameter": 0.0364,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0698,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -5124,7 +5603,8 @@
       0.0386,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -5141,6 +5621,7 @@
    },
    "triangles": 5050,
    "pack": "misc",
+   "approved": [],
    "file": "misc/m-m1911.glb",
    "label": "M1911"
   },
@@ -5161,14 +5642,16 @@
       0.0491,
       0
      ],
-     "diameter": 0.0179
+     "diameter": 0.0179,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0639,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -5176,7 +5659,8 @@
       0.0417,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -5193,6 +5677,7 @@
    },
    "triangles": 2880,
    "pack": "misc",
+   "approved": [],
    "file": "misc/m-deagle.glb",
    "label": "Desert Eagle"
   },
@@ -5218,7 +5703,8 @@
       0.0222,
       0
      ],
-     "diameter": 0.0718
+     "diameter": 0.0718,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -5229,14 +5715,16 @@
      "size": [
       0.1247,
       0.1495
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1617,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -5244,7 +5732,8 @@
       0.1362,
       0
      ],
-     "length": 0.384
+     "length": 0.384,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -5261,8 +5750,10 @@
    },
    "triangles": 2016,
    "pack": "modern",
+   "approved": [],
    "file": "modern/w-vss.glb",
-   "label": "VSS"
+   "label": "VSS",
+   "quarantine": "Queda un bloque suelto detrás del cajón: se usa como arma entera."
   },
   {
    "id": "w-l115",
@@ -5301,7 +5792,8 @@
       0.0166,
       -0.0079
      ],
-     "diameter": 0.0207
+     "diameter": 0.0207,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -5312,14 +5804,16 @@
      "size": [
       0.0789,
       0.0627
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       -0.2668,
       0.1299,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -5327,7 +5821,8 @@
       0.0936,
       0
      ],
-     "length": 0.3076
+     "length": 0.3076,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -5354,7 +5849,8 @@
      "size": [
       0.1038,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -5365,7 +5861,8 @@
      "size": [
       0.1346,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -5376,7 +5873,8 @@
      "size": [
       0.4024,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -5387,7 +5885,8 @@
      "size": [
       0.1038,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -5398,7 +5897,8 @@
      "size": [
       0.1346,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -5409,10 +5909,17 @@
      "size": [
       0.2625,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-l115.glb",
    "label": "L115"
   },
@@ -5453,7 +5960,8 @@
       0.0503,
       0
      ],
-     "diameter": 0.0352
+     "diameter": 0.0352,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -5464,14 +5972,16 @@
      "size": [
       0.1237,
       0.1151
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       -0.2054,
       0.1579,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -5479,7 +5989,8 @@
       0.1351,
       0
      ],
-     "length": 0.2536
+     "length": 0.2536,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -5506,7 +6017,8 @@
      "size": [
       0.0478,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -5517,7 +6029,8 @@
      "size": [
       0.0844,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -5528,7 +6041,8 @@
      "size": [
       0.1678,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -5539,7 +6053,8 @@
      "size": [
       0.0478,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -5550,7 +6065,8 @@
      "size": [
       0.0824,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -5561,10 +6077,17 @@
      "size": [
       0.0977,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-barrett.glb",
    "label": "Barrett"
   },
@@ -5605,7 +6128,8 @@
       0.0625,
       0.0134
      ],
-     "diameter": 0.031
+     "diameter": 0.031,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -5616,14 +6140,16 @@
      "size": [
       0.0787,
       0.1084
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       -0.1912,
       0.1633,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -5631,7 +6157,8 @@
       0.108,
       0
      ],
-     "length": 0.3514
+     "length": 0.3514,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -5658,7 +6185,8 @@
      "size": [
       0.1186,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -5669,7 +6197,8 @@
      "size": [
       0.1841,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -5680,7 +6209,8 @@
      "size": [
       0.5021,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -5691,7 +6221,8 @@
      "size": [
       0.1186,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -5702,7 +6233,8 @@
      "size": [
       0.1887,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -5713,10 +6245,17 @@
      "size": [
       0.3234,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-m249.glb",
    "label": "M249"
   },
@@ -5757,7 +6296,8 @@
       0.0213,
       0.0761
      ],
-     "diameter": 0.0262
+     "diameter": 0.0262,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -5768,14 +6308,16 @@
      "size": [
       0.0984,
       0.1207
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       -0.1857,
       0.1354,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -5783,7 +6325,8 @@
       0.0624,
       0
      ],
-     "length": 0.1915
+     "length": 0.1915,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -5810,7 +6353,8 @@
      "size": [
       0.0888,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -5821,7 +6365,8 @@
      "size": [
       0.0894,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -5832,7 +6377,8 @@
      "size": [
       0.2233,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -5843,7 +6389,8 @@
      "size": [
       0.0915,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -5854,7 +6401,8 @@
      "size": [
       0.0894,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -5865,64 +6413,19 @@
      "size": [
       0.0839,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-m60.glb",
    "label": "M60"
-  },
-  {
-   "id": "w-minigun",
-   "type": "lmg",
-   "parts": [
-    {
-     "role": "body",
-     "node": "body",
-     "source": "w-minigun"
-    }
-   ],
-   "sockets": {
-    "muzzle": {
-     "pos": [
-      0.575,
-      0.0788,
-      0.0016
-     ],
-     "diameter": 0.1415
-    },
-    "top": {
-     "pos": [
-      0,
-      0.2379,
-      0
-     ]
-    },
-    "rail": {
-     "pos": [
-      -0.046,
-      0.1332,
-      0
-     ],
-     "length": 0.368
-    }
-   },
-   "bounds": {
-    "min": [
-     -0.575,
-     -0.2379,
-     -0.1115
-    ],
-    "max": [
-     0.575,
-     0.2379,
-     0.1115
-    ]
-   },
-   "triangles": 2304,
-   "pack": "modern",
-   "file": "modern/w-minigun.glb",
-   "label": "Minigun"
   },
   {
    "id": "w-sten",
@@ -5946,7 +6449,8 @@
       0.0482,
       0.0849
      ],
-     "diameter": 0.0137
+     "diameter": 0.0137,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -5957,14 +6461,16 @@
      "size": [
       0.0291,
       0.0151
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0677,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -5972,7 +6478,8 @@
       0.0364,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -5989,8 +6496,10 @@
    },
    "triangles": 1844,
    "pack": "modern",
+   "approved": [],
    "file": "modern/w-sten.glb",
-   "label": "Sten"
+   "label": "Sten",
+   "quarantine": "La culata queda suelta al trocear: se usa como arma entera."
   },
   {
    "id": "w-ppsh",
@@ -6014,7 +6523,8 @@
       0.0371,
       0
      ],
-     "diameter": 0.022
+     "diameter": 0.022,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -6025,14 +6535,16 @@
      "size": [
       0.0358,
       0.0807
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0575,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -6040,7 +6552,8 @@
       0.0406,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -6057,6 +6570,9 @@
    },
    "triangles": 1524,
    "pack": "modern",
+   "approved": [
+    "magazine"
+   ],
    "file": "modern/w-ppsh.glb",
    "label": "PPSh"
   },
@@ -6082,7 +6598,8 @@
       0.0513,
       0
      ],
-     "diameter": 0.033
+     "diameter": 0.033,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -6093,14 +6610,16 @@
      "size": [
       0.068,
       0.0887
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0682,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -6108,7 +6627,8 @@
       0.0343,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -6125,6 +6645,9 @@
    },
    "triangles": 830,
    "pack": "modern",
+   "approved": [
+    "magazine"
+   ],
    "file": "modern/w-m1911.glb",
    "label": "M1911"
   },
@@ -6145,14 +6668,16 @@
       0.0508,
       0
      ],
-     "diameter": 0.0328
+     "diameter": 0.0328,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0765,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -6160,7 +6685,8 @@
       0.0545,
       0
      ],
-     "length": 0.288
+     "length": 0.288,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -6177,8 +6703,10 @@
    },
    "triangles": 714,
    "pack": "modern",
+   "approved": [],
    "file": "modern/w-garand.glb",
-   "label": "M1 Garand"
+   "label": "M1 Garand",
+   "quarantine": "Al trocear desaparece el cajón: se usa como arma entera."
   },
   {
    "id": "w-luger",
@@ -6202,7 +6730,8 @@
       0.0538,
       0
      ],
-     "diameter": 0.0223
+     "diameter": 0.0223,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -6213,14 +6742,16 @@
      "size": [
       0.0806,
       0.0993
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0688,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -6228,7 +6759,8 @@
       0.0466,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -6245,6 +6777,9 @@
    },
    "triangles": 890,
    "pack": "modern",
+   "approved": [
+    "magazine"
+   ],
    "file": "modern/w-luger.glb",
    "label": "Luger P08"
   },
@@ -6285,7 +6820,8 @@
       0.0417,
       0.0037
      ],
-     "diameter": 0.0235
+     "diameter": 0.0235,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -6296,14 +6832,16 @@
      "size": [
       0.0969,
       0.1797
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       -0.0831,
       0.1582,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -6311,7 +6849,8 @@
       0.1122,
       0
      ],
-     "length": 0.2632
+     "length": 0.2632,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -6338,7 +6877,8 @@
      "size": [
       0.0627,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -6349,7 +6889,8 @@
      "size": [
       0.1139,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -6360,7 +6901,8 @@
      "size": [
       0.2156,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -6371,7 +6913,8 @@
      "size": [
       0.0627,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -6382,7 +6925,8 @@
      "size": [
       0.1139,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -6393,10 +6937,17 @@
      "size": [
       0.2156,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-xm8.glb",
    "label": "XM8"
   },
@@ -6437,7 +6988,8 @@
       0.0449,
       0.0017
      ],
-     "diameter": 0.0212
+     "diameter": 0.0212,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -6448,14 +7000,16 @@
      "size": [
       0.0813,
       0.1505
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       -0.1035,
       0.1338,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -6463,7 +7017,8 @@
       0.0944,
       0
      ],
-     "length": 0.2346
+     "length": 0.2346,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -6490,7 +7045,8 @@
      "size": [
       0.0887,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -6501,7 +7057,8 @@
      "size": [
       0.0803,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -6512,7 +7069,8 @@
      "size": [
       0.3172,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -6523,7 +7081,8 @@
      "size": [
       0.0887,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -6534,7 +7093,8 @@
      "size": [
       0.0831,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -6545,10 +7105,17 @@
      "size": [
       0.1594,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-scarh.glb",
    "label": "SCAR-H"
   },
@@ -6589,7 +7156,8 @@
       0.0507,
       0
      ],
-     "diameter": 0.0229
+     "diameter": 0.0229,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -6600,14 +7168,16 @@
      "size": [
       0.0711,
       0.1299
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       -0.1268,
       0.1119,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -6615,7 +7185,8 @@
       0.0773,
       0
      ],
-     "length": 0.202
+     "length": 0.202,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -6642,7 +7213,8 @@
      "size": [
       0.0628,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -6653,7 +7225,8 @@
      "size": [
       0.0633,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -6664,7 +7237,8 @@
      "size": [
       0.2706,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -6675,7 +7249,8 @@
      "size": [
       0.0628,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -6686,7 +7261,8 @@
      "size": [
       0.0633,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -6697,10 +7273,17 @@
      "size": [
       0.1406,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-m16a4.glb",
    "label": "M16A4"
   },
@@ -6741,7 +7324,8 @@
       0.0759,
       0
      ],
-     "diameter": 0.026
+     "diameter": 0.026,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -6752,14 +7336,16 @@
      "size": [
       0.1255,
       0.2115
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0.0167,
       0.1725,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -6767,7 +7353,8 @@
       0.1563,
       0
      ],
-     "length": 0.2455
+     "length": 0.2455,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -6794,7 +7381,8 @@
      "size": [
       0.2012,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -6805,7 +7393,8 @@
      "size": [
       0.12,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -6816,7 +7405,8 @@
      "size": [
       0.3507,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -6827,7 +7417,8 @@
      "size": [
       0.2012,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -6838,7 +7429,8 @@
      "size": [
       0.12,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -6849,10 +7441,17 @@
      "size": [
       0.0469,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-g36.glb",
    "label": "G36"
   },
@@ -6893,7 +7492,8 @@
       0.083,
       0
      ],
-     "diameter": 0.0208
+     "diameter": 0.0208,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -6904,14 +7504,16 @@
      "size": [
       0.1458,
       0.207
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       -0.0568,
       0.1284,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -6919,7 +7521,8 @@
       0.1007,
       0
      ],
-     "length": 0.2738
+     "length": 0.2738,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -6946,7 +7549,8 @@
      "size": [
       0.055,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -6957,7 +7561,8 @@
      "size": [
       0.0692,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -6968,7 +7573,8 @@
      "size": [
       0.3911,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -6979,7 +7585,8 @@
      "size": [
       0.055,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -6990,7 +7597,8 @@
      "size": [
       0.0692,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -7001,10 +7609,17 @@
      "size": [
       0.1781,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-ak47.glb",
    "label": "AK-47"
   },
@@ -7045,7 +7660,8 @@
       0.0328,
       0
      ],
-     "diameter": 0.0359
+     "diameter": 0.0359,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -7056,14 +7672,16 @@
      "size": [
       0.093,
       0.174
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       -0.112,
       0.1647,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7071,7 +7689,8 @@
       0.0871,
       0
      ],
-     "length": 0.2358
+     "length": 0.2358,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7098,7 +7717,8 @@
      "size": [
       0.0928,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -7109,7 +7729,8 @@
      "size": [
       0.1163,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -7120,7 +7741,8 @@
      "size": [
       0.3368,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -7131,7 +7753,8 @@
      "size": [
       0.0928,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -7142,7 +7765,8 @@
      "size": [
       0.1037,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -7153,10 +7777,17 @@
      "size": [
       0.1563,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-aa12.glb",
    "label": "AA-12"
   },
@@ -7197,7 +7828,8 @@
       0.0617,
       0
      ],
-     "diameter": 0.018
+     "diameter": 0.018,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -7208,14 +7840,16 @@
      "size": [
       0.0356,
       0.1387
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       -0.0693,
       0.0985,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7223,7 +7857,8 @@
       0.0294,
       0
      ],
-     "length": 0.0701
+     "length": 0.0701,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7250,7 +7885,8 @@
      "size": [
       0.0692,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -7261,7 +7897,8 @@
      "size": [
       0.1067,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -7272,7 +7909,8 @@
      "size": [
       0.0808,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -7283,7 +7921,8 @@
      "size": [
       0.0694,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -7294,7 +7933,8 @@
      "size": [
       0.1078,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -7305,10 +7945,17 @@
      "size": [
       0.0167,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-uzi.glb",
    "label": "Uzi"
   },
@@ -7334,7 +7981,8 @@
       0.0092,
       -0.0014
      ],
-     "diameter": 0.0241
+     "diameter": 0.0241,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -7345,14 +7993,16 @@
      "size": [
       0.2797,
       0.0253
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0932,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7360,7 +8010,8 @@
       -0.0143,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7377,6 +8028,9 @@
    },
    "triangles": 1236,
    "pack": "modern",
+   "approved": [
+    "magazine"
+   ],
    "file": "modern/w-p90.glb",
    "label": "P90"
   },
@@ -7402,7 +8056,8 @@
       0.0991,
       0
      ],
-     "diameter": 0.0218
+     "diameter": 0.0218,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -7413,14 +8068,16 @@
      "size": [
       0.124,
       0.2521
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1836,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7428,7 +8085,8 @@
       0.162,
       0
      ],
-     "length": 0.16
+     "length": 0.16,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7445,6 +8103,9 @@
    },
    "triangles": 1894,
    "pack": "modern",
+   "approved": [
+    "magazine"
+   ],
    "file": "modern/w-mp5k.glb",
    "label": "MP5K"
   },
@@ -7485,7 +8146,8 @@
       0.0513,
       0
      ],
-     "diameter": 0.0189
+     "diameter": 0.0189,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -7496,14 +8158,16 @@
      "size": [
       0.0752,
       0.1179
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0.0423,
       0.0985,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7511,7 +8175,8 @@
       0.0936,
       0
      ],
-     "length": 0.0952
+     "length": 0.0952,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7538,7 +8203,8 @@
      "size": [
       0.1317,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "front": {
      "pos": [
@@ -7549,7 +8215,8 @@
      "size": [
       0.0603,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "grip": {
      "pos": [
@@ -7560,7 +8227,8 @@
      "size": [
       0.0152,
       0
-     ]
+     ],
+     "type": "grip_mount"
     },
     "stockFace": {
      "pos": [
@@ -7571,7 +8239,8 @@
      "size": [
       0.1321,
       0
-     ]
+     ],
+     "type": "stock_mount"
     },
     "frontFace": {
      "pos": [
@@ -7582,7 +8251,8 @@
      "size": [
       0.0627,
       0
-     ]
+     ],
+     "type": "handguard_mount"
     },
     "gripFace": {
      "pos": [
@@ -7593,10 +8263,17 @@
      "size": [
       0.0129,
       0
-     ]
+     ],
+     "type": "grip_mount"
     }
    },
    "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "magazine"
+   ],
    "file": "modern/w-vector.glb",
    "label": "Vector"
   },
@@ -7622,7 +8299,8 @@
       0.0453,
       0.003
      ],
-     "diameter": 0.0221
+     "diameter": 0.0221,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -7633,14 +8311,16 @@
      "size": [
       0.0921,
       0.1443
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1595,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7648,7 +8328,8 @@
       0.0039,
       0
      ],
-     "length": 0.24
+     "length": 0.24,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7665,6 +8346,9 @@
    },
    "triangles": 1082,
    "pack": "modern",
+   "approved": [
+    "magazine"
+   ],
    "file": "modern/w-f2000.glb",
    "label": "F2000"
   },
@@ -7690,7 +8374,8 @@
       0.0466,
       0
      ],
-     "diameter": 0.0155
+     "diameter": 0.0155,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -7701,14 +8386,16 @@
      "size": [
       0.0832,
       0.1579
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.1429,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7716,7 +8403,8 @@
       0.036,
       0
      ],
-     "length": 0.24
+     "length": 0.24,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7733,6 +8421,9 @@
    },
    "triangles": 1596,
    "pack": "modern",
+   "approved": [
+    "magazine"
+   ],
    "file": "modern/w-famas.glb",
    "label": "FAMAS"
   },
@@ -7753,14 +8444,16 @@
       0.057,
       0
      ],
-     "diameter": 0.0695
+     "diameter": 0.0695,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1443,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7768,7 +8461,8 @@
       0.1397,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7785,6 +8479,7 @@
    },
    "triangles": 2364,
    "pack": "modern",
+   "approved": [],
    "file": "modern/w-spas12.glb",
    "label": "SPAS-12"
   },
@@ -7805,14 +8500,16 @@
       0.0806,
       0
      ],
-     "diameter": 0.0658
+     "diameter": 0.0658,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.1267,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7820,7 +8517,8 @@
       0.1211,
       0
      ],
-     "length": 0.32
+     "length": 0.32,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7837,6 +8535,7 @@
    },
    "triangles": 636,
    "pack": "modern",
+   "approved": [],
    "file": "modern/w-sawedoff.glb",
    "label": "Sawed-off"
   },
@@ -7862,7 +8561,8 @@
       0.0509,
       -0.001
      ],
-     "diameter": 0.0362
+     "diameter": 0.0362,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -7873,14 +8573,16 @@
      "size": [
       0.0739,
       0.1033
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.077,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7888,7 +8590,8 @@
       0.0215,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7905,6 +8608,9 @@
    },
    "triangles": 642,
    "pack": "modern",
+   "approved": [
+    "magazine"
+   ],
    "file": "modern/w-glock17.glb",
    "label": "Glock 17"
   },
@@ -7925,14 +8631,16 @@
       0.0353,
       0
      ],
-     "diameter": 0.0256
+     "diameter": 0.0256,
+     "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
       0.0552,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -7940,7 +8648,8 @@
       0.0431,
       0
      ],
-     "length": 0.0832
+     "length": 0.0832,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -7957,6 +8666,7 @@
    },
    "triangles": 1446,
    "pack": "modern",
+   "approved": [],
    "file": "modern/w-revolver.glb",
    "label": "Revolver"
   },
@@ -7982,7 +8692,8 @@
       0.0479,
       0
      ],
-     "diameter": 0.0207
+     "diameter": 0.0207,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -7993,14 +8704,16 @@
      "size": [
       0.0521,
       0.0728
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0,
       0.0658,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -8008,7 +8721,8 @@
       0.0294,
       0
      ],
-     "length": 0.0704
+     "length": 0.0704,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -8025,6 +8739,9 @@
    },
    "triangles": 1040,
    "pack": "modern",
+   "approved": [
+    "magazine"
+   ],
    "file": "modern/w-deagle.glb",
    "label": "Desert Eagle"
   },
@@ -8050,7 +8767,8 @@
       0.0283,
       0.0001
      ],
-     "diameter": 0.0223
+     "diameter": 0.0223,
+     "type": "barrel_thread"
     },
     "magazine": {
      "pos": [
@@ -8061,14 +8779,16 @@
      "size": [
       0.0413,
       0.0578
-     ]
+     ],
+     "type": "mag_well"
     },
     "top": {
      "pos": [
       0.0004,
       0.0437,
       0
-     ]
+     ],
+     "type": "top_surface"
     },
     "rail": {
      "pos": [
@@ -8076,7 +8796,8 @@
       0.0391,
       0
      ],
-     "length": 0.0702
+     "length": 0.0702,
+     "type": "rail_top"
     }
    },
    "bounds": {
@@ -8093,6 +8814,9 @@
    },
    "triangles": 874,
    "pack": "modern",
+   "approved": [
+    "magazine"
+   ],
    "file": "modern/w-usp45.glb",
    "label": "USP .45 SD"
   }

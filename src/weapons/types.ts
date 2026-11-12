@@ -4,7 +4,9 @@ export type WeaponType = "pistol" | "revolver" | "smg" | "rifle" | "bullpup" | "
 export type PartRole = "body" | "slide" | "frame" | "barrel" | "magazine" | "scope" | "muzzle" | "receiver" | "stock" | "grip" | "front";
 export type FireMode = "auto" | "semi" | "burst" | "pump" | "bolt";
 
-export interface Socket { pos: [number, number, number]; diameter?: number; size?: [number, number]; length?: number }
+/** Tipos estándar de unión: una pieza solo encaja en una unión del mismo tipo. */
+export type ConnectorType = "barrel_thread" | "mag_well" | "optic_mount" | "rail_top" | "slide_rails" | "barrel_seat" | "top_surface" | "stock_mount" | "handguard_mount" | "grip_mount";
+export interface Socket { pos: [number, number, number]; diameter?: number; size?: [number, number]; length?: number; type?: ConnectorType }
 
 /** Una entrada del manifest generado por tools/build-assets.mjs */
 export interface AssetEntry {
@@ -20,6 +22,10 @@ export interface AssetEntry {
   /** Armas despiezadas: juntas de unión (cajón: rear/front/grip; piezas: stockFace/frontFace/gripFace). */
   joints?: Record<"rear" | "front" | "grip" | "stockFace" | "frontFace" | "gripFace", Socket>;
   modular?: boolean;
+  /** Piezas aprobadas para usarse sueltas (revisión visual); el generador solo usa estas. */
+  approved?: string[];
+  /** Si está en cuarentena, el motivo. */
+  quarantine?: string;
 }
 export interface Manifest { convention: string; weapons: AssetEntry[] }
 
@@ -36,7 +42,8 @@ export interface Rarity { id: RarityId; weight: number; budget: number; tiers: (
 /** Efecto: nivel A (menor), B (mayor; incluye fuego, eléctrico y explosivo) o L (firma de una legendaria). */
 export interface Effect { id: string; tier: "A" | "B" | "L"; family: string; element?: "fuego" | "electrico" | "explosive"; icon: string; color: string; value?: number }
 
-export interface Paint { id: string; color: [number, number, number] | null }
+/** Acabado: color principal (cajón, guardamanos), secundario (culata, empuñadura) y el resto en acero. */
+export interface Paint { id: string; color: [number, number, number] | null; secondary?: [number, number, number] | null }
 
 /** Pieza elegida: rol y arma (o accesorio) de la que sale. */
 export interface PartPick { role: PartRole; from: string }

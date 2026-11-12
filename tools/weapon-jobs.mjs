@@ -94,4 +94,12 @@ ALL.push(
   w("usp45", "USP .45 SD", "pistol", "^Usp45-Silenced$", "^Pistol_Magazine_3$"),
 );
 
+// Cuarentena: piezas que no se usan sueltas, con el motivo (revisión del piloto de despiece).
+const QUARANTINE = {
+  "w-garand": "Al trocear desaparece el cajón: se usa como arma entera.",
+  "w-sten": "La culata queda suelta al trocear: se usa como arma entera.",
+  "w-vss": "Queda un bloque suelto detrás del cajón: se usa como arma entera.",
+};
+for (const j of ALL) if (QUARANTINE[j.id]) j.quarantine = QUARANTINE[j.id];
+
 export const JOBS = ALL.map((j) => (BODY_ONLY[j.id] ? { ...j, pick: [{ match: BODY_ONLY[j.id], role: "body" }] } : j));

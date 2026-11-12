@@ -7,6 +7,7 @@ import { PELLETS, effectValue, hasEffect, elementOf } from "../weapons/generator
 import { accessory } from "../weapons/accessories";
 import type { Item } from "./inventory";
 import type { Dummy, Element, Zone } from "./dummies";
+import { Arms } from "./arms";
 
 const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3, smg: 1.8, rifle: 2.2, bullpup: 2.4, shotgun: 2.6, sniper: 2.9, launcher: 3.2, lmg: 4.4, flamethrower: 2.8 };
 
@@ -17,6 +18,34 @@ export interface ShotHooks {
 }
 export interface Control { fire: boolean; aim: boolean; moving: number; sprinting: boolean; lookX: number; lookY: number; vy: number; grounded: boolean; inspect: boolean }
 
+/**
+ * Recarga como máquina de fases con nombre. Duraciones en fracción del tiempo total de recarga, que ya se escala con
+ * el manejo y los efectos. Retocar una recarga es cambiar estos datos, no el código.
+ */
+export const RELOAD_PHASES: [string, number][] = [["tilt", 0.14], ["grab", 0.12], ["out", 0.14], ["pouch", 0.16], ["in", 0.2], ["rack", 0.14], ["settle", 0.1]];
+interface PhaseState { id: string; t: number }
+export function phaseAt(phases: [string, number][], p: number): PhaseState {
+  let acc = 0;
+  for (const [id, d] of phases) { if (p <= acc + d) return { id, t: THREE.MathUtils.clamp((p - acc) / d, 0, 1) }; acc += d; }
+  return { id: phases[phases.length - 1][0], t: 1 };
+}
+
+/** Patrón de retroceso (vertical, horizontal) por disparo de una ráfaga, determinista por arma. */
+const patterns = new Map<number, [number, number][]>();
+export function recoilPattern(seed: number): [number, number][] {
+  if (!patterns.has(seed)) {
+    let x = seed >>> 0; const r = () => ((x = (Math.imul(x ^ (x >>> 15), 2246822519) + 0x9e3779b9) >>> 0) / 4294967296);
+    const bias = (r() - 0.5) * 1.4, wobble = 0.4 + r() * 0.8, freq = 0.25 + r() * 0.35;
+    const p: [number, number][] = [];
+    for (let i = 0; i < 40; i++) p.push([1 + (i < 6 ? 0.25 : 0) + (r() - 0.5) * 0.2, bias * Math.min(1, i / 8) + Math.sin(i * freq) * wobble]);
+    patterns.set(seed, p);
+  }
+  return patterns.get(seed)!;
+}
+
+const casingGeo = { small: new THREE.CylinderGeometry(0.0045, 0.0045, 0.02, 6), big: new THREE.CylinderGeometry(0.007, 0.007, 0.06, 6), shell: new THREE.CylinderGeometry(0.0095, 0.0095, 0.065, 8) };
+const brassMat = new THREE.MeshStandardMaterial({ color: 0xc8a050, metalness: 0.85, roughness: 0.3 });
+const shellMat = new THREE.MeshStandardMaterial({ color: 0xa02a1e, roughness: 0.6 });
 const ease = (x: number) => x * x * (3 - 2 * x);
 const tri = (x: number, a: number, b: number) => (x <= a || x >= b ? 0 : Math.sin(((x - a) / (b - a)) * Math.PI));
 
@@ -59,12 +88,17 @@ export class Gun {
   private audio: AudioContext | null = null;
   private pendingEcho = -1;
   hitmarker = 0; critmarker = 0; killmarker = 0;
+  private arms: Arms;
+  private reloadPhase: PhaseState | null = null;
+  private sprayIndex = 0; private sprayT = 0;
+  private casings: { mesh: THREE.Mesh; vel: THREE.Vector3; spin: THREE.Vector3; t: number }[] = [];
 
   constructor(private camera: THREE.PerspectiveCamera, private scene: THREE.Scene, private asm: WeaponAssembler, private world: THREE.Object3D[], private hooks: ShotHooks) {
     camera.add(this.viewmodel);
     this.viewmodel.add(this.sway); this.sway.add(this.holder);
     this.flash = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0 }));
     this.holder.add(this.flash, this.flashLight);
+    this.arms = new Arms(camera);
   }
 
   get spec() { return this.item?.spec ?? null; }
@@ -115,6 +149,7 @@ export class Gun {
     try {
       this.audio ??= new AudioContext();
       const a = this.audio, t = a.currentTime, g = a.createGain(); g.connect(a.destination);
+      if (kind === "shot" && type) { this.layeredShot(a, type, quiet); return; }
       if (kind === "shot" || kind === "boom") {
         const len = kind === "boom" ? 0.6 : type === "sniper" || type === "shotgun" || type === "revolver" ? 0.38 : 0.16;
         const buf = a.createBuffer(1, a.sampleRate * len, a.sampleRate), d = buf.getChannelData(0);
@@ -131,6 +166,35 @@ export class Gun {
         o.connect(g); o.start(t); o.stop(t + c[2] + 0.02);
       }
     } catch { /* sin audio */ }
+  }
+
+  /** Ruido blanco con envolvente, filtrado. */
+  private noise(a: AudioContext, len: number, decay: number, filter: BiquadFilterType, freq: number, gain: number, when: number, rate = 1, out: AudioNode = a.destination) {
+    const buf = a.createBuffer(1, Math.max(1, Math.floor(a.sampleRate * len)), a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, decay);
+    const src = a.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
+    const f = a.createBiquadFilter(); f.type = filter; f.frequency.value = freq;
+    const g = a.createGain(); g.gain.value = gain;
+    src.connect(f); f.connect(g); g.connect(out); src.start(when);
+  }
+  /**
+   * Disparo por capas: ataque (chasquido), cuerpo (explosión filtrada por tipo), cola (eco, más larga bajo la
+   * marquesina) y mecánica (cerrojo). Tono con variación aleatoria; el supresor apaga ataque y cuerpo.
+   */
+  private layeredShot(a: AudioContext, type: WeaponType, quiet: boolean) {
+    const t = a.currentTime, pitch = 0.94 + Math.random() * 0.12;
+    const body: Record<string, [number, number, number]> = { pistol: [2400, 0.14, 0.32], revolver: [1500, 0.3, 0.42], smg: [2800, 0.12, 0.28], rifle: [2000, 0.18, 0.34], bullpup: [2100, 0.17, 0.33], shotgun: [1100, 0.34, 0.5], sniper: [1200, 0.42, 0.5], lmg: [1800, 0.2, 0.36] };
+    const [freq, len, gain] = body[type] ?? body.rifle;
+    const z = this.camera.position.z, indoor = z > 1.4 && z < 12.8;
+    if (!quiet) this.noise(a, 0.02, 1, "highpass", 3500, gain * 0.6, t, pitch);              // ataque
+    this.noise(a, len, 3, "lowpass", quiet ? 700 : freq, quiet ? gain * 0.3 : gain, t, pitch);  // cuerpo
+    // cola: eco con retardo; bajo techo, más corta y más presente
+    const delay = a.createDelay(); delay.delayTime.value = indoor ? 0.06 : 0.14;
+    const fb = a.createGain(); fb.gain.value = indoor ? 0.35 : 0.25; delay.connect(fb); fb.connect(delay);
+    const out = a.createGain(); out.gain.value = quiet ? 0.25 : 0.5; delay.connect(out); out.connect(a.destination);
+    this.noise(a, len * (indoor ? 1.6 : 2.4), 2, "lowpass", indoor ? 900 : 600, gain * 0.35, t + 0.01, pitch, delay);
+    setTimeout(() => { delay.disconnect(); fb.disconnect(); }, 2000);
+    this.noise(a, 0.03, 2, "bandpass", 3200, 0.06, t + 0.035, pitch * 1.3);                // mecánica
   }
 
   startReload() {
@@ -173,6 +237,8 @@ export class Gun {
       }
     }
     this.triggerHeld = c.fire;
+    this.sprayT += dt; if (this.sprayT > 0.35) this.sprayIndex = 0;
+    this.updateCasings(dt);
     if (this.pendingEcho >= 0) { this.pendingEcho -= dt; if (this.pendingEcho < 0) { this.pendingEcho = -1; this.fire(c.moving, true); } }
 
     // Recuperación del retroceso
@@ -211,18 +277,21 @@ export class Gun {
     rot.x += this.kick * (handgun ? 0.2 : 0.07); rot.z += this.kickRoll;
     // Corredera / cerrojo tras disparar
     if (this.cycleT > 0) { const k = tri(1 - this.cycleT / 0.45, 0.1, 0.9); rot.z += 0.25 * k; rot.x += 0.12 * k; pos.y -= 0.02 * k; }
-    // Recarga: inclinar, sacar cargador, meter cargador, montar
+    // Recarga por fases con nombre (datos en RELOAD_PHASES). Las fases mueven el arma, el cargador y la mano izquierda.
+    let reloadPhase: PhaseState | null = null;
     if (this.reloadT > 0 && s) {
-      const p = 1 - this.reloadT / this.reloadDur;
-      const tilt = tri(p, 0, 1);
-      rot.z += 0.55 * tilt; rot.x += 0.25 * tilt; pos.y -= 0.05 * tilt; pos.x -= 0.03 * tilt;
-      pos.z += 0.04 * tri(p, 0.82, 0.97); rot.x -= 0.15 * tri(p, 0.82, 0.97);
+      reloadPhase = phaseAt(RELOAD_PHASES, 1 - this.reloadT / this.reloadDur);
+      const { id, t } = reloadPhase;
+      const tilt = id === "tilt" ? ease(t) : id === "settle" ? 1 - ease(t) : 1;
+      rot.z += 0.5 * tilt; rot.x += 0.22 * tilt; pos.y -= 0.045 * tilt; pos.x -= 0.025 * tilt;
+      if (id === "rack") { const k = tri(t, 0, 1); pos.z += 0.035 * k; rot.x -= 0.12 * k; }
       if (this.mag) {
-        const out = p < 0.5 ? ease(THREE.MathUtils.clamp((p - 0.15) / 0.2, 0, 1)) : 1 - ease(THREE.MathUtils.clamp((p - 0.5) / 0.22, 0, 1));
-        this.mag.object.position.copy(this.mag.base).add(new THREE.Vector3(-0.01, -0.2 * out, 0));
-        this.mag.object.visible = !(p > 0.38 && p < 0.47);
+        const drop = id === "out" ? ease(t) : id === "pouch" ? 1 : id === "in" ? 1 - ease(t) : 0;
+        this.mag.object.position.copy(this.mag.base).add(new THREE.Vector3(-0.01, -0.2 * drop, 0));
+        this.mag.object.visible = id !== "pouch";
       }
     } else if (this.mag) { this.mag.object.position.copy(this.mag.base); this.mag.object.visible = true; }
+    this.reloadPhase = reloadPhase;
     // Inspección: mostrar el lateral del arma
     if (this.inspectT > 0) { const k = tri(1 - this.inspectT / 2.6, 0, 1); rot.y += -1.1 * ease(Math.min(1, k * 1.4)); rot.z += 0.45 * k; pos.x -= 0.06 * k; pos.z += 0.05 * k; pos.y += 0.03 * k; }
     // Sacar el arma
@@ -241,6 +310,8 @@ export class Gun {
     this.sway.position.set(-this.swayV.x * 0.15 * swayK, this.swayV.y * 0.1 * swayK, 0);
     // Con visor de aumento, al apuntar del todo se ve a través del visor (el arma se oculta)
     this.viewmodel.visible = !(this.sight === "scope" && this.aimT > 0.9);
+    this.arms.visible = this.viewmodel.visible && !!this.model;
+    if (this.model) this.updateHands();
 
     // Efectos
     const fm = this.flash.material as THREE.MeshBasicMaterial;
@@ -256,13 +327,64 @@ export class Gun {
     }
   }
 
+  /** Casquillo expulsado por la ventana del cajón, con física simple. */
+  private ejectCasing() {
+    const s = this.spec!; const m = this.model; if (!m || s.type === "revolver") return;
+    const big = s.type === "sniper" || s.type === "shotgun";
+    const geo = s.type === "shotgun" ? casingGeo.shell : big ? casingGeo.big : casingGeo.small;
+    const mesh = new THREE.Mesh(geo, s.type === "shotgun" ? shellMat : brassMat);
+    const port = m.group.localToWorld(m.handles.charge.clone().add(new THREE.Vector3(0.02, -0.01, 0)));
+    mesh.position.copy(port);
+    const camQ = this.camera.getWorldQuaternion(new THREE.Quaternion());
+    const vel = new THREE.Vector3(1.6 + Math.random() * 0.6, 1.2 + Math.random() * 0.6, 0.4).applyQuaternion(camQ);
+    this.scene.add(mesh);
+    this.casings.push({ mesh, vel, spin: new THREE.Vector3(Math.random() * 20, Math.random() * 20, Math.random() * 20), t: 2.5 });
+    if (this.casings.length > 40) { const old = this.casings.shift()!; this.scene.remove(old.mesh); }
+  }
+  private updateCasings(dt: number) {
+    for (let i = this.casings.length - 1; i >= 0; i--) {
+      const c = this.casings[i]; c.t -= dt;
+      c.vel.y -= 9.8 * dt; c.mesh.position.addScaledVector(c.vel, dt);
+      c.mesh.rotation.x += c.spin.x * dt; c.mesh.rotation.y += c.spin.y * dt; c.mesh.rotation.z += c.spin.z * dt;
+      if (c.mesh.position.y < 0.01) { c.mesh.position.y = 0.01; c.vel.multiplyScalar(0.35); c.vel.y = Math.abs(c.vel.y) * 0.5; c.spin.multiplyScalar(0.5); }
+      if (c.t <= 0) { this.scene.remove(c.mesh); this.casings.splice(i, 1); }
+    }
+  }
+
+  /** Manos: la derecha en la empuñadura; la izquierda en el guardamanos o siguiendo la fase de recarga / corredera. */
+  private updateHands() {
+    const m = this.model!; const h = m.handles;
+    this.viewmodel.updateMatrixWorld(true);
+    const toCam = (p: THREE.Vector3) => this.camera.worldToLocal(m.group.localToWorld(p.clone()));
+    const camQ = this.camera.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const orient = camQ.multiply(this.holder.getWorldQuaternion(new THREE.Quaternion())).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.35, 0, 0)));
+    let left: THREE.Vector3 | null = h.support.clone();
+    const ph = this.reloadPhase;
+    if (ph) {
+      const mag = this.mag ? this.mag.object.position.clone().sub(this.mag.base) : new THREE.Vector3();
+      const atMag = h.magwell.clone().add(mag);
+      if (ph.id === "grab") left = h.support.clone().lerp(atMag, ease(ph.t));
+      else if (ph.id === "out") left = atMag;
+      else if (ph.id === "pouch") left = ph.t < 0.5 ? atMag.add(new THREE.Vector3(0, -0.25 * ph.t, 0)) : null;
+      else if (ph.id === "in") left = atMag;
+      else if (ph.id === "rack") left = h.charge.clone().add(new THREE.Vector3(-0.05 * tri(ph.t, 0, 1), 0.01, 0.03));
+      else if (ph.id === "settle") left = h.charge.clone().lerp(h.support, ease(ph.t));
+    } else if (this.cycleT > 0 && this.spec?.fireMode === "pump") {
+      left = h.support.clone().add(new THREE.Vector3(-0.07 * tri(1 - this.cycleT / 0.45, 0, 1), 0, 0));
+    } else if (this.cycleT > 0 && this.spec?.fireMode === "bolt") {
+      left = h.charge.clone().add(new THREE.Vector3(-0.04 * tri(1 - this.cycleT / 0.45, 0, 1), 0.02, 0.04));
+    }
+    this.arms.update({ right: toCam(h.grip), left: left ? toCam(left) : null, orient });
+  }
+
   private fire(moving: number, echo = false) {
     const s = this.spec!, it = this.item!;
     const fullMag = it.ammo === s.stats.cargador;
     const lowAmmo = it.ammo <= Math.ceil(s.stats.cargador * 0.25);
     if (!echo) { it.ammo--; this.cooldown = 60 / (s.stats.cadencia * (this.frenzyT > 0 ? 1.5 : 1)); }
     this.shotCount++;
-    if (s.fireMode === "pump" || s.fireMode === "bolt") { this.cycleT = 0.45; setTimeout(() => this.sfx("cycle"), 200); }
+    if (s.fireMode === "pump" || s.fireMode === "bolt") { this.cycleT = 0.45; setTimeout(() => { this.sfx("cycle"); if (this.item === it) this.ejectCasing(); }, 220); }
+    else if (!echo) this.ejectCasing();
     const quiet = !!accessory(s.muzzle)?.quiet;
     const sig = s.effects.find((e) => e.tier === "L")?.id ?? null;
     this.sfx("shot", s.type, quiet);
@@ -270,7 +392,12 @@ export class Gun {
     (this.flash.material as THREE.MeshBasicMaterial).opacity = quiet ? 0.2 : 1; this.flashLight.intensity = quiet ? 0.6 : 4;
     const steady = 1 - effectValue(s, "steady") / 100;
     const kickPower = (s.type === "sniper" || s.type === "shotgun" ? 2.2 : s.type === "revolver" ? 2 : s.type === "pistol" ? 1.2 : 0.7) * (1.4 - s.stats.manejo / 100) * (1 - this.aimT * 0.35) * steady * (hasEffect(s, "doble") ? 1.4 : 1);
-    this.recoil += 0.011 * kickPower; this.recoilYaw += (Math.random() - 0.5) * 0.006 * kickPower;
+    // Patrón de retroceso propio del arma: subida dominante + deriva lateral determinista (con un poco de ruido)
+    const pat = recoilPattern(s.statSeed), i = Math.min(this.sprayIndex++, pat.length - 1);
+    const lateral = accessory(s.muzzle)?.id === "acc:compensator" || accessory(s.muzzle)?.id === "acc:brake" ? 0.55 : 1;
+    this.recoil += 0.011 * kickPower * pat[i][0];
+    this.recoilYaw += 0.006 * kickPower * (pat[i][1] * lateral + (Math.random() - 0.5) * 0.3);
+    this.sprayT = 0;
     this.kick = Math.min(1, this.kick + 0.65); this.kickRoll += (Math.random() - 0.5) * 0.08 * kickPower;
     const element = elementOf(s) as Element;
     const pellets = (PELLETS[s.type] ?? 1) * (hasEffect(s, "doble") ? 2 : 1);

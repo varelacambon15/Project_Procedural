@@ -133,11 +133,20 @@ async function exportGLB(parts) {
 
 function roundSockets(o) { return JSON.parse(JSON.stringify(o, (k, v) => (typeof v === "number" ? +v.toFixed(4) : v))); }
 
+/** Tipo estándar de cada punto de unión: una pieza solo encaja en una unión de su mismo tipo. */
+const CONNECTOR_TYPES = { muzzle: "barrel_thread", magazine: "mag_well", optic: "optic_mount", rail: "rail_top", slide: "slide_rails", barrel: "barrel_seat", top: "top_surface",
+  rear: "stock_mount", front: "handguard_mount", grip: "grip_mount", stockFace: "stock_mount", frontFace: "handguard_mount", gripFace: "grip_mount" };
+
 async function finish(id, type, parts, extra = {}) {
   const meta = roundSockets(sockets(parts));
+  for (const [k, v] of Object.entries(meta.sockets)) v.type = CONNECTOR_TYPES[k] ?? k;
+  if (extra.joints) for (const [k, v] of Object.entries(extra.joints)) v.type = CONNECTOR_TYPES[k] ?? k;
   const tris = parts.reduce((s, p) => s + p.mesh.geometry.attributes.position.count / 3, 0);
   const glb = await exportGLB(parts);
-  return { id, type, parts: parts.map((p) => ({ role: p.role, node: p.mesh.name, source: p.source || "" })), ...meta, triangles: Math.round(tris), ...extra, glb };
+  // Piezas intercambiables aprobadas tras la revisión visual (las demás no se usan sueltas)
+  const swappable = ["stock", "grip", "front", "slide", "frame", "barrel", "magazine", "scope"];
+  const approved = parts.map((p) => p.role).filter((r) => swappable.includes(r));
+  return { id, type, parts: parts.map((p) => ({ role: p.role, node: p.mesh.name, source: p.source || "" })), ...meta, triangles: Math.round(tris), ...extra, approved, glb };
 }
 
 // ---------- OBJ (Quaternius) con separación por componentes conexas ----------

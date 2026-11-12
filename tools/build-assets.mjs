@@ -53,7 +53,9 @@ if (args[0] === "--list") {
     const rel = `${job.pack}/${job.id}.glb`;
     await writeFile(path.join(ROOT, "assets/weapons", rel), Buffer.from(out.glb, "base64"));
     delete out.glb;
-    manifest.weapons.push({ ...out, file: rel, label: job.label || job.id });
+    const entry = { ...out, file: rel, label: job.label || job.id };
+    if (job.quarantine) { entry.quarantine = job.quarantine; entry.approved = []; }
+    manifest.weapons.push(entry);
     console.log(`✓ ${rel.padEnd(52)} ${String(out.triangles).padStart(6)} tris  ${out.parts.map((p) => p.role).join(",")}`);
   }
   // Conversión parcial: se actualizan solo esas entradas del manifest existente, conservando el orden.

@@ -118,13 +118,16 @@ const INTEGRATED_MUZZLE = new Set(["w-usp45", "w-vss", "w-minigun"]);
 // ---------- Acabados ----------
 export const PAINTS: Paint[] = [
   { id: "original", color: null },
-  { id: "black", color: [0.1, 0.1, 0.11] },
-  { id: "fde", color: [0.36, 0.31, 0.24] },
-  { id: "olive", color: [0.24, 0.26, 0.2] },
-  { id: "gray", color: [0.3, 0.31, 0.33] },
-  { id: "rust", color: [0.3, 0.2, 0.14] },
+  { id: "black", color: [0.1, 0.1, 0.11], secondary: [0.16, 0.16, 0.17] },
+  { id: "fde", color: [0.47, 0.39, 0.28], secondary: [0.42, 0.35, 0.25] },
+  { id: "olive", color: [0.3, 0.32, 0.22], secondary: [0.26, 0.28, 0.2] },
+  { id: "gray", color: [0.33, 0.34, 0.36], secondary: [0.14, 0.14, 0.15] },
+  { id: "rust", color: [0.4, 0.24, 0.15], secondary: [0.2, 0.15, 0.11] },
+  { id: "fdeblack", color: [0.12, 0.12, 0.13], secondary: [0.47, 0.39, 0.28] },
+  { id: "olivefde", color: [0.3, 0.32, 0.22], secondary: [0.47, 0.39, 0.28] },
+  { id: "grayblack", color: [0.33, 0.34, 0.36], secondary: [0.1, 0.1, 0.11] },
 ];
-const PAINT_WEIGHTS = [3, 1.2, 1, 1, 1, 0.6];
+const PAINT_WEIGHTS = [3, 1.2, 1, 1, 1, 0.6, 0.9, 0.7, 0.8];
 
 // ---------- Efectos ----------
 // Nivel A: mejora pequeña de un aspecto. Nivel B: se nota en combate (incluye fuego, eléctrico y explosivo).
@@ -261,7 +264,8 @@ export class WeaponGenerator {
         // siempre que pasen la puerta de calidad (proporciones y longitud total).
         layout = "modular-long";
         parts.push({ role: "receiver", from: base.id });
-        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && w.pack === base.pack && ok(w) && w.parts.some((p) => p.role === role));
+        // Solo piezas aprobadas, de la misma familia y con una unión del mismo tipo
+        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && w.pack === base.pack && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)));
         const cls = (t: WeaponType) => (t === "smg" ? "compact" : "long");
         // Solo piezas cuya junta encaja con la del cajón (sección parecida); luego se comprueba el conjunto.
         const fit = (joint: "rear" | "front" | "grip", lo: number, hi: number) => (w: AssetEntry) => w.id === base.id || within(jointScale(base, w, joint), lo, hi);

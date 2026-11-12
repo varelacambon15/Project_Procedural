@@ -11,6 +11,9 @@ export interface AssembledWeapon {
   /** Punta del cañón (o del accesorio de boca), en coordenadas del grupo. */ muzzle: THREE.Vector3;
   /** Altura de la línea de mira (centro de la mira, si la lleva), en coordenadas del grupo. */ sightY: number | null;
   /** Aumentos de la mira (1 = sin mira). */ zoom: number;
+  /** Puntos de agarre (coordenadas del grupo): mano derecha en la empuñadura, izquierda en el guardamanos,
+   *  pozo del cargador y palanca de carga. Los usan los brazos (IK) y las animaciones de recarga. */
+  handles: { grip: THREE.Vector3; support: THREE.Vector3; magwell: THREE.Vector3; charge: THREE.Vector3 };
 }
 
 const v3 = (a: readonly number[]) => new THREE.Vector3(a[0], a[1], a[2]);
@@ -110,11 +113,11 @@ export class WeaponAssembler {
             // La empuñadura gira un poco sobre su junta
             const pivot = new THREE.Group(); pivot.position.copy(anchor); pivot.rotation.z = tw.gripAngle;
             node.position.copy(v3(donor.joints![face].pos).multiply(sv).negate());
-            pivot.add(node); add(pivot, role, donor, explode); paint(node, spec);
+            pivot.add(node); add(pivot, role, donor, explode); paint(node, spec, "secondary");
             return { donor, k, node: pivot, sv };
           }
           node.position.copy(anchor.sub(v3(donor.joints![face].pos).multiply(sv)));
-          add(node, role, donor, explode); paint(node, spec);
+          add(node, role, donor, explode); paint(node, spec, role === "stock" ? "secondary" : "primary");
           return { donor, k, node, sv };
         };
         await attach("stock", "rear", "stockFace", [-1.2, 0, 0]);
@@ -123,7 +126,8 @@ export class WeaponAssembler {
         // Remates de unión: un anillo de acero en el guardamanos y una placa en la culata, para que no se vea el corte
         for (const [j, w] of [["front", 0.012], ["rear", 0.008]] as const) {
           const h = J[j].size![0];
-          const collar = new THREE.Mesh(new THREE.BoxGeometry(w, h * 1.06, thick * 0.92), new THREE.MeshStandardMaterial({ name: "Steel", color: 0x1e1f21, metalness: 0.75, roughness: 0.4 }));
+          const legendary = spec.rarity.id === "legendaria";
+          const collar = new THREE.Mesh(new THREE.BoxGeometry(w, h * 1.06, thick * 0.92), new THREE.MeshStandardMaterial({ name: "Steel", color: legendary ? 0x3a2410 : 0x1e1f21, metalness: 0.75, roughness: legendary ? 0.3 : 0.4, emissive: legendary ? 0xf08a24 : 0x000000, emissiveIntensity: legendary ? 0.35 : 0 }));
           collar.position.set(J[j].pos[0], J[j].pos[1], 0);
           recv.add(collar);
         }
@@ -220,7 +224,33 @@ export class WeaponAssembler {
     const length = box.max.x - box.min.x;
     for (const p of parts) { p.object.position.sub(center); p.base.copy(p.object.position); p.explode.multiplyScalar(length * 0.18); }
     const muzzleOut = (muzzle ?? new THREE.Vector3(box.max.x, center.y, 0)).clone().sub(center);
-    return { group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, zoom };
+    group.updateMatrixWorld(true);
+    const handles = this.handles(spec, parts, new THREE.Box3().setFromObject(group));
+    return { group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, zoom, handles };
+  }
+
+  /** Estima dónde agarran las manos: empuñadura (junta o detrás del cargador), guardamanos, pozo y palanca. */
+  private handles(spec: WeaponSpec, parts: AssembledPart[], box: THREE.Box3) {
+    const center = box.getCenter(new THREE.Vector3());
+    const L = box.max.x - box.min.x, H = box.max.y - box.min.y;
+    const part = (role: PartRole) => parts.find((p) => p.role === role);
+    const boxOf = (o: THREE.Object3D) => new THREE.Box3().setFromObject(o);
+    const handgun = spec.type === "pistol" || spec.type === "revolver";
+    const mag = part("magazine"); const magBox = mag ? boxOf(mag.object) : null;
+    let grip: THREE.Vector3;
+    const gp = part("grip") ?? part("frame");
+    if (gp) { const b = boxOf(gp.object); grip = new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - (b.max.y - b.min.y) * 0.35, 0); }
+    else if (handgun && magBox) grip = new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.3, 0);
+    else if (magBox) grip = new THREE.Vector3(magBox.min.x - L * 0.09, box.min.y + H * 0.32, 0);
+    else grip = new THREE.Vector3(box.min.x + L * (handgun ? 0.35 : 0.38), box.min.y + H * 0.3, 0);
+    const fp = part("front");
+    const fb = fp ? boxOf(fp.object) : null;
+    const support = handgun ? grip.clone().add(new THREE.Vector3(0.01, -0.01, 0))
+      : fb ? new THREE.Vector3(fb.min.x + (fb.max.x - fb.min.x) * 0.35, fb.min.y + (fb.max.y - fb.min.y) * 0.15, 0)
+      : new THREE.Vector3(box.min.x + L * 0.68, center.y - H * 0.05, 0);
+    const magwell = magBox ? new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.min.y + (magBox.max.y - magBox.min.y) * 0.2, 0) : grip.clone().add(new THREE.Vector3(L * 0.1, -H * 0.1, 0));
+    const charge = new THREE.Vector3(handgun ? box.min.x + L * 0.25 : box.min.x + L * 0.5, box.max.y - H * 0.15, 0);
+    return { grip, support, magwell, charge };
   }
 }
 
@@ -256,10 +286,11 @@ function roleOf(o: THREE.Object3D): string | null {
   return null;
 }
 
-/** Pinta las piezas principales con la pintura del arma (las texturas de paleta se tiñen). */
-function paint(obj: THREE.Object3D, spec: WeaponSpec) {
-  if (!spec.paint.color) return;
-  const tint = new THREE.Color().setRGB(...spec.paint.color, THREE.SRGBColorSpace);
+/** Pinta una pieza con el color principal o el secundario del acabado (las texturas de paleta se tiñen). */
+function paint(obj: THREE.Object3D, spec: WeaponSpec, which: "primary" | "secondary" = "primary") {
+  const c = which === "secondary" ? spec.paint.secondary ?? spec.paint.color : spec.paint.color;
+  if (!c) return;
+  const tint = new THREE.Color().setRGB(...c, THREE.SRGBColorSpace);
   obj.traverse((o) => {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;
