@@ -34,6 +34,10 @@ export interface LoftOpts {
   origin?: P2; angle?: number;
   /** Desgaste en esquinas (aclarado del color de vértice). */
   wear?: number;
+  /** Solo un tramo del eje (en u local, de 0 a 1 sobre el largo de la pieza): anillos, bandas, abrazaderas. */
+  range?: [number, number];
+  /** Engorde de la sección (m): para piezas que abrazan a otra (cintas, abrazaderas). */
+  grow?: number;
   /** Estaciones extra (en x local), p. ej. a ambos lados de cada ranura de unas estrías. */
   extraX?: number[];
   /** Ventana pasante (en coordenadas locales): en ese tramo la pieza se parte en una parte de arriba y otra de abajo. */
@@ -86,7 +90,10 @@ export function loftPoly(poly: P2[], o: LoftOpts): THREE.BufferGeometry {
   for (let i = 0; i <= n; i++) xs.add(u0 + E + ((u1 - u0 - 2 * E) * i) / n);
   for (const u of us) for (const d of [-E, E]) if (u + d > u0 && u + d < u1) xs.add(u + d);
   for (const u of o.extraX ?? []) if (u > u0 && u < u1) xs.add(u);
-  const st = [...xs].sort((a, b) => a - b).map((u) => ({ u, c: cutPoly(local, u) }));
+  const R = o.range ? [u0 + (u1 - u0) * o.range[0], u0 + (u1 - u0) * o.range[1]] : null;
+  if (R) for (const d of [E, -E]) { xs.add(R[0] + d); xs.add(R[1] + d); }
+  const gr = o.grow ?? 0;
+  const st = [...xs].filter((u) => !R || (u >= R[0] && u <= R[1])).sort((a, b) => a - b).map((u) => { const c = cutPoly(local, u); return { u, c: c ? ([c[0] - gr, c[1] + gr] as [number, number]) : null }; });
   const pos: number[] = [], ctr: number[] = [];
   const W = (u: number, v: number, z: number): [number, number, number] => [ox + u * ca - v * sa, oy + u * sa + v * ca, z];
   const tri = (a: number[], b: number[], c: number[], cen: number[]) => { pos.push(...a, ...b, ...c); for (let i = 0; i < 3; i++) ctr.push(...cen); };
@@ -121,7 +128,7 @@ export function loftPoly(poly: P2[], o: LoftOpts): THREE.BufferGeometry {
   for (const { u, c } of st) {
     const inHole = !!H && u > H.x0 && u < H.x1;
     if (!c) { close("main"); close("up"); close("lo"); continue; }
-    const [wx] = W(u, (c[0] + c[1]) / 2, 0), hw = o.half(wx);
+    const [wx] = W(u, (c[0] + c[1]) / 2, 0), hw = o.half(wx) + gr;
     if (!inHole) { close("up"); close("lo"); runs.main.push({ u, s: section(c[0], c[1], hw, o.rTop, o.rBot, segs), mid: (c[0] + c[1]) / 2 }); continue; }
     close("main");
     if (c[1] > H!.y1 + 1e-4) runs.up.push({ u, s: section(Math.max(c[0], H!.y1), c[1], hw, o.rTop, 0.15, segs), mid: (Math.max(c[0], H!.y1) + c[1]) / 2 }); else close("up");

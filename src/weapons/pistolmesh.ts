@@ -190,10 +190,8 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
           screws(g, cx, cy, zh * 1.04, 0.0024);
         }
         if (d.grip.panels === "tape" || d.extra.wrap) {
-          for (const t of [0.3, 0.5, 0.7]) {
-            const x = gc.TB[0] + (gc.BB[0] - gc.TB[0]) * t + d.grip.depth / 2, y = gc.TB[1] + (gc.BB[1] - gc.TB[1]) * t;
-            const band = box(d.grip.depth * 0.94, 0.005, p.depth * 1.04, x - 0.001, y, 0, "proctape"); band.rotation.z = -d.grip.angle; g.add(band);
-          }
+          // Vueltas de cinta que abrazan la forma de la empuñadura (un tramo de la misma pieza, algo más gruesa)
+          for (const t of [0.22, 0.42, 0.62]) g.add(lofted(p.poly, "proctape", { ...gAx, half: () => zh * (wood ? 1.04 : 1), grow: 0.0011, range: [t, t + 0.09], rTop: 0.75, rBot: 0.8, segs: 3, n: 2, wear: 1.05 }));
         }
         // Brocal ensanchado en la base (abertura del cargador) en las de cargador en la empuñadura
         if (!rev && d.mag.kind !== "front" && d.mag.kind !== "none") {
