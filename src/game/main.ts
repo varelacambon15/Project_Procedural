@@ -1,7 +1,7 @@
 // Proving Grounds / Campo de Pruebas: demo jugable de la Fase 1.
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { RARITIES, WeaponGenerator, type BaseType } from "../weapons/generator";
+import { RARITIES, WeaponGenerator } from "../weapons/generator";
 import { WeaponAssembler } from "../weapons/assembler";
 import { archName, rarityName, typeName } from "../weapons/labels";
 import { displayName, rename } from "../weapons/naming";
@@ -21,6 +21,7 @@ import { Pickups, type Pickup } from "./pickups";
 import { LOOT, LootDirector, type LootSource } from "../weapons/loot";
 import { lootChime } from "./audio";
 import { installPixelFont } from "./pixelfont";
+import { starterWeapons } from "./loadout";
 import { $, MenuCursor, MenuNav, ModelView, Thumbnails, esc, weaponCard, type Dir } from "./ui/common";
 import { InventoryScreen } from "./ui/inventory";
 import { WorkshopScreen } from "./ui/workshop";
@@ -171,11 +172,10 @@ async function boot() {
   document.addEventListener("pointerlockchange", () => { if (!input.locked && state === "play") openStart(); });
 
   // ---------- Partida: nueva, guardar, cargar ----------
-  const starter = (type: BaseType, seed0: number) => { for (let s = seed0; ; s++) { const w = gen.generate(s, type); if (w.rarity.id === "comun" || w.rarity.id === "poco") return w; } };
   function newGame() {
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
     // Armas iniciales: pistola y fusil equipados; escopeta y subfusil en la mochila. Sin accesorios sueltos.
-    for (const [type, seed] of [["pistol", 11], ["rifle", 40], ["shotgun", 70], ["smg", 90]] as [BaseType, number][]) inv.add(makeItem(starter(type, seed)));
+    for (const spec of starterWeapons(gen)) inv.add(makeItem(spec));
     inv.credits = SHOP.startCredits; shopState = newShopState(); playSeconds = 0; inGame = true;
     inv.changed(); php.reset();
   }
