@@ -10,8 +10,6 @@
 import * as THREE from "three";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
-import { MeshBVH } from "three-mesh-bvh";
-import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const TARGET_LENGTH = { lmg: 1.15, pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, launcher: 1.1, flamethrower: 0.95, accessory: null };
 
@@ -148,33 +146,58 @@ const CONNECTOR_TYPES = { muzzle: "barrel_thread", magazine: "mag_well", optic: 
  * semiesfera de su normal contra todas las mallas de la pieza; los rincones y huecos quedan más oscuros.
  */
 function bakeAO(meshes, rays = 24, maxDist = 0.035, strength = 0.75) {
-  const geos = meshes.map((m) => { const g = (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone()); for (const k of Object.keys(g.attributes)) if (k !== "position") g.deleteAttribute(k); return g; });
-  if (!geos.length) return;
-  const merged = mergeGeometries(geos, false);
-  const bvh = new MeshBVH(merged);
-  const ray = new THREE.Ray(), dir = new THREE.Vector3(), t1 = new THREE.Vector3(), t2 = new THREE.Vector3(), n = new THREE.Vector3(), p = new THREE.Vector3();
-  // Direcciones fijas (espiral de Fibonacci en la semiesfera +Z), giradas hacia cada normal
+  // Triángulos de todas las mallas de la pieza, repartidos en una rejilla de celdas del tamaño del radio de búsqueda:
+  // para cada vértice solo se prueban los triángulos de las celdas cercanas (cálculo propio, sin librerías).
+  const tri = [];
+  for (const m of meshes) {
+    const g = m.geometry, p = g.attributes.position, idx = g.index;
+    const n = idx ? idx.count : p.count;
+    for (let t = 0; t + 2 < n; t += 3) for (let k = 0; k < 3; k++) { const v = idx ? idx.getX(t + k) : t + k; tri.push(p.getX(v), p.getY(v), p.getZ(v)); }
+  }
+  const T = tri.length / 9; if (!T) return;
+  const C = maxDist, cells = new Map();
+  const key = (x, y, z) => `${x},${y},${z}`;
+  for (let t = 0; t < T; t++) {
+    const o = t * 9;
+    const mn = [0, 1, 2].map((a) => Math.floor(Math.min(tri[o + a], tri[o + 3 + a], tri[o + 6 + a]) / C));
+    const mx = [0, 1, 2].map((a) => Math.floor(Math.max(tri[o + a], tri[o + 3 + a], tri[o + 6 + a]) / C));
+    for (let x = mn[0]; x <= mx[0]; x++) for (let y = mn[1]; y <= mx[1]; y++) for (let z = mn[2]; z <= mx[2]; z++) { const k = key(x, y, z); let c = cells.get(k); if (!c) cells.set(k, (c = [])); c.push(t); }
+  }
+  // Rayo contra triángulo (Möller–Trumbore), por las dos caras; devuelve la distancia o -1
+  const hitTri = (ox, oy, oz, dx, dy, dz, o) => {
+    const e1x = tri[o + 3] - tri[o], e1y = tri[o + 4] - tri[o + 1], e1z = tri[o + 5] - tri[o + 2];
+    const e2x = tri[o + 6] - tri[o], e2y = tri[o + 7] - tri[o + 1], e2z = tri[o + 8] - tri[o + 2];
+    const px = dy * e2z - dz * e2y, py = dz * e2x - dx * e2z, pz = dx * e2y - dy * e2x;
+    const det = e1x * px + e1y * py + e1z * pz; if (Math.abs(det) < 1e-12) return -1;
+    const inv = 1 / det, tx = ox - tri[o], ty = oy - tri[o + 1], tz = oz - tri[o + 2];
+    const u = (tx * px + ty * py + tz * pz) * inv; if (u < 0 || u > 1) return -1;
+    const qx = ty * e1z - tz * e1y, qy = tz * e1x - tx * e1z, qz = tx * e1y - ty * e1x;
+    const v = (dx * qx + dy * qy + dz * qz) * inv; if (v < 0 || u + v > 1) return -1;
+    const d = (e2x * qx + e2y * qy + e2z * qz) * inv; return d > 0.0002 ? d : -1;
+  };
   const dirs = Array.from({ length: rays }, (_, i) => { const z = 1 - (i + 0.5) / rays, r = Math.sqrt(1 - z * z), a = i * 2.39996; return new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r, z); });
-  const q = new THREE.Quaternion(), Z = new THREE.Vector3(0, 0, 1);
+  const q = new THREE.Quaternion(), Z = new THREE.Vector3(0, 0, 1), n = new THREE.Vector3(), p = new THREE.Vector3(), d = new THREE.Vector3();
   for (const m of meshes) {
     const g = m.geometry; if (!g.attributes.normal) g.computeVertexNormals();
     const pos = g.attributes.position, nor = g.attributes.normal, col = new Float32Array(pos.count * 3);
     for (let i = 0; i < pos.count; i++) {
-      p.fromBufferAttribute(pos, i); n.fromBufferAttribute(nor, i).normalize();
-      q.setFromUnitVectors(Z, n);
+      p.fromBufferAttribute(pos, i); n.fromBufferAttribute(nor, i).normalize(); q.setFromUnitVectors(Z, n);
+      const ox = p.x + n.x * 0.0006, oy = p.y + n.y * 0.0006, oz = p.z + n.z * 0.0006;
+      // Triángulos candidatos: celdas vecinas (radio de búsqueda = tamaño de celda)
+      const cx = Math.floor(ox / C), cy = Math.floor(oy / C), cz = Math.floor(oz / C), cand = new Set();
+      for (let x = cx - 1; x <= cx + 1; x++) for (let y = cy - 1; y <= cy + 1; y++) for (let z = cz - 1; z <= cz + 1; z++) { const c = cells.get(key(x, y, z)); if (c) for (const t of c) cand.add(t); }
       let hit = 0;
-      for (const d of dirs) {
-        dir.copy(d).applyQuaternion(q);
-        ray.origin.copy(p).addScaledVector(n, 0.0006); ray.direction.copy(dir);
-        const h = bvh.raycastFirst(ray, THREE.DoubleSide, 0.0002, maxDist);
-        if (h) hit += 1 - h.distance / maxDist * 0.5;
+      for (const dir of dirs) {
+        d.copy(dir).applyQuaternion(q);
+        let best = Infinity;
+        for (const t of cand) { const h = hitTri(ox, oy, oz, d.x, d.y, d.z, t * 9); if (h > 0 && h < best) best = h; }
+        if (best <= maxDist) hit += 1 - (best / maxDist) * 0.5;
       }
-      const ao = 1 - strength * Math.min(1, hit / rays * 1.6);
+      const ao = 1 - strength * Math.min(1, (hit / rays) * 1.6);
       col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = ao;
     }
     g.setAttribute("color", new THREE.BufferAttribute(col, 3));
   }
-  t1.set(0, 0, 0); t2.set(0, 0, 0);
 }
 
 /** Perfil lateral de un conjunto de mallas: en N franjas a lo largo de X, el punto más alto y el más bajo (silueta). */

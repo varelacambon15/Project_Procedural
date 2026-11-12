@@ -227,6 +227,44 @@ async function boot() {
     }
     return out.toDataURL("image/png");
   };
-  (window as unknown as Record<string, unknown>).__bench = { showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+  // Hoja de parecido (Parte A): armas cerca de cada objetivo de parecido con su base, grandes y en tres vistas.
+  const simSheet = async (targets: number[], perTarget: number, types: string[], startSeed = 1) => {
+    const VW = 400, VH = 220, HEAD = 70, cols = 3;
+    const picks: { spec: WeaponSpec; target: number }[] = [];
+    for (const target of targets) {
+      const used = new Set<string>(); let ti = 0;
+      for (let s = startSeed; s < startSeed + 20000 && picks.filter((p) => p.target === target).length < perTarget; s++) {
+        const spec = gen.generate(s, types[ti % types.length] as never);
+        if (Math.abs((spec.lineage?.similarity ?? 1) - target) > 0.015 || used.has(spec.parts[0].from)) continue;
+        used.add(spec.parts[0].from); picks.push({ spec, target }); ti++;
+      }
+    }
+    const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(VW, VH); r.toneMapping = THREE.ACESFilmicToneMapping;
+    const sc = new THREE.Scene(); sc.background = new THREE.Color(0x3a3d42);
+    sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+    sc.add(new THREE.HemisphereLight(0xffffff, 0x555555, 1.3)); const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(1, 2, 3); sc.add(dl);
+    const rim = new THREE.DirectionalLight(0xbfd8ff, 1.2); rim.position.set(-2, 1, -3); sc.add(rim);
+    const out = document.createElement("canvas"); out.width = VW * cols; out.height = (VH + HEAD) * picks.length; const g = out.getContext("2d")!;
+    const wrap = (text: string, x: number, y: number, w: number, lh: number) => { let line = ""; for (const word of text.split(" ")) { const t = line ? line + " " + word : word; if (g.measureText(t).width > w && line) { g.fillText(line, x, y); y += lh; line = word; } else line = t; } g.fillText(line, x, y); return y + lh; };
+    for (const [i, { spec, target }] of picks.entries()) {
+      const y0 = i * (VH + HEAD);
+      g.fillStyle = "#1e2023"; g.fillRect(0, y0, VW * cols, HEAD);
+      g.fillStyle = spec.rarity.color; g.font = "bold 20px sans-serif"; g.fillText(`${spec.name}  ·  parecido ${Math.round((spec.lineage?.similarity ?? 1) * 100)} %  (objetivo ~${Math.round(target * 100)} %)`, 12, y0 + 24);
+      g.fillStyle = "#c8c8c8"; g.font = "14px sans-serif";
+      wrap(`${spec.type} · base ${spec.lineage?.base} · ${spec.lineage?.changes.length} cambios: ${spec.lineage?.changes.join(", ")} · acabado ${spec.paint.id}`, 12, y0 + 46, VW * cols - 24, 17);
+      const built = await asm.assemble(spec); sc.add(built.group);
+      const views: [number, number][] = [[0, 0], [-0.7, 0.22], [-0.35, -0.7]];
+      views.forEach(([yaw, pitch], v) => {
+        built.group.rotation.set(pitch, yaw, 0);
+        const b = new THREE.Box3().setFromObject(built.group), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+        const half = Math.max((sz.x / 2) * VH / VW, sz.y / 2) * 1.12;
+        const cam = new THREE.OrthographicCamera(-half * VW / VH, half * VW / VH, half, -half, -10, 10); cam.position.set(c.x, c.y, c.z + 3); cam.lookAt(c);
+        r.render(sc, cam); g.drawImage(r.domElement, v * VW, y0 + HEAD);
+      });
+      sc.remove(built.group);
+    }
+    return out.toDataURL("image/png");
+  };
+  (window as unknown as Record<string, unknown>).__bench = { simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
 }
 boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });
