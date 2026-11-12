@@ -9,6 +9,7 @@ import type { Manifest, WeaponSpec } from "../weapons/types";
 import { LANGS, applyStatic, getLang, onLang, setLang, t, type Lang } from "../i18n";
 import { Input } from "./input";
 import { buildRange, type Interactable } from "./world";
+import { PIXEL_LEVELS, pixelLevel, setPixelLevel } from "../weapons/textures";
 import { spawnDummies, DamageNumbers, type Dummy } from "./dummies";
 import { Player } from "./player";
 import { Gun } from "./gun";
@@ -63,6 +64,13 @@ async function boot() {
   const asm = new WeaponAssembler(gen, ASSETS);
   asm.preloadKit();
 
+  // Nivel de pixelado de las texturas (ajuste a ojo en la sala: tecla P; se guarda)
+  addEventListener("keydown", (e) => {
+    if (e.code !== "KeyP" || state !== "play") return;
+    const i = PIXEL_LEVELS.indexOf(pixelLevel());
+    setPixelLevel(PIXEL_LEVELS[(i + 1) % PIXEL_LEVELS.length]);
+    toast(t("ui.pixelLevel", { n: pixelLevel() }));
+  });
   // Estadísticas de la sala (cuadro de datos de la pared)
   const sim = { shots: 0, hits: 0, log: [] as [number, number][], distance: null as number | null, ttk: null as number | null, firstHit: new Map<Dummy, number>(), lastShot: -100 };
   const gun = new Gun(camera, scene, asm, world.shootables, {
@@ -133,7 +141,8 @@ async function boot() {
     // El arma sale despedida del cofre hacia el jugador y cae al suelo, lista para recoger
     const chestPos = world.interactables.find((i) => i.id === "chest")!.position;
     const toward = player.pos.clone().sub(chestPos).setY(0).normalize();
-    pickups.spawn(makeItem(spec), chestPos.clone().add(new THREE.Vector3(0, 0.9, 0)).addScaledVector(toward, 0.3), toward.multiplyScalar(2.2).setY(4.2));
+    // El terminal "compila" el arma (escaneo de abajo arriba) y la deja en la bandeja
+    pickups.spawn(makeItem(spec), chestPos.clone().add(new THREE.Vector3(0, 0.9, 0)).addScaledVector(toward, 0.3), toward.multiplyScalar(2.2).setY(4.2), { compile: true });
   }
 
   /** Suelta un arma delante del jugador. */
