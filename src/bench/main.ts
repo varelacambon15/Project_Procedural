@@ -275,6 +275,16 @@ async function boot() {
     }
     return out.toDataURL("image/png");
   };
+  /** Inspección: cajas de cada pieza montada de la primera arma que cumpla el filtro (depurar piezas flotantes). */
+  const inspect = async (type: string, need: string, start = 1) => {
+    for (let s2 = start; s2 < start + 20000; s2++) {
+      const w = gen.generate(s2, type as never);
+      if (!JSON.stringify(w).includes(need)) continue;
+      const built = await asm.assemble(w); built.group.updateMatrixWorld(true);
+      return { seed: s2, tweaks: w.tweaks, parts: built.parts.map((p) => { const b = new THREE.Box3().setFromObject(p.object); return { role: p.role, id: p.from.id, min: b.min.toArray().map((v) => +v.toFixed(3)), max: b.max.toArray().map((v) => +v.toFixed(3)) }; }) };
+    }
+    return null;
+  };
   // ---------- Hojas del prompt 06 ----------
   /** Escena de estudio para las hojas (fondo gris, luz suave, borde frío). */
   const studio = (VW: number, VH: number, bg = 0x3a3d42) => {
@@ -457,6 +467,6 @@ async function boot() {
     }
     return out.toDataURL("image/png");
   };
-  (window as unknown as Record<string, unknown>).__bench = { decisionSheet, varietySheet, closeups, lotSheet, simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+  (window as unknown as Record<string, unknown>).__bench = { inspect, decisionSheet, varietySheet, closeups, lotSheet, simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
 }
 boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });

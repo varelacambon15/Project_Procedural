@@ -245,10 +245,20 @@ export class WeaponAssembler {
         if (twb.pstock) add(buildStock(twb.pstock), "stock", { id: `proc-stock-${twb.pstock.kind}`, label: "Stock", pack: "proc" } as AssetEntry, [-1.2, 0, 0]);
         if (bodyE.sockets.muzzle) { const m = bodyE.sockets.muzzle; muzzle = new THREE.Vector3(stretchAll(m.pos[0], bodyZoneUsed), m.pos[1], m.pos[2]); muzzleDiameter = m.diameter ?? 0.03; }
         if (twb.pfront) {
-          const pf = buildFront(twb.pfront);
-          add(pf.group, "front", { id: `proc-front-${twb.pfront.kind}`, label: "Handguard", pack: "proc" } as AssetEntry, [1.1, 0.2, 0]);
+          // Conjunto en la boca sin corte: se apoya donde acaba de verdad la malla del cuerpo (algunos modelos traen
+          // medidas de relleno en el manifiesto y la malla es más corta): nada flotando
+          let pfr = twb.pfront;
+          if (twb.cutFront == null) {
+            body.updateMatrixWorld(true);
+            // Solo lo que se ve (el modelo puede traer piezas ocultas más largas)
+            let bx = -Infinity; const v = new THREE.Vector3();
+            body.traverseVisible((o) => { const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position; for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (v.x > bx) bx = v.x; } });
+            if (pfr.at[0] > bx - 0.004) pfr = { ...pfr, at: [bx - 0.012, pfr.at[1]] };
+          }
+          const pf = buildFront(pfr);
+          add(pf.group, "front", { id: `proc-front-${pfr.kind}`, label: "Handguard", pack: "proc" } as AssetEntry, [1.1, 0.2, 0]);
           add(pf.barrel, "barrel", { id: "proc-barrel", label: "Barrel", pack: "proc" } as AssetEntry, [1.6, 0, 0]);
-          muzzle = pf.muzzle; muzzleDiameter = twb.pfront.d;
+          muzzle = pf.muzzle; muzzleDiameter = pfr.d;
         }
       }
       // Cargador: su parte superior encaja en el pozo del cuerpo; se escala al ancho del pozo original.

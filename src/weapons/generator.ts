@@ -708,10 +708,13 @@ export class WeaponGenerator {
         ops.push({ id: "pfront", run: () => {
           const k = Math.min(prof.top.length - 1, Math.floor(prof.top.length * 0.93)); const t = prof.top[k], b = prof.bot[k];
           const hBody = t != null && b != null ? t - b : 0.03;
-          const h = Math.min(type === "bullpup" ? 0.06 : 0.045, Math.max(0.024, Math.min(hBody, (mz.diameter ?? 0.012) * 2.6)));
+          const h = type === "bullpup" ? Math.min(0.06, Math.max(0.036, hBody * 0.55)) : type === "smg" ? Math.min(0.05, Math.max(0.03, hBody * 0.7)) : Math.min(0.045, Math.max(0.024, Math.min(hBody, (mz.diameter ?? 0.012) * 2.6)));
+          // Donde acaba de verdad la silueta del cuerpo (algunos modelos traen la boca desplazada): nada flotando
+          let kEnd = prof.top.length - 1; while (kEnd > 0 && (prof.top[kEnd] == null || prof.bot[kEnd] == null)) kEnd--;
+          const xEnd = Math.min(mz.pos[0], prof.x0 + ((prof.x1 - prof.x0) * (kEnd + 1)) / prof.top.length);
           const len = (long ? 0.12 : 0.07) + r() * (long ? 0.12 : 0.07);
-          tw.body = 1; // sin estirar el cuerpo: el conjunto va en la boca de serie
-          tw.pfront = { kind: era === "classic" || r() < 0.5 ? "tube" : "quad", at: [mz.pos[0] - 0.012, mz.pos[1]], h, w: Math.min(0.04, h * 0.9), len, barrel: 0.02 + r() * 0.05, d: Math.min(0.02, Math.max(0.011, mz.diameter ?? 0.013)) };
+          tw.body = 1; tw.cutFront = null; // sin estirar ni cortar el cuerpo: el conjunto va en la boca de serie
+          tw.pfront = { kind: era === "classic" || r() < 0.5 ? "tube" : "quad", at: [xEnd - 0.012, mz.pos[1]], h, w: Math.min(0.04, h * 0.9), len, barrel: 0.02 + r() * 0.05, d: Math.min(0.02, Math.max(0.011, mz.diameter ?? 0.013)) };
         } });
       }
       if (long && prof && !sawed) {
