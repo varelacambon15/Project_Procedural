@@ -52,6 +52,14 @@ const ALL = [
   // --- Modelos sueltos (origen sin confirmar, uso privado) ---
   { kind: "fbx", pack: "misc", id: "m-m1911", label: "M1911", fbx: "raw/misc/M1911.fbx", type: "pistol", palette: "misc" },
   { kind: "fbx", pack: "misc", id: "m-deagle", label: "Desert Eagle", fbx: "raw/misc/DesertEagle.fbx", type: "pistol", palette: "misc" },
+  // Segunda tanda (origen sin confirmar, uso privado)
+  { kind: "fbx", pack: "misc", id: "m-m1911t", label: "M1911 Tactical", fbx: "raw/misc2/M1911Tactical.fbx", type: "pistol", palette: "misc" },
+  { kind: "fbx", pack: "misc", id: "m-m4a1", label: "M4A1", fbx: "raw/misc2/M4A1.fbx", type: "rifle", palette: "misc" },
+  { kind: "fbx", pack: "misc", id: "m-mp5", label: "MP5", fbx: "raw/misc2/MP5.fbx", type: "smg", palette: "misc" },
+  { kind: "fbx", pack: "misc", id: "m-mp7", label: "MP7", fbx: "raw/misc2/MP7.fbx", type: "smg", palette: "misc" },
+  // El archivo trae dos revólveres separados: cañón corto y cañón largo
+  { kind: "fbx", pack: "misc", id: "m-revolver", label: "Revolver", fbx: "raw/demo-gun/demo.fbx", type: "revolver", texture: "/raw/demo-gun/Baked_Texture.png", pick: [{ match: "^Cylinder001$", role: "body" }] },
+  { kind: "fbx", pack: "misc", id: "m-revolver-l", label: "Long Revolver", fbx: "raw/demo-gun/demo.fbx", type: "revolver", texture: "/raw/demo-gun/Baked_Texture.png", pick: [{ match: "^Cylinder006$", role: "body" }] },
 ];
 
 // --- WeaponsOBJ (Cinema 4D, origen sin confirmar, uso privado): 30 armas modernas con cargador separado ---
@@ -102,4 +110,26 @@ const QUARANTINE = {
 };
 for (const j of ALL) if (QUARANTINE[j.id]) j.quarantine = QUARANTINE[j.id];
 
-export const JOBS = ALL.map((j) => (BODY_ONLY[j.id] ? { ...j, pick: [{ match: BODY_ONLY[j.id], role: "body" }] } : j));
+// --- Modular Firearms Pack (sschocolate): piezas sueltas con sockets propios, se montan por sockets ---
+// Cada pieza encaja en el socket del mismo nombre de otra pieza del mismo calibre (o de calibre "any").
+const K = "raw/modular-firearms";
+const KIT_FILES = ["Platform_5.56mm_01", "Platform_9mm_01", "Platform_9mm_02", "Platform_12ga_01",
+  "Barrel_5.56mm_16in_01", "Barrel_5.56mm_16in_02", "Barrel_9mm_4.5in_01", "Barrel_9mm_4.5in_02", "Barrel_12ga_18in_01", "Barrel_12ga_18in_02",
+  "Handguard_5.56mm_16in_01", "Handguard_5.56mm_16in_02", "Stock_Rod_01", "Stock_Rod_02", "Stock_Rod_03", "Handle_01", "Handle_02",
+  "Trigger_01", "Trigger_02", "ChargingHandle_5.56mm_01", "ChargingHandle_5.56mm_02", "Slide_9mm_01", "Slide_9mm_02",
+  "PumpHandle_12ga_01", "PumpHandle_12ga_02", "PumpHandle_12ga_03",
+  "Magazine_5.56mm_01", "Magazine_5.56mm_02", "Magazine_5.56mm_03", "Magazine_9mm_01", "Magazine_9mm_02", "Magazine_12ga_6Shell", "Magazine_12ga_8Shell",
+  "MuzzleDevice_5.56mm_01", "MuzzleDevice_5.56mm_02", "MuzzleDevice_5.56mm_03", "MuzzleDevice_9mm_01", "MuzzleDevice_9mm_02", "MuzzleDevice_9mm_03",
+  "MuzzleDevice_12ga_01", "MuzzleDevice_12ga_02", "MuzzleDevice_12ga_03",
+  "Optic_Rear_Rail_01", "Optic_Rear_Rail_02", "IronSight_Rear_Rail_01", "IronSight_Rear_Welded_01", "IronSight_Front_5.56mmBarrel_01", "IronSight_Front_Welded_01",
+  "Device_Foregrip_01", "Device_Foregrip_02", "Device_Flashlight_01", "Device_Laser_01", "Device_LaserLight_01"];
+const KIT_SLOT = [[/^Platform/, "Platform"], [/^Barrel/, "Barrel"], [/^Handguard/, "Handguard"], [/^Stock/, "Stock"], [/^Handle/, "Handle"], [/^Trigger/, "Trigger"],
+  [/^ChargingHandle/, "ChargingHandle"], [/^Slide/, "Slide"], [/^PumpHandle/, "PumpHandle"], [/^Magazine/, "Magazine"], [/^MuzzleDevice/, "Muzzle"],
+  [/^(Optic|IronSight)_Rear_Rail/, "Sights_Rear"], [/^IronSight_Rear_Welded/, "Sights_Rear_Welded"], [/^IronSight_Front_5/, "Sights_Front"], [/^IronSight_Front_Welded/, "Sights_Front_Welded"], [/^Device/, "Device"]];
+const kitJobs = KIT_FILES.map((f) => ({
+  kind: "kitpart", pack: "kit", id: "k-" + f.toLowerCase().replace(/\.|_\d+in|mm/g, "").replace(/[^a-z0-9]+/g, "-"),
+  fbx: `${K}/MW1_${f}.fbx`, texture: `/${K}/Master_Texture.png`,
+  slot: KIT_SLOT.find(([re]) => re.test(f))[1], caliber: /5\.56/.test(f) ? "556" : /9mm/.test(f) ? "9mm" : /12ga/.test(f) ? "12ga" : "any",
+}));
+
+export const JOBS = ALL.map((j) => (BODY_ONLY[j.id] ? { ...j, pick: [{ match: BODY_ONLY[j.id], role: "body" }] } : j)).concat(kitJobs);

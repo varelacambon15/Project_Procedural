@@ -2,6 +2,7 @@
 import { t } from "../i18n";
 import { PELLETS } from "./generator";
 import type { Effect, Paint, WeaponSpec } from "./types";
+import { isKit, kitLabel } from "./kit";
 
 export const rarityName = (s: WeaponSpec) => t(`rarity.${s.rarity.id}`);
 export const typeName = (type: string) => t(`type.${type}`);
@@ -16,6 +17,7 @@ export const roleName = (role: string) => t(`role.${role}`);
 /** Nombre de una pieza: accesorio propio (traducido) o modelo del pack. */
 export function partLabel(byId: Map<string, { label: string }>, id: string) {
   if (id.startsWith("acc:")) return t(`acc.${id.slice(4)}`);
+  if (isKit(id)) return kitLabel(id);
   return (byId.get(id)?.label ?? id).replace("Accessories/", "");
 }
 

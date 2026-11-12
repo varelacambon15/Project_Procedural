@@ -8,7 +8,7 @@ const gen = new WeaponGenerator(JSON.parse(readFileSync(new URL("../assets/weapo
 
 describe("banco de trabajo", () => {
   it("cambiar el cargador recalcula las estadísticas y devuelve el viejo a la caja", () => {
-    const w = Array.from({ length: 200 }, (_, s) => gen.generate(s, "rifle")).find((x) => slotsOf(gen, x).includes("magazine"))!;
+    const w = Array.from({ length: 200 }, (_, s) => gen.generate(s, "rifle")).find((x) => x.layout !== "kit" && slotsOf(gen, x).includes("magazine"))!;
     const old = w.parts.find((p) => p.role === "magazine")!.from;
     const donor = gen.byType.get("rifle")!.find((a) => a.id !== old && a.sockets.magazine)!;
     const before = w.stats.cargador;

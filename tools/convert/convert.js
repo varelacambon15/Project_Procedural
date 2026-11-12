@@ -352,7 +352,7 @@ async function loadFBX(url) {
 
 const PALETTES = {
   asimov: { GunMetalNewPallete: ["#6a7078", 0.45, 0.5], PlasticNewPallete: ["#3a3e44", 0.75, 0.05] },
-  misc: { M1911BodyMat: ["#2d3034", 0.45, 0.6], M1911InsideMat: ["#55585c", 0.5, 0.5], M1911HandleMat: ["#5a3a24", 0.8, 0.05], Deagle: ["#6b6e72", 0.4, 0.65] },
+  misc: { M1911BodyMat: ["#2d3034", 0.45, 0.6], M1911InsideMat: ["#55585c", 0.5, 0.5], M1911HandleMat: ["#5a3a24", 0.8, 0.05], Deagle: ["#6b6e72", 0.4, 0.65], Mat_Dark: ["#2e3034", 0.5, 0.55] },
 };
 function applyPalette(mesh, pal) {
   if (!pal) return;
@@ -393,6 +393,42 @@ async function convertFBX(job) {
   return finish(job.id, job.type, parts, { pack: job.pack });
 }
 
-window.convertJob = async (job) => (job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
+
+// ---------- Kit modular (sschocolate): cada pieza trae su origen en su punto de unión y sus propios sockets ----------
+// Unidades del pack: cm, +Z hacia la boca, +Y arriba. Se pasa a metros y +X hacia la boca: (x, y, z) -> (z, y, -x) / 100.
+const KIT_M = new THREE.Matrix4().makeRotationY(Math.PI / 2).premultiply(new THREE.Matrix4().makeScale(0.01, 0.01, 0.01));
+/** Nombre de socket sin el sufijo de duplicado de Blender ("Socket_Barrel001" -> "Barrel", "Socket_Device_01001" -> "Device"). */
+const socketKey = (n) => n.replace(/^Socket_/, "").replace(/\d{3}$/, "").replace(/_0\d$/, "");
+async function convertKitPart(job) {
+  const root = await loadFBX(job.fbx);
+  const tex = await loadTexture(job.texture);
+  root.updateMatrixWorld(true);
+  const sockets = {};
+  root.traverse((o) => {
+    if (!/^Socket_/.test(o.name)) return;
+    const p = o.getWorldPosition(new THREE.Vector3()).applyMatrix4(KIT_M);
+    (sockets[socketKey(o.name)] ??= []).push(p.toArray().map((v) => +v.toFixed(4)));
+  });
+  const seen = new Set();
+  const parts = [];
+  for (const m of bakeMeshes(root)) {
+    m.geometry.applyMatrix4(KIT_M);
+    m.geometry.computeBoundingBox();
+    const key = m.geometry.boundingBox.min.toArray().concat(m.geometry.boundingBox.max.toArray()).map((v) => v.toFixed(4)).join();
+    if (seen.has(key)) continue; // mallas duplicadas en el archivo
+    seen.add(key);
+    const lens = /Lens/i.test(m.name);
+    m.material = lens ? new THREE.MeshStandardMaterial({ name: "Lens", color: 0x4a7a8c, roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.45 })
+      : new THREE.MeshStandardMaterial({ name: "kit", map: tex, roughness: 0.55, metalness: 0.35, flatShading: true });
+    parts.push({ role: lens ? "lens" : "kit", source: job.id, mesh: m });
+  }
+  const box = boxOf(parts.map((p) => p.mesh));
+  const tris = parts.reduce((s, p) => s + p.mesh.geometry.attributes.position.count / 3, 0);
+  const glb = await exportGLB(parts);
+  return { id: job.id, slot: job.slot, caliber: job.caliber, sockets, bounds: { min: box.min.toArray().map((v) => +v.toFixed(4)), max: box.max.toArray().map((v) => +v.toFixed(4)) }, triangles: Math.round(tris), glb };
+}
+
+window.convertJob = async (job) => (job.kind === "kitpart" ? convertKitPart(job) : job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
+window.treeFBX = async (url) => { const root = await loadFBX(url); const out = []; root.traverse((o) => out.push({ n: o.name, t: o.type, p: o.position.toArray().map((v) => +v.toFixed(2)), r: o.rotation.toArray().slice(0, 3).map((v) => +v.toFixed(2)), s: +o.scale.x.toFixed(3), mat: o.isMesh ? [].concat(o.material).map((m) => m.name + (m.map ? "*" : "")) : undefined })); return out; };
 window.listFBX = async (url) => { const root = await loadFBX(url); const out = []; root.updateMatrixWorld(true); root.traverse((o) => { if (o.isMesh) { const b = new THREE.Box3().setFromObject(o); out.push({ name: o.name, min: b.min.toArray().map((v) => +v.toFixed(1)), max: b.max.toArray().map((v) => +v.toFixed(1)) }); } }); return out; };
 window.ready = true;

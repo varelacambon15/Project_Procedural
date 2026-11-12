@@ -16,7 +16,7 @@ describe("WeaponGenerator", () => {
   it("genera armas de todos los tipos con piezas que existen", () => {
     for (const t of gen.types) for (const w of many(40, t)) {
       expect(w.type).toBe(t);
-      for (const p of w.parts) expect(gen.byId.has(p.from)).toBe(true);
+      for (const p of w.parts) expect(gen.byId.has(p.from) || gen.kit.byId.has(p.from)).toBe(true);
       for (const v of Object.values(w.stats)) expect(Number.isFinite(v)).toBe(true);
       expect(TYPE_INFO[t].archetypes.some((a) => a.id === w.archetype)).toBe(true);
     }
@@ -31,7 +31,7 @@ describe("WeaponGenerator", () => {
     for (const w of many(3000)) {
       const own = w.optic === w.parts[0].from; // mira integrada del modelo: no es un accesorio
       const n = (w.optic && !own ? 1 : 0) + (w.muzzle ? 1 : 0);
-      const can = gen.muzzleOptions(w.type, w.parts[0].from).length > 0 || gen.opticOptions(w).length > 0;
+      const can = gen.muzzleOptions(w).length > 0 || gen.opticOptions(w).length > 0;
       if (w.rarity.id === "comun") expect(n).toBe(0);
       if (w.rarity.id === "poco" && can) expect(n).toBe(1);
     }

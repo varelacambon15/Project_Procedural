@@ -38,7 +38,9 @@ await page.goto(`${base}/tools/convert/index.html`);
 await page.waitForFunction(() => window.ready === true);
 
 const args = process.argv.slice(2);
-if (args[0] === "--list") {
+if (args[0] === "--tree") {
+  for (const f of args.slice(1)) console.log(f, JSON.stringify(await page.evaluate((u) => window.treeFBX(u), "/" + f)));
+} else if (args[0] === "--list") {
   console.log(JSON.stringify(await page.evaluate((u) => window.listFBX(u), "/" + args[1]), null, 1));
 } else {
   const only = args[0];
@@ -48,6 +50,13 @@ if (args[0] === "--list") {
     const j = { ...job };
     for (const k of ["obj", "mtl", "fbx"]) if (j[k]) j[k] = "/" + j[k];
     const out = await page.evaluate((jj) => window.convertJob(jj), j);
+    if (job.kind === "kitpart") {
+      const dir = path.join(ROOT, "assets/weapons/kit"); await mkdir(dir, { recursive: true });
+      await writeFile(path.join(dir, job.id + ".glb"), Buffer.from(out.glb, "base64")); delete out.glb;
+      (manifest.kit ??= []).push({ ...out, file: `kit/${job.id}.glb` });
+      console.log(`✓ kit/${job.id}.glb ${out.slot} ${out.caliber} ${Object.keys(out.sockets).join(",")}`);
+      continue;
+    }
     const dir = path.join(ROOT, "assets/weapons", job.pack);
     await mkdir(dir, { recursive: true });
     const rel = `${job.pack}/${job.id}.glb`;
@@ -65,6 +74,7 @@ if (args[0] === "--list") {
     const fresh = new Map(manifest.weapons.map((w) => [w.id, w]));
     out = { ...old, weapons: old.weapons.map((w) => fresh.get(w.id) ?? w) };
     for (const w of manifest.weapons) if (!old.weapons.some((o) => o.id === w.id)) out.weapons.push(w);
+    if (manifest.kit) out.kit = [...(old.kit ?? []).filter((k) => !manifest.kit.some((n) => n.id === k.id)), ...manifest.kit];
   }
   await writeFile(path.join(ROOT, "assets/weapons/manifest.json"), JSON.stringify(out, null, 1));
 }

@@ -17,7 +17,14 @@ export const ACCESSORIES: AccessoryDef[] = [
   { id: "acc:acog", kind: "optic", mods: { precision: 8, alcance: 12, manejo: -3 }, zoom: 3, for: ["rifle", "bullpup", "lmg", "smg"] },
   { id: "acc:scope6", kind: "optic", mods: { precision: 12, alcance: 20, manejo: -6 }, zoom: 5, for: ["rifle", "bullpup", "sniper"] },
 ];
-export const accessory = (id: string | null) => (id ? ACCESSORIES.find((a) => a.id === id) ?? null : null);
+/** Piezas del kit modular que hacen de accesorio: usan las estadísticas (y el sonido, el retículo) del equivalente. */
+export const KIT_ALIAS: Record<string, string> = {
+  "k-muzzledevice-556-01": "acc:suppressor-l", "k-muzzledevice-556-02": "acc:suppressor-s", "k-muzzledevice-556-03": "acc:brake",
+  "k-muzzledevice-9-01": "acc:suppressor-l", "k-muzzledevice-9-02": "acc:suppressor-s", "k-muzzledevice-9-03": "acc:compensator",
+  "k-muzzledevice-12ga-01": "acc:suppressor-l", "k-muzzledevice-12ga-02": "acc:brake", "k-muzzledevice-12ga-03": "acc:compensator",
+  "k-optic-rear-rail-01": "acc:holo", "k-optic-rear-rail-02": "acc:reddot",
+};
+export const accessory = (id: string | null) => (id ? ACCESSORIES.find((a) => a.id === (KIT_ALIAS[id] ?? id)) ?? null : null);
 export const isAccessory = (id: string | null) => !!id && id.startsWith("acc:");
 
 const black = () => new THREE.MeshStandardMaterial({ name: "Steel", color: 0x1c1d1f, metalness: 0.75, roughness: 0.42 });

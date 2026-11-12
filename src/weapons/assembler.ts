@@ -2,7 +2,8 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { NO_TWEAKS, type AssetEntry, type PartRole, type WeaponSpec } from "./types";
-import { jointScale, type WeaponGenerator } from "./generator";
+import { TYPE_LENGTH, jointScale, type WeaponGenerator } from "./generator";
+import { isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
 import { accessory, buildMuzzle, buildOptic } from "./accessories";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
@@ -42,6 +43,24 @@ export class WeaponAssembler {
     return gltf.scene;
   }
 
+  /** Carga de antemano todas las piezas del kit (son pequeñas): así las armas del kit se montan al instante. */
+  preloadKit() { for (const p of this.gen.kit.parts) if (!this.cache.has(p.id)) this.cache.set(p.id, this.fetchModel(this.baseUrl + p.file)); }
+
+  /** Pieza del kit: sus mallas con el acabado común (el cristal de las miras se conserva). */
+  private async kitNode(part: KitPart): Promise<THREE.Group> {
+    if (!this.cache.has(part.id)) this.cache.set(part.id, this.fetchModel(this.baseUrl + part.file));
+    const scene = await this.cache.get(part.id)!;
+    const g = new THREE.Group();
+    scene.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      const c = new THREE.Mesh(m.geometry, Array.isArray(m.material) ? m.material.map(finish) : finish(m.material));
+      c.name = m.name; c.castShadow = true; c.receiveShadow = true;
+      g.add(c);
+    });
+    return g;
+  }
+
   /** Copia las mallas de un rol de un arma (geometría compartida, material propio). */
   private async nodes(entry: AssetEntry, role: PartRole): Promise<THREE.Group> {
     const scene = await this.load(entry);
@@ -65,13 +84,42 @@ export class WeaponAssembler {
       group.add(object); parts.push({ object, role, from, explode: new THREE.Vector3(...explode), base: object.position.clone() });
     };
     let muzzle: THREE.Vector3 | null = null;
-    const first = get(spec.parts[0].from);
-    const length0 = first.bounds.max[0] - first.bounds.min[0];
+    const first = this.gen.byId.get(spec.parts[0].from);
+    const length0 = first ? first.bounds.max[0] - first.bounds.min[0] : TYPE_LENGTH[spec.type] ?? 0.9;
     let muzzleDiameter = 0.03;
     let opticTarget: THREE.Vector3 | null = null;
     let opticLength = 0;
 
-    if (spec.layout === "modular-pistol") {
+    let sightKit: number | null = null;
+    if (spec.layout === "kit") {
+      // Kit modular: cada pieza en su socket, recorriendo el árbol desde la plataforma
+      const { placements, muzzle: mz, opticAt } = kitPlacements(this.gen.kit, spec);
+      let frontSightTop: number | null = null;
+      // Todas las piezas se cargan a la vez (en paralelo), y luego se colocan en orden
+      const nodes = await Promise.all(placements.map((pl) => this.kitNode(pl.part)));
+      for (const [i, pl] of placements.entries()) {
+        const node = nodes[i];
+        node.position.set(...pl.pos); node.scale.x = pl.stretch;
+        const role: PartRole = pl.role === "sight" ? "scope" : pl.role;
+        add(node, role, { id: pl.part.id, label: kitLabel(pl.part.id), pack: "kit" } as AssetEntry, KIT_EXPLODE[pl.role] ?? [0, 0.6, 0]);
+        if (KIT_PRIMARY.has(pl.role)) paint(node, spec);
+        else if (KIT_SECONDARY.has(pl.role)) paint(node, spec, "secondary");
+        if (pl.role === "scope") {
+          // Mira del kit: la línea de mira pasa por el centro del cristal
+          node.updateMatrixWorld(true);
+          const lens = node.children.find((c) => /lens/i.test(c.name)) ?? node;
+          const b = new THREE.Box3().setFromObject(lens); sightKit = (b.min.y + b.max.y) / 2;
+        }
+        if (pl.role === "sight" && /front/.test(pl.part.id)) { node.updateMatrixWorld(true); frontSightTop = new THREE.Box3().setFromObject(node).max.y; }
+      }
+      if (!spec.optic) {
+        // Alzas: la línea pasa por la punta del punto de mira (o por encima de la corredera, en pistola)
+        const slide = parts.find((p) => p.role === "slide");
+        sightKit = frontSightTop !== null ? frontSightTop - 0.002 : slide ? new THREE.Box3().setFromObject(slide.object).max.y + 0.002 : null;
+      }
+      if (mz) { muzzle = v3(mz); muzzleDiameter = spec.type === "shotgun" ? 0.026 : spec.type === "pistol" ? 0.014 : 0.018; }
+      if (opticAt && spec.optic && !isKit(spec.optic)) { opticTarget = v3(opticAt); opticLength = spec.type === "pistol" ? 0.05 : 0.1; }
+    } else if (spec.layout === "modular-pistol") {
       const frameE = get(spec.parts.find((p) => p.role === "frame")!.from);
       const slideE = get(spec.parts.find((p) => p.role === "slide")!.from);
       const barrelE = get(spec.parts.find((p) => p.role === "barrel")!.from);
@@ -156,11 +204,11 @@ export class WeaponAssembler {
       if (bodyE.sockets.optic) { opticTarget = v3(bodyE.sockets.optic.pos); opticLength = bodyE.sockets.optic.size?.[0] ?? 0; }
       else if (bodyE.sockets.rail) { opticTarget = v3(bodyE.sockets.rail.pos); opticLength = bodyE.sockets.rail.length ?? 0.1; }
     }
-    let sight: number | null = null, zoom = 1;
+    let sight: number | null = sightKit, zoom = isKit(spec.optic) ? accessory(spec.optic)?.zoom ?? 1 : 1;
 
     // Mira: la propia del arma o una de otra arma/accesorio, apoyada en el socket "optic" o en la parte superior.
     const optAcc = accessory(spec.optic);
-    if (optAcc && opticTarget) {
+    if (optAcc && opticTarget && !isKit(spec.optic)) {
       // Mira propia, generada a medida del raíl
       const { group: opt, sightHeight } = buildOptic(optAcc.id, opticLength, length0);
       // Si alguna parte del arma (cajón, culata, alzas) queda por encima de la línea de mira, la mira va sobre
@@ -176,7 +224,7 @@ export class WeaponAssembler {
       group.add(opt);
       parts.push({ object: opt, role: "scope", from: { id: optAcc.id, label: optAcc.id, pack: "acc" } as AssetEntry, explode: new THREE.Vector3(0, 1.4, 0), base: opt.position.clone() });
       sight = opticTarget.y + sightHeight; zoom = optAcc.zoom ?? 1;
-    } else if (spec.optic && opticTarget) {
+    } else if (spec.optic && opticTarget && !isKit(spec.optic)) {
       const optE = get(spec.optic);
       const opt = await this.nodes(optE, "scope");
       if (optE.id !== spec.parts[0].from) {
@@ -191,7 +239,7 @@ export class WeaponAssembler {
 
     // Accesorio de boca: su parte trasera en la boca del cañón, escalado al diámetro.
     const muzAcc = accessory(spec.muzzle);
-    if (muzAcc && muzzle) {
+    if (muzAcc && muzzle && !isKit(spec.muzzle)) {
       // Dispositivo de boca propio, del diámetro exacto del cañón
       const { group: dev, length: dl } = buildMuzzle(muzAcc.id, muzzleDiameter, length0);
       dev.position.copy(muzzle).add(new THREE.Vector3(-0.002, 0, 0));
@@ -243,7 +291,7 @@ export class WeaponAssembler {
     else if (handgun && magBox) grip = new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.3, 0);
     else if (magBox) grip = new THREE.Vector3(magBox.min.x - L * 0.09, box.min.y + H * 0.32, 0);
     else grip = new THREE.Vector3(box.min.x + L * (handgun ? 0.35 : 0.38), box.min.y + H * 0.3, 0);
-    const fp = part("front");
+    const fp = part("pump") ?? part("front");
     const fb = fp ? boxOf(fp.object) : null;
     const support = handgun ? grip.clone().add(new THREE.Vector3(0.01, -0.01, 0))
       : fb ? new THREE.Vector3(fb.min.x + (fb.max.x - fb.min.x) * 0.35, fb.min.y + (fb.max.y - fb.min.y) * 0.15, 0)
@@ -254,6 +302,14 @@ export class WeaponAssembler {
   }
 }
 
+/** Despiece del kit (dirección en la que se separa cada pieza) y qué piezas llevan el color principal o el secundario. */
+const KIT_EXPLODE: Partial<Record<string, [number, number, number]>> = {
+  receiver: [0, 0, 0], barrel: [1.5, 0, 0], front: [1, 0.25, 0], stock: [-1.2, 0, 0], grip: [-0.2, -1, 0], magazine: [0, -1.2, 0], muzzle: [2, 0.3, 0],
+  scope: [0, 1.4, 0], sight: [0, 1, 0], trigger: [0, -0.7, 0], charging: [-0.5, 0.8, 0], slide: [0, 1, 0], pump: [0.8, -0.7, 0], device: [0.6, -1.1, 0],
+};
+const KIT_PRIMARY = new Set(["receiver", "front", "slide", "pump"]);
+const KIT_SECONDARY = new Set(["stock", "grip", "device"]);
+
 /** Grosor máximo (ancho / largo) según el tipo, como en armas reales. */
 const MAX_THICKNESS: Partial<Record<string, number>> = { pistol: 0.17, revolver: 0.2, smg: 0.12, rifle: 0.08, bullpup: 0.1, shotgun: 0.075, sniper: 0.075, lmg: 0.11, launcher: 0.16, flamethrower: 0.16 };
 
@@ -263,7 +319,7 @@ const MAX_THICKNESS: Partial<Record<string, number>> = { pistol: 0.17, revolver:
  */
 function finish(src: THREE.Material): THREE.Material {
   const m = src.clone() as THREE.MeshStandardMaterial;
-  if (!m.isMeshStandardMaterial) return m;
+  if (!m.isMeshStandardMaterial || /Lens|Glass/i.test(m.name)) return m;
   const wood = /Wood|Handle/i.test(m.name);
   if (!m.map) {
     const hsl = { h: 0, s: 0, l: 0 }; m.color.getHSL(hsl);

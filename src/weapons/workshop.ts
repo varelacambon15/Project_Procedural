@@ -2,29 +2,38 @@
 import { PAINTS, jointScale, longGunOk, type WeaponGenerator } from "./generator";
 import { accessory } from "./accessories";
 import type { Paint, PartRole, WeaponSpec } from "./types";
+import { KIT_ROLE, isKit } from "./kit";
 
 /** Pieza suelta guardada en la caja de piezas. `from` es un arma del manifest o un accesorio ("acc:…"). */
 export interface PartItem { uid: number; role: PartRole; from: string; barrelLength?: number }
 /** Ranuras personalizables en el banco. */
-export type Slot = "magazine" | "scope" | "muzzle" | "slide" | "frame" | "barrel" | "stock" | "grip" | "front";
+export type Slot = "magazine" | "scope" | "muzzle" | "slide" | "frame" | "barrel" | "stock" | "grip" | "front" | "trigger" | "charging" | "pump" | "device";
 
 let nextUid = 1;
 export const newPart = (role: PartRole, from: string, barrelLength?: number): PartItem => ({ uid: nextUid++, role, from, barrelLength });
 
 /** Ranuras que tiene un arma concreta. */
 export function slotsOf(gen: WeaponGenerator, w: WeaponSpec): Slot[] {
+  if (w.layout === "kit") {
+    // Una ranura por pieza montada (salvo la plataforma), más mira, boca y accesorio bajo el raíl si caben
+    const out: Slot[] = w.parts.slice(1).map((p) => p.role as Slot).filter((s) => s !== "device");
+    if (w.parts.some((p) => gen.kit.byId.get(p.from)?.sockets.Device)) out.push("device");
+    if (gen.opticOptions(w).length) out.push("scope");
+    if (gen.muzzleOptions(w).length) out.push("muzzle");
+    return out;
+  }
   if (w.layout === "modular-pistol") return ["slide", "frame", "barrel", "muzzle"];
   if (w.layout === "modular-long") {
     const out: Slot[] = ["stock", "grip", "front", "magazine"];
     if (gen.opticOptions(w).length) out.push("scope");
-    if (gen.muzzleOptions(w.type, w.parts[0].from).length) out.push("muzzle");
+    if (gen.muzzleOptions(w).length) out.push("muzzle");
     return out;
   }
   const body = gen.byId.get(w.parts[0].from)!;
   const out: Slot[] = [];
   if (body.sockets.magazine) out.push("magazine");
   if (body.parts.some((p) => p.role === "scope") || gen.opticOptions(w).length) out.push("scope");
-  if (gen.muzzleOptions(w.type, w.parts[0].from).length) out.push("muzzle");
+  if (gen.muzzleOptions(w).length) out.push("muzzle");
   return out;
 }
 
@@ -39,8 +48,20 @@ export function mounted(w: WeaponSpec, slot: Slot): PartItem | null {
 /** ¿Encaja esta pieza en esta ranura de esta arma? */
 export function fits(gen: WeaponGenerator, w: WeaponSpec, slot: Slot, part: PartItem): boolean {
   if (part.role !== slot) return false;
+  if (w.layout === "kit") {
+    if (slot === "muzzle") return gen.muzzleOptions(w).includes(part.from);
+    if (slot === "scope") return gen.opticOptions(w).includes(part.from);
+    const k = gen.kit.byId.get(part.from); if (!k || KIT_ROLE[k.slot] !== slot) return false;
+    const cal = gen.kit.caliberOf(w);
+    if (!gen.kit.options(k.slot, cal, w.type).includes(k)) return false;
+    // Un cañón sin rosca no admite el dispositivo de boca montado; con el tubo largo de escopeta tampoco
+    const next = { ...w, parts: w.parts.map((p) => (p.role === slot ? { role: slot, from: part.from } : p)) };
+    if (!next.parts.some((p) => p.from === part.from)) next.parts.push({ role: slot, from: part.from });
+    return !w.muzzle || gen.muzzleOptions(next).includes(w.muzzle);
+  }
+  if (isKit(part.from)) return false;
   const acc = accessory(part.from);
-  if (slot === "muzzle") return !!acc && acc.kind === "muzzle" && gen.muzzleOptions(w.type, w.parts[0].from).includes(part.from);
+  if (slot === "muzzle") return !!acc && acc.kind === "muzzle" && gen.muzzleOptions(w).includes(part.from);
   if (slot === "scope") {
     if (acc) return acc.kind === "optic" && gen.opticOptions(w).includes(part.from);
     const body = gen.byId.get(w.parts[0].from)!;
@@ -64,7 +85,7 @@ export function fits(gen: WeaponGenerator, w: WeaponSpec, slot: Slot, part: Part
 }
 
 /** Mira y boca se pueden dejar vacías; el resto solo se intercambia. */
-export const removable = (slot: Slot) => slot === "scope" || slot === "muzzle";
+export const removable = (slot: Slot) => slot === "scope" || slot === "muzzle" || slot === "device";
 
 /** Monta `part` en la ranura (o la vacía si es null). Devuelve la pieza retirada, que va a la caja. */
 export function swap(gen: WeaponGenerator, w: WeaponSpec, slot: Slot, part: PartItem | null): PartItem | null {
@@ -75,7 +96,8 @@ export function swap(gen: WeaponGenerator, w: WeaponSpec, slot: Slot, part: Part
   else if (slot === "muzzle") w.muzzle = part?.from ?? null;
   else {
     const i = w.parts.findIndex((x) => x.role === slot);
-    if (i >= 0 && part) w.parts[i] = { role: slot, from: part.from };
+    if (i >= 0 && !part) w.parts.splice(i, 1);
+    else if (i >= 0 && part) w.parts[i] = { role: slot, from: part.from };
     else if (part) w.parts.push({ role: slot, from: part.from });
     if (slot === "barrel" && part) w.barrelLength = part.barrelLength ?? 1;
   }

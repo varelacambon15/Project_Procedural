@@ -1,7 +1,7 @@
 // Tipos compartidos del sistema de armas. Los textos visibles se obtienen con i18n a partir de los ids.
 
 export type WeaponType = "pistol" | "revolver" | "smg" | "rifle" | "bullpup" | "shotgun" | "sniper" | "launcher" | "flamethrower" | "lmg" | "accessory";
-export type PartRole = "body" | "slide" | "frame" | "barrel" | "magazine" | "scope" | "muzzle" | "receiver" | "stock" | "grip" | "front";
+export type PartRole = "body" | "slide" | "frame" | "barrel" | "magazine" | "scope" | "muzzle" | "receiver" | "stock" | "grip" | "front" | "trigger" | "charging" | "pump" | "device";
 export type FireMode = "auto" | "semi" | "burst" | "pump" | "bolt";
 
 /** Tipos estándar de unión: una pieza solo encaja en una unión del mismo tipo. */
@@ -27,7 +27,7 @@ export interface AssetEntry {
   /** Si está en cuarentena, el motivo. */
   quarantine?: string;
 }
-export interface Manifest { convention: string; weapons: AssetEntry[] }
+export interface Manifest { convention: string; weapons: AssetEntry[]; kit?: import("./kit").KitPart[] }
 
 export type StatKey = "dano" | "cadencia" | "precision" | "alcance" | "manejo" | "cargador";
 export type Stats = Record<StatKey, number>;
@@ -59,7 +59,7 @@ export interface WeaponSpec {
   modeShift: FireMode | null;
   /** Disparos por ráfaga (solo en modo ráfaga). */
   burst: number;
-  layout: "modular-pistol" | "modular-long" | "body";
+  layout: "modular-pistol" | "modular-long" | "body" | "kit";
   parts: PartPick[];
   barrelLength: number;
   muzzle: string | null;

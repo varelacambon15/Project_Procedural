@@ -58,6 +58,7 @@ async function boot() {
   const manifest: Manifest = await (await fetch(ASSETS + "manifest.json")).json();
   const gen = new WeaponGenerator(manifest);
   const asm = new WeaponAssembler(gen, ASSETS);
+  asm.preloadKit();
 
   const gun = new Gun(camera, scene, asm, world.shootables, {
     dummies: () => dummies,

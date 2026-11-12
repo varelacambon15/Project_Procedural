@@ -169,7 +169,7 @@ async function boot() {
   if (t && gen.types.includes(t)) { typeFilter = t; buildTypeButtons(); }
   await show(Number(q.get("seed")) || 4127);
   // Hoja de contacto (revisión visual): n armas despiezadas, cada una en perfil, tres cuartos y vista de empuñadura.
-  const sheet = async (n: number, start = 1, types: string[] = ["rifle", "smg", "shotgun", "sniper", "lmg"]) => {
+  const sheet = async (n: number, start = 1, types: string[] = ["rifle", "smg", "shotgun", "sniper", "lmg"], layout = "modular-long") => {
     const CW = 220, CH = 110, cols = 3, rows = n;
     const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(CW, CH); r.toneMapping = THREE.ACESFilmicToneMapping;
     const sc = new THREE.Scene(); sc.background = new THREE.Color(0xcfc9bd);
@@ -180,7 +180,7 @@ async function boot() {
     let seed = start, i = 0;
     while (i < n) {
       const spec = gen.generate(seed++, types[seed % types.length] as never);
-      if (spec.layout !== "modular-long") continue;
+      if (spec.layout !== layout) continue;
       const built = await asm.assemble(spec); sc.add(built.group);
       const views: [number, number][] = [[0, 0], [-0.75, 0.25], [-0.35, -0.75]];
       views.forEach(([yaw, pitch], v) => {
@@ -192,7 +192,7 @@ async function boot() {
       });
       sc.remove(built.group);
       g.fillStyle = "#222"; g.font = "11px monospace";
-      const lbl = `${i + 1}. ${spec.parts.filter((p) => ["receiver", "stock", "grip", "front"].includes(p.role)).map((p) => p.role[0].toUpperCase() + ":" + p.from.replace("w-", "")).join(" ")}`;
+      const lbl = `${i + 1}. ${spec.parts.filter((p) => ["receiver", "stock", "grip", "front"].includes(p.role)).map((p) => p.role[0].toUpperCase() + ":" + p.from.replace(/^[wk]-/, "")).join(" ")} ${spec.optic ?? ""} ${spec.muzzle ?? ""}`;
       g.fillText(lbl, 4, i * CH + 12); names.push(lbl);
       i++;
     }

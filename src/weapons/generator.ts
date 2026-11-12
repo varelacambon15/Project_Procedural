@@ -2,6 +2,7 @@
 // Lógica pura (sin Three.js): se puede probar sin navegador. Los textos se traducen fuera, a partir de los ids.
 import { hashString, mulberry32, pick, type Rng } from "./rng";
 import { ACCESSORIES, accessory } from "./accessories";
+import { KIT_MODS, KitIndex, isKit, kitMagazine, kitMuzzleOptions, kitOpticOptions, rollKit } from "./kit";
 import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Rarity, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
@@ -177,6 +178,7 @@ export const elementOf = (s: WeaponSpec) => s.effects.find((e) => e.element)?.el
 export function partMods(from: string, role: string): Partial<Stats> {
   const acc = accessory(from);
   if (acc) return acc.mods;
+  if (isKit(from)) return KIT_MODS[from] ?? {};
   const r = mulberry32(hashString(`${from}#${role}`));
   const keys: StatKey[] = ["dano", "cadencia", "precision", "alcance", "manejo", "cargador"];
   const relevant: Record<string, StatKey[]> = {
@@ -198,6 +200,8 @@ function weighted<T>(r: Rng, arr: T[], w: (x: T) => number): T {
   for (const x of arr) { roll -= w(x); if (roll < 0) return x; }
   return arr[arr.length - 1];
 }
+/** Proporción de armas del kit modular en cada tipo que lo admite. */
+const KIT_SHARE: Partial<Record<WeaponType, number>> = { rifle: 0.4, pistol: 0.3, shotgun: 0.4 };
 /** Peso de cada pack al elegir el cuerpo: los modelos más realistas salen más a menudo. */
 const PACK_WEIGHT: Record<string, number> = { modern: 4, asimov: 2.5, misc: 2.5, quaternius: 1.5, cosmo: 1 };
 
@@ -210,8 +214,11 @@ export class WeaponGenerator {
   readonly byType = new Map<WeaponType, AssetEntry[]>();
   readonly byId = new Map<string, AssetEntry>();
   readonly scopes: AssetEntry[];
+  /** Piezas del kit modular (armas montadas por sockets). */
+  readonly kit: KitIndex;
 
   constructor(readonly manifest: Manifest) {
+    this.kit = new KitIndex(manifest.kit ?? []);
     for (const w of manifest.weapons) {
       this.byId.set(w.id, w);
       if (!this.byType.has(w.type)) this.byType.set(w.type, []);
@@ -226,12 +233,16 @@ export class WeaponGenerator {
 
   /** Miras (accesorio) que admite un arma. Las que llevan mira integrada en el cuerpo no admiten otra. */
   opticOptions(spec: Pick<WeaponSpec, "type" | "parts">): string[] {
+    const procedural = () => ACCESSORIES.filter((a) => a.kind === "optic" && (!a.for || a.for.includes(spec.type))).map((a) => a.id);
+    if (isKit(spec.parts[0].from)) return kitOpticOptions(this.kit, spec, spec.type === "pistol" ? ["acc:reddot"] : procedural());
     const body = this.byId.get(spec.parts[0].from);
     if (!body?.sockets.rail || spec.type === "sniper" || spec.type === "launcher" || spec.type === "flamethrower") return [];
     if (body.parts.some((p) => p.role === "scope")) return [];
     return ACCESSORIES.filter((a) => a.kind === "optic" && (!a.for || a.for.includes(spec.type))).map((a) => a.id);
   }
-  muzzleOptions(type: WeaponType, bodyId?: string): string[] {
+  muzzleOptions(spec: Pick<WeaponSpec, "type" | "parts">): string[] {
+    const type = spec.type, bodyId = spec.parts[0]?.from;
+    if (isKit(bodyId)) return kitMuzzleOptions(this.kit, spec);
     if (type === "launcher" || type === "flamethrower" || (bodyId && INTEGRATED_MUZZLE.has(bodyId))) return [];
     return ACCESSORIES.filter((a) => a.kind === "muzzle").map((a) => a.id);
   }
@@ -247,8 +258,15 @@ export class WeaponGenerator {
     const parts: PartPick[] = [];
     let tweaks: Tweaks = { ...NO_TWEAKS };
     let layout: WeaponSpec["layout"] = "body";
+    let kitBarrel = 1;
     const modular = pool.filter((w) => w.parts.some((p) => p.role === "slide"));
-    if (type === "pistol" && modular.length >= 2 && r() < 0.35) {
+    if (this.kit.types().includes(type) && r() < KIT_SHARE[type]!) {
+      // Arma del kit modular: plataforma y piezas por sockets
+      layout = "kit";
+      const k = rollKit(this.kit, r, type);
+      parts.push(...k.parts); kitBarrel = k.barrelLength;
+      tweaks = { ...NO_TWEAKS, front: k.front, stock: k.stock };
+    } else if (type === "pistol" && modular.length >= 2 && r() < 0.35) {
       layout = "modular-pistol";
       const slide = pick(r, modular);
       let frame = pick(r, modular);
@@ -284,8 +302,8 @@ export class WeaponGenerator {
         parts.push({ role: "magazine", from: (r() < 0.6 ? pick(r, mags) : base).id });
       }
     }
-    const body = this.byId.get(parts[0].from)!;
-    const barrelLength = layout === "modular-pistol" ? 0.85 + r() * 0.75 : 1;
+    const body = this.byId.get(parts[0].from) ?? ({ id: parts[0].from, pack: "kit", parts: [], sockets: {} } as unknown as AssetEntry);
+    const barrelLength = layout === "modular-pistol" ? 0.85 + r() * 0.75 : layout === "kit" ? kitBarrel : 1;
 
     // 2. Variante: la propia del modelo (70%) o cualquiera del tipo
     const hint = MODEL_HINTS[body.id];
@@ -306,7 +324,7 @@ export class WeaponGenerator {
     const ownScope = body.parts.some((p) => p.role === "scope");
     if (ownScope) optic = body.id;
     const opticOpts = ownScope ? this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id).map((x) => x.id) : this.opticOptions({ type, parts });
-    const muzzleOpts = this.muzzleOptions(type, body.id);
+    const muzzleOpts = this.muzzleOptions({ type, parts });
     const [amin, amax] = rarity.accessories;
     let nAcc = amin + Math.floor(r() * (amax - amin + 1));
     const slots = [opticOpts.length ? "optic" : "", muzzleOpts.length ? "muzzle" : ""].filter(Boolean);
@@ -396,7 +414,8 @@ export function computeStats(spec: WeaponSpec): Stats {
   const hint = MODEL_HINTS[spec.parts[0].from];
   // Variante (si es la propia del modelo, se usa la capacidad real de su cargador)
   s.dano *= a.dano ?? 1; s.cadencia *= a.cadencia ?? 1; s.alcance *= a.alcance ?? 1;
-  s.cargador = hint?.mag && hint.arch === a.id ? hint.mag : (hint?.mag ?? s.cargador) * (a.cargador ?? 1);
+  const kitMag = spec.layout === "kit" ? kitMagazine(spec) : null;
+  s.cargador = kitMag ? kitMag * (a.cargador ?? 1) : hint?.mag && hint.arch === a.id ? hint.mag : (hint?.mag ?? s.cargador) * (a.cargador ?? 1);
   s.precision += a.precision ?? 0; s.manejo += a.manejo ?? 0;
   // Modo de disparo raro
   const sh = shiftOf(spec);
@@ -418,6 +437,7 @@ export function computeStats(spec: WeaponSpec): Stats {
   s.alcance *= 1 + (tw.front - 1) * 0.8; s.precision += (tw.front - 1) * 15; s.manejo -= (tw.front - 1) * 15;
   s.precision += (tw.stock - 1) * 15; s.manejo -= (tw.stock - 1) * 10;
   const L = spec.barrelLength;
+  if (spec.layout === "kit") { s.alcance *= 1 + (L - 1) * 0.7; s.precision += (L - 1) * 10; s.manejo -= (L - 1) * 12; }
   if (spec.layout === "modular-pistol") { s.alcance *= 1 + (L - 1) * 0.9; s.precision += (L - 1) * 14; s.manejo -= (L - 1) * 16; }
   // Habilidades que cambian números (y penalizaciones de los elementos)
   const ev = (id: string) => spec.effects.find((e) => e.id === id)?.value ?? 0;
