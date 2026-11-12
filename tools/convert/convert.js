@@ -145,7 +145,45 @@ const CONNECTOR_TYPES = { muzzle: "barrel_thread", magazine: "mag_well", optic: 
  * Oclusión ambiental horneada en los vértices (atributo de color, gris): desde cada vértice se lanzan rayos en la
  * semiesfera de su normal contra todas las mallas de la pieza; los rincones y huecos quedan más oscuros.
  */
+/**
+ * Subdivide las caras grandes (bisección por el lado más largo) para que la oclusión horneada se concentre en los
+ * rincones en vez de manchar caras enteras. Tope de triángulos por malla para no disparar el tamaño.
+ */
+function subdivideLarge(mesh, maxEdge = 0.02, cap = 3) {
+  const g = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry;
+  const pos = g.attributes.position.array;
+  // Respeta los grupos de material (mallas con varios materiales): se subdivide cada grupo por separado
+  const groups = g.groups.length ? g.groups.map((gr) => ({ start: gr.start, count: gr.count, mi: gr.materialIndex })) : [{ start: 0, count: pos.length / 3, mi: 0 }];
+  const total = pos.length / 9, limit = total * cap;
+  let edge = maxEdge, outs;
+  for (let pass = 0; pass < 6; pass++) {
+    outs = []; let n = 0;
+    for (const gr of groups) {
+      const out = []; const stack = [];
+      for (let v = gr.start; v < gr.start + gr.count; v += 3) stack.push(Array.from(pos.slice(v * 3, v * 3 + 9)));
+      while (stack.length) {
+        const t = stack.pop();
+        const L = (a, b) => Math.hypot(t[a] - t[b], t[a + 1] - t[b + 1], t[a + 2] - t[b + 2]);
+        const l = [L(0, 3), L(3, 6), L(6, 0)]; const k = l.indexOf(Math.max(...l));
+        if (l[k] <= edge) { out.push(...t); continue; }
+        const a = k * 3, b = ((k + 1) % 3) * 3, c = ((k + 2) % 3) * 3;
+        const m = [(t[a] + t[b]) / 2, (t[a + 1] + t[b + 1]) / 2, (t[a + 2] + t[b + 2]) / 2];
+        const P = (i) => [t[i], t[i + 1], t[i + 2]];
+        stack.push([...P(a), ...m, ...P(c)], [...m, ...P(b), ...P(c)]);
+      }
+      outs.push({ out, mi: gr.mi }); n += out.length / 9;
+    }
+    if (n <= limit) break;
+    edge *= 1.5;
+  }
+  const all = []; const ng = new THREE.BufferGeometry();
+  for (const o of outs) { const start = all.length / 3; all.push(...o.out); if (g.groups.length) ng.addGroup(start, o.out.length / 3, o.mi); }
+  ng.setAttribute("position", new THREE.Float32BufferAttribute(all, 3)); ng.computeVertexNormals(); ng.computeBoundingBox();
+  mesh.geometry = ng;
+}
+
 function bakeAO(meshes, rays = 24, maxDist = 0.035, strength = 0.75) {
+  for (const m of meshes) subdivideLarge(m);
   // Triángulos de todas las mallas de la pieza, repartidos en una rejilla de celdas del tamaño del radio de búsqueda:
   // para cada vértice solo se prueban los triángulos de las celdas cercanas (cálculo propio, sin librerías).
   const tri = [];
@@ -520,29 +558,31 @@ async function convertFBX(job) {
 // ---------- Kit modular (sschocolate): cada pieza trae su origen en su punto de unión y sus propios sockets ----------
 // Unidades del pack: cm, +Z hacia la boca, +Y arriba. Se pasa a metros y +X hacia la boca: (x, y, z) -> (z, y, -x) / 100.
 const KIT_M = new THREE.Matrix4().makeRotationY(Math.PI / 2).premultiply(new THREE.Matrix4().makeScale(0.01, 0.01, 0.01));
+// Packs con el frente hacia -Z (Flat Gun Attachments): (x, y, z) -> (-z, y, x) / 100
+const KIT_M_NEG = new THREE.Matrix4().makeRotationY(-Math.PI / 2).premultiply(new THREE.Matrix4().makeScale(0.01, 0.01, 0.01));
 /** Nombre de socket sin el sufijo de duplicado de Blender ("Socket_Barrel001" -> "Barrel", "Socket_Device_01001" -> "Device"). */
 const socketKey = (n) => n.replace(/^Socket_/, "").replace(/\d{3}$/, "").replace(/_0\d$/, "");
 async function convertKitPart(job) {
   const root = await loadFBX(job.fbx);
-  const tex = await loadTexture(job.texture);
+  const tex = job.texture ? await loadTexture(job.texture) : null;
   root.updateMatrixWorld(true);
   const sockets = {};
   root.traverse((o) => {
     if (!/^Socket_/.test(o.name)) return;
-    const p = o.getWorldPosition(new THREE.Vector3()).applyMatrix4(KIT_M);
+    const p = o.getWorldPosition(new THREE.Vector3()).applyMatrix4((job.negZ ? KIT_M_NEG : KIT_M));
     (sockets[socketKey(o.name)] ??= []).push(p.toArray().map((v) => +v.toFixed(4)));
   });
   const seen = new Set();
   const parts = [];
-  for (const m of bakeMeshes(root)) {
-    m.geometry.applyMatrix4(KIT_M);
+  for (const m of bakeMeshes(root).flatMap(splitByMaterial)) {
+    m.geometry.applyMatrix4((job.negZ ? KIT_M_NEG : KIT_M));
     m.geometry.computeBoundingBox();
     const key = m.geometry.boundingBox.min.toArray().concat(m.geometry.boundingBox.max.toArray()).map((v) => v.toFixed(4)).join();
     if (seen.has(key)) continue; // mallas duplicadas en el archivo
     seen.add(key);
-    const lens = /Lens/i.test(m.name);
+    const lens = /Lens|Glass/i.test(m.name);
     m.material = lens ? new THREE.MeshStandardMaterial({ name: "Lens", color: 0x4a7a8c, roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.45 })
-      : new THREE.MeshStandardMaterial({ name: "kit", map: tex, roughness: 0.55, metalness: 0.35, flatShading: true });
+      : tex ? new THREE.MeshStandardMaterial({ name: "kit", map: tex, roughness: 0.55, metalness: 0.35, flatShading: true }) : m.material;
     parts.push({ role: lens ? "lens" : "kit", source: job.id, mesh: m });
   }
   const box = boxOf(parts.map((p) => p.mesh));

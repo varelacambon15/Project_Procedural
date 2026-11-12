@@ -200,19 +200,20 @@ async function boot() {
     return { url: out.toDataURL("image/png"), names };
   };
   // Escaparate: armas grandes en tres cuartos, con nombre y rareza (para enseñar resultados).
-  const showcase = async (picks: { type: string; layout?: string; cross?: boolean; start: number }[]) => {
+  const showcase = async (picks: { type: string; layout?: string; cross?: boolean; start: number; need?: string }[]) => {
     const CW = 640, CH = 300;
     const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(CW, CH); r.toneMapping = THREE.ACESFilmicToneMapping;
     const sc = new THREE.Scene(); sc.background = new THREE.Color(0x2b2d31);
     sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
     sc.add(new THREE.HemisphereLight(0xffffff, 0x555555, 1.3)); const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(1, 2, 3); sc.add(dl);
+    const rim = new THREE.DirectionalLight(0xbfd8ff, 1.2); rim.position.set(-2, 1, -3); sc.add(rim); // luz de borde
     const out = document.createElement("canvas"); out.width = CW * 2; out.height = CH * Math.ceil(picks.length / 2); const g = out.getContext("2d")!;
     for (const [i, pk] of picks.entries()) {
       let spec = gen.generate(pk.start, pk.type as never);
       for (let s = pk.start; s < pk.start + 3000; s++) {
         const w = gen.generate(s, pk.type as never);
         const packs = new Set(w.parts.map((p) => gen.byId.get(p.from)?.pack ?? "kit"));
-        if ((!pk.layout || w.layout === pk.layout) && (!pk.cross || packs.size > 1)) { spec = w; break; }
+        if ((!pk.layout || w.layout === pk.layout) && (!pk.cross || packs.size > 1) && (!pk.need || JSON.stringify(w).includes(pk.need))) { spec = w; break; }
       }
       const built = await asm.assemble(spec); sc.add(built.group);
       built.group.rotation.set(0.12, -0.5, 0);
@@ -223,7 +224,11 @@ async function boot() {
       sc.remove(built.group);
       g.fillStyle = spec.rarity.color; g.font = "bold 22px sans-serif"; g.fillText(spec.name, x + 14, y + 32);
       g.fillStyle = "#bbb"; g.font = "14px sans-serif"; g.fillText(`${spec.rarity.id} · ${spec.type} · ${spec.fireMode}`, x + 14, y + 54);
-      g.fillStyle = "#777"; g.font = "12px monospace"; g.fillText(`base ${spec.lineage?.base.replace(/^[a-z]-/, "")} · cambios ${spec.lineage?.changes.join(", ") || "—"} · parecido ${Math.round((spec.lineage?.similarity ?? 1) * 100)}% · ${spec.paint.id}`, x + 14, y + CH - 12);
+      g.fillStyle = "#888"; g.font = "12px monospace";
+      { const txt = `base ${spec.lineage?.base} · parecido ${Math.round((spec.lineage?.similarity ?? 1) * 100)}% · ${spec.paint.id} · cambios: ${spec.lineage?.changes.join(", ") || "—"}`;
+        const lines: string[] = []; let line = "";
+        for (const w of txt.split(" ")) { const t = line ? line + " " + w : w; if (g.measureText(t).width > CW - 28 && line) { lines.push(line); line = w; } else line = t; }
+        lines.push(line); lines.slice(-3).forEach((l, k, arr) => g.fillText(l, x + 14, y + CH - 10 - (arr.length - 1 - k) * 14)); }
     }
     return out.toDataURL("image/png");
   };

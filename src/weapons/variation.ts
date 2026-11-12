@@ -81,6 +81,6 @@ export function similarity(a: [number, number, number][], b: [number, number, nu
 }
 
 /** Rango buscado de parecido con la base ("reconocible pero nuevo"); ajustable mirando resultados. */
-export const SIMILARITY_RANGE: [number, number] = [0.6, 0.85];
+export const SIMILARITY_RANGE: [number, number] = [0.7, 0.8];
 /** Por encima de esto, dos armas de un mismo lote se consideran casi iguales. */
 export const BATCH_MAX_SIMILARITY = 0.9;

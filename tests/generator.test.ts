@@ -138,10 +138,15 @@ describe("armas largas despiezadas", () => {
     expect(total).toBeGreaterThan(100);
   });
 
-  it("reconocible pero nuevo: casi todas parecen su base entre un 60 y un 85 %", () => {
-    const ws = many(800).filter((w) => !(w.layout === "kit" && w.type === "pistol"));
-    const inRange = ws.filter((w) => w.lineage!.similarity >= 0.6 && w.lineage!.similarity <= 0.85).length;
-    expect(inRange / ws.length).toBeGreaterThan(0.9);
+  it("reconocible pero nuevo: la mayoría entre 70 y 80 %; una minoría (≤10 %) hasta 88 % con 3+ añadidos visibles", () => {
+    const ws = many(800);
+    const ADD = ["rail", "device", "drum", "mag-ext"];
+    const sim = (w: WeaponSpec) => w.lineage!.similarity;
+    const band = ws.filter((w) => sim(w) >= 0.7 && sim(w) <= 0.8).length;
+    const exception = ws.filter((w) => sim(w) > 0.8 && sim(w) <= 0.88 && w.lineage!.changes.filter((c) => ADD.includes(c)).length >= 3).length;
+    expect(band / ws.length).toBeGreaterThan(0.85);
+    expect(exception / ws.length).toBeLessThanOrEqual(0.1);
+    expect((band + exception) / ws.length).toBeGreaterThan(0.95);
   });
 
   it("la métrica es coherente: un arma sin cambios se parece ~100 % a su base", () => {

@@ -23,7 +23,7 @@ export const FINISH_WEIGHTS = [3, 1.6, 1.2, 1, 0.8, 1, 1, 0.8];
 type Slot = "primary" | "secondary" | "metal" | "accent" | "wood" | "highlight";
 const ROLE_SLOT: Partial<Record<PartRole | "sight", Slot>> = {
   receiver: "primary", body: "primary", frame: "primary", slide: "primary", front: "primary", pump: "primary",
-  stock: "secondary", grip: "secondary", device: "secondary",
+  stock: "secondary", grip: "secondary", device: "accent",
   barrel: "metal", muzzle: "metal", charging: "metal", trigger: "metal",
   magazine: "metal", scope: "accent", sight: "accent",
 };
@@ -57,12 +57,18 @@ float vn(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   m.customProgramCacheKey = () => "detail" + kind;
 }
 const cache = new Map<string, THREE.MeshStandardMaterial>();
+/** Luminancia mínima (sRGB) de cualquier color de acabado [propuesta, ajustable]. */
+export const MIN_LUM = 0.16;
 function material(f: Paint, slot: Slot): THREE.MeshStandardMaterial {
   const key = `${f.id}|${slot}`;
   let m = cache.get(key);
   if (!m) {
     const c = slot === "primary" ? f.color : slot === "secondary" ? f.secondary : slot === "metal" ? f.metal : slot === "accent" ? f.accent : slot === "highlight" ? hex(0xb8692a) : f.secondary;
-    m = new THREE.MeshStandardMaterial({ name: slot === "wood" ? "Wood" : slot, vertexColors: true, color: new THREE.Color().setRGB(...(c ?? [0.15, 0.15, 0.15]), THREE.SRGBColorSpace), flatShading: true, ...PROPS[slot] });
+    // Brillo mínimo: ninguna superficie baja de ~0,16 de luminancia (en sRGB), para que las armas oscuras no se pierdan
+    const rgb = (c ?? [0.15, 0.15, 0.15]).slice() as RGB;
+    const lumS = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+    if (lumS < MIN_LUM) { const k = MIN_LUM / Math.max(0.01, lumS); for (let i = 0; i < 3; i++) rgb[i] = Math.min(1, rgb[i] * k); }
+    m = new THREE.MeshStandardMaterial({ name: slot === "wood" ? "Wood" : slot, vertexColors: true, color: new THREE.Color().setRGB(...rgb, THREE.SRGBColorSpace), flatShading: true, ...PROPS[slot] });
     addDetail(m, DETAIL[slot]);
     cache.set(key, m);
   }
@@ -87,6 +93,8 @@ export function applyFinish(obj: THREE.Object3D, role: PartRole | "sight", f: Pa
   const pick = (m: THREE.Material): THREE.Material => {
     if (keep(m)) return m;
     let s: Slot = slot;
+    // Tiras de color de origen (rojo, azul…): en el tono sobrio del arma; solo las legendarias las llevan en color
+    if (/Red|Blue|Cerulean|Green|Orange|Emiss/i.test(m.name)) return material(f, _legendary ? "highlight" : "accent");
     if (isWoodSrc(m) && (slot === "primary" || slot === "secondary")) s = f.wood ? "wood" : "secondary";
     else if (slot === "secondary" && f.wood) s = "wood";
     else if ((slot === "primary") && lums.length > 1 && lum(m) === darkest) s = "metal";

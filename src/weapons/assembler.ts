@@ -7,6 +7,7 @@ import { midZone, stretchAll, stretchX, type Stretches } from "./variation";
 import { KIT_FLIP, isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
 import { accessory, buildFrontSight, buildMuzzle, buildOptic } from "./accessories";
 import { applyFinish } from "./finish";
+import { contactAO } from "./ao";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
 export interface AssembledWeapon {
@@ -122,7 +123,7 @@ export class WeaponAssembler {
         sightKit = frontSightTop !== null ? frontSightTop - 0.002 : slide ? new THREE.Box3().setFromObject(slide.object).max.y + 0.002 : null;
       }
       const kd = spec.tweaks?.device ? this.gen.kit.byId.get(spec.tweaks.device.id) : null;
-      if (kd && spec.tweaks?.device) { const dev = await this.kitNode(kd); dev.position.set(spec.tweaks.device.at[0], spec.tweaks.device.at[1] + 0.002, 0); add(dev, "device", { id: kd.id, label: kitLabel(kd.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
+      if (kd && spec.tweaks?.device) { const dev = await this.kitNode(kd); dev.scale.setScalar(DEVICE_SCALE(spec.type)); dev.position.set(spec.tweaks.device.at[0], spec.tweaks.device.at[1] + 0.002, 0); add(dev, "device", { id: kd.id, label: kitLabel(kd.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
       if (mz) { muzzle = v3(mz); muzzleDiameter = spec.type === "shotgun" ? 0.026 : spec.type === "pistol" ? 0.014 : 0.018; }
       if (opticAt && spec.optic && !isKit(spec.optic)) { opticTarget = v3(opticAt); opticLength = spec.type === "pistol" ? 0.05 : 0.1; }
     } else if (spec.layout === "modular-pistol") {
@@ -237,7 +238,7 @@ export class WeaponAssembler {
       }
       if (tw2.device) {
         const kp = this.gen.kit.byId.get(tw2.device.id);
-        if (kp) { const dev = await this.kitNode(kp); dev.position.set(tw2.device.at[0], tw2.device.at[1] + 0.002, 0); add(dev, "device", { id: kp.id, label: kitLabel(kp.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
+        if (kp) { const dev = await this.kitNode(kp); dev.scale.setScalar(DEVICE_SCALE(spec.type)); dev.position.set(tw2.device.at[0], tw2.device.at[1] + 0.002, 0); add(dev, "device", { id: kp.id, label: kitLabel(kp.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
       }
       if (bodyE.sockets.optic) { opticTarget = v3(bodyE.sockets.optic.pos); opticLength = bodyE.sockets.optic.size?.[0] ?? 0; }
       else if (bodyE.sockets.rail) { opticTarget = v3(bodyE.sockets.rail.pos); opticLength = bodyE.sockets.rail.length ?? 0.1; }
@@ -262,6 +263,24 @@ export class WeaponAssembler {
       group.add(opt);
       parts.push({ object: opt, role: "scope", from: { id: optAcc.id, label: optAcc.id, pack: "acc" } as AssetEntry, explode: new THREE.Vector3(0, 1.4, 0), base: opt.position.clone() });
       sight = opticTarget.y + sightHeight; zoom = optAcc.zoom ?? 1;
+    } else if (isKit(spec.optic) && opticTarget && spec.layout !== "kit") {
+      // Mira real (accesorio del kit) sobre el raíl de un arma despiezada o entera, con elevador si hace falta
+      const kp = this.gen.kit.byId.get(spec.optic);
+      if (kp) {
+        const opt = await this.kitNode(kp);
+        const lens = opt.children.find((c) => /lens/i.test(c.name));
+        const lb = lens ? new THREE.Box3().setFromObject(lens) : null;
+        const lensY = lb ? (lb.min.y + lb.max.y) / 2 : kp.bounds.max[1] * 0.6;
+        const top = new THREE.Box3().setFromObject(group).max.y;
+        const riser = Math.max(0, top + 0.004 - (opticTarget.y + lensY));
+        opt.position.copy(opticTarget).add(new THREE.Vector3(0, riser, 0));
+        if (riser > 0.002) {
+          const block = new THREE.Mesh(new THREE.BoxGeometry(0.05, riser + 0.004, 0.022), new THREE.MeshStandardMaterial({ name: "riser" }));
+          block.position.set(opticTarget.x, opticTarget.y + riser / 2, 0); add(block, "scope", { id: "riser", label: "Riser", pack: "proc" } as AssetEntry, [0, 1.2, 0]);
+        }
+        add(opt, "scope", { id: kp.id, label: kitLabel(kp.id), pack: "kit" } as AssetEntry, [0, 1.4, 0]);
+        sight = opticTarget.y + riser + lensY; zoom = accessory(spec.optic)?.zoom ?? 1;
+      }
     } else if (spec.optic && opticTarget && !isKit(spec.optic)) {
       const optE = get(spec.optic);
       const opt = await this.nodes(optE, "scope");
@@ -277,7 +296,18 @@ export class WeaponAssembler {
 
     // Accesorio de boca: su parte trasera en la boca del cañón, escalado al diámetro.
     const muzAcc = accessory(spec.muzzle);
-    if (muzAcc && muzzle && !isKit(spec.muzzle)) {
+    if (isKit(spec.muzzle) && muzzle && spec.layout !== "kit") {
+      // Supresor real en la boca, escalado al calibre (diámetro de la boca)
+      const kp = this.gen.kit.byId.get(spec.muzzle);
+      if (kp) {
+        const dev = await this.kitNode(kp);
+        const dia = kp.bounds.max[1] - kp.bounds.min[1];
+        const k = THREE.MathUtils.clamp((muzzleDiameter * 2.2) / dia, 0.45, 1.15);
+        dev.scale.setScalar(k); dev.position.copy(muzzle).add(new THREE.Vector3(-0.002, 0, 0));
+        add(dev, "muzzle", { id: kp.id, label: kitLabel(kp.id), pack: "kit" } as AssetEntry, [1.2, 0.3, 0]);
+        muzzle = muzzle.clone().add(new THREE.Vector3(kp.bounds.max[0] * k, 0, 0));
+      }
+    } else if (muzAcc && muzzle && !isKit(spec.muzzle)) {
       // Dispositivo de boca propio, del diámetro exacto del cañón
       const { group: dev, length: dl } = buildMuzzle(muzAcc.id, muzzleDiameter, length0);
       dev.position.copy(muzzle).add(new THREE.Vector3(-0.002, 0, 0));
@@ -296,6 +326,8 @@ export class WeaponAssembler {
     }
 
     // Acabado único por rol (descarta colores y texturas de origen)
+    // Oclusión de contacto entre piezas (una vez por arma montada)
+    contactAO(group, parts.map((p) => p.object));
     // Las legendarias: un único detalle pequeño en color vivo (boca, palanca, gatillo o accesorio), nunca el cargador
     const legendary = spec.rarity.id === "legendaria";
     const hl = legendary ? parts.find((p) => p.role === "muzzle") ?? parts.find((p) => p.role === "charging") ?? parts.find((p) => p.role === "trigger") ?? parts.find((p) => p.role === "device") : undefined;
@@ -351,6 +383,9 @@ const KIT_EXPLODE: Partial<Record<string, [number, number, number]>> = {
   receiver: [0, 0, 0], barrel: [1.5, 0, 0], front: [1, 0.25, 0], stock: [-1.2, 0, 0], grip: [-0.2, -1, 0], magazine: [0, -1.2, 0], muzzle: [2, 0.3, 0],
   scope: [0, 1.4, 0], sight: [0, 1, 0], trigger: [0, -0.7, 0], charging: [-0.5, 0.8, 0], slide: [0, 1, 0], pump: [0.8, -0.7, 0], device: [0.6, -1.1, 0],
 };
+
+/** Los accesorios bajo el cañón son de tamaño de fusil: en armas cortas se reducen. */
+const DEVICE_SCALE = (type: string) => (type === "pistol" || type === "revolver" ? 0.62 : type === "smg" ? 0.85 : 1);
 
 /** Grosor máximo (ancho / largo) según el tipo, como en armas reales. */
 const MAX_THICKNESS: Partial<Record<string, number>> = { pistol: 0.17, revolver: 0.2, smg: 0.12, rifle: 0.08, bullpup: 0.1, shotgun: 0.075, sniper: 0.075, lmg: 0.11, launcher: 0.16, flamethrower: 0.16 };

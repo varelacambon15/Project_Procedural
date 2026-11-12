@@ -173,4 +173,24 @@ const kitJobs = KIT_FILES.map((f) => ({
   slot: KIT_SLOT.find(([re]) => re.test(f))[1], caliber: /5\.56/.test(f) ? "556" : /9mm/.test(f) ? "9mm" : /12ga/.test(f) ? "12ga" : "any",
 }));
 
-export const JOBS = ALL.map((j) => (BODY_ONLY[j.id] ? { ...j, pick: [{ match: BODY_ONLY[j.id], role: "body" }] } : j)).concat(kitJobs);
+// --- Polygonal Modern Weapons Collection 1 (OpenGameArt, CC-BY-SA 3.0 / GPL 3.0): armas enteras de una malla con atlas.
+// Las largas se despiezan con el cortador (solo mezclan dentro de su familia); el color de origen se descarta (acabado único).
+const PM = (file, type, extra = {}) => ({ kind: "fbx", pack: "pmw", id: "p-" + file.replace(/_/g, "-"), label: file.replace(/_/g, " "), fbx: `raw/pmw/${file}.fbx`, type, texture: "/raw/pmw/atlass_1_diffuse.png", ...extra });
+ALL.push(
+  ...[1, 2, 3].map((i) => PM(`rifle_${i}`, "sniper", { modular: true })),
+  ...[1, 2, 3, 4, 5, 6, 7].map((i) => PM(`machine_gun_${i}`, "rifle", { modular: true })),
+  ...[1, 2, 3, 4, 5].map((i) => PM(`submachine_gun_${i}`, "smg", { modular: true })),
+  ...[1, 2, 3].map((i) => PM(`shotgun_${i}`, "shotgun", { modular: true })),
+  ...[1, 2, 3].map((i) => PM(`pistol_${i}`, "pistol")),
+);
+
+// --- Flat Gun Attachments (CC0, OpenGameArt): accesorios reales con origen en su punto de montaje y frente hacia -Z ---
+// Miras en el socket superior, empuñaduras y linternas bajo el guardamanos, supresores en la boca y láseres en el lateral.
+const FA = "raw/flat-attachments";
+const ATT = { RedDot: "Sights_Rear", Reflex: "Sights_Rear", Holographic: "Sights_Rear", Magnified: "Sights_Rear", Scope: "Sights_Rear",
+  Foregrip: "Device", Flashlight: "Device", Laser: "Laser", Suppressor: "Muzzle" };
+const attJobs = Object.entries(ATT).flatMap(([name, slot]) => ["East", "West"].map((v) => ({
+  kind: "kitpart", pack: "kit", id: `k-att-${name.toLowerCase()}-${v.toLowerCase()}`, fbx: `${FA}/${name}_${v}.fbx`, negZ: true, slot, caliber: "any",
+})));
+
+export const JOBS = ALL.map((j) => (BODY_ONLY[j.id] ? { ...j, pick: [{ match: BODY_ONLY[j.id], role: "body" }] } : j)).concat(kitJobs, attJobs);

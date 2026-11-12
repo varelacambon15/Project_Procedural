@@ -4,7 +4,7 @@ import { hashString, mulberry32, pick, type Rng } from "./rng";
 import { ACCESSORIES, accessory } from "./accessories";
 import { FINISHES, FINISH_WEIGHTS } from "./finish";
 import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zoneLen, type Box2, type Placed, type Stretch } from "./variation";
-import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
+import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
 import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Rarity, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
@@ -237,17 +237,19 @@ export class WeaponGenerator {
   /** Miras (accesorio) que admite un arma. Las que llevan mira integrada en el cuerpo no admiten otra. */
   opticOptions(spec: Pick<WeaponSpec, "type" | "parts">): string[] {
     const procedural = () => ACCESSORIES.filter((a) => a.kind === "optic" && (!a.for || a.for.includes(spec.type))).map((a) => a.id);
-    if (isKit(spec.parts[0].from)) return kitOpticOptions(this.kit, spec, spec.type === "pistol" ? ["acc:reddot"] : procedural());
+    // Las miras reales (Flat Gun Attachments) sustituyen a las hechas por código; se conservan solo las de aumento sin equivalente
+    if (isKit(spec.parts[0].from)) return kitOpticOptions(this.kit, spec, []);
     const body = this.byId.get(spec.parts[0].from);
     if (!body?.sockets.rail || spec.type === "sniper" || spec.type === "launcher" || spec.type === "flamethrower") return [];
     if (body.parts.some((p) => p.role === "scope")) return [];
-    return ACCESSORIES.filter((a) => a.kind === "optic" && (!a.for || a.for.includes(spec.type))).map((a) => a.id);
+    void procedural;
+    return realOptics(this.kit, spec.type);
   }
   muzzleOptions(spec: Pick<WeaponSpec, "type" | "parts">): string[] {
     const type = spec.type, bodyId = spec.parts[0]?.from;
     if (isKit(bodyId)) return kitMuzzleOptions(this.kit, spec);
     if (type === "launcher" || type === "flamethrower" || (bodyId && INTEGRATED_MUZZLE.has(bodyId))) return [];
-    return ACCESSORIES.filter((a) => a.kind === "muzzle").map((a) => a.id);
+    return [...ACCESSORIES.filter((a) => a.kind === "muzzle" && (!a.quiet || type === "pistol")).map((a) => a.id), ...realSuppressors(this.kit, type)];
   }
 
   generate(seed: number, wanted?: BaseType): WeaponSpec {
@@ -524,9 +526,13 @@ export class WeaponGenerator {
       ops.push({ id: "stock", run: () => (tw.stock = away(0.72, 1.32)) });
       ops.push({ id: "stockH", run: () => (tw.stockH = away(0.84, 1.2, 0.08)) });
       ops.push({ id: "grip", run: () => { tw.grip = away(0.9, 1.14, 0.06); tw.gripAngle = (r() < 0.5 ? -1 : 1) * (0.05 + r() * 0.06); } });
-      if (type === "smg" || type === "shotgun") ops.push({ id: "nostock", run: () => (tw.nostock = true) });
+      // Sin culata solo en armas cortas (subfusiles y escopetas de menos de ~75 cm): en una larga se ve raro
+      const len = base ? base.bounds.max[0] - base.bounds.min[0] : 1;
+      if ((type === "smg" || type === "shotgun") && len < 0.75) ops.push({ id: "nostock", run: () => (tw.nostock = true) });
     } else if (layout === "body") {
-      ops.push({ id: "barrel", run: () => (tw.body = long ? away(0.75, 1.4) : away(0.82, 1.32)) });
+      // Las recortadas no se alargan (dejarían de ser recortadas): solo se pueden acortar un poco
+      const sawed = /sawed|sawoff|mini|shotgun-03/.test(parts[0].from);
+      ops.push({ id: "barrel", run: () => (tw.body = sawed ? 0.82 + r() * 0.1 : long ? away(0.75, 1.4) : away(0.82, 1.32)) });
       if (long) ops.push({ id: "stock", run: () => (tw.stock = away(0.75, 1.3)) });
     } else {
       ops.push({ id: "barrel", run: () => { const k = kitLengths(r, type, parts); bl = k.barrelLength; tw.front = k.front; } });
@@ -535,7 +541,9 @@ export class WeaponGenerator {
       if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = 1.2 + r() * 0.3) });
       if (type === "pistol" && !parts.some((p) => this.kit.byId.get(p.from)?.slot === "Device")) ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) });
     }
-    if (base?.sockets.magazine && type !== "shotgun") ops.push({ id: "mag", run: () => { if (["smg", "rifle", "lmg"].includes(type) && r() < 0.35) tw.drum = true; else tw.magLen = 1.22 + r() * 0.28; } });
+    // Cargador alargado o de tambor solo donde el cargador va por debajo (no en armas con cargador superior, como el P90)
+    const magBelow = !!base?.sockets.magazine && base.sockets.magazine.pos[1] < (base.bounds.min[1] + base.bounds.max[1]) / 2;
+    if (magBelow && type !== "shotgun") ops.push({ id: "mag", run: () => { if (["smg", "rifle", "lmg"].includes(type) && r() < 0.35) tw.drum = true; else tw.magLen = 1.22 + r() * 0.28; } });
     if (layout !== "kit") { ops.push({ id: "rail", run: () => (tw.rail = [0, 0, 0]) }); ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) }); }
     const isKitPistol = layout === "kit" && type === "pistol";
     // Mínimo 3 cambios en total (piezas cambiadas + cambios de forma), y siempre al menos 2 de forma

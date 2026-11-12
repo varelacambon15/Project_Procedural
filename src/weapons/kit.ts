@@ -46,6 +46,15 @@ export const KIT_MODS: Record<string, Partial<Stats>> = {
 };
 /** Piezas que el pack trae orientadas al revés (la mira holográfica tiene la ventana delante): se giran 180°. */
 export const KIT_FLIP = new Set(["k-optic-rear-rail-01"]);
+/** Accesorios reales (Flat Gun Attachments) aptos para cada tipo de arma: miras y supresores. */
+export function realOptics(kit: KitIndex, type: WeaponType): string[] {
+  const ok: Record<string, WeaponType[] | null> = {
+    reddot: null, reflex: null, holographic: ["rifle", "smg", "shotgun", "lmg", "bullpup"], magnified: ["rifle", "smg", "lmg", "bullpup"], scope: ["rifle", "sniper", "bullpup"],
+  };
+  return kit.parts.filter((p) => p.id.startsWith("k-att-") && p.slot === "Sights_Rear").filter((p) => { const k = p.id.split("-")[2]; const t = ok[k]; return t === null ? true : !!t?.includes(type); })
+    .filter((p) => type !== "pistol" && type !== "revolver" || /reddot|reflex/.test(p.id)).map((p) => p.id);
+}
+export const realSuppressors = (kit: KitIndex, type: WeaponType) => (type === "pistol" || type === "revolver" ? [] : kit.parts.filter((p) => p.id.startsWith("k-att-suppressor")).map((p) => p.id));
 export const isKit = (id: string | null | undefined): id is string => !!id && id.startsWith("k-");
 const FOREGRIP = /foregrip/;
 
@@ -133,14 +142,14 @@ export function kitMuzzleOptions(kit: KitIndex, spec: Pick<WeaponSpec, "parts">)
   if (!barrel.sockets.Muzzle && barrel.caliber !== "556") return [];
   // Escopeta con tubo de 8 cartuchos: el tubo llega a la boca y no deja sitio
   if (spec.parts.some((p) => p.from === "k-magazine-12ga-8shell")) return [];
-  return kit.options("Muzzle", barrel.caliber).map((p) => p.id);
+  return [...kit.options("Muzzle", barrel.caliber).filter((p) => !p.id.startsWith("k-att-")).map((p) => p.id), ...(barrel.caliber === "9mm" ? [] : realSuppressors(kit, "rifle"))];
 }
 /** Miras: del kit o propias, si la plataforma o la corredera tienen raíl. */
 export function kitOpticOptions(kit: KitIndex, spec: Pick<WeaponSpec, "parts" | "type">, procedural: string[]): string[] {
   const rail = spec.parts.some((p) => kit.byId.get(p.from)?.sockets.Sights_Rear);
   if (!rail) return [];
-  const own = kit.options("Sights_Rear", "any").filter((p) => !p.id.includes("ironsight")).filter((p) => spec.type !== "pistol" || p.id === "k-optic-rear-rail-02");
-  return [...own.map((p) => p.id), ...procedural];
+  const own = kit.options("Sights_Rear", "any").filter((p) => !p.id.includes("ironsight") && !p.id.startsWith("k-att-")).filter((p) => spec.type !== "pistol" || p.id === "k-optic-rear-rail-02");
+  return [...own.map((p) => p.id), ...realOptics(kit, spec.type), ...procedural];
 }
 
 /**

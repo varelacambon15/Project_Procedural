@@ -23,6 +23,9 @@ export const KIT_ALIAS: Record<string, string> = {
   "k-muzzledevice-9-01": "acc:suppressor-l", "k-muzzledevice-9-02": "acc:suppressor-s", "k-muzzledevice-9-03": "acc:compensator",
   "k-muzzledevice-12ga-01": "acc:suppressor-l", "k-muzzledevice-12ga-02": "acc:brake", "k-muzzledevice-12ga-03": "acc:compensator",
   "k-optic-rear-rail-01": "acc:holo", "k-optic-rear-rail-02": "acc:reddot",
+  "k-att-reddot-east": "acc:reddot", "k-att-reddot-west": "acc:reddot", "k-att-reflex-east": "acc:reddot", "k-att-reflex-west": "acc:reddot",
+  "k-att-holographic-east": "acc:holo", "k-att-holographic-west": "acc:holo", "k-att-magnified-east": "acc:acog", "k-att-magnified-west": "acc:acog",
+  "k-att-scope-east": "acc:scope6", "k-att-scope-west": "acc:scope6", "k-att-suppressor-east": "acc:suppressor-l", "k-att-suppressor-west": "acc:suppressor-s",
 };
 export const accessory = (id: string | null) => (id ? ACCESSORIES.find((a) => a.id === (KIT_ALIAS[id] ?? id)) ?? null : null);
 export const isAccessory = (id: string | null) => !!id && id.startsWith("acc:");
