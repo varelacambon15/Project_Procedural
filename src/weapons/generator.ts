@@ -10,6 +10,7 @@ import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zon
 import { CAL_EFFECT, PISTOL_ARCHES, PISTOL_MUTATIONS, STRUCTURAL, archDesign, archesFor, designEntry, designKey, designPolys, designSpans, gripCorners, mutationAllowed, upgradeDesign, type PEra, type PistolDesign } from "./pistolgen";
 import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
 import { ensureGrip } from "./grip";
+import { recipeStatMods } from "./effects";
 import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Addon, type Rarity, type RarityId, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
@@ -1139,6 +1140,10 @@ export function computeStats(spec: WeaponSpec): Stats {
   if (spec.effects.some((e) => e.element === "electrico")) s.dano *= 0.9;   // menos daño directo
   if (spec.effects.some((e) => e.element === "explosive")) s.dano *= 0.85;  // menos daño directo
   if (spec.effects.some((e) => e.id === "rapid")) s.cadencia *= 1.08;
+  // Recetas (05-C): bonus pasivos y contrapartidas (multiplicativos). Suelos: el cargador nunca baja de 1 bala (se
+  // redondea al final), precisión y cadencia con tope de pérdida. El presupuesto de rareza no reparte a lo recortado.
+  const rm = recipeStatMods(spec.effects);
+  s.cargador *= rm.cargador; s.alcance *= rm.alcance; s.cadencia *= rm.cadencia; s.precision = Math.max(5, s.precision + rm.precision);
   // Pequeña variación estable
   const v = mulberry32(spec.statSeed);
   for (const k of Object.keys(s) as StatKey[]) s[k] *= 0.97 + v() * 0.06;
@@ -1157,7 +1162,12 @@ function applyBudget(s: Stats, spec: WeaponSpec) {
   const base = TYPE_INFO[spec.type as BaseType].base;
   const total = powerScore(s, spec.type);
   let leftover = 0; // poder que no cabe por el tope de 100 en precisión o manejo: pasa al daño
-  for (const [k, share] of Object.entries(spec.bonus ?? {}) as [StatKey, number][]) {
+  // Lo que recorta una contrapartida no lo devuelve la rareza: su parte del presupuesto pasa a las demás (o al daño)
+  const blocked = recipeStatMods(spec.effects).blocked;
+  let shares = (Object.entries(spec.bonus ?? {}) as [StatKey, number][]).filter(([k]) => !blocked.has(k));
+  if (!shares.length && Object.keys(spec.bonus ?? {}).length) shares = [["dano", 1]];
+  const sum = shares.reduce((a, [, v]) => a + v, 0) || 1; shares = shares.map(([k, v]) => [k, v / sum]);
+  for (const [k, share] of shares) {
     const want = budget * share * total;
     const contrib = POWER_WEIGHTS[k] * (s[k] / base[k]);
     let next = s[k] * (1 + want / Math.max(1e-6, contrib));

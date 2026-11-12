@@ -3,15 +3,23 @@
 // encadenar, prender…), que ejecuta la capa de juego. Así no hay lógica de efectos suelta en gun.ts.
 import data from "../data/effects.json";
 import type { Effect, WeaponSpec } from "./types";
+import { RECIPE_DEFS, TRADEOFF_MAX, type Recipe, type RStat } from "./recipes";
 
 export type Tier = "A" | "B" | "L";
 export type El = "fuego" | "electrico" | "explosive";
 export interface EffectDef {
   id: string; tier: Tier; family: string; tags: string[]; cost: number; events: string[];
   params?: Record<string, number>; element?: El; icon: string; color: string; name?: string; range?: [number, number]; overlap?: string; only?: string[];
+  /** Efecto escrito como receta (05-C): lo interpreta el ejecutor genérico. */
+  recipe?: Recipe; names?: { es: string; en: string };
 }
+const EL_COLOR: Record<El, string> = { fuego: "#f07a2a", electrico: "#5cc8f0", explosive: "#ffb060" };
 const TIER_COLOR: Record<Tier, string> = { A: "#d8d2c4", B: "#e8b25a", L: "#f08a24" };
-export const EFFECT_DEFS: EffectDef[] = (data.effects as unknown as EffectDef[]).map((e) => ({ ...e, color: e.color ?? TIER_COLOR[e.tier], tags: e.tags ?? [] }));
+export const EFFECT_DEFS: EffectDef[] = [
+  ...(data.effects as unknown as EffectDef[]).map((e) => ({ ...e, color: e.color ?? TIER_COLOR[e.tier], tags: e.tags ?? [] })),
+  // Recetas (05-C): se suman al catálogo con el mismo formato
+  ...RECIPE_DEFS.map((r) => ({ id: r.id, tier: r.tier, family: r.family, tags: r.tags, cost: r.cost, events: r.events, element: r.element, icon: r.icon, color: r.element ? EL_COLOR[r.element] : TIER_COLOR[r.tier], name: r.name, names: r.names, recipe: r.recipe })),
+];
 export const effectDef = (id: string) => EFFECT_DEFS.find((e) => e.id === id);
 export const EFFECTS_A = EFFECT_DEFS.filter((e) => e.tier === "A");
 export const EFFECTS_B = EFFECT_DEFS.filter((e) => e.tier === "B");
@@ -27,7 +35,13 @@ export function legalWith(current: Pick<Effect, "id">[], cand: EffectDef, type: 
   if (defs.some((d) => d.family === cand.family)) return false;
   for (const tag of ["streak", "multiply", "element"]) if (cand.tags.includes(tag) && defs.some((d) => d.tags.includes(tag))) return false;
   if (cand.only && !cand.only.includes(type)) return false;
+  // Contrapartidas: como mucho dos por arma, y la penalización de diseño del elemento (eléctrico, explosivo) cuenta
+  if (tradeoffCount([...defs, cand]) > 2) return false;
   return true;
+}
+/** Número de contrapartidas de un conjunto de efectos (las de las recetas más la del elemento eléctrico o explosivo). */
+export function tradeoffCount(defs: EffectDef[]) {
+  return defs.filter((d) => d.recipe?.tradeoff).length + (defs.some((d) => d.element === "electrico" || d.element === "explosive") ? 1 : 0);
 }
 /** Coste de poder total de los efectos de un arma (en %). */
 export const effectsCost = (effects: Pick<Effect, "id">[]) => effects.reduce((a, e) => a + (effectDef(e.id)?.cost ?? 0), 0);
@@ -45,7 +59,32 @@ export type FxAction<T, V> =
   | { type: "later"; delay: number; action: FxAction<T, V> }
   | { type: "ammo"; n: number }
   | { type: "refill" }
-  | { type: "echo"; delay: number };
+  | { type: "echo"; delay: number }
+  // Recetas (05-C): rayo en un punto, atracción (único estado de control aprobado, con tope) y explosión con autodaño
+  | { type: "strikeAt"; at: V; radius: number; dmg: number }
+  | { type: "pull"; at: V; radius: number; seconds: number; then: number }
+  | { type: "selfBlast"; at: V; dmg: number; self: number };
+
+/**
+ * Cambios de estadística de los efectos-receta (bonus pasivos y contrapartidas), para computeStats. Con suelos: el
+ * cargador nunca baja de 1 bala (lo redondea computeStats), la cadencia y el alcance tienen tope de pérdida.
+ */
+export function recipeStatMods(effects: Pick<Effect, "id">[]) {
+  // Multiplicadores (cargador, alcance, cadencia), puntos (precisión) y estadísticas recortadas por una contrapartida
+  const m = { cargador: 1, alcance: 1, cadencia: 1, precision: 0, blocked: new Set<string>() };
+  for (const e of effects) {
+    const r = effectDef(e.id)?.recipe; if (!r) continue;
+    if (r.action === "stat" && r.trigger === "passive") { if (r.stat === "mag") m.cargador *= 1 + r.value / 100; if (r.stat === "range") m.alcance *= 1 + r.value / 100; }
+    const t = r.tradeoff; if (!t) continue;
+    const v = Math.min(t.value, TRADEOFF_MAX[t.kind]) / 100;
+    if (t.kind === "mag") { m.cargador *= 1 - v; m.blocked.add("cargador"); }
+    if (t.kind === "rate") { m.cadencia *= 1 - v; m.blocked.add("cadencia"); }
+    if (t.kind === "range") { m.alcance *= 1 - v; m.blocked.add("alcance"); }
+    if (t.kind === "accuracy") { m.precision -= v * 100; m.blocked.add("precision"); }
+  }
+  m.cadencia = Math.max(0.6, m.cadencia); m.alcance = Math.max(0.55, m.alcance); m.precision = Math.max(-30, m.precision);
+  return m;
+}
 
 /** Lo que cambia un disparo. */
 export interface ShotMods { dmg: number; pellets: number; recoil: number; pierce: number; critMult: number; forceCrit: boolean; spread: number; element: El | null }
@@ -63,13 +102,73 @@ export class EffectRunner<T, V> {
   private spin = 0; private firingT = 0; private altFire = true;
   private marks = new Map<T, number>(); private tremor = new Map<T, number[]>();
   readonly sig: string | null;
+  // Recetas: bonus temporales (con pilas), enfriamientos, contador de disparos, último contexto, furia y calor
+  private recipes: { id: string; r: Recipe }[] = [];
+  private buffs = new Map<string, { t: number; stacks: number }>(); private cds = new Map<string, number>();
+  private shotN = 0; private ctx = { aiming: false, moving: 0, near: 0, ammoFrac: 1 };
+  private furyT = 0; private furyAfter = false;
 
   constructor(readonly spec: WeaponSpec) {
     const ids = new Set(spec.effects.map((e) => e.id));
     this.has = (id) => ids.has(id);
     this.val = (id) => spec.effects.find((e) => e.id === id)?.value ?? 0;
     this.sig = spec.effects.find((e) => e.tier === "L")?.id ?? null;
+    for (const e of spec.effects) { const r = effectDef(e.id)?.recipe; if (r) this.recipes.push({ id: e.id, r }); }
   }
+
+  // ---------- Intérprete de recetas ----------
+  private condOk(r: Recipe, big = false): boolean {
+    const c = this.ctx;
+    switch (r.cond) {
+      case "always": return true;
+      case "aiming": return c.aiming;
+      case "hip": return !c.aiming;
+      case "still": return c.moving < 0.1;
+      case "moving": return c.moving > 0.3;
+      case "near": return c.near >= 3;
+      case "lowammo": return c.ammoFrac <= 0.3;
+      case "big": return big;
+      case "nth": return this.shotN % (r.n ?? 4) === 0;
+      case "chance": return Math.random() * 100 < (r.chance ?? 30);
+      case "afterkill": case "afterreload": return false; // son bonus temporales (buffs)
+    }
+  }
+  private ready(id: string, r: Recipe) { if ((this.cds.get(id) ?? 0) > 0) return false; if (r.cooldown) this.cds.set(id, r.cooldown); return true; }
+  private startBuff(id: string, r: Recipe) { const b = this.buffs.get(id); this.buffs.set(id, { t: r.duration ?? 4, stacks: Math.min(r.stacks ?? 1, (b?.stacks ?? 0) + 1) }); }
+  /** Suma de bonus de una estadística (en %) por recetas activas ahora (condición cumplida o bonus temporal). */
+  private statBonus(stat: RStat, big = false): number {
+    let v = 0;
+    for (const { id, r } of this.recipes) {
+      if (r.stat !== stat) continue;
+      if (r.action === "stat" && (r.trigger === "onShot" || r.trigger === "passive") && this.condOk(r, big)) v += r.value;
+      const b = this.buffs.get(id); if (b && b.t > 0) v += r.value * b.stacks;
+    }
+    return v;
+  }
+  private tradeoff(kind: string) { let v = 0; for (const { r } of this.recipes) if (r.tradeoff?.kind === kind) v = Math.max(v, Math.min(r.tradeoff.value, TRADEOFF_MAX[r.tradeoff.kind])); return v; }
+  /** Acciones de una receta disparada en un punto / sobre un objetivo. */
+  private act(r: Recipe, at: V, target: T | null, baseDmg: number, except?: T): FxAction<T, V>[] {
+    const el = this.element();
+    switch (r.action) {
+      case "explode": return r.tradeoff?.kind === "selfDamage" ? [{ type: "selfBlast", at, dmg: baseDmg * r.value, self: 6 }] : [{ type: "explode", at, dmg: baseDmg * r.value, element: el, except }];
+      case "chain": return target ? [{ type: "chain", from: target, dmg: baseDmg * r.value, n: r.targets ?? 3 }] : [];
+      case "ignite": return [{ type: "igniteNear", at, radius: r.radius ?? 4, dmg: baseDmg * r.value * 2, except }];
+      case "shards": return [{ type: "shards", at, n: r.targets ?? 3, dmg: baseDmg * r.value }];
+      case "strike": return [{ type: "strikeAt", at, radius: r.radius ?? 6, dmg: baseDmg * r.value }];
+      case "pull": return [{ type: "pull", at, radius: r.radius ?? 8, seconds: Math.min(1.2, r.value), then: baseDmg * 1.5 }];
+      default: return [];
+    }
+  }
+  /** Balas que gasta cada disparo (racimo: varias; furia: ninguna). */
+  ammoPerShot() { if (this.furyT > 0) return 0; return Math.max(1, Math.round(this.tradeoff("ammoPerShot")) || 1); }
+  /** Velocidad al apuntar (contrapartida de algunos cargadores grandes). */
+  adsMult() { return 1 - this.tradeoff("ads") / 100; }
+  /** Calor por disparo (0 si el arma no se sobrecalienta). */
+  heatPerShot() { return this.tradeoff("heat") ? 0.045 : 0; }
+  /** Fuego automático forzado (modo furia). */
+  autoFire() { return this.furyT > 0; }
+  /** Estado de furia (para la interfaz). */
+  get fury() { return this.furyT; }
 
   /** Elemento actual (el "alternador" cambia entre fuego y eléctrico en cada cargador). */
   element(): El | null {
@@ -84,6 +183,10 @@ export class EffectRunner<T, V> {
     this.rampageT = dec(this.rampageT); if (this.rampageT <= 0) this.rampage = 0;
     this.tallyT = dec(this.tallyT); if (this.tallyT <= 0) this.tally = 0;
     this.relayT = dec(this.relayT); this.kickT = dec(this.kickT); this.voltT = dec(this.voltT); if (this.voltT <= 0) this.volt = false;
+    for (const [k, b] of this.buffs) { b.t -= dt; if (b.t <= 0) this.buffs.delete(k); }
+    for (const [k, t] of this.cds) this.cds.set(k, Math.max(0, t - dt));
+    if (this.furyT > 0) { this.furyT = dec(this.furyT); if (this.furyT <= 0) this.furyAfter = true; }
+    this.ctx.aiming = c.aiming;
     // Pulso firme: apuntar sin disparar acumula
     this.breath = c.aiming && !c.firing ? this.breath + dt : 0;
     // Sprint y fuego: tras esprintar un rato, bonus breve al dejar de esprintar
@@ -104,11 +207,13 @@ export class EffectRunner<T, V> {
     let m = 1;
     if (this.frenzyT > 0) m *= 1 + P("frenzy", "rate", 50) / 100;
     if (this.sig === "spinup") m *= 1 + this.spin / 100;
+    const rb = this.statBonus("rate"); if (rb) m *= 1 + rb / 100;
     return m;
   }
 
   /** Lo que cambia el siguiente disparo. `ammoFrac` = balas que quedan / cargador (antes de disparar). */
-  shot(c: { fullMag: boolean; ammoFrac: number; aiming: boolean; nearCount: number; pellets: number }): ShotMods {
+  shot(c: { fullMag: boolean; ammoFrac: number; aiming: boolean; nearCount: number; pellets: number; moving?: number }): ShotMods {
+    this.shotN++; this.ctx = { aiming: c.aiming, moving: c.moving ?? 0, near: c.nearCount, ammoFrac: c.ammoFrac };
     const m: ShotMods = { dmg: 1, pellets: c.pellets, recoil: 1 - this.val("steady") / 100, pierce: 1, critMult: 2 * (1 + this.val("headhunter") / 100), forceCrit: false, spread: 1, element: this.element() };
     if (this.has("doble")) { m.pellets *= 2; m.recoil *= 1.4; }
     if (c.fullMag && this.has("opening")) m.dmg *= 1 + this.val("opening") / 100;
@@ -124,16 +229,27 @@ export class EffectRunner<T, V> {
     if (this.sig === "lastrounds" && c.ammoFrac <= 0.25) m.dmg *= 2;
     if (this.sig === "deadhand" && this.deadhand) { m.dmg *= 3; m.forceCrit = true; this.deadhand = false; }
     m.pierce = this.has("piercing") ? 3 : this.has("pierce") ? 2 : 1;
+    // Recetas: daño, crítico, dispersión y retroceso (con su condición o bonus temporal), proyectiles y contrapartidas
+    if (this.recipes.length) {
+      const d = this.statBonus("dmg"); if (d) m.dmg *= 1 + d / 100;
+      const cr = this.statBonus("crit"); if (cr) m.critMult *= 1 + cr / 100;
+      const sp = this.statBonus("spread"); if (sp) m.spread *= Math.max(0.15, 1 - sp / 100);
+      const rc = this.statBonus("recoil"); if (rc) m.recoil *= Math.max(0.15, 1 - rc / 100);
+      const rk = this.tradeoff("recoil"); if (rk) m.recoil *= 1 + rk / 100;
+      for (const { r } of this.recipes) if (r.action === "pellets") m.pellets = Math.min(24, m.pellets * r.value);
+    }
     return m;
   }
   /** Dispersión al apuntar (concentración). */
   spreadFocus(aimT: number) { return 1 - (this.val("adsfocus") / 100) * aimT; }
 
   /** Multiplicador del impacto sobre un objetivo concreto (primer golpe, cazatanques). */
-  hitMult(t: { full: boolean; big: boolean }): number {
+  hitMult(t: { full: boolean; big: boolean; crit?: boolean }): number {
     let m = 1;
     if (this.has("instigator") && t.full) m *= 1 + P("instigator", "bonus", 20) / 100;
     if (this.has("giantslayer") && t.big) m *= 1 + P("giantslayer", "bonus", 25) / 100;
+    // Recetas "contra objetivos grandes" (daño; el crítico se aplica si el impacto es crítico)
+    if (t.big) for (const { r } of this.recipes) if (r.cond === "big" && r.action === "stat") { if (r.stat === "dmg") m *= 1 + r.value / 100; if (r.stat === "crit" && t.crit) m *= 1 + r.value / 200; }
     return m;
   }
 
@@ -156,6 +272,12 @@ export class EffectRunner<T, V> {
       if (n >= 5) { this.marks.delete(h.target); out.push({ type: "explode", at: h.point, dmg: h.baseDmg * 1.5, element: null, color: 0xc040ff }); } else this.marks.set(h.target, n);
     }
     if (this.sig === "verdict" && h.crit) out.push({ type: "explode", at: h.point, dmg: h.dmg * 0.8, element: null, except: h.target, color: 0xffd060 });
+    for (const { id, r } of this.recipes) {
+      if (!(r.trigger === "onHit" || (r.trigger === "onCrit" && h.crit))) continue;
+      if (r.action === "stat" || r.action === "buff") continue;
+      if (!this.condOk(r) || !this.ready(id, r)) continue;
+      out.push(...this.act(r, h.point, h.target, h.baseDmg, r.action === "explode" ? h.target : undefined));
+    }
     return out;
   }
 
@@ -172,12 +294,26 @@ export class EffectRunner<T, V> {
     if (this.sig === "olddog") out.push({ type: "refill" });
     if (this.sig === "deadhand") this.deadhand = true;
     if (this.sig === "stormcaller") out.push({ type: "strike", target: k.target, radius: 8, dmg: k.baseDmg * 1.2 });
+    for (const { id, r } of this.recipes) {
+      if (r.cond === "afterkill") { this.startBuff(id, r); continue; }
+      if (r.trigger !== "onKill") continue;
+      if (r.action === "buff") { this.startBuff(id, r); continue; }
+      if (r.action === "fury") { if (this.ready(id, r)) this.furyT = r.value; continue; }
+      if (!this.ready(id, r)) continue;
+      out.push(...this.act(r, k.point, k.target, k.baseDmg, k.target));
+    }
     return out;
   }
 
   /** Acciones tras un disparo completo (todas las balas). */
-  afterShot(c: { shotCount: number; firstHit: V | null; echo: boolean; baseDmg: number; hitAny: boolean }): FxAction<T, V>[] {
+  afterShot(c: { shotCount: number; firstHit: V | null; echo: boolean; baseDmg: number; hitAny: boolean; firstTarget?: T | null }): FxAction<T, V>[] {
     const out: FxAction<T, V>[] = [];
+    // Recetas "cada N disparos" con acción (explosión, cadena, rayo) en el primer impacto
+    if (!c.echo && c.firstHit != null) for (const { id, r } of this.recipes) {
+      if (r.trigger !== "onShot" || r.cond !== "nth" || r.action === "stat" || r.action === "pellets") continue;
+      if (this.shotN % (r.n ?? 4) !== 0 || !this.ready(id, r)) continue;
+      out.push(...this.act(r, c.firstHit, c.firstTarget ?? null, c.baseDmg));
+    }
     if (this.sig === "requiem" && c.shotCount % 6 === 0 && c.firstHit) out.push({ type: "shards", at: c.firstHit, n: 6, dmg: c.baseDmg * 0.4 });
     if (!c.echo && this.has("eco") && c.shotCount % 5 === 0) out.push({ type: "echo", delay: 0.5 });
     if (!c.echo && this.sig === "echochamber" && c.shotCount % 4 === 0) out.push({ type: "echo", delay: 0.25 }, { type: "echo", delay: 0.5 });
@@ -190,6 +326,10 @@ export class EffectRunner<T, V> {
     let m = 1;
     if (this.killT > 0 && this.has("killreload")) m *= 1 - this.val("killreload") / 100;
     if (this.has("rapid")) m *= 1 - P("rapid", "reload", 10) / 100;
+    // Recetas: recarga más rápida (con su condición o tras una baja), contrapartida de recarga lenta y resaca de la furia
+    const rb = this.statBonus("reload"); if (rb) m *= Math.max(0.2, 1 - rb / 100);
+    const rt = this.tradeoff("reload"); if (rt && !this.recipes.some((x) => x.r.action === "fury")) m *= 1 + rt / 100;
+    if (this.furyAfter) { m *= 1 + (rt || 100) / 100; this.furyAfter = false; }
     this.reloadAfterKill = this.killT > 0;
     this.tally = 0; // la racha se pierde al recargar
     return m;
@@ -199,6 +339,7 @@ export class EffectRunner<T, V> {
     if (this.reloadAfterKill && this.has("killclip")) this.killclipT = P("killclip", "seconds", 4);
     if (this.reloadAfterKill && this.has("voltshot")) { this.volt = true; this.voltT = P("voltshot", "seconds", 5); }
     if (this.sig === "alternator") this.altFire = !this.altFire;
+    for (const { id, r } of this.recipes) if (r.cond === "afterreload" || (r.trigger === "onReloadEnd" && r.action === "buff")) this.startBuff(id, r);
   }
   /** Sacar el arma más rápido (quickdraw). */
   equipFast() { return this.has("quickdraw"); }

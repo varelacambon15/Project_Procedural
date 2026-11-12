@@ -5,7 +5,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { TYPE_INFO } from "../../weapons/generator";
 import type { WeaponAssembler } from "../../weapons/assembler";
 import type { StatKey, WeaponSpec } from "../../weapons/types";
-import { archName, calName, holdName, damageText, effectDesc, effectName, modeName, rarityName, typeName } from "../../weapons/labels";
+import { archName, calName, holdName, damageText, effectCost, effectDesc, effectName, modeName, rarityName, typeName } from "../../weapons/labels";
 import { displayName } from "../../weapons/naming";
 import { t } from "../../i18n";
 import type { Item } from "../inventory";
@@ -51,7 +51,7 @@ export function weaponCard(s: WeaponSpec, cmp?: WeaponSpec | null, title = "", o
       const cpct = cmp ? Math.max(4, Math.min(100, (cmp.stats[k] / (k === "precision" || k === "manejo" ? 100 : base[k] * 1.8)) * 100)) : null;
       return `<span class="k">${t(`stat.${k}`)}</span><span class="meter"><i style="width:${pct}%"></i>${cpct !== null ? `<b style="left:${cpct}%"></b>` : ""}</span><span class="v">${f(s.stats[k])}</span>${delta(k)}`;
     }).join("")}</div>
-    ${s.effects.length ? `<div class="fxs">${s.effects.map((e) => `<div class="fx tier-${e.tier}"><span class="ico" style="color:${e.color}">${e.icon}</span><div><b style="color:${e.color}">${effectName(e)}</b><small>${effectDesc(e)}</small></div></div>`).join("")}</div>` : `<div class="fxs none">${t("ui.noEffects")}</div>`}
+    ${s.effects.length ? `<div class="fxs">${s.effects.map((e) => `<div class="fx tier-${e.tier}"><span class="ico" style="color:${e.color}">${e.icon}</span><div><b style="color:${e.color}">${esc(effectName(e))}</b><small><span class="bonus">${esc(effectDesc(e))}</span>${effectCost(e) ? ` <span class="cost">${esc(effectCost(e))}</span>` : ""}</small></div></div>`).join("")}</div>` : `<div class="fxs none">${t("ui.noEffects")}</div>`}
   </div>`;
 }
 

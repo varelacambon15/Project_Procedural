@@ -1,0 +1,829 @@
+{
+  "_doc": "Efectos como recetas (prompt 05-C): disparador + condición + acción + modificador + límites + aspecto + contrapartida. Las tablas de pesos fijan el coste de poder (en %) que se calcula para cada receta; los efectos de nivel A se generan cruzando estadística y condición (versión sin coste y versión arriesgada con contrapartida); los de nivel B (elementales y otros) y L se escriben a mano como recetas. Valores [C] ajustables con los tests de balance.",
+  "statWeight": {
+    "dmg": 1.0,
+    "rate": 0.7,
+    "crit": 0.35,
+    "spread": 0.25,
+    "recoil": 0.2,
+    "reload": 0.3
+  },
+  "statMax": {
+    "dmg": 35,
+    "rate": 40,
+    "crit": 70,
+    "spread": 70,
+    "recoil": 70,
+    "reload": 70
+  },
+  "uptime": {
+    "aiming": 0.45,
+    "hip": 0.45,
+    "still": 0.4,
+    "moving": 0.5,
+    "near": 0.35,
+    "lowammo": 0.3,
+    "afterkill": 0.35,
+    "afterreload": 0.3,
+    "big": 0.25,
+    "nth": 0.25,
+    "always": 1,
+    "crit": 0.3,
+    "hit": 0.6,
+    "kill": 0.2,
+    "chance": 0.3
+  },
+  "tradeoffWeight": {
+    "accuracy": 0.25,
+    "recoil": 0.1,
+    "rate": 0.35,
+    "mag": 0.12,
+    "ads": 0.08,
+    "reload": 0.12,
+    "range": 0.08,
+    "ammoPerShot": 9,
+    "selfDamage": 3,
+    "heat": 7,
+    "cooldown": 2
+  },
+  "tradeoffMax": {
+    "accuracy": 30,
+    "recoil": 60,
+    "rate": 35,
+    "mag": 90,
+    "ads": 30,
+    "reload": 100,
+    "range": 40,
+    "ammoPerShot": 3,
+    "selfDamage": 1,
+    "heat": 1,
+    "cooldown": 1
+  },
+  "_pairs": "Combinaciones de nivel A (estadística · condición) y la contrapartida de su versión arriesgada. Se dejan fuera las que ya existen (daño con cargador lleno = 'opening', daño al primer golpe = 'instigator', daño tras esprintar = 'kickstart', daño con pocas balas = 'lastbullets', daño rodeado = 'surrounded').",
+  "pairs": [
+    [
+      "dmg",
+      "aiming",
+      "accuracy"
+    ],
+    [
+      "dmg",
+      "hip",
+      "accuracy"
+    ],
+    [
+      "dmg",
+      "still",
+      "rate"
+    ],
+    [
+      "dmg",
+      "moving",
+      "accuracy"
+    ],
+    [
+      "dmg",
+      "afterreload",
+      "reload"
+    ],
+    [
+      "dmg",
+      "big",
+      "rate"
+    ],
+    [
+      "dmg",
+      "nth",
+      "recoil"
+    ],
+    [
+      "rate",
+      "aiming",
+      "recoil"
+    ],
+    [
+      "rate",
+      "hip",
+      "recoil"
+    ],
+    [
+      "rate",
+      "lowammo",
+      "recoil"
+    ],
+    [
+      "rate",
+      "afterkill",
+      "accuracy"
+    ],
+    [
+      "rate",
+      "afterreload",
+      "mag"
+    ],
+    [
+      "rate",
+      "near",
+      "recoil"
+    ],
+    [
+      "crit",
+      "aiming",
+      "rate"
+    ],
+    [
+      "crit",
+      "still",
+      "rate"
+    ],
+    [
+      "crit",
+      "big",
+      "rate"
+    ],
+    [
+      "crit",
+      "afterkill",
+      "recoil"
+    ],
+    [
+      "spread",
+      "aiming",
+      "ads"
+    ],
+    [
+      "spread",
+      "still",
+      "ads"
+    ],
+    [
+      "spread",
+      "moving",
+      "recoil"
+    ],
+    [
+      "recoil",
+      "aiming",
+      "ads"
+    ],
+    [
+      "recoil",
+      "always",
+      "range"
+    ],
+    [
+      "recoil",
+      "hip",
+      "range"
+    ],
+    [
+      "reload",
+      "lowammo",
+      "ads"
+    ],
+    [
+      "reload",
+      "afterkill",
+      "mag"
+    ],
+    [
+      "reload",
+      "always",
+      "mag"
+    ]
+  ],
+  "special": [
+    {
+      "id": "rc-bigmag",
+      "tier": "A",
+      "family": "mag",
+      "trigger": "passive",
+      "cond": "always",
+      "action": "stat",
+      "stat": "mag",
+      "value": 60,
+      "tradeoff": {
+        "kind": "ads",
+        "value": 15
+      },
+      "cost": 8,
+      "icon": "▥"
+    },
+    {
+      "id": "rc-snipe",
+      "tier": "A",
+      "family": "crit",
+      "trigger": "onCrit",
+      "cond": "always",
+      "action": "stat",
+      "stat": "crit",
+      "value": 35,
+      "tradeoff": {
+        "kind": "rate",
+        "value": 20
+      },
+      "cost": 8,
+      "icon": "⊙"
+    },
+    {
+      "id": "rc-f-critflare",
+      "tier": "B",
+      "family": "element",
+      "element": "fuego",
+      "trigger": "onCrit",
+      "cond": "always",
+      "action": "explode",
+      "value": 0.5,
+      "cost": 15,
+      "name": {
+        "es": "Llamarada",
+        "en": "Flare"
+      },
+      "icon": "✶"
+    },
+    {
+      "id": "rc-f-pyre",
+      "tier": "B",
+      "family": "element",
+      "element": "fuego",
+      "trigger": "onKill",
+      "cond": "always",
+      "action": "explode",
+      "value": 0.9,
+      "cost": 16,
+      "name": {
+        "es": "Pira",
+        "en": "Pyre"
+      },
+      "icon": "♆"
+    },
+    {
+      "id": "rc-f-tongue",
+      "tier": "B",
+      "family": "element",
+      "element": "fuego",
+      "trigger": "onShot",
+      "cond": "nth",
+      "n": 5,
+      "action": "explode",
+      "value": 0.7,
+      "cost": 15,
+      "name": {
+        "es": "Lengua de fuego",
+        "en": "Firetongue"
+      },
+      "icon": "≀"
+    },
+    {
+      "id": "rc-f-ember",
+      "tier": "B",
+      "family": "element",
+      "element": "fuego",
+      "trigger": "onShot",
+      "cond": "aiming",
+      "action": "stat",
+      "stat": "dmg",
+      "value": 18,
+      "cost": 14,
+      "name": {
+        "es": "Rescoldo",
+        "en": "Smoulder"
+      },
+      "icon": "◒"
+    },
+    {
+      "id": "rc-f-bonfire",
+      "tier": "B",
+      "family": "element",
+      "element": "fuego",
+      "trigger": "onShot",
+      "cond": "near",
+      "action": "stat",
+      "stat": "dmg",
+      "value": 25,
+      "cost": 15,
+      "name": {
+        "es": "Hoguera",
+        "en": "Bonfire"
+      },
+      "icon": "♨"
+    },
+    {
+      "id": "rc-f-hungry",
+      "tier": "B",
+      "family": "element",
+      "element": "fuego",
+      "trigger": "onHit",
+      "cond": "chance",
+      "chance": 35,
+      "action": "ignite",
+      "value": 1,
+      "radius": 3.5,
+      "tradeoff": {
+        "kind": "ammoPerShot",
+        "value": 2
+      },
+      "cost": 18,
+      "name": {
+        "es": "Brasas voraces",
+        "en": "Hungry Embers"
+      },
+      "icon": "❦"
+    },
+    {
+      "id": "rc-f-afterheat",
+      "tier": "B",
+      "family": "element",
+      "element": "fuego",
+      "trigger": "onReloadEnd",
+      "cond": "always",
+      "action": "buff",
+      "stat": "rate",
+      "value": 25,
+      "duration": 4,
+      "cost": 14,
+      "name": {
+        "es": "Calor residual",
+        "en": "Afterheat"
+      },
+      "icon": "≈"
+    },
+    {
+      "id": "rc-f-longflame",
+      "tier": "B",
+      "family": "element",
+      "element": "fuego",
+      "trigger": "passive",
+      "cond": "always",
+      "action": "stat",
+      "stat": "range",
+      "value": 25,
+      "cost": 13,
+      "name": {
+        "es": "Llama larga",
+        "en": "Long Flame"
+      },
+      "icon": "⟿"
+    },
+    {
+      "id": "rc-e-critarc",
+      "tier": "B",
+      "family": "element",
+      "element": "electrico",
+      "trigger": "onCrit",
+      "cond": "always",
+      "action": "chain",
+      "value": 0.5,
+      "n": 3,
+      "cost": 15,
+      "name": {
+        "es": "Arco certero",
+        "en": "True Arc"
+      },
+      "icon": "ϟ"
+    },
+    {
+      "id": "rc-e-squall",
+      "tier": "B",
+      "family": "element",
+      "element": "electrico",
+      "trigger": "onKill",
+      "cond": "always",
+      "action": "chain",
+      "value": 0.6,
+      "n": 4,
+      "cost": 16,
+      "name": {
+        "es": "Turbonada",
+        "en": "Squall"
+      },
+      "icon": "⚟"
+    },
+    {
+      "id": "rc-e-pulse",
+      "tier": "B",
+      "family": "element",
+      "element": "electrico",
+      "trigger": "onShot",
+      "cond": "nth",
+      "n": 4,
+      "action": "chain",
+      "value": 0.7,
+      "n2": 2,
+      "cost": 15,
+      "name": {
+        "es": "Pulso",
+        "en": "Pulse"
+      },
+      "icon": "⌁"
+    },
+    {
+      "id": "rc-e-saturated",
+      "tier": "B",
+      "family": "element",
+      "element": "electrico",
+      "trigger": "onHit",
+      "cond": "chance",
+      "chance": 30,
+      "action": "chain",
+      "value": 0.6,
+      "n": 6,
+      "cooldown": 3,
+      "tradeoff": {
+        "kind": "rate",
+        "value": 20
+      },
+      "cost": 18,
+      "name": {
+        "es": "Cadena saturada",
+        "en": "Saturated Chain"
+      },
+      "icon": "⛓"
+    },
+    {
+      "id": "rc-e-static",
+      "tier": "B",
+      "family": "element",
+      "element": "electrico",
+      "trigger": "onShot",
+      "cond": "aiming",
+      "action": "stat",
+      "stat": "spread",
+      "value": 40,
+      "cost": 13,
+      "name": {
+        "es": "Estática",
+        "en": "Static"
+      },
+      "icon": "⌇"
+    },
+    {
+      "id": "rc-e-overload",
+      "tier": "B",
+      "family": "element",
+      "element": "electrico",
+      "trigger": "onShot",
+      "cond": "lowammo",
+      "action": "stat",
+      "stat": "dmg",
+      "value": 30,
+      "cost": 14,
+      "name": {
+        "es": "Sobrecarga",
+        "en": "Overload"
+      },
+      "icon": "⚡"
+    },
+    {
+      "id": "rc-e-relay",
+      "tier": "B",
+      "family": "element",
+      "element": "electrico",
+      "trigger": "onKill",
+      "cond": "always",
+      "action": "buff",
+      "stat": "rate",
+      "value": 25,
+      "duration": 4,
+      "cost": 14,
+      "name": {
+        "es": "Relé",
+        "en": "Relay Coil"
+      },
+      "icon": "⇆"
+    },
+    {
+      "id": "rc-e-conductor",
+      "tier": "B",
+      "family": "element",
+      "element": "electrico",
+      "trigger": "onShot",
+      "cond": "big",
+      "action": "stat",
+      "stat": "dmg",
+      "value": 30,
+      "cost": 13,
+      "name": {
+        "es": "Conductor",
+        "en": "Conductor"
+      },
+      "icon": "⏚"
+    },
+    {
+      "id": "rc-x-shrapnel",
+      "tier": "B",
+      "family": "element",
+      "element": "explosive",
+      "trigger": "onCrit",
+      "cond": "always",
+      "action": "shards",
+      "value": 0.4,
+      "n": 3,
+      "cost": 15,
+      "name": {
+        "es": "Metralla",
+        "en": "Shrapnel"
+      },
+      "icon": "✲"
+    },
+    {
+      "id": "rc-x-crater",
+      "tier": "B",
+      "family": "element",
+      "element": "explosive",
+      "trigger": "onKill",
+      "cond": "always",
+      "action": "explode",
+      "value": 1.0,
+      "cost": 16,
+      "name": {
+        "es": "Cráter",
+        "en": "Crater"
+      },
+      "icon": "◉"
+    },
+    {
+      "id": "rc-x-shortfuse",
+      "tier": "B",
+      "family": "element",
+      "element": "explosive",
+      "trigger": "onShot",
+      "cond": "nth",
+      "n": 6,
+      "action": "explode",
+      "value": 1.1,
+      "cost": 15,
+      "name": {
+        "es": "Mecha corta",
+        "en": "Short Fuse"
+      },
+      "icon": "☄"
+    },
+    {
+      "id": "rc-x-volatile",
+      "tier": "B",
+      "family": "element",
+      "element": "explosive",
+      "trigger": "onHit",
+      "cond": "always",
+      "action": "explode",
+      "value": 0.75,
+      "tradeoff": {
+        "kind": "selfDamage",
+        "value": 1
+      },
+      "cost": 18,
+      "name": {
+        "es": "Carga inestable",
+        "en": "Volatile Load"
+      },
+      "icon": "✹"
+    },
+    {
+      "id": "rc-x-wave",
+      "tier": "B",
+      "family": "element",
+      "element": "explosive",
+      "trigger": "onShot",
+      "cond": "near",
+      "action": "stat",
+      "stat": "dmg",
+      "value": 25,
+      "cost": 14,
+      "name": {
+        "es": "Onda expansiva",
+        "en": "Blastwave"
+      },
+      "icon": "◎"
+    },
+    {
+      "id": "rc-x-slowcharge",
+      "tier": "B",
+      "family": "element",
+      "element": "explosive",
+      "trigger": "onShot",
+      "cond": "aiming",
+      "action": "stat",
+      "stat": "dmg",
+      "value": 30,
+      "tradeoff": {
+        "kind": "rate",
+        "value": 15
+      },
+      "cost": 15,
+      "name": {
+        "es": "Carga pausada",
+        "en": "Slow Charge"
+      },
+      "icon": "⏲"
+    },
+    {
+      "id": "rc-x-rumble",
+      "tier": "B",
+      "family": "element",
+      "element": "explosive",
+      "trigger": "onReloadEnd",
+      "cond": "always",
+      "action": "buff",
+      "stat": "dmg",
+      "value": 20,
+      "duration": 3,
+      "cost": 14,
+      "name": {
+        "es": "Retumbo",
+        "en": "Rumble"
+      },
+      "icon": "♒"
+    },
+    {
+      "id": "rc-b-lastgasp",
+      "tier": "B",
+      "family": "rate",
+      "tags": [
+        "streak"
+      ],
+      "trigger": "onShot",
+      "cond": "lowammo",
+      "action": "stat",
+      "stat": "rate",
+      "value": 45,
+      "tradeoff": {
+        "kind": "accuracy",
+        "value": 15
+      },
+      "cost": 14,
+      "name": {
+        "es": "Último aliento",
+        "en": "Last Gasp"
+      },
+      "icon": "⇟"
+    },
+    {
+      "id": "rc-b-patient",
+      "tier": "B",
+      "family": "crit",
+      "trigger": "onShot",
+      "cond": "still",
+      "action": "stat",
+      "stat": "crit",
+      "value": 80,
+      "tradeoff": {
+        "kind": "rate",
+        "value": 25
+      },
+      "cost": 14,
+      "name": {
+        "es": "Cazador paciente",
+        "en": "Patient Hunter"
+      },
+      "icon": "⌚"
+    },
+    {
+      "id": "rc-l-horizon",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onHit",
+      "cond": "always",
+      "action": "pull",
+      "value": 1.2,
+      "radius": 8,
+      "cooldown": 6,
+      "tradeoff": {
+        "kind": "mag",
+        "value": 90
+      },
+      "cost": 26,
+      "name": {
+        "es": "Event Horizon",
+        "en": "Event Horizon"
+      },
+      "icon": "★"
+    },
+    {
+      "id": "rc-l-hailstorm",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onShot",
+      "cond": "always",
+      "action": "pellets",
+      "value": 3,
+      "tradeoff": {
+        "kind": "ammoPerShot",
+        "value": 3
+      },
+      "cost": 25,
+      "name": {
+        "es": "Hailstorm",
+        "en": "Hailstorm"
+      },
+      "icon": "★"
+    },
+    {
+      "id": "rc-l-forge",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "passive",
+      "cond": "always",
+      "action": "stat",
+      "stat": "mag",
+      "value": 400,
+      "tradeoff": {
+        "kind": "heat",
+        "value": 1
+      },
+      "cost": 24,
+      "name": {
+        "es": "Forge Heart",
+        "en": "Forge Heart"
+      },
+      "icon": "★"
+    },
+    {
+      "id": "rc-l-rage",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onKill",
+      "cond": "always",
+      "action": "fury",
+      "value": 5,
+      "cooldown": 12,
+      "tradeoff": {
+        "kind": "reload",
+        "value": 100
+      },
+      "cost": 26,
+      "name": {
+        "es": "Rage Engine",
+        "en": "Rage Engine"
+      },
+      "icon": "★"
+    },
+    {
+      "id": "rc-l-thunderhead",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onShot",
+      "cond": "nth",
+      "n": 5,
+      "action": "strike",
+      "value": 1.0,
+      "radius": 6,
+      "tradeoff": {
+        "kind": "rate",
+        "value": 15
+      },
+      "cost": 25,
+      "name": {
+        "es": "Thunderhead",
+        "en": "Thunderhead"
+      },
+      "icon": "★"
+    },
+    {
+      "id": "rc-l-cinder",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onKill",
+      "cond": "always",
+      "action": "ignite",
+      "value": 1.5,
+      "radius": 7,
+      "tradeoff": {
+        "kind": "range",
+        "value": 25
+      },
+      "cost": 24,
+      "name": {
+        "es": "Cinder Crown",
+        "en": "Cinder Crown"
+      },
+      "icon": "★"
+    }
+  ],
+  "controlStates": {
+    "_doc": "Estados de control: NO implementados (punto de decisión del usuario), salvo el Pozo de gravedad aprobado (Event Horizon). Listados aquí para decidir.",
+    "pending": [
+      "ralentizar (slow)",
+      "aturdir (stun)",
+      "derribar (knockdown)",
+      "inmovilizar (root)",
+      "miedo (fear)",
+      "confusión (enemigos se atacan entre sí)",
+      "congelar (freeze; además no es un elemento permitido)"
+    ],
+    "approved": [
+      "atraer (Event Horizon, legendario: tope de 1,2 s y 8 m, enfriamiento de 6 s)"
+    ],
+    "discarded": [
+      "dron acompañante y cualquier aliado o enemigo convertido"
+    ]
+  },
+  "riskyMax": {
+    "dmg": 60,
+    "rate": 70,
+    "crit": 120,
+    "spread": 85,
+    "recoil": 85,
+    "reload": 80
+  }
+}

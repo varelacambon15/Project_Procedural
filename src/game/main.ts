@@ -112,6 +112,7 @@ async function boot() {
       }
     },
     onShot() { sim.shots++; sim.lastShot = performance.now() / 1000; },
+    hurt(dmg) { if (php.hit(dmg)) { waves.stop(); php.reset(); toast(t("ui.simReset")); } },
   });
   gun.env = weaponEnv;
   const pickups = new Pickups(scene, asm, world.colliders);

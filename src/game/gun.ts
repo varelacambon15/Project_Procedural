@@ -28,6 +28,8 @@ export interface ShotHooks {
   /** Cada disparo (para las estadísticas de la sala: precisión). */
   onShot?(): void;
   dummies(): Dummy[];
+  /** Daño al jugador (contrapartida de autodaño de algunos efectos). */
+  hurt?(dmg: number): void;
 }
 export interface Control { fire: boolean; aim: boolean; moving: number; sprinting: boolean; lookX: number; lookY: number; vy: number; grounded: boolean; inspect: boolean }
 
@@ -65,6 +67,10 @@ export class Gun {
   item: Item | null = null;
   env: THREE.Texture | null = null;
   private cooldown = 0;
+  /** Calor (0..1) y sobrecalentamiento (s): armas cuyo efecto se sobrecalienta. */
+  heat = 0; overheatT = 0;
+  /** Atracciones activas (Event Horizon). */
+  private pulls: { at: THREE.Vector3; radius: number; t: number }[] = [];
   reloadT = 0; private reloadDur = 1;
   private triggerHeld = false;
   private equipT = 0; private equipDur = 0.45;
@@ -244,15 +250,20 @@ export class Gun {
     if (this.reloadT > 0) { this.reloadT -= dt; if (this.reloadT <= 0 && it && s) { it.ammo = s.stats.cargador; this.sfx("cycle"); this.fx?.reloadEnd(); } }
     if (c.inspect && s && this.reloadT <= 0 && this.aimT < 0.2) this.inspectT = 2.6;
     this.inspectT = Math.max(0, this.inspectT - dt);
-    const busy = this.equipT > 0 || this.reloadT > 0 || c.sprinting || this.pending !== null;
+    // Calor: se enfría solo; sobrecalentada no dispara hasta enfriarse
+    if (this.overheatT > 0) { this.overheatT -= dt; if (this.overheatT <= 0) this.heat = 0.3; } else if (!c.fire) this.heat = Math.max(0, this.heat - dt * 0.3);
+    // Atracción: los enemigos cercanos se acercan al centro (fuerza y duración con tope)
+    for (const pl of this.pulls) { pl.t -= dt; for (const d of this.hooks.dummies()) { if (!d.alive) continue; const to = pl.at.clone().sub(d.group.position).setY(0), dist = to.length(); if (dist > 1.2 && dist < pl.radius) d.group.position.addScaledVector(to.normalize(), Math.min(dist - 1.2, 6 * dt)); } }
+    this.pulls = this.pulls.filter((pl) => pl.t > 0);
+    const busy = this.equipT > 0 || this.reloadT > 0 || c.sprinting || this.pending !== null || this.overheatT > 0;
     const canAim = !!s && !c.sprinting && this.reloadT <= 0;
-    const adsSpeed = 6 + (s?.stats.manejo ?? 50) / 9 + (this.fx?.equipFast() ? 6 : 0);
+    const adsSpeed = (6 + (s?.stats.manejo ?? 50) / 9 + (this.fx?.equipFast() ? 6 : 0)) * (this.fx?.adsMult() ?? 1);
     this.aimT += ((c.aim && canAim ? 1 : 0) - this.aimT) * Math.min(1, dt * adsSpeed);
     if (c.aim || c.fire) this.inspectT = 0;
 
     // Disparo según el modo
     if (s && it && !busy) {
-      const mode = s.fireMode;
+      const mode = this.fx?.autoFire() ? "auto" : s.fireMode; // modo furia: automático un rato
       const pressed = c.fire && !this.triggerHeld;
       if (this.burstLeft > 0) {
         this.burstTimer -= dt;
@@ -367,7 +378,7 @@ export class Gun {
     const orient = camQ.multiply(this.holder.getWorldQuaternion(new THREE.Quaternion())).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.35, 0, 0)));
     // Mano de apoyo según el perfil de agarre: su soporte en la cadera y al apuntar (con transición suave); sin soporte,
     // la mano baja fuera de la vista (pistola a una mano)
-    const hold = this.spec?.hold, A = h.anchors, k = ease(Math.min(1, Math.max(0, this.aimT)));
+    const hold = this.spec?.hold, A = h.anchors, k = ease(Math.min(1, Math.max(0, this.poseOverride?.ads ?? this.aimT)));
     const at = (s: Support | undefined) => (!s || s === "none" ? null : (A[s] ?? A.grip ?? h.support).clone());
     const rest = h.grip.clone().add(new THREE.Vector3(-0.05, -0.24, -0.12));
     const hipP = at(hold?.hip ?? "front"), adsP = at(hold?.ads ?? "front");
@@ -415,7 +426,12 @@ export class Gun {
     const fx = this.fx!;
     const fullMag = it.ammo === s.stats.cargador;
     const ammoFrac = it.ammo / s.stats.cargador;
-    if (!echo) { it.ammo--; this.cooldown = 60 / (s.stats.cadencia * fx.rateMult()); }
+    if (!echo) {
+      // Balas por disparo (racimo gasta varias; en furia, ninguna) y calor (armas que se sobrecalientan)
+      it.ammo -= Math.min(it.ammo, fx.ammoPerShot());
+      this.cooldown = 60 / (s.stats.cadencia * fx.rateMult());
+      const hp = fx.heatPerShot(); if (hp) { this.heat = Math.min(1, this.heat + hp); if (this.heat >= 1) { this.overheatT = 2.2; this.sfx("empty"); } }
+    }
     this.shotCount++;
     if (!echo) this.hooks.onShot?.();
     if (s.fireMode === "pump" || s.fireMode === "bolt") { this.cycleT = 0.45; setTimeout(() => { this.sfx("cycle"); if (this.item === it) this.ejectCasing(); }, 220); }
@@ -428,7 +444,7 @@ export class Gun {
     // Lo que cambian los efectos en este disparo (multiplicadores, perdigones, perforación, elemento…)
     const origin0 = this.camera.getWorldPosition(new THREE.Vector3());
     const nearCount = this.hooks.dummies().filter((d) => d.alive && d.center.distanceTo(origin0) < 8).length;
-    const mods = fx.shot({ fullMag, ammoFrac, aiming: this.aimT > 0.6, nearCount, pellets: PELLETS[s.type] ?? 1 });
+    const mods = fx.shot({ fullMag, ammoFrac, aiming: this.aimT > 0.6, nearCount, pellets: PELLETS[s.type] ?? 1, moving });
     const rp = this.anim.p.recoil;
     // (el calibre del revólver cambia el retroceso: el mágnum patea, el ligero apenas)
     const calKick = s.tweaks?.pistol?.cyl ? CAL_EFFECT[s.tweaks.pistol.cyl.cal].recoil : 1;
@@ -449,7 +465,7 @@ export class Gun {
     const targets = [...this.hooks.dummies().filter((d) => d.alive).flatMap((d) => d.hitboxes), ...this.world];
     const dmgMult = mods.dmg, forceCrit = mods.forceCrit, critMult = mods.critMult, pierceN = mods.pierce;
     const tracerColor = sig ? "#ffb347" : element === "fuego" ? "#ff7a2a" : element === "electrico" ? "#8fd8ff" : s.rarity.id === "comun" ? "#e9dcc0" : s.rarity.color;
-    let firstHit: THREE.Vector3 | null = null, hitAny = false;
+    let firstHit: THREE.Vector3 | null = null, hitAny = false, firstTarget: Dummy | null = null;
     for (let p = 0; p < pellets; p++) {
       const dir = new THREE.Vector3(0, 0, -1);
       const a = THREE.MathUtils.degToRad(spreadDeg) * Math.sqrt(Math.random()), th = Math.random() * Math.PI * 2;
@@ -462,12 +478,12 @@ export class Gun {
         const dummy = hit.object.userData.dummy as Dummy | undefined;
         end = hit.point; firstHit ??= hit.point.clone();
         if (!dummy) { this.decal(hit, element === "fuego" || element === "explosive"); if (element === "explosive") this.explode(hit.point, s.stats.dano * 0.4 * dmgMult, element); break; }
-        if (seen.has(dummy)) continue; seen.add(dummy);
+        if (seen.has(dummy)) continue; seen.add(dummy); firstTarget ??= dummy;
         const zone = hit.object.userData.zone as Zone;
         const falloff = hit.distance <= s.stats.alcance ? 1 : Math.max(0.45, 1 - (hit.distance - s.stats.alcance) / (s.stats.alcance * 2));
         const crit = forceCrit || zone === "head";
         const big = (dummy.kind.scale ?? 1) > 1.2 || !!dummy.kind.boss;
-        const dmg = s.stats.dano * falloff * dmgMult * fx.hitMult({ full: dummy.health >= dummy.layers[0].max, big }) * (crit ? critMult : zone === "limb" ? 0.8 : 1) * (pierced > 0 ? 0.5 : 1);
+        const dmg = s.stats.dano * falloff * dmgMult * fx.hitMult({ full: dummy.health >= dummy.layers[0].max, big, crit }) * (crit ? critMult : zone === "limb" ? 0.8 : 1) * (pierced > 0 ? 0.5 : 1);
         this.applyHit(dummy, zone, hit.point, dmg, element, crit, p === 0);
         hitAny = true;
         this.runFx(fx.afterHit({ target: dummy, point: hit.point.clone(), dmg, crit, baseDmg: s.stats.dano, now: performance.now() / 1000 }), moving);
@@ -475,7 +491,7 @@ export class Gun {
       }
       if (p < 3) this.tracer(muzzle, end, tracerColor);
     }
-    this.runFx(fx.afterShot({ shotCount: this.shotCount, firstHit, echo, baseDmg: s.stats.dano, hitAny }), moving);
+    this.runFx(fx.afterShot({ shotCount: this.shotCount, firstHit, echo, baseDmg: s.stats.dano, hitAny, firstTarget }), moving);
   }
 
   /** Ejecuta las acciones que piden los efectos (el módulo de efectos no sabe de rayos ni posiciones). */
@@ -500,6 +516,23 @@ export class Gun {
         case "ammo": it.ammo = Math.min(s.stats.cargador, it.ammo + a.n); break;
         case "refill": it.ammo = s.stats.cargador; break;
         case "echo": { const item = it; setTimeout(() => { if (this.item === item) this.fire(moving, true); }, a.delay * 1000); break; }
+        case "strikeAt": {
+          this.tracer(a.at.clone().add(new THREE.Vector3(0, 12, 0)), a.at, "#bfe8ff", 0.25); this.sfx("boom");
+          for (const o of this.hooks.dummies()) if (o.alive && o.center.distanceTo(a.at) < a.radius) { this.tracer(a.at, o.center, "#bfe8ff", 0.2); this.applyHit(o, "body", o.center, a.dmg, "electrico", false, false); }
+          break;
+        }
+        case "pull": {
+          // Atracción (Event Horizon): tope de duración y de fuerza; al terminar, explota en el centro
+          this.pulls.push({ at: a.at.clone(), radius: a.radius, t: a.seconds });
+          const item = it; setTimeout(() => { if (this.item === item) this.explode(a.at, a.then, null, undefined, 0x8060ff); }, a.seconds * 1000);
+          break;
+        }
+        case "selfBlast": {
+          this.explode(a.at, a.dmg, "explosive");
+          // Autodaño leve si la explosión es cerca del jugador (contrapartida de la carga inestable)
+          if (a.at.distanceTo(this.camera.getWorldPosition(new THREE.Vector3())) < 4) this.hooks.hurt?.(a.self);
+          break;
+        }
       }
     }
   }

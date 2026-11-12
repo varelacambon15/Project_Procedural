@@ -1,6 +1,7 @@
 import { KIT_ALIAS } from "./accessories";
 // Textos visibles de las armas, traducidos según el idioma elegido.
-import { t } from "../i18n";
+import { getLang, t } from "../i18n";
+import { effectDef } from "./effects";
 import { PELLETS } from "./generator";
 import type { Effect, Paint, WeaponSpec } from "./types";
 import { isKit, kitLabel } from "./kit";
@@ -13,8 +14,41 @@ export const calName = (s: WeaponSpec) => (s.tweaks?.pistol?.cyl ? t(`cal.${s.tw
 export const holdName = (s: WeaponSpec) => (s.hold ? t(`hold.${s.hold.variant}`) : "");
 export const archName = (s: WeaponSpec) => (s.modeShift ? t(`shift.${s.modeShift}`) : t(`arch.${s.archetype}`));
 export const modeName = (s: WeaponSpec) => t(`mode.${s.fireMode}`) + (s.fireMode === "burst" ? ` ×${s.burst}` : "");
-export const effectName = (e: Effect) => t(`fx.${e.id}`);
-export const effectDesc = (e: Effect) => t(`fx.${e.id}.d`, { v: e.value ?? "" });
+/** Nombre de un efecto: los escritos a mano por su clave; las recetas por su nombre propio (B y L) o por plantilla (A). */
+export function effectName(e: Effect): string {
+  const d = effectDef(e.id); const r = d?.recipe;
+  if (!r) return t(`fx.${e.id}`);
+  if (d.names) return d.names[getLang() === "es" ? "es" : "en"];
+  const cond = t(`rc.cond.${r.cond}`, { n: r.n ?? 4, c: r.chance ?? 30 });
+  const name = t("rc.name", { S: t(`rc.Stat.${r.stat}`), c: cond }).trim();
+  return r.risky ? t("rc.risky", { n: name }) : name;
+}
+const DOWN = new Set(["spread", "recoil", "reload"]);
+/** Lo que da el efecto (en la ficha, en verde). */
+export function effectDesc(e: Effect): string {
+  const d = effectDef(e.id); const r = d?.recipe;
+  if (!r) return t(`fx.${e.id}.d`, { v: e.value ?? "" });
+  const pct = (x: number) => Math.round(x * 100);
+  const cond = t(`rc.cond.${r.cond}`, { n: r.n ?? 4, c: r.chance ?? 30 });
+  const statTxt = r.stat ? t(DOWN.has(r.stat) ? "rc.down" : "rc.up", { v: r.value, s: t(`rc.stat.${r.stat}`) }) : "";
+  let main: string;
+  if (r.action === "stat") main = `${statTxt}${cond ? ` ${cond}` : ""}`;
+  else if (r.action === "buff") main = `${r.trigger === "onShot" ? "" : t(`rc.trig.${r.trigger}`) + ": "}${t("rc.buff", { b: statTxt, d: r.duration ?? 4 })}${r.cond === "afterkill" || r.cond === "afterreload" ? ` ${cond}` : ""}`;
+  else {
+    const act = t(`rc.act.${r.action}`, { p: pct(r.value), n: r.targets ?? 3, r: r.radius ?? 4, v: r.value });
+    const when = r.cond === "nth" || r.cond === "chance" ? cond : t(`rc.trig.${r.trigger}`);
+    main = when ? `${when.charAt(0).toUpperCase()}${when.slice(1)}: ${act}` : act;
+  }
+  return d.element ? `${t(`rc.el.${d.element}`)} · ${main}` : main;
+}
+/** La contrapartida del efecto (en la ficha, en rojo), o "" si no tiene. */
+export function effectCost(e: Effect): string {
+  const d = effectDef(e.id); const tr = d?.recipe?.tradeoff;
+  const parts: string[] = [];
+  if (tr) parts.push(t(`rc.tr.${tr.kind}`, { v: tr.value }));
+  if (d?.element === "electrico" || d?.element === "explosive") parts.push(t("rc.tr.element"));
+  return parts.join(" · ");
+}
 export const paintName = (p: Paint) => t(`paint.${p.id}`);
 export const slotName = (slot: string) => t(`slot.${slot}`);
 export const roleName = (role: string) => t(`role.${role}`);

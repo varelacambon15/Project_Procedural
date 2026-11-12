@@ -130,6 +130,10 @@ button { font: inherit; color: inherit; }
 .fx .ico { width: 18px; height: 18px; display: grid; place-items: center; border: 1px solid currentColor; font-size: 11px; }
 .fx b { font-weight: 400; font-family: var(--display); font-size: 20px; line-height: 1; }
 .fx small { display: block; color: var(--t-dim); line-height: 1.35; margin-top: 2px; }
+/* Efectos con contrapartida (05-C): lo que da en verde y lo que cuesta en rojo, en la misma línea */
+.fx small .bonus { color: #9fd58a; }
+.fx small .cost { color: #e5735f; }
+.fx small .cost::before { content: "· "; color: var(--t-dim); }
 .fx.tier-L b { text-transform: uppercase; }
 .card.empty { color: var(--t-dim); }
 
