@@ -339,7 +339,7 @@ function buildMag(g: THREE.Object3D, d: PistolDesign, poly: Pt[], depth: number)
     const cx = poly.reduce((s, q) => s + q[0], 0) / poly.length, cy = poly.reduce((s, q) => s + q[1], 0) / poly.length;
     const R = Math.hypot(poly[0][0] - cx, poly[0][1] - cy);
     g.add(disc(R, depth, cx, cy, 0, "magazine", 18));
-    for (const z of [-1, 1]) { g.add(disc(R * 0.8, 0.0015, cx, cy, z * (depth / 2 + 0.0006), "procpad", 18)); g.add(disc(R * 0.22, 0.004, cx, cy, z * (depth / 2 + 0.002), "procmetal", 8)); }
+    for (const z of [-1, 1]) { g.add(disc(R * 0.8, 0.0015, cx, cy, z * (depth / 2 + 0.0006), "procpad", 18)); g.add(disc(R * 0.14, 0.003, cx, cy, z * (depth / 2 + 0.0018), "procmetal", 8)); g.add(box(R * 0.5, 0.004, 0.0025, cx, cy, z * (depth / 2 + 0.003), "procmetal")); }
     return;
   }
   const quad = poly.length === 4;

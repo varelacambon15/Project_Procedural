@@ -80,7 +80,7 @@ export const PISTOL_ARCHES: Arch[] = [
   { id: "officer", label: "Officer", family: "auto", eras: ["classic"], d: base({ slide: { len: 0.2, h: 0.03, style: "stepped", nose: "step", rear: "round" }, hammer: "spur", grip: { angle: 0.3, panels: "wood", shape: "hump" }, frame: { guard: "round", dust: 0.7 } }) },
   { id: "pocket", label: "Pocket", family: "auto", eras: ["classic", "rustic"], d: base({ slide: { len: 0.14, h: 0.027, style: "round", nose: "taper", rear: "round", serr: 2 }, grip: { len: 0.072, panels: "wood" }, hammer: "ring", frame: { guard: "round" } }) },
   { id: "pipe", label: "Pipe", family: "auto", eras: ["rustic"], d: base({ slide: { len: 0.17, h: 0.032, style: "tube", nose: "flat", serr: 0, port: false }, barrel: { ext: 0.04, d: 0.016 }, grip: { panels: "tape", angle: 0.22, shape: "raked" }, extra: { rivets: true, wrap: true, patch: true }, frame: { guard: "square" } }) },
-  { id: "vector", label: "Vector", family: "auto", eras: ["scifi"], d: base({ slide: { len: 0.2, h: 0.036, style: "shroud", nose: "taper", rear: "slant", fins: true, top: "optic" }, barrel: { shroud: true, ext: 0.02 }, extra: { cell: true, fairing: true }, grip: { angle: 0.24, shape: "flared" } }) },
+  { id: "vector", label: "Vector", family: "auto", eras: ["scifi"], d: base({ slide: { len: 0.2, h: 0.036, style: "slab", nose: "taper", rear: "slant", top: "rail", serr: 2 }, barrel: { ext: 0.02, comp: "block" }, frame: { rail: true, guard: "hook" }, grip: { angle: 0.24, shape: "flared" } }) },
   // Cargador delante del guardamonte (empuñadura sin cargador, inclinada)
   { id: "broom", label: "Broom", family: "frontmag", eras: ["classic", "rustic"], d: base({ slide: { len: 0.2, h: 0.034, style: "round", nose: "step", rear: "round", top: "high", serr: 1 }, barrel: { ext: 0.06, d: 0.012 }, frame: { dust: 1, guard: "round" }, grip: { angle: 0.5, len: 0.095, shape: "raked", panels: "wood" }, mag: { kind: "front", len: 0.06 }, hammer: "ring" }) },
   { id: "lancer", label: "Lancer", family: "frontmag", eras: ["scifi", "modern"], d: base({ slide: { len: 0.21, h: 0.036, style: "shroud", nose: "bevel", rear: "slant", top: "rail" }, barrel: { ext: 0.03, shroud: true }, frame: { dust: 1, guard: "hook", rail: true }, grip: { angle: 0.36, shape: "flared" }, mag: { kind: "front", len: 0.075 } }) },
@@ -114,9 +114,12 @@ export function archDesign(archId: string, era: PEra): PistolDesign {
   if (era === "modern" && d.family !== "revolver" && d.slide.serr === 1) d.slide.serr = 2;
   if (era === "rustic") { d.extra.wrap = true; d.extra.patch = true; d.extra.rivets = true; if (d.grip.panels === "polymer") d.grip.panels = "tape"; }
   if (era === "scifi") {
-    d.extra.cell = d.family !== "revolver"; d.extra.fairing = true; d.slide.fins = d.family !== "revolver";
+    // Sci-fi "cercano": como un arma moderna de última generación (formas anguladas, raíles, polímero), sin aletas,
+    // celdas de energía ni carenados
+    d.extra.cell = false; d.extra.fairing = false; d.slide.fins = false;
     if (d.slide.nose === "flat" || d.slide.nose === "step") d.slide.nose = "taper";
     d.slide.rear = "slant"; if (d.hammer !== "none" && d.family !== "revolver") d.hammer = "none";
+    if (d.slide.top === "optic") d.slide.top = "rail";
   }
   return d;
 }
@@ -319,10 +322,12 @@ export function designPolys(d: PistolDesign): PartPoly[] {
   const down = (t: number): Pt => [mf.top[0] - Math.sin(a) * t, mf.top[1] - Math.cos(a) * t];
   if (d.mag.kind === "drum") {
     // Tambor unido por un cuello a la base de la empuñadura (nada flotando)
-    const R = 0.026, neck = 0.012, c = down(neck + R * 0.75), poly: Pt[] = [];
-    out.push({ role: "mag", depth: w * 0.62, poly: quadAlong(down(-0.004), down(neck + 0.006), mw * 0.85, a) });
+    // Como los tambores reales de pistola: cuello largo (el cargador asoma) y disco grande adelantado hacia el guardamonte
+    const R = 0.031, neck = 0.03, d0 = down(neck + R * 0.55), fwd = R * 0.7, poly: Pt[] = [];
+    const c: Pt = [d0[0] + Math.cos(a) * fwd, d0[1] - Math.sin(a) * fwd];
+    out.push({ role: "mag", depth: w * 0.62, poly: quadAlong(down(-0.004), down(neck + 0.008), mw * 0.9, a) });
     for (let i = 0; i < 14; i++) { const t = (i / 14) * Math.PI * 2; poly.push([c[0] + Math.cos(t) * R, c[1] + Math.sin(t) * R]); }
-    out.push({ role: "mag", depth: w * 1.1, poly });
+    out.push({ role: "mag", depth: w * 1.35, poly });
   } else if (d.mag.kind === "curved") {
     // Petaca curva que se dobla hacia delante
     const n = 6, len = d.mag.len, fr: Pt[] = [], bk: Pt[] = [];
