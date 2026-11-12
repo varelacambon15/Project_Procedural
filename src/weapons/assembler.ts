@@ -328,6 +328,10 @@ export class WeaponAssembler {
     }
 
     // Accesorio de boca: su parte trasera en la boca del cañón, escalado al diámetro.
+    // El diámetro medido en las armas enteras es el del frontal del modelo (corredera, guardamanos), no el del ánima:
+    // se limita por clase para que un supresor de pistola no salga con el grosor de una lata.
+    const BORE_MAX: Record<string, number> = { pistol: 0.013, revolver: 0.014, smg: 0.015, rifle: 0.017, bullpup: 0.017, sniper: 0.018, lmg: 0.018, shotgun: 0.022 };
+    muzzleDiameter = Math.min(muzzleDiameter, BORE_MAX[spec.type] ?? 0.02);
     const muzAcc = accessory(spec.muzzle);
     if (isKit(spec.muzzle) && muzzle && spec.layout !== "kit") {
       // Supresor real en la boca, escalado al calibre (diámetro de la boca)

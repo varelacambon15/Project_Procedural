@@ -45,6 +45,29 @@ Se desarrolla en dos etapas que comparten el mismo núcleo:
 | Interfaz | Retícula y cursor circular estilo Destiny. Inglés por defecto, español seleccionable |
 | Plataformas | Web y escritorio (.exe vía Electron, publicado en Releases). Android posible más adelante con Capacitor |
 
+## Decisiones del prompt 04 (campo de pruebas)
+
+| Tema | Decisión |
+|---|---|
+| Botín de enemigos | Solo de los enemigos de las oleadas (los blancos de práctica reaparecen y no sueltan nada). Probabilidad, suelo, tope y rarezas en `src/data/loot.json`; lógica en `src/weapons/loot.ts`; test de 1000 bajas |
+| Máquina expendedora | El terminal de la sala (antes "cofre" gratis e infinito) pasa a ser la máquina: niveles con precio y suelo de rareza, progreso por créditos gastados, cápsula con revelación saltable. **Economía como propuesta** en `src/data/shop.json` (punto de decisión) |
+| Créditos | Se ganan por bajas y fin de oleada (`income` en shop.json) y al desguazar (valor de chatarra del arma) |
+| Accesorios | Solo se desmontan accesorios (mira, boca, bajo el raíl), nunca piezas estructurales. El banco solo tiene lo que has desmontado. Montar/desmontar no saca el arma de su banda de poder (±5%); lo que no encaja dice por qué |
+| Renombrar | Cosmético; se conserva el nombre generado (vacío = volver a él) |
+| Partidas | Almacenamiento abstracto (navegador, escritorio con archivos, memoria para tests), escritura atómica, 3 ranuras + autoguardado, versión y migraciones, exportar/importar JSON. Lo del suelo no se guarda |
+| Menús | Fuente pixelada hecha por código (sin descargas), terminal de la simulación, foco navegable con teclado y mando, textos en i18n con test |
+| Animación | Capa procedural con parámetros por clase en `src/data/anim.json` (lógica sin dibujo en `src/game/anim.ts`) |
+
+### Portabilidad (parte E): datos frente a mallas
+
+El generador ya produce **datos** (`WeaponSpec`: piezas, posiciones, escalas, paleta, accesorios, era, modernización) y
+el ensamblador los convierte en mallas de Three.js; la partida guarda solo esos datos. Queda un acoplamiento: tres
+módulos mezclan tablas de datos con constructores de mallas (`accessories.ts`, `finish.ts`, `procparts.ts`), así que el
+generador arrastra Three.js al importarlos aunque no dibuje nada. **Propuesta** (no hecha, para no reescribir sin
+avisar): partir cada uno en `*.data.ts` (tablas y perfiles, sin Three.js) y `*.mesh.ts` (constructores), y mover a JSON
+las tablas que aún están en código (accesorios, acabados, rarezas, tipos). Estimación: 2-3 h, riesgo bajo (los tests de
+generador y taller lo cubren).
+
 ## Sistema de armas
 
 Un arma = **tipo × piezas × rareza × efectos × variaciones**.

@@ -392,6 +392,7 @@ async function boot() {
   const clock = new THREE.Clock();
   let shownPickup: Pickup | null = null;
   const debug = { fire: false, aim: false }; // usado por las pruebas automáticas
+  let frameNo = 0;
   function frame() {
     const dt = Math.min(clock.getDelta(), 0.05);
     const edges = input.padEdges();
@@ -498,7 +499,10 @@ async function boot() {
     if (state === "workbench" || state === "pause" || state === "title") view.update(dt);
     if (state === "shop") shop.update(dt);
     hud();
-    renderer.render(scene, camera);
+    // Detrás del inventario, el taller y la máquina la sala apenas se ve: se redibuja 1 de cada 4 fotogramas
+    // (el inicio y la pausa la mantienen viva). Así abrir un menú no cuesta más que jugar.
+    frameNo++;
+    if (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0) renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
   player.applyCamera(camera, 0);

@@ -131,7 +131,7 @@ export class ModelView {
   private camera = new THREE.PerspectiveCamera(30, 1, 0.01, 30);
   private model: THREE.Object3D | null = null;
   private token = 0; private host: HTMLElement | null = null;
-  yaw = -0.5; pitch = 0.18; zoom = 1; private dist = 1; private dragging = false; private last = [0, 0];
+  yaw = -0.2; pitch = 0.18; private spinT = 0; zoom = 1; private dist = 1; private dragging = false; private last = [0, 0];
   autoSpin = true;
   /** Volver al encuadre de 3/4 en el próximo modelo (al elegir otra arma). */
   resetYaw = false;
@@ -161,7 +161,7 @@ export class ModelView {
     if (my !== this.token) return;
     if (this.model) this.scene.remove(this.model);
     this.model = built.group; this.scene.add(built.group); this.dist = built.length * 1.7 + 0.08;
-    if (this.resetYaw) { this.yaw = -0.5; this.resetYaw = false; }
+    if (this.resetYaw) { this.yaw = -0.2; this.spinT = 0; this.resetYaw = false; }
   }
   update(dt: number) {
     if (!this.renderer || !this.host || !this.host.offsetParent) return;
@@ -169,9 +169,11 @@ export class ModelView {
     const c = this.renderer.domElement;
     if (c.width !== Math.round(r.width * this.renderer.getPixelRatio()) || c.height !== Math.round(r.height * this.renderer.getPixelRatio())) this.renderer.setSize(r.width, r.height, false);
     this.camera.aspect = r.width / r.height; this.camera.updateProjectionMatrix();
-    if (!this.dragging && this.autoSpin) this.yaw += dt * 0.25;
+    // Giro automático: vaivén alrededor de la vista de 3/4 (nunca de punta, que la haría parecer diminuta)
+    if (!this.dragging && this.autoSpin) this.spinT += dt;
+    const yaw = this.yaw + Math.sin(this.spinT * 0.45) * 0.8;
     const d = this.dist * this.zoom;
-    this.camera.position.set(Math.sin(this.yaw) * Math.cos(this.pitch) * d, Math.sin(this.pitch) * d, Math.cos(this.yaw) * Math.cos(this.pitch) * d); this.camera.lookAt(0, 0, 0);
+    this.camera.position.set(Math.sin(yaw) * Math.cos(this.pitch) * d, Math.sin(this.pitch) * d, Math.cos(yaw) * Math.cos(this.pitch) * d); this.camera.lookAt(0, 0, 0);
     this.renderer.render(this.scene, this.camera);
   }
 }
