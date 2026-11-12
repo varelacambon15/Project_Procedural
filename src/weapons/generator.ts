@@ -176,9 +176,9 @@ function weighted<T>(r: Rng, arr: T[], w: (x: T) => number): T {
 /** Proporción de armas del kit modular en cada tipo que lo admite. */
 const KIT_SHARE: Partial<Record<WeaponType, number>> = { rifle: 0.4, pistol: 0.3, shotgun: 0.4 };
 /** Parte de las pistolas que son modulares generadas por código (el resto: kit y modelos enteros). */
-const PROC_PISTOL_SHARE = 0.5;
+const PROC_PISTOL_SHARE = 0.65;
 /** Parte de los revólveres generados por código (el resto: modelos enteros). */
-const PROC_REVOLVER_SHARE = 0.5;
+const PROC_REVOLVER_SHARE = 0.65;
 const ERA_W: Record<PEra, number> = { modern: 4, classic: 2, rustic: 2, scifi: 1.5 };
 /** Peso de cada familia al elegir arquetipo (las de corredera son las más comunes). */
 const FAMILY_W: Record<string, number> = { auto: 1, frontmag: 0.8, carbine: 1.2, revolver: 1 };
@@ -611,12 +611,14 @@ export class WeaponGenerator {
     const cands: { tw: Tweaks; bl: number; sim: number; d: number; ch: string[] }[] = [];
     let amp = 1;
     // Cambios llamativos solo en una parte de las armas (si no, el generador los usaría siempre para alejarse de la base)
-    const rare = { nostock: r() < 0.3, hgStock: r() < 0.4 };
+    const rare = { nostock: r() < 0.3, hgStock: r() < 0.4, front: r() < 0.4 };
     for (let i = 0; i < 40; i++) {
       // Si la mejor tirada hasta ahora se aleja demasiado de la base, las siguientes cambian con menos amplitud
       if (best && best.sim < lo && i % 6 === 5) amp = Math.max(0.35, amp * 0.7);
       if (best && best.sim > hi && i % 4 === 3) amp = Math.min(1.9, amp * 1.2);
-      const { tw, barrelLength: bl } = this.rollOps(r, type, layout, parts, tw0, barrelLength, swaps.length, amp, rare, era);
+      // Si con los cambios normales no entra en la banda (amplitud alta), se permiten también culata y conjunto carabina
+      const gate = amp > 1.4 ? { nostock: rare.nostock, hgStock: true, front: true } : rare;
+      const { tw, barrelLength: bl } = this.rollOps(r, type, layout, parts, tw0, barrelLength, swaps.length, amp, gate, era);
       if (layout === "modular-long" && base) {
         const get = (role: string) => this.byId.get(parts.find((p) => p.role === role)!.from)!;
         if (!longGunOk(base, get("stock"), get("front"), get("grip"), type, tw)) continue;
@@ -626,7 +628,9 @@ export class WeaponGenerator {
         const sp = this.silhouette(layout, parts, tw, bl); const xs = sp.map((p) => p[0]);
         const L = Math.max(...xs) - Math.min(...xs), ref = TYPE_LENGTH[type] ?? 0.9;
         const handgun = type === "pistol" || type === "revolver";
-        if (L / ref < 0.75 || L / ref > (handgun && tw.pstock ? 2.1 : 1.3)) continue;
+        // (armas cortas con culata o conjunto carabina: más largas a propósito)
+        const short = handgun || type === "smg" || type === "bullpup";
+        if (L / ref < 0.75 || L / ref > (handgun && (tw.pstock || tw.pfront) ? 2.1 : short && tw.pfront && !tw.cutFront ? 1.6 : 1.3)) continue;
       }
       const ch = changesOf(layout, tw, bl, swaps);
       const sim = similarity(ref, this.silhouette(layout, parts, tw, bl));
@@ -648,7 +652,7 @@ export class WeaponGenerator {
     return parts.slice(1).filter((p) => p.from !== baseId && !(layout === "kit" && defaults.some((d) => d.from === p.from)));
   }
 
-  private rollOps(r: Rng, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw0: Tweaks, barrelLength: number, swaps: number, amp = 1, rare: { nostock: boolean; hgStock: boolean } = { nostock: true, hgStock: true }, era: Era = "modern"): { tw: Tweaks; barrelLength: number } {
+  private rollOps(r: Rng, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw0: Tweaks, barrelLength: number, swaps: number, amp = 1, rare: { nostock: boolean; hgStock: boolean; front?: boolean } = { nostock: true, hgStock: true, front: true }, era: Era = "modern"): { tw: Tweaks; barrelLength: number } {
     const long = type !== "pistol" && type !== "revolver";
     const tw: Tweaks = { ...tw0, rail: null, drum: false, device: null, nostock: false, magLen: 1, stockH: 1, fold: false, pstock: null, pfront: null, cutRear: null, cutFront: null, adds: null };
     let bl = barrelLength;
@@ -682,7 +686,7 @@ export class WeaponGenerator {
     } else if (layout === "body") {
       // Las recortadas no se alargan (dejarían de ser recortadas): solo se pueden acortar un poco
       const sawed = /sawed|sawoff|mini|shotgun-03/.test(parts[0].from);
-      ops.push({ id: "barrel", run: () => (tw.body = sawed ? 0.82 + r() * 0.1 : long ? away(0.75, 1.4) : away(0.82, 1.32)) });
+      ops.push({ id: "barrel", run: () => { if (!tw.pfront) tw.body = sawed ? 0.82 + r() * 0.1 : long ? away(0.75, 1.4) : away(0.82, 1.32); } });
       // Armas enteras largas: se corta el cuerpo y se pone culata o guardamanos por código (solo si la sección es fina)
       const prof = base?.profiles?.body;
       // Armas cortas: culata de hombro opcional (pistolas ametralladoras, carabinas de revólver)
@@ -693,7 +697,21 @@ export class WeaponGenerator {
           const k = Math.min(n - 1, Math.floor(n * 0.06)); const t = prof.top[k], b = prof.bot[k];
           if (t == null || b == null) return;
           const y = b + (t - b) * 0.35;
-          tw.pstock = { kind: r() < 0.5 ? "tube" : "skeleton", at: [prof.x0 + L * 0.04, y], h: 0.032, w: 0.024, len: 0.17 + r() * 0.08, drop: 0.012 + r() * 0.02 };
+          // Tipos de culata (prompt 05-A): esqueleto, tubo, plegable, brace de polímero, de carabina; madera en las clásicas
+          const kinds: StockKind[] = era === "classic" ? ["wood", "folding"] : era === "rustic" ? ["wood", "tube", "skeleton", "folding"] : ["skeleton", "tube", "folding", "polymer", "carbine"];
+          tw.pstock = { kind: kinds[Math.floor(r() * kinds.length)], at: [prof.x0 + L * 0.04, y], h: 0.032, w: 0.024, len: 0.15 + r() * 0.07, drop: 0.012 + r() * 0.02 };
+        } });
+      }
+      // Conjunto carabina (armas cortas y bullpups): cañón largo con guardamanos montado en la boca, sin cortar el cuerpo
+      const mz = base?.sockets.muzzle;
+      if (mz && prof && ((rare.front ?? true) && (!long || type === "smg") || type === "bullpup") && !sawed) {
+        ops.push({ id: "pfront", run: () => {
+          const k = Math.min(prof.top.length - 1, Math.floor(prof.top.length * 0.93)); const t = prof.top[k], b = prof.bot[k];
+          const hBody = t != null && b != null ? t - b : 0.03;
+          const h = Math.min(type === "bullpup" ? 0.06 : 0.045, Math.max(0.024, Math.min(hBody, (mz.diameter ?? 0.012) * 2.6)));
+          const len = (long ? 0.12 : 0.07) + r() * (long ? 0.12 : 0.07);
+          tw.body = 1; // sin estirar el cuerpo: el conjunto va en la boca de serie
+          tw.pfront = { kind: era === "classic" || r() < 0.5 ? "tube" : "quad", at: [mz.pos[0] - 0.012, mz.pos[1]], h, w: Math.min(0.04, h * 0.9), len, barrel: 0.02 + r() * 0.05, d: Math.min(0.02, Math.max(0.011, mz.diameter ?? 0.013)) };
         } });
       }
       if (long && prof && !sawed) {
@@ -725,10 +743,13 @@ export class WeaponGenerator {
       if (type === "shotgun") { if (!sawedGun) wantAdd("shield"); wantAdd("rib"); }
       if (type === "smg") wantAdd("shield"); // camisa perforada del cañón, clásica en subfusiles
       if (type === "rifle" || type === "sniper") wantAdd("ladder");
+      if (type === "bullpup") wantAdd("bipod");
       if (type === "lmg" || type === "sniper") wantAdd("bipod");
     } else if (layout === "modular-long" && (type === "lmg" || type === "sniper")) wantAdd("bipod");
     // Kit modular (fusiles): bípode plegado (más variedad entre armas del kit). Sin lanzagranadas: descartado (05).
     if (layout === "kit" && type === "rifle") wantAdd("bipod");
+    // Escopetas del kit: cubrecañón perforado y banda ventilada (sus cambios de serie apenas movían la silueta)
+    if (layout === "kit" && type === "shotgun") { wantAdd("shield"); wantAdd("rib"); }
     // Añadidos grandes (cambian de verdad la silueta): asa, camisa y carrillera
     if (layout !== "kit") {
       if (type === "rifle" || type === "bullpup" || type === "lmg") wantAdd("handle");
@@ -737,8 +758,10 @@ export class WeaponGenerator {
     }
     // Cargador alargado o de tambor solo donde el cargador va por debajo (no en armas con cargador superior, como el P90)
     const magBelow = !!base?.sockets.magazine && base.sockets.magazine.pos[1] < (base.bounds.min[1] + base.bounds.max[1]) / 2;
-    if (magBelow && type !== "shotgun") ops.push({ id: "mag", run: () => { if (["smg", "rifle", "lmg"].includes(type) && r() < 0.35) tw.drum = true; else tw.magLen = 1.22 + r() * 0.28; } });
+    if (magBelow && type !== "shotgun") ops.push({ id: "mag", run: () => { if (["smg", "rifle", "lmg", "bullpup"].includes(type) && r() < 0.35) tw.drum = true; else tw.magLen = 1.22 + r() * 0.28; } });
     if (layout !== "kit") { ops.push({ id: "rail", run: () => (tw.rail = [0, 0, 0]) }); ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) }); }
+    // Escopetas del kit: linterna o láser bajo el cañón
+    else if (type === "shotgun") ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) });
     const isKitPistol = layout === "kit" && type === "pistol";
     // Cada era admite sus cambios: la clásica no lleva raíles, accesorios tácticos, culatas de tubo ni guardamanos de raíles
     if (era === "classic") for (let i = ops.length - 1; i >= 0; i--) if (["rail", "device", "fold"].includes(ops[i].id)) ops.splice(i, 1);
@@ -749,14 +772,14 @@ export class WeaponGenerator {
     for (const op of ops.slice(0, n)) op.run();
     if (era === "classic") {
       // Piezas por código de estilo clásico: culata maciza (madera) y camisa ventilada; nunca raíles
-      if (tw.pstock && tw.pstock.kind !== "solid") tw.pstock = { ...tw.pstock, kind: "solid" };
+      if (tw.pstock && !["solid", "wood", "folding"].includes(tw.pstock.kind)) tw.pstock = { ...tw.pstock, kind: "wood" };
       if (tw.pfront && tw.pfront.kind === "quad") tw.pfront = { ...tw.pfront, kind: "tube" };
     }
     // Raíl y accesorio: se colocan sobre la zona delantera ya variada (guardamanos o tramo del cañón)
     if (tw.rail || tw.device) {
       const wantRail = !!tw.rail, wantDev = !!tw.device; tw.rail = null; tw.device = null;
       const { byRole } = this.placedParts(layout, parts, tw, bl);
-      const zone = byRole.get(layout === "modular-long" ? "front" : isKitPistol ? "receiver" : "body");
+      const zone = byRole.get(layout === "modular-long" ? "front" : isKitPistol ? "receiver" : layout === "kit" ? "barrel" : "body");
       if (zone) {
         const sp = spans([zone]);
         const xs = sp.map((p) => p[0]); const xa = Math.min(...xs), xb = Math.max(...xs);
@@ -796,7 +819,8 @@ export class WeaponGenerator {
     const save = tw.adds; tw.adds = null;
     const { byRole } = this.placedParts(layout, parts, tw, bl);
     tw.adds = save;
-    const zone = byRole.get(layout === "body" ? "body" : "front");
+    // Zona de los añadidos: el cuerpo (arma entera), el guardamanos (despiezada) o el cañón (kit)
+    const zone = byRole.get(layout === "body" ? "body" : layout === "kit" ? "barrel" : "front");
     if (!zone) return null;
     const bins = new Map<number, { x: number; lo: number; hi: number }>();
     for (const [x, lo, hi] of spans([zone])) {
