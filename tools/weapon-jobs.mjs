@@ -102,6 +102,39 @@ ALL.push(
   w("usp45", "USP .45 SD", "pistol", "^Usp45-Silenced$", "^Pistol_Magazine_3$"),
 );
 
+// --- Wp-Pack-2 (estilo antiguo: madera y acero) y Zsky Weapons Pack (moderno low poly) ---
+// Mallas enteras con varios materiales. Revisión del piloto: en Zsky los cortes caen en mal sitio (culatas sueltas,
+// bullpups), así que se usan como armas enteras; del Wp-Pack-2 se despiezan solo los fusiles y carabinas de madera,
+// que mezclan bien entre sí. Las armas largas se despiezan conservando madera y metal, y solo
+// intercambian piezas dentro de su propia familia. Las variantes larga/media/corta conservan su largo relativo.
+const LEN = { Long: 1.1, Medium: 1, Short: 0.86, Complete: 1.05, Mini: 0.85, SawOff: 0.72 };
+const W2 = (dir, file, type, extra = {}) => {
+  const variant = (file.match(/-(Long|Medium|Short|Complete|Mini|SawOff)$/) || [])[1];
+  return { kind: "fbx", pack: "wp2", id: "v-" + file.toLowerCase().replace(/[^a-z0-9]+/g, "-"), label: file.replace(/-/g, " "), fbx: `raw/wp2/${dir}/${file}.fbx`, type,
+    hint: { lengthMul: LEN[variant] ?? 1 }, ...extra };
+};
+ALL.push(
+  ...["A", "B"].flatMap((v) => ["Long", "Medium", "Short"].map((l) => W2("Rifles", `BoltAction-Rifles-${v}-${l}`, l === "Short" ? "rifle" : "sniper", { modular: true }))),
+  ...["Long", "Medium", "Short"].map((l) => W2("Rifles", `Lever-Rifles-${l}`, "rifle", { modular: true })),
+  ...["Long", "Medium", "Short"].map((l) => W2("Rifles", `Revolver-Rifles-${l}`, "rifle", { modular: true })),
+  ...["Carabine-Shotgun-Long", "Carabine-Shotgun-Short", "Hunter-Shotgun-Complete", "Hunter-Shotgun-Mini", "Lever-Shotgun", "Pump-Shotgun-Long", "Pump-Shotgun-Short", "SemiAutomati-Schotgun"].map((f) => W2("Shotgun", f, "shotgun", { modular: true })),
+  W2("Shotgun", "Hunter-Shotgun-SawOff", "shotgun"),
+  // Subfusiles enteros: empuñaduras verticales y culatas de alambre no se cortan limpio
+  ...["M3GG", "M3GG-Drum", "PPSH", "PPSH-Drum"].map((f) => W2("SMG", f, "smg")),
+  ...["Long", "Medium", "Short"].map((l) => W2("Pistols", `MSR-C96-${l}`, "pistol")),
+  ...["A-Long", "A-Medium", "A-Short", "B-Long", "B-Medium", "B-Short"].map((v) => W2("Pistols", `Revolver-${v}`, "revolver")),
+);
+// Descartados por no encajar: Lanchester (orientación invertida) y el revólver retorcido (modelo de broma).
+const ZS = (file, type) => ({ kind: "fbx", pack: "zsky", id: "z-" + file.toLowerCase().replace(/_/g, "-"), label: file.replace(/_/g, " "), fbx: `raw/zsky/${file}.fbx`, type });
+ALL.push(
+  ...[1, 2].map((i) => ZS(`AssaultRifle_0${i}`, "rifle")), ZS("AssaultRifle_03", "bullpup"),
+  ...[1, 2, 3, 4, 5].map((i) => ZS(`SubmachineGun_0${i}`, "smg")),
+  ...[1, 2, 3].map((i) => ZS(`Shotgun_0${i}`, "shotgun")),
+  ...[1, 2].map((i) => ZS(`SniperRifle_0${i}`, "sniper")),
+  ...[1, 2, 3].map((i) => ZS(`Pistol_0${i}`, "pistol")),
+  ...[1, 2].map((i) => ZS(`Revolver_0${i}`, "revolver")),
+);
+
 // Cuarentena: piezas que no se usan sueltas, con el motivo (revisión del piloto de despiece).
 const QUARANTINE = {
   "w-garand": "Al trocear desaparece el cajón: se usa como arma entera.",

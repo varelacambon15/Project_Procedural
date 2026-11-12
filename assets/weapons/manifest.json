@@ -5753,7 +5753,7 @@
    "approved": [],
    "file": "modern/w-vss.glb",
    "label": "VSS",
-   "quarantine": "Queda un bloque suelto detrás del cajón: se usa como arma entera."
+   "quarantine": "Queda un bloque suelto detr\u00e1s del caj\u00f3n: se usa como arma entera."
   },
   {
    "id": "w-l115",
@@ -6706,7 +6706,7 @@
    "approved": [],
    "file": "modern/w-garand.glb",
    "label": "M1 Garand",
-   "quarantine": "Al trocear desaparece el cajón: se usa como arma entera."
+   "quarantine": "Al trocear desaparece el caj\u00f3n: se usa como arma entera."
   },
   {
    "id": "w-luger",
@@ -9494,6 +9494,4781 @@
    "approved": [],
    "file": "misc/m-revolver-l.glb",
    "label": "Long Revolver"
+  },
+  {
+   "id": "v-boltaction-rifles-a-long",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-long"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-boltaction-rifles-a-long"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-boltaction-rifles-a-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-boltaction-rifles-a-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-long"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.66,
+      0.0737,
+      -0.0186
+     ],
+     "diameter": 0.0269,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.308,
+      0.0906,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.308,
+      0.0387,
+      0
+     ],
+     "length": 0.241,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.66,
+     -0.0906,
+     -0.0436
+    ],
+    "max": [
+     0.66,
+     0.0906,
+     0.0436
+    ]
+   },
+   "triangles": 1038,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.4802,
+      0.0017,
+      0
+     ],
+     "size": [
+      0.0975,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      -0.1359,
+      0.0587,
+      0
+     ],
+     "size": [
+      0.0637,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.308,
+      0.0328,
+      0
+     ],
+     "size": [
+      0.3443,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.4802,
+      0.0017,
+      0
+     ],
+     "size": [
+      0.0975,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      -0.1359,
+      0.0587,
+      0
+     ],
+     "size": [
+      0.0637,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.4331,
+      0.0328,
+      0
+     ],
+     "size": [
+      0.0413,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "stock",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-boltaction-rifles-a-long.glb",
+   "label": "BoltAction Rifles A Long"
+  },
+  {
+   "id": "v-boltaction-rifles-a-medium",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-medium"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-medium"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-medium"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-medium"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-boltaction-rifles-a-medium"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-boltaction-rifles-a-medium"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-boltaction-rifles-a-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-medium"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0831,
+      -0.021
+     ],
+     "diameter": 0.0303,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.23,
+      0.1015,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.23,
+      0.049,
+      0
+     ],
+     "length": 0.2191,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1021,
+     -0.0492
+    ],
+    "max": [
+     0.6,
+     0.1021,
+     0.0492
+    ]
+   },
+   "triangles": 1002,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.3865,
+      0.0036,
+      0
+     ],
+     "size": [
+      0.107,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      -0.0735,
+      0.0643,
+      0
+     ],
+     "size": [
+      0.0668,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.218,
+      0.0336,
+      0
+     ],
+     "size": [
+      0.289,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.3865,
+      0.0036,
+      0
+     ],
+     "size": [
+      0.107,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      -0.0735,
+      0.0643,
+      0
+     ],
+     "size": [
+      0.0668,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.3438,
+      0.0336,
+      0
+     ],
+     "size": [
+      0.0375,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "stock",
+    "grip",
+    "front",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-boltaction-rifles-a-medium.glb",
+   "label": "BoltAction Rifles A Medium"
+  },
+  {
+   "id": "v-boltaction-rifles-a-short",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-a-short"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-boltaction-rifles-a-short"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-boltaction-rifles-a-short"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-boltaction-rifles-a-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-a-short"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.387,
+      0.0706,
+      -0.0178
+     ],
+     "diameter": 0.0257,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.0919,
+      0.0862,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0919,
+      0.0215,
+      0
+     ],
+     "length": 0.1526,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.387,
+     -0.0867,
+     -0.0418
+    ],
+    "max": [
+     0.387,
+     0.0867,
+     0.0418
+    ]
+   },
+   "triangles": 1000,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.2009,
+      0.0038,
+      0
+     ],
+     "size": [
+      0.0894,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      0.0171,
+      0.0534,
+      0
+     ],
+     "size": [
+      0.0591,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.0919,
+      0.0215,
+      0
+     ],
+     "size": [
+      0.218,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.2009,
+      0.0038,
+      0
+     ],
+     "size": [
+      0.0894,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      0.0171,
+      0.0534,
+      0
+     ],
+     "size": [
+      0.0591,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.1653,
+      0.0215,
+      0
+     ],
+     "size": [
+      0.0403,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "stock",
+    "grip",
+    "front",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-boltaction-rifles-a-short.glb",
+   "label": "BoltAction Rifles A Short"
+  },
+  {
+   "id": "v-boltaction-rifles-b-long",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-long"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-boltaction-rifles-b-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-boltaction-rifles-b-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-boltaction-rifles-b-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-boltaction-rifles-b-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-b-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-b-long"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.66,
+      0.085,
+      -0.0191
+     ],
+     "diameter": 0.0277,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.1843,
+      0.102,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.1843,
+      0.0937,
+      0
+     ],
+     "length": 0.3758,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.66,
+     -0.102,
+     -0.0457
+    ],
+    "max": [
+     0.66,
+     0.102,
+     0.0457
+    ]
+   },
+   "triangles": 1044,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.4527,
+      0.0062,
+      0
+     ],
+     "size": [
+      0.1049,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      0.0842,
+      0.0688,
+      0
+     ],
+     "size": [
+      0.0594,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.1843,
+      0.0393,
+      0
+     ],
+     "size": [
+      0.5368,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.4527,
+      0.0062,
+      0
+     ],
+     "size": [
+      0.1049,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      0.0842,
+      0.0688,
+      0
+     ],
+     "size": [
+      0.0594,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.3094,
+      0.0393,
+      0
+     ],
+     "size": [
+      0.2338,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "grip",
+    "grip",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-boltaction-rifles-b-long.glb",
+   "label": "BoltAction Rifles B Long"
+  },
+  {
+   "id": "v-boltaction-rifles-b-medium",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-medium"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-medium"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-medium"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-medium"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-boltaction-rifles-b-medium"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-boltaction-rifles-b-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-b-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-b-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-b-medium"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0994,
+      -0.0224
+     ],
+     "diameter": 0.0324,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.155,
+      0.1191,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.155,
+      0.0383,
+      0
+     ],
+     "length": 0.2891,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1191,
+     -0.0533
+    ],
+    "max": [
+     0.6,
+     0.1191,
+     0.0533
+    ]
+   },
+   "triangles": 1028,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.3615,
+      0.0066,
+      0
+     ],
+     "size": [
+      0.1237,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      0.0515,
+      0.0597,
+      0
+     ],
+     "size": [
+      0.1107,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.143,
+      0.0094,
+      0
+     ],
+     "size": [
+      0.389,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.3615,
+      0.0066,
+      0
+     ],
+     "size": [
+      0.1237,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      0.0515,
+      0.0597,
+      0
+     ],
+     "size": [
+      0.1107,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.2688,
+      0.0094,
+      0
+     ],
+     "size": [
+      0.1375,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-boltaction-rifles-b-medium.glb",
+   "label": "BoltAction Rifles B Medium"
+  },
+  {
+   "id": "v-boltaction-rifles-b-short",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-boltaction-rifles-b-short"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-boltaction-rifles-b-short"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-boltaction-rifles-b-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-b-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-b-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-boltaction-rifles-b-short"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.387,
+      0.0747,
+      -0.0168
+     ],
+     "diameter": 0.0244,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.0838,
+      0.0896,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0838,
+      0.0288,
+      0
+     ],
+     "length": 0.1639,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.387,
+     -0.0896,
+     -0.0401
+    ],
+    "max": [
+     0.387,
+     0.0896,
+     0.0401
+    ]
+   },
+   "triangles": 942,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.2009,
+      0.0061,
+      0
+     ],
+     "size": [
+      0.091,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      0.0332,
+      0.0556,
+      0
+     ],
+     "size": [
+      0.0617,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.0922,
+      0.0053,
+      0
+     ],
+     "size": [
+      0.2175,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.2009,
+      0.0061,
+      0
+     ],
+     "size": [
+      0.091,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      0.0332,
+      0.0557,
+      0
+     ],
+     "size": [
+      0.0616,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.1572,
+      0.0053,
+      0
+     ],
+     "size": [
+      0.0564,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-boltaction-rifles-b-short.glb",
+   "label": "BoltAction Rifles B Short"
+  },
+  {
+   "id": "v-lever-rifles-long",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-lever-rifles-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-lever-rifles-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-lever-rifles-long"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-lever-rifles-long"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-lever-rifles-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-lever-rifles-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-lever-rifles-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-lever-rifles-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-lever-rifles-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-lever-rifles-long"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.495,
+      0.052,
+      0
+     ],
+     "diameter": 0.0275,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.2104,
+      0.0804,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.2104,
+      0.0358,
+      0
+     ],
+     "length": 0.2096,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.495,
+     -0.0835,
+     -0.0234
+    ],
+    "max": [
+     0.495,
+     0.0835,
+     0.0234
+    ]
+   },
+   "triangles": 1030,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.3601,
+      0.0037,
+      0
+     ],
+     "size": [
+      0.093,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      -0.0606,
+      0.0307,
+      0
+     ],
+     "size": [
+      0.0758,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.2104,
+      -0.0061,
+      0
+     ],
+     "size": [
+      0.2995,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.3601,
+      0.0037,
+      0
+     ],
+     "size": [
+      0.093,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      -0.0606,
+      0.0307,
+      0
+     ],
+     "size": [
+      0.0758,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.3042,
+      -0.0061,
+      0
+     ],
+     "size": [
+      0.0722,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "stock",
+    "grip",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-lever-rifles-long.glb",
+   "label": "Lever Rifles Long"
+  },
+  {
+   "id": "v-lever-rifles-medium",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-lever-rifles-medium"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-lever-rifles-medium"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-lever-rifles-medium"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-lever-rifles-medium"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-lever-rifles-medium"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-lever-rifles-medium"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-lever-rifles-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-lever-rifles-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-lever-rifles-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-lever-rifles-medium"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.053,
+      0
+     ],
+     "diameter": 0.0251,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.1819,
+      0.0819,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.1819,
+      -0.0009,
+      0
+     ],
+     "length": 0.1774,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.0851,
+     -0.0238
+    ],
+    "max": [
+     0.45,
+     0.0851,
+     0.0238
+    ]
+   },
+   "triangles": 1060,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.3086,
+      0.0046,
+      0
+     ],
+     "size": [
+      0.0933,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      -0.0551,
+      0.0312,
+      0
+     ],
+     "size": [
+      0.0772,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.1905,
+      -0.0168,
+      0
+     ],
+     "size": [
+      0.2003,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.3086,
+      0.0046,
+      0
+     ],
+     "size": [
+      0.0933,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      -0.0551,
+      0.0312,
+      0
+     ],
+     "size": [
+      0.0772,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.2672,
+      -0.0168,
+      0
+     ],
+     "size": [
+      0.0469,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "stock",
+    "grip",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-lever-rifles-medium.glb",
+   "label": "Lever Rifles Medium"
+  },
+  {
+   "id": "v-lever-rifles-short",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-lever-rifles-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-lever-rifles-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-lever-rifles-short"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-lever-rifles-short"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-lever-rifles-short"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-lever-rifles-short"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-lever-rifles-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-lever-rifles-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-lever-rifles-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-lever-rifles-short"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.387,
+      0.0509,
+      0
+     ],
+     "diameter": 0.0241,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.1403,
+      0.0786,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.1403,
+      0.0338,
+      0
+     ],
+     "length": 0.1526,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.387,
+     -0.0817,
+     -0.0229
+    ],
+    "max": [
+     0.387,
+     0.0817,
+     0.0229
+    ]
+   },
+   "triangles": 1078,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.2493,
+      0.0048,
+      0
+     ],
+     "size": [
+      0.0889,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      -0.0313,
+      0.03,
+      0
+     ],
+     "size": [
+      0.0741,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.1507,
+      -0.0308,
+      0
+     ],
+     "size": [
+      0.1662,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.2493,
+      0.0048,
+      0
+     ],
+     "size": [
+      0.0889,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      -0.0313,
+      0.03,
+      0
+     ],
+     "size": [
+      0.0741,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.2137,
+      -0.0308,
+      0
+     ],
+     "size": [
+      0.0403,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "stock",
+    "grip",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-lever-rifles-short.glb",
+   "label": "Lever Rifles Short"
+  },
+  {
+   "id": "v-revolver-rifles-long",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-revolver-rifles-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-revolver-rifles-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-revolver-rifles-long"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-revolver-rifles-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-revolver-rifles-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-revolver-rifles-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-revolver-rifles-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-revolver-rifles-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-revolver-rifles-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-revolver-rifles-long"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.495,
+      0.0709,
+      0
+     ],
+     "diameter": 0.026,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.1072,
+      0.0922,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.1072,
+      0.0825,
+      0
+     ],
+     "length": 0.2963,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.495,
+     -0.1029,
+     -0.0346
+    ],
+    "max": [
+     0.495,
+     0.1029,
+     0.0346
+    ]
+   },
+   "triangles": 1718,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.3189,
+      -0.0092,
+      0
+     ],
+     "size": [
+      0.0696,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      0.1044,
+      0.0536,
+      0
+     ],
+     "size": [
+      0.0652,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.1073,
+      0.0276,
+      0
+     ],
+     "size": [
+      0.4232,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.3189,
+      -0.0092,
+      0
+     ],
+     "size": [
+      0.0696,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      0.1044,
+      0.0536,
+      0
+     ],
+     "size": [
+      0.0652,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.1758,
+      0.0276,
+      0
+     ],
+     "size": [
+      0.1454,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "grip",
+    "grip",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-revolver-rifles-long.glb",
+   "label": "Revolver Rifles Long"
+  },
+  {
+   "id": "v-revolver-rifles-medium",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-revolver-rifles-medium"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-revolver-rifles-medium"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-revolver-rifles-medium"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-revolver-rifles-medium"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-revolver-rifles-medium"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-revolver-rifles-medium"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-revolver-rifles-medium"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-revolver-rifles-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-revolver-rifles-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-revolver-rifles-medium"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-revolver-rifles-medium"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0731,
+      0
+     ],
+     "diameter": 0.0268,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.0225,
+      0.0951,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0225,
+      0.0852,
+      0
+     ],
+     "length": 0.2168,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1061,
+     -0.0357
+    ],
+    "max": [
+     0.45,
+     0.1061,
+     0.0357
+    ]
+   },
+   "triangles": 1674,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.1774,
+      0.0259,
+      0
+     ],
+     "size": [
+      0.1048,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      0.1324,
+      0.0553,
+      0
+     ],
+     "size": [
+      0.0673,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.0868,
+      -0.0115,
+      0
+     ],
+     "size": [
+      0.1452,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.1774,
+      0.0257,
+      0
+     ],
+     "size": [
+      0.1043,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      0.1324,
+      0.0553,
+      0
+     ],
+     "size": [
+      0.0673,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.1078,
+      -0.0115,
+      0
+     ],
+     "size": [
+      0.1031,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "stock",
+    "grip",
+    "grip",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-revolver-rifles-medium.glb",
+   "label": "Revolver Rifles Medium"
+  },
+  {
+   "id": "v-revolver-rifles-short",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-revolver-rifles-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-revolver-rifles-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-revolver-rifles-short"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-revolver-rifles-short"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-revolver-rifles-short"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-revolver-rifles-short"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-revolver-rifles-short"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-revolver-rifles-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-revolver-rifles-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-revolver-rifles-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-revolver-rifles-short"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.387,
+      0.0808,
+      0
+     ],
+     "diameter": 0.0296,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0.0613,
+      0.105,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      0.0613,
+      0.0869,
+      0
+     ],
+     "length": 0.209,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.387,
+     -0.1172,
+     -0.0395
+    ],
+    "max": [
+     0.387,
+     0.1172,
+     0.0395
+    ]
+   },
+   "triangles": 1668,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.088,
+      0.028,
+      0
+     ],
+     "size": [
+      0.1151,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      0.2106,
+      0.0609,
+      0
+     ],
+     "size": [
+      0.074,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.0225,
+      -0.0268,
+      0
+     ],
+     "size": [
+      0.1311,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.088,
+      0.028,
+      0
+     ],
+     "size": [
+      0.1151,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      0.2106,
+      0.0609,
+      0
+     ],
+     "size": [
+      0.074,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.0148,
+      -0.0268,
+      0
+     ],
+     "size": [
+      0.1156,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "stock",
+    "grip",
+    "grip",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-revolver-rifles-short.glb",
+   "label": "Revolver Rifles Short"
+  },
+  {
+   "id": "v-carabine-shotgun-long",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-carabine-shotgun-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-carabine-shotgun-long"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-carabine-shotgun-long"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-carabine-shotgun-long"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-carabine-shotgun-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-carabine-shotgun-long"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-carabine-shotgun-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-carabine-shotgun-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-carabine-shotgun-long"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-carabine-shotgun-long"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.55,
+      0.0563,
+      0
+     ],
+     "diameter": 0.0314,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      -0.0733,
+      0.0918,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0733,
+      0.0699,
+      0
+     ],
+     "length": 0.265,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.55,
+     -0.0918,
+     -0.0246
+    ],
+    "max": [
+     0.55,
+     0.0918,
+     0.0246
+    ]
+   },
+   "triangles": 1020,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.2626,
+      0.0201,
+      0
+     ],
+     "size": [
+      0.0501,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      0.116,
+      0.0506,
+      0
+     ],
+     "size": [
+      0.0504,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.1164,
+      0.0112,
+      0
+     ],
+     "size": [
+      0.2484,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.2626,
+      0.0201,
+      0
+     ],
+     "size": [
+      0.0501,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      0.116,
+      0.0506,
+      0
+     ],
+     "size": [
+      0.0504,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.1776,
+      0.0112,
+      0
+     ],
+     "size": [
+      0.126,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "stock",
+    "grip",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-carabine-shotgun-long.glb",
+   "label": "Carabine Shotgun Long"
+  },
+  {
+   "id": "v-carabine-shotgun-short",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-carabine-shotgun-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-carabine-shotgun-short"
+    },
+    {
+     "role": "receiver",
+     "node": "receiver",
+     "source": "v-carabine-shotgun-short"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-carabine-shotgun-short"
+    },
+    {
+     "role": "stock",
+     "node": "stock",
+     "source": "v-carabine-shotgun-short"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-carabine-shotgun-short"
+    },
+    {
+     "role": "grip",
+     "node": "grip",
+     "source": "v-carabine-shotgun-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-carabine-shotgun-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-carabine-shotgun-short"
+    },
+    {
+     "role": "front",
+     "node": "front",
+     "source": "v-carabine-shotgun-short"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.43,
+      0.0544,
+      0
+     ],
+     "diameter": 0.0304,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0.0143,
+      0.0888,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      0.0143,
+      0.0581,
+      0
+     ],
+     "length": 0.2072,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.43,
+     -0.0888,
+     -0.0238
+    ],
+    "max": [
+     0.43,
+     0.0888,
+     0.0238
+    ]
+   },
+   "triangles": 1108,
+   "pack": "wp2",
+   "joints": {
+    "rear": {
+     "pos": [
+      -0.1337,
+      0.0212,
+      0
+     ],
+     "size": [
+      0.0475,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "front": {
+     "pos": [
+      0.1623,
+      0.0465,
+      0
+     ],
+     "size": [
+      0.0535,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "grip": {
+     "pos": [
+      -0.0644,
+      0.0005,
+      0
+     ],
+     "size": [
+      0.1386,
+      0
+     ],
+     "type": "grip_mount"
+    },
+    "stockFace": {
+     "pos": [
+      -0.1337,
+      0.0212,
+      0
+     ],
+     "size": [
+      0.0473,
+      0
+     ],
+     "type": "stock_mount"
+    },
+    "frontFace": {
+     "pos": [
+      0.1623,
+      0.0465,
+      0
+     ],
+     "size": [
+      0.0535,
+      0
+     ],
+     "type": "handguard_mount"
+    },
+    "gripFace": {
+     "pos": [
+      -0.0672,
+      0.0005,
+      0
+     ],
+     "size": [
+      0.0985,
+      0
+     ],
+     "type": "grip_mount"
+    }
+   },
+   "modular": true,
+   "approved": [
+    "stock",
+    "stock",
+    "grip",
+    "grip",
+    "front",
+    "front",
+    "front"
+   ],
+   "file": "wp2/v-carabine-shotgun-short.glb",
+   "label": "Carabine Shotgun Short"
+  },
+  {
+   "id": "v-hunter-shotgun-complete",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-hunter-shotgun-complete"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-hunter-shotgun-complete"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-hunter-shotgun-complete"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.525,
+      0.0665,
+      0
+     ],
+     "diameter": 0.0332,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0972,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.042,
+      0.0545,
+      0
+     ],
+     "length": 0.336,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.525,
+     -0.0972,
+     -0.0403
+    ],
+    "max": [
+     0.525,
+     0.0972,
+     0.0403
+    ]
+   },
+   "triangles": 1136,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-hunter-shotgun-complete.glb",
+   "label": "Hunter Shotgun Complete"
+  },
+  {
+   "id": "v-hunter-shotgun-mini",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-hunter-shotgun-mini"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-hunter-shotgun-mini"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-hunter-shotgun-mini"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.425,
+      0.1058,
+      -0.0002
+     ],
+     "diameter": 0.0738,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1669,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.034,
+      0.146,
+      0
+     ],
+     "length": 0.272,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.425,
+     -0.1669,
+     -0.0691
+    ],
+    "max": [
+     0.425,
+     0.1669,
+     0.0691
+    ]
+   },
+   "triangles": 1136,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-hunter-shotgun-mini.glb",
+   "label": "Hunter Shotgun Mini"
+  },
+  {
+   "id": "v-lever-shotgun",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-lever-shotgun"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-lever-shotgun"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-lever-shotgun"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0527,
+      0
+     ],
+     "diameter": 0.1143,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.141,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.04,
+      0.1165,
+      0
+     ],
+     "length": 0.32,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.141,
+     -0.0336
+    ],
+    "max": [
+     0.5,
+     0.141,
+     0.0336
+    ]
+   },
+   "triangles": 904,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-lever-shotgun.glb",
+   "label": "Lever Shotgun"
+  },
+  {
+   "id": "v-pump-shotgun-long",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-pump-shotgun-long"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-pump-shotgun-long"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-pump-shotgun-long"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-pump-shotgun-long"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.55,
+      0.0584,
+      0
+     ],
+     "diameter": 0.0337,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0896,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.044,
+      0.0547,
+      0
+     ],
+     "length": 0.352,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.55,
+     -0.0896,
+     -0.0234
+    ],
+    "max": [
+     0.55,
+     0.0896,
+     0.0234
+    ]
+   },
+   "triangles": 978,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-pump-shotgun-long.glb",
+   "label": "Pump Shotgun Long"
+  },
+  {
+   "id": "v-pump-shotgun-short",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-pump-shotgun-short"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-pump-shotgun-short"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-pump-shotgun-short"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-pump-shotgun-short"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.43,
+      0.0553,
+      0
+     ],
+     "diameter": 0.0319,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0849,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0344,
+      0.0523,
+      0
+     ],
+     "length": 0.2752,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.43,
+     -0.0849,
+     -0.0222
+    ],
+    "max": [
+     0.43,
+     0.0849,
+     0.0222
+    ]
+   },
+   "triangles": 978,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-pump-shotgun-short.glb",
+   "label": "Pump Shotgun Short"
+  },
+  {
+   "id": "v-semiautomati-schotgun",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-semiautomati-schotgun"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-semiautomati-schotgun"
+    },
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-semiautomati-schotgun"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0614,
+      0
+     ],
+     "diameter": 0.0366,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0995,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.04,
+      0.0844,
+      0
+     ],
+     "length": 0.32,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.0995,
+     -0.0241
+    ],
+    "max": [
+     0.5,
+     0.0995,
+     0.0241
+    ]
+   },
+   "triangles": 826,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-semiautomati-schotgun.glb",
+   "label": "SemiAutomati Schotgun"
+  },
+  {
+   "id": "v-hunter-shotgun-sawoff",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-hunter-shotgun-sawoff"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.36,
+      0.0681,
+      0
+     ],
+     "diameter": 0.0341,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0996,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0288,
+      0.0909,
+      0
+     ],
+     "length": 0.2304,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.36,
+     -0.0996,
+     -0.0412
+    ],
+    "max": [
+     0.36,
+     0.0996,
+     0.0412
+    ]
+   },
+   "triangles": 1136,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-hunter-shotgun-sawoff.glb",
+   "label": "Hunter Shotgun SawOff"
+  },
+  {
+   "id": "v-m3gg",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-m3gg"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0165,
+      -0.0076
+     ],
+     "diameter": 0.084,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1238,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.02,
+      0.0626,
+      0
+     ],
+     "length": 0.16,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1238,
+     -0.0345
+    ],
+    "max": [
+     0.25,
+     0.1238,
+     0.0345
+    ]
+   },
+   "triangles": 894,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-m3gg.glb",
+   "label": "M3GG"
+  },
+  {
+   "id": "v-m3gg-drum",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-m3gg-drum"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0,
+      0
+     ],
+     "diameter": 0.084,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1072,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.02,
+      0.0349,
+      0
+     ],
+     "length": 0.16,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1072,
+     -0.0538
+    ],
+    "max": [
+     0.25,
+     0.1072,
+     0.0538
+    ]
+   },
+   "triangles": 926,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-m3gg-drum.glb",
+   "label": "M3GG Drum"
+  },
+  {
+   "id": "v-ppsh",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-ppsh"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0006,
+      -0.0087
+     ],
+     "diameter": 0.0624,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0755,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.02,
+      0.0655,
+      0
+     ],
+     "length": 0.16,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.0755,
+     -0.026
+    ],
+    "max": [
+     0.25,
+     0.0755,
+     0.026
+    ]
+   },
+   "triangles": 1524,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-ppsh.glb",
+   "label": "PPSH"
+  },
+  {
+   "id": "v-ppsh-drum",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-ppsh-drum"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0415,
+      0
+     ],
+     "diameter": 0.032,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0575,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.02,
+      0.0396,
+      0
+     ],
+     "length": 0.16,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.0575,
+     -0.0396
+    ],
+    "max": [
+     0.25,
+     0.0575,
+     0.0396
+    ]
+   },
+   "triangles": 1556,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-ppsh-drum.glb",
+   "label": "PPSH Drum"
+  },
+  {
+   "id": "v-msr-c96-long",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-msr-c96-long"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.121,
+      0.0413,
+      0
+     ],
+     "diameter": 0.0146,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0497,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0097,
+      0.0429,
+      0
+     ],
+     "length": 0.0774,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.121,
+     -0.0497,
+     -0.0105
+    ],
+    "max": [
+     0.121,
+     0.0497,
+     0.0105
+    ]
+   },
+   "triangles": 625,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-msr-c96-long.glb",
+   "label": "MSR C96 Long"
+  },
+  {
+   "id": "v-msr-c96-medium",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-msr-c96-medium"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0478,
+      0
+     ],
+     "diameter": 0.0169,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0575,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0088,
+      0.045,
+      0
+     ],
+     "length": 0.0704,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0575,
+     -0.0122
+    ],
+    "max": [
+     0.11,
+     0.0575,
+     0.0122
+    ]
+   },
+   "triangles": 625,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-msr-c96-medium.glb",
+   "label": "MSR C96 Medium"
+  },
+  {
+   "id": "v-msr-c96-short",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-msr-c96-short"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.0946,
+      0.055,
+      0
+     ],
+     "diameter": 0.0194,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0662,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0076,
+      0.0097,
+      0
+     ],
+     "length": 0.0605,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.0946,
+     -0.0662,
+     -0.014
+    ],
+    "max": [
+     0.0946,
+     0.0662,
+     0.014
+    ]
+   },
+   "triangles": 625,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-msr-c96-short.glb",
+   "label": "MSR C96 Short"
+  },
+  {
+   "id": "v-revolver-a-long",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-revolver-a-long"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.143,
+      0.0365,
+      0
+     ],
+     "diameter": 0.02,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0465,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0114,
+      0.0417,
+      0
+     ],
+     "length": 0.0915,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.143,
+     -0.0465,
+     -0.0154
+    ],
+    "max": [
+     0.143,
+     0.0465,
+     0.0154
+    ]
+   },
+   "triangles": 996,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-revolver-a-long.glb",
+   "label": "Revolver A Long"
+  },
+  {
+   "id": "v-revolver-a-medium",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-revolver-a-medium"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.13,
+      0.0409,
+      0
+     ],
+     "diameter": 0.0224,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0521,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0104,
+      0.0034,
+      0
+     ],
+     "length": 0.0832,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.13,
+     -0.0521,
+     -0.0172
+    ],
+    "max": [
+     0.13,
+     0.0521,
+     0.0172
+    ]
+   },
+   "triangles": 996,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-revolver-a-medium.glb",
+   "label": "Revolver A Medium"
+  },
+  {
+   "id": "v-revolver-a-short",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-revolver-a-short"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.1118,
+      0.0481,
+      0
+     ],
+     "diameter": 0.0264,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0613,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0089,
+      -0.0041,
+      0
+     ],
+     "length": 0.0716,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.1118,
+     -0.0613,
+     -0.0203
+    ],
+    "max": [
+     0.1118,
+     0.0613,
+     0.0203
+    ]
+   },
+   "triangles": 996,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-revolver-a-short.glb",
+   "label": "Revolver A Short"
+  },
+  {
+   "id": "v-revolver-b-long",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-revolver-b-long"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.143,
+      0.0421,
+      0
+     ],
+     "diameter": 0.0363,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0602,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0114,
+      0.0445,
+      0
+     ],
+     "length": 0.0915,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.143,
+     -0.0602,
+     -0.0188
+    ],
+    "max": [
+     0.143,
+     0.0602,
+     0.0188
+    ]
+   },
+   "triangles": 1252,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-revolver-b-long.glb",
+   "label": "Revolver B Long"
+  },
+  {
+   "id": "v-revolver-b-medium",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-revolver-b-medium"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.13,
+      0.0509,
+      0
+     ],
+     "diameter": 0.0438,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0728,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0104,
+      -0.0004,
+      0
+     ],
+     "length": 0.0832,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.13,
+     -0.0728,
+     -0.0227
+    ],
+    "max": [
+     0.13,
+     0.0728,
+     0.0227
+    ]
+   },
+   "triangles": 1252,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-revolver-b-medium.glb",
+   "label": "Revolver B Medium"
+  },
+  {
+   "id": "v-revolver-b-short",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "v-revolver-b-short"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.1118,
+      0.0575,
+      0
+     ],
+     "diameter": 0.0473,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.085,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0089,
+      0.0536,
+      0
+     ],
+     "length": 0.0716,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.1118,
+     -0.085,
+     -0.0265
+    ],
+    "max": [
+     0.1118,
+     0.085,
+     0.0265
+    ]
+   },
+   "triangles": 1252,
+   "pack": "wp2",
+   "approved": [],
+   "file": "wp2/v-revolver-b-short.glb",
+   "label": "Revolver B Short"
+  },
+  {
+   "id": "z-assaultrifle-01",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-assaultrifle-01"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0129,
+      0
+     ],
+     "diameter": 0.0995,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1454,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.036,
+      0.1001,
+      0
+     ],
+     "length": 0.288,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1454,
+     -0.0265
+    ],
+    "max": [
+     0.45,
+     0.1454,
+     0.0265
+    ]
+   },
+   "triangles": 968,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-assaultrifle-01.glb",
+   "label": "AssaultRifle 01"
+  },
+  {
+   "id": "z-assaultrifle-02",
+   "type": "rifle",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-assaultrifle-02"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.45,
+      0.0537,
+      0
+     ],
+     "diameter": 0.025,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1404,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.036,
+      0.0744,
+      0
+     ],
+     "length": 0.288,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.45,
+     -0.1404,
+     -0.0351
+    ],
+    "max": [
+     0.45,
+     0.1404,
+     0.0351
+    ]
+   },
+   "triangles": 1473,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-assaultrifle-02.glb",
+   "label": "AssaultRifle 02"
+  },
+  {
+   "id": "z-assaultrifle-03",
+   "type": "bullpup",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-assaultrifle-03"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.375,
+      0.0469,
+      0
+     ],
+     "diameter": 0.0168,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1279,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.03,
+      0.0709,
+      0
+     ],
+     "length": 0.24,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.375,
+     -0.1279,
+     -0.0311
+    ],
+    "max": [
+     0.375,
+     0.1279,
+     0.0311
+    ]
+   },
+   "triangles": 1062,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-assaultrifle-03.glb",
+   "label": "AssaultRifle 03"
+  },
+  {
+   "id": "z-submachinegun-01",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-submachinegun-01"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.1467,
+      0
+     ],
+     "diameter": 0.0381,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.2076,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.02,
+      0.0867,
+      0
+     ],
+     "length": 0.16,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.2076,
+     -0.0324
+    ],
+    "max": [
+     0.25,
+     0.2076,
+     0.0324
+    ]
+   },
+   "triangles": 572,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-submachinegun-01.glb",
+   "label": "SubmachineGun 01"
+  },
+  {
+   "id": "z-submachinegun-02",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-submachinegun-02"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0209,
+      0.0002
+     ],
+     "diameter": 0.1012,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1075,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.02,
+      0.005,
+      0
+     ],
+     "length": 0.16,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1075,
+     -0.0248
+    ],
+    "max": [
+     0.25,
+     0.1075,
+     0.0248
+    ]
+   },
+   "triangles": 824,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-submachinegun-02.glb",
+   "label": "SubmachineGun 02"
+  },
+  {
+   "id": "z-submachinegun-03",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-submachinegun-03"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0253,
+      -0.0025
+     ],
+     "diameter": 0.1299,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.095,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.02,
+      0.0522,
+      0
+     ],
+     "length": 0.16,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.095,
+     -0.0327
+    ],
+    "max": [
+     0.25,
+     0.095,
+     0.0327
+    ]
+   },
+   "triangles": 1140,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-submachinegun-03.glb",
+   "label": "SubmachineGun 03"
+  },
+  {
+   "id": "z-submachinegun-04",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-submachinegun-04"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0274,
+      0
+     ],
+     "diameter": 0.0173,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0717,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.02,
+      0.0081,
+      0
+     ],
+     "length": 0.16,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.0717,
+     -0.0189
+    ],
+    "max": [
+     0.25,
+     0.0717,
+     0.0189
+    ]
+   },
+   "triangles": 918,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-submachinegun-04.glb",
+   "label": "SubmachineGun 04"
+  },
+  {
+   "id": "z-submachinegun-05",
+   "type": "smg",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-submachinegun-05"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.25,
+      0.0837,
+      0
+     ],
+     "diameter": 0.0819,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1457,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.02,
+      0.0205,
+      0
+     ],
+     "length": 0.16,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.25,
+     -0.1457,
+     -0.0358
+    ],
+    "max": [
+     0.25,
+     0.1457,
+     0.0358
+    ]
+   },
+   "triangles": 1034,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-submachinegun-05.glb",
+   "label": "SubmachineGun 05"
+  },
+  {
+   "id": "z-shotgun-01",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-shotgun-01"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0622,
+      0
+     ],
+     "diameter": 0.0559,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0902,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.04,
+      0.0765,
+      0
+     ],
+     "length": 0.32,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.0902,
+     -0.0285
+    ],
+    "max": [
+     0.5,
+     0.0902,
+     0.0285
+    ]
+   },
+   "triangles": 700,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-shotgun-01.glb",
+   "label": "Shotgun 01"
+  },
+  {
+   "id": "z-shotgun-02",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-shotgun-02"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.0868,
+      0
+     ],
+     "diameter": 0.0422,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1079,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.04,
+      0.0993,
+      0
+     ],
+     "length": 0.32,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.1079,
+     -0.0337
+    ],
+    "max": [
+     0.5,
+     0.1079,
+     0.0337
+    ]
+   },
+   "triangles": 640,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-shotgun-02.glb",
+   "label": "Shotgun 02"
+  },
+  {
+   "id": "z-shotgun-03",
+   "type": "shotgun",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-shotgun-03"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.5,
+      0.1075,
+      0
+     ],
+     "diameter": 0.0557,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1353,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.04,
+      0.0915,
+      0
+     ],
+     "length": 0.32,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.5,
+     -0.1353,
+     -0.0584
+    ],
+    "max": [
+     0.5,
+     0.1353,
+     0.0584
+    ]
+   },
+   "triangles": 456,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-shotgun-03.glb",
+   "label": "Shotgun 03"
+  },
+  {
+   "id": "z-sniperrifle-01",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-sniperrifle-01"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0337,
+      -0.0084
+     ],
+     "diameter": 0.0137,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.1147,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.048,
+      0.0435,
+      0
+     ],
+     "length": 0.384,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.1147,
+     -0.0359
+    ],
+    "max": [
+     0.6,
+     0.1147,
+     0.0359
+    ]
+   },
+   "triangles": 994,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-sniperrifle-01.glb",
+   "label": "SniperRifle 01"
+  },
+  {
+   "id": "z-sniperrifle-02",
+   "type": "sniper",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-sniperrifle-02"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.6,
+      0.0239,
+      -0.0119
+     ],
+     "diameter": 0.0277,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.121,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.048,
+      0.1007,
+      0
+     ],
+     "length": 0.384,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.6,
+     -0.121,
+     -0.0445
+    ],
+    "max": [
+     0.6,
+     0.121,
+     0.0445
+    ]
+   },
+   "triangles": 1782,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-sniperrifle-02.glb",
+   "label": "SniperRifle 02"
+  },
+  {
+   "id": "z-pistol-01",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-pistol-01"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0535,
+      0
+     ],
+     "diameter": 0.0396,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0802,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0088,
+      0.0318,
+      0
+     ],
+     "length": 0.0704,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0802,
+     -0.015
+    ],
+    "max": [
+     0.11,
+     0.0802,
+     0.015
+    ]
+   },
+   "triangles": 1160,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-pistol-01.glb",
+   "label": "Pistol 01"
+  },
+  {
+   "id": "z-pistol-02",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-pistol-02"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0426,
+      -0.0002
+     ],
+     "diameter": 0.0486,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0733,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0088,
+      0.0264,
+      0
+     ],
+     "length": 0.0704,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0733,
+     -0.0219
+    ],
+    "max": [
+     0.11,
+     0.0733,
+     0.0219
+    ]
+   },
+   "triangles": 524,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-pistol-02.glb",
+   "label": "Pistol 02"
+  },
+  {
+   "id": "z-pistol-03",
+   "type": "pistol",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-pistol-03"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.11,
+      0.0357,
+      0
+     ],
+     "diameter": 0.0511,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0669,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0088,
+      0.016,
+      0
+     ],
+     "length": 0.0704,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.11,
+     -0.0669,
+     -0.0125
+    ],
+    "max": [
+     0.11,
+     0.0669,
+     0.0125
+    ]
+   },
+   "triangles": 1662,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-pistol-03.glb",
+   "label": "Pistol 03"
+  },
+  {
+   "id": "z-revolver-01",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-revolver-01"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.13,
+      0.0665,
+      0
+     ],
+     "diameter": 0.0504,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0917,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0104,
+      0.0099,
+      0
+     ],
+     "length": 0.0832,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.13,
+     -0.0917,
+     -0.0281
+    ],
+    "max": [
+     0.13,
+     0.0917,
+     0.0281
+    ]
+   },
+   "triangles": 892,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-revolver-01.glb",
+   "label": "Revolver 01"
+  },
+  {
+   "id": "z-revolver-02",
+   "type": "revolver",
+   "parts": [
+    {
+     "role": "body",
+     "node": "body",
+     "source": "z-revolver-02"
+    }
+   ],
+   "sockets": {
+    "muzzle": {
+     "pos": [
+      0.13,
+      0.0435,
+      0.0002
+     ],
+     "diameter": 0.0357,
+     "type": "barrel_thread"
+    },
+    "top": {
+     "pos": [
+      0,
+      0.0613,
+      0
+     ],
+     "type": "top_surface"
+    },
+    "rail": {
+     "pos": [
+      -0.0104,
+      0.0073,
+      0
+     ],
+     "length": 0.0832,
+     "type": "rail_top"
+    }
+   },
+   "bounds": {
+    "min": [
+     -0.13,
+     -0.0613,
+     -0.0168
+    ],
+    "max": [
+     0.13,
+     0.0613,
+     0.0168
+    ]
+   },
+   "triangles": 830,
+   "pack": "zsky",
+   "approved": [],
+   "file": "zsky/z-revolver-02.glb",
+   "label": "Revolver 02"
   }
  ],
  "kit": [

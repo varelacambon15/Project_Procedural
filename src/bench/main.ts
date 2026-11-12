@@ -169,7 +169,7 @@ async function boot() {
   if (t && gen.types.includes(t)) { typeFilter = t; buildTypeButtons(); }
   await show(Number(q.get("seed")) || 4127);
   // Hoja de contacto (revisión visual): n armas despiezadas, cada una en perfil, tres cuartos y vista de empuñadura.
-  const sheet = async (n: number, start = 1, types: string[] = ["rifle", "smg", "shotgun", "sniper", "lmg"], layout = "modular-long") => {
+  const sheet = async (n: number, start = 1, types: string[] = ["rifle", "smg", "shotgun", "sniper", "lmg"], layout = "modular-long", pack = "") => {
     const CW = 220, CH = 110, cols = 3, rows = n;
     const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(CW, CH); r.toneMapping = THREE.ACESFilmicToneMapping;
     const sc = new THREE.Scene(); sc.background = new THREE.Color(0xcfc9bd);
@@ -181,6 +181,7 @@ async function boot() {
     while (i < n) {
       const spec = gen.generate(seed++, types[seed % types.length] as never);
       if (spec.layout !== layout) continue;
+      if (pack && gen.byId.get(spec.parts[0].from)?.pack !== pack) continue;
       const built = await asm.assemble(spec); sc.add(built.group);
       const views: [number, number][] = [[0, 0], [-0.75, 0.25], [-0.35, -0.75]];
       views.forEach(([yaw, pitch], v) => {

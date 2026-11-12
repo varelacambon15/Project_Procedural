@@ -101,7 +101,7 @@ export const shiftOf = (spec: Pick<WeaponSpec, "type" | "modeShift">) => (spec.m
  * El arma se comporta según el modelo: variante habitual y capacidad real del cargador.
  * Con un 30% de probabilidad sale otra variante del mismo tipo ("de todo": pistolas automáticas, subfusiles lentos…).
  */
-const MODEL_HINTS: Record<string, { arch?: string; mag?: number }> = {
+const MODEL_HINTS: Record<string, { arch?: string; mag?: number; strict?: boolean }> = {
   "w-glock17": { arch: "standard", mag: 17 }, "w-usp45": { arch: "standard", mag: 12 }, "w-m1911": { arch: "heavy", mag: 8 }, "w-luger": { arch: "standard", mag: 8 },
   "w-deagle": { arch: "heavy", mag: 7 }, "m-deagle": { arch: "heavy", mag: 7 }, "m-m1911": { arch: "heavy", mag: 8 }, "w-revolver": { arch: "heavy", mag: 6 },
   "w-uzi": { arch: "rapid", mag: 32 }, "w-vector": { arch: "rapid", mag: 25 }, "w-p90": { arch: "standard", mag: 50 }, "w-mp5k": { arch: "standard", mag: 30 },
@@ -110,6 +110,15 @@ const MODEL_HINTS: Record<string, { arch?: string; mag?: number }> = {
   "w-xm8": { arch: "auto", mag: 30 }, "w-garand": { arch: "marksman", mag: 8 }, "w-f2000": { arch: "auto", mag: 30 }, "w-famas": { arch: "burst", mag: 25 },
   "w-aa12": { arch: "auto", mag: 20 }, "w-spas12": { arch: "pump", mag: 8 }, "w-sawedoff": { arch: "double", mag: 2 }, "q-shotgun-sawedoff": { arch: "double", mag: 2 },
   "w-l115": { arch: "bolt", mag: 5 }, "w-barrett": { arch: "antimateriel", mag: 10 }, "w-vss": { arch: "semi", mag: 10 },
+  // Armas antiguas (Wp-Pack-2): su mecanismo manda (un fusil de palanca nunca dispara en automático)
+  ...Object.fromEntries(["v-boltaction-rifles-a-short", "v-boltaction-rifles-b-short", "v-lever-rifles-long", "v-lever-rifles-medium", "v-lever-rifles-short", "v-revolver-rifles-long", "v-revolver-rifles-medium", "v-revolver-rifles-short"].map((id) => [id, { arch: "marksman", mag: id.includes("revolver") ? 6 : id.includes("lever") ? 8 : 5, strict: true }])),
+  ...Object.fromEntries(["a-long", "a-medium", "b-long", "b-medium"].map((v) => [`v-boltaction-rifles-${v}`, { arch: "bolt", mag: 5, strict: true }])),
+  "v-pump-shotgun-long": { arch: "pump", mag: 7, strict: true }, "v-pump-shotgun-short": { arch: "pump", mag: 5, strict: true }, "v-lever-shotgun": { arch: "pump", mag: 5, strict: true },
+  "v-carabine-shotgun-long": { arch: "pump", mag: 6, strict: true }, "v-carabine-shotgun-short": { arch: "pump", mag: 4, strict: true },
+  "v-hunter-shotgun-complete": { arch: "double", mag: 2, strict: true }, "v-hunter-shotgun-mini": { arch: "double", mag: 2, strict: true }, "v-hunter-shotgun-sawoff": { arch: "double", mag: 2, strict: true },
+  "v-ppsh": { arch: "rapid", mag: 35 }, "v-ppsh-drum": { arch: "rapid", mag: 71 }, "v-m3gg": { arch: "standard", mag: 30 }, "v-m3gg-drum": { arch: "standard", mag: 50 },
+  "z-assaultrifle-01": { arch: "heavy", mag: 30 }, "z-shotgun-01": { arch: "pump", mag: 6 }, "z-shotgun-02": { arch: "pump", mag: 6 }, "z-shotgun-03": { arch: "double", mag: 2, strict: true },
+  "z-sniperrifle-01": { arch: "bolt", mag: 5 }, "z-sniperrifle-02": { arch: "bolt", mag: 5 },
   "w-m249": { arch: "standard", mag: 100 }, "w-m60": { arch: "heavy", mag: 100 }, "w-minigun": { arch: "minigun", mag: 300 },
 };
 
@@ -203,7 +212,7 @@ function weighted<T>(r: Rng, arr: T[], w: (x: T) => number): T {
 /** Proporción de armas del kit modular en cada tipo que lo admite. */
 const KIT_SHARE: Partial<Record<WeaponType, number>> = { rifle: 0.4, pistol: 0.3, shotgun: 0.4 };
 /** Peso de cada pack al elegir el cuerpo: los modelos más realistas salen más a menudo. */
-const PACK_WEIGHT: Record<string, number> = { modern: 4, asimov: 2.5, misc: 2.5, quaternius: 1.5, cosmo: 1 };
+const PACK_WEIGHT: Record<string, number> = { modern: 4, asimov: 2.5, misc: 2.5, wp2: 2.5, zsky: 2, quaternius: 1.5, cosmo: 1 };
 
 export function archetypeOf(spec: Pick<WeaponSpec, "type" | "archetype">): Arch {
   const info = TYPE_INFO[spec.type as BaseType];
@@ -308,7 +317,7 @@ export class WeaponGenerator {
     // 2. Variante: la propia del modelo (70%) o cualquiera del tipo
     const hint = MODEL_HINTS[body.id];
     const regular = info.archetypes.filter((a) => a.w > 0);
-    const arch = hint?.arch && r() < 0.7 ? info.archetypes.find((a) => a.id === hint.arch) ?? regular[0] : weighted(r, regular, (a) => a.w);
+    const arch = hint?.arch && (r() < 0.7 || hint.strict) ? info.archetypes.find((a) => a.id === hint.arch) ?? regular[0] : weighted(r, regular, (a) => a.w);
     // Rareza (antes que el modo: los modos raros son exclusivos de moradas y legendarias)
     const rarity = rollRarity(r);
     // Modo de disparo: el de la variante o, en moradas y legendarias, a veces uno "raro" para su tipo

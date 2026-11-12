@@ -82,7 +82,8 @@ function normalize(parts, type, hint) {
   for (const m of all) m.geometry.applyMatrix4(rot);
   let box = boxOf(all);
   const len = box.max.x - box.min.x;
-  const k = TARGET_LENGTH[type] ? TARGET_LENGTH[type] / len : hint?.scale ?? 1;
+  // lengthMul: variantes larga/corta del mismo modelo conservan su diferencia de largo
+  const k = (TARGET_LENGTH[type] ? TARGET_LENGTH[type] / len : hint?.scale ?? 1) * (hint?.lengthMul ?? 1);
   const c = box.getCenter(new THREE.Vector3());
   const t = new THREE.Matrix4().makeScale(k, k, k).multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z));
   for (const m of all) { m.geometry.applyMatrix4(t); m.geometry.computeVertexNormals(); m.geometry.computeBoundingBox(); }
@@ -267,9 +268,11 @@ function face(arr, axis, value, eps) {
  * del cajón. Devuelve piezas y "juntas" (caras de unión) para montar piezas de otras armas.
  */
 function splitLongGun(parts) {
-  const body = parts.find((p) => p.role === "body"), mag = parts.find((p) => p.role === "magazine");
-  const arr = Array.from(body.mesh.geometry.attributes.position.array);
-  const box = boxOf([body.mesh]); const x0 = box.min.x, L = box.max.x - box.min.x;
+  // El cuerpo puede venir en varias mallas (una por material): se corta cada una con los mismos planos.
+  const bodies = parts.filter((p) => p.role === "body"), body = bodies[0], mag = parts.find((p) => p.role === "magazine");
+  const arrs = bodies.map((p) => Array.from(p.mesh.geometry.attributes.position.array));
+  const arr = arrs.flat();
+  const box = boxOf(bodies.map((p) => p.mesh)); const x0 = box.min.x, L = box.max.x - box.min.x;
   const N = 48, minY = new Array(N).fill(Infinity), maxY = new Array(N).fill(-Infinity);
   const slice = (x) => Math.min(N - 1, Math.max(0, Math.floor(((x - x0) / L) * N)));
   for (let i = 0; i < arr.length; i += 3) { const k = slice(arr[i]); minY[k] = Math.min(minY[k], arr[i + 1]); maxY[k] = Math.max(maxY[k], arr[i + 1]); }
@@ -291,21 +294,27 @@ function splitLongGun(parts) {
   const a = gx0 - L * 0.02;                               // culata | cajón
   const b = mb ? mb.max.x + L * 0.05 : sx(g1) + L * 0.22;  // cajón | guardamanos
   if (a < x0 + L * 0.08 || b > x0 + L * 0.85 || b - a < L * 0.15) return null;
-  const [stock, rest] = clipByPlane(arr, 0, a);
-  const [middle, front] = clipByPlane(rest, 0, b);
-  const [left, r1] = clipByPlane(middle, 0, gx0);
-  const [m2, right] = clipByPlane(r1, 0, gx1);
-  const [grip, above] = clipByPlane(m2, 1, yb);
-  const receiver = [...left, ...above, ...right];
+  const cut = (data) => {
+    const [stock, rest] = clipByPlane(data, 0, a);
+    const [middle, front] = clipByPlane(rest, 0, b);
+    const [left, r1] = clipByPlane(middle, 0, gx0);
+    const [m2, right] = clipByPlane(r1, 0, gx1);
+    const [grip, above] = clipByPlane(m2, 1, yb);
+    return { receiver: [...left, ...above, ...right], stock, grip, front };
+  };
+  const pieces = arrs.map(cut);
+  const join = (k) => pieces.flatMap((p) => p[k]);
+  const receiver = join("receiver"), stock = join("stock"), grip = join("grip"), front = join("front");
   const eps = L * 0.004;
   const joints = {
     rear: face(receiver, 0, a, eps), front: face(receiver, 0, b, eps), grip: face(receiver, 1, yb, eps),
     stockFace: face(stock, 0, a, eps), frontFace: face(front, 0, b, eps), gripFace: face(grip, 1, yb, eps),
   };
   if (Object.values(joints).some((j) => !j) || stock.length < 90 || front.length < 90 || grip.length < 45) return null;
-  const mat = Array.isArray(body.mesh.material) ? body.mesh.material[0] : body.mesh.material;
-  const mk = (data, role) => { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(data, 3)); g.computeVertexNormals(); g.computeBoundingBox(); return { role, source: body.source, mesh: new THREE.Mesh(g, mat) }; };
-  const out = [mk(receiver, "receiver"), mk(stock, "stock"), mk(grip, "grip"), mk(front, "front")];
+  const matOf = (p) => (Array.isArray(p.mesh.material) ? p.mesh.material[0] : p.mesh.material);
+  const mk = (data, role, mat) => { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(data, 3)); g.computeVertexNormals(); g.computeBoundingBox(); return { role, source: body.source, mesh: new THREE.Mesh(g, mat) }; };
+  const out = [];
+  for (const role of ["receiver", "stock", "grip", "front"]) pieces.forEach((pc, i) => { if (pc[role].length) out.push(mk(pc[role], role, matOf(bodies[i]))); });
   if (mag) out.push(mag);
   return { parts: out, joints };
 }
@@ -360,7 +369,7 @@ function applyPalette(mesh, pal) {
   mesh.material = Array.isArray(mesh.material) ? mesh.material.map(fix) : fix(mesh.material);
 }
 function fixTextured(mesh) {
-  const fix = (m) => { if (m.map) { m.map.colorSpace = THREE.SRGBColorSpace; m.map.magFilter = THREE.NearestFilter; } m.flatShading = true; m.color?.set?.(0xffffff); const s = new THREE.MeshStandardMaterial({ name: m.name, map: m.map || null, color: m.map ? 0xffffff : m.color, roughness: 0.6, metalness: 0.2, flatShading: true }); return s; };
+  const fix = (m) => { if (m.map) { m.map.colorSpace = THREE.SRGBColorSpace; m.map.magFilter = THREE.NearestFilter; } m.flatShading = true; if (m.map) m.color?.set?.(0xffffff); const s = new THREE.MeshStandardMaterial({ name: m.name, map: m.map || null, color: m.map ? 0xffffff : m.color, roughness: 0.6, metalness: 0.2, flatShading: true }); return s; };
   mesh.material = Array.isArray(mesh.material) ? mesh.material.map(fix) : fix(mesh.material);
 }
 
@@ -374,10 +383,27 @@ async function loadTexture(url) {
   return texCache.get(url);
 }
 
+/** Separa una malla multimaterial en una malla por material (sin índices). */
+function splitByMaterial(mesh) {
+  if (!Array.isArray(mesh.material) || !mesh.geometry.groups.length) return [mesh];
+  const g = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry;
+  const pos = g.attributes.position.array;
+  const out = [];
+  mesh.material.forEach((mat, mi) => {
+    const data = [];
+    for (const gr of g.groups) if (gr.materialIndex === mi) for (let v = gr.start; v < gr.start + gr.count; v++) data.push(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]);
+    if (!data.length) return;
+    const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(data, 3)); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat); m.name = mesh.name + "_" + (mat.name || mi); out.push(m);
+  });
+  return out;
+}
+
 async function convertFBX(job) {
   const root = await loadFBX(job.fbx);
   const tex = job.texture ? await loadTexture(job.texture) : null;
   let meshes = bakeMeshes(root);
+  if (job.modular) meshes = meshes.flatMap(splitByMaterial);
   if (job.pick) meshes = meshes.filter((m) => job.pick.some((rule) => new RegExp(rule.match).test(m.name)));
   const parts = meshes.map((m) => {
     const rule = (job.pick || []).find((r) => new RegExp(r.match).test(m.name));
@@ -390,6 +416,10 @@ async function convertFBX(job) {
   });
   // Si el cargador viene separado y lejos del arma (pack con piezas repartidas), se recoloca en el pozo.
   normalize(parts, job.type, job.hint || {});
+  if (job.modular) {
+    const split = splitLongGun(parts);
+    if (split) { const r = roundSockets({ joints: split.joints }); return finish(job.id, job.type, split.parts, { pack: job.pack, joints: r.joints, modular: true }); }
+  }
   return finish(job.id, job.type, parts, { pack: job.pack });
 }
 
