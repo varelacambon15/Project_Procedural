@@ -138,6 +138,26 @@ function roundSockets(o) { return JSON.parse(JSON.stringify(o, (k, v) => (typeof
 const CONNECTOR_TYPES = { muzzle: "barrel_thread", magazine: "mag_well", optic: "optic_mount", rail: "rail_top", slide: "slide_rails", barrel: "barrel_seat", top: "top_surface",
   rear: "stock_mount", front: "handguard_mount", grip: "grip_mount", stockFace: "stock_mount", frontFace: "handguard_mount", gripFace: "grip_mount" };
 
+
+/** Perfil lateral de un conjunto de mallas: en N franjas a lo largo de X, el punto más alto y el más bajo (silueta). */
+function profileOf(meshes, N = 24) {
+  const b = boxOf(meshes); const x0 = b.min.x, x1 = b.max.x, L = Math.max(1e-6, x1 - x0);
+  const top = new Array(N).fill(-Infinity), bot = new Array(N).fill(Infinity);
+  for (const m of meshes) {
+    const a = m.geometry.attributes.position, idx = m.geometry.index;
+    const n = idx ? idx.count : a.count;
+    // Por triángulo, para que las franjas sin vértices (caras largas) también cuenten
+    for (let t = 0; t + 2 < n; t += 3) {
+      const ids = [0, 1, 2].map((k) => (idx ? idx.getX(t + k) : t + k));
+      const xs = ids.map((i) => a.getX(i)), ys = ids.map((i) => a.getY(i));
+      const k0 = Math.max(0, Math.floor(((Math.min(...xs) - x0) / L) * N)), k1 = Math.min(N - 1, Math.floor(((Math.max(...xs) - x0) / L) * N));
+      const lo = Math.min(...ys), hi = Math.max(...ys);
+      for (let k = k0; k <= k1; k++) { top[k] = Math.max(top[k], hi); bot[k] = Math.min(bot[k], lo); }
+    }
+  }
+  const r = (v) => (Number.isFinite(v) ? +v.toFixed(4) : null);
+  return { x0: +x0.toFixed(4), x1: +x1.toFixed(4), top: top.map(r), bot: bot.map(r) };
+}
 async function finish(id, type, parts, extra = {}) {
   const meta = roundSockets(sockets(parts));
   for (const [k, v] of Object.entries(meta.sockets)) v.type = CONNECTOR_TYPES[k] ?? k;
@@ -156,7 +176,9 @@ async function finish(id, type, parts, extra = {}) {
     const mats = [].concat(p.mesh.material);
     if (mats.some((m) => /wood|brown|handle/i.test(m.name || "")) && !wood.includes(p.role)) wood.push(p.role);
   }
-  return { id, type, parts: parts.map((p) => ({ role: p.role, node: p.mesh.name, source: p.source || "" })), ...meta, partBounds: roundSockets(partBounds), wood, triangles: Math.round(tris), ...extra, approved, glb };
+  const profiles = {};
+  for (const role of new Set(parts.map((p) => p.role))) profiles[role] = profileOf(parts.filter((p) => p.role === role).map((p) => p.mesh));
+  return { id, type, parts: parts.map((p) => ({ role: p.role, node: p.mesh.name, source: p.source || "" })), ...meta, partBounds: roundSockets(partBounds), wood, profiles, triangles: Math.round(tris), ...extra, approved, glb };
 }
 
 // ---------- OBJ (Quaternius) con separación por componentes conexas ----------
@@ -464,7 +486,7 @@ async function convertKitPart(job) {
   const box = boxOf(parts.map((p) => p.mesh));
   const tris = parts.reduce((s, p) => s + p.mesh.geometry.attributes.position.count / 3, 0);
   const glb = await exportGLB(parts);
-  return { id: job.id, slot: job.slot, caliber: job.caliber, sockets, bounds: { min: box.min.toArray().map((v) => +v.toFixed(4)), max: box.max.toArray().map((v) => +v.toFixed(4)) }, triangles: Math.round(tris), glb };
+  return { id: job.id, slot: job.slot, caliber: job.caliber, sockets, profile: profileOf(parts.map((p) => p.mesh), 16), bounds: { min: box.min.toArray().map((v) => +v.toFixed(4)), max: box.max.toArray().map((v) => +v.toFixed(4)) }, triangles: Math.round(tris), glb };
 }
 
 window.convertJob = async (job) => (job.kind === "kitpart" ? convertKitPart(job) : job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
