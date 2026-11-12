@@ -3,7 +3,8 @@
 // tamaño de píxel en el mundo (TILE metros por repetición), así ninguna pieza parece pegada de otra.
 import * as THREE from "three";
 
-export type TexKind = "metal" | "polymer" | "wood" | "fabric" | "rust";
+/** stipple: punteado de agarre; checker: rejilla de las cachas; engrave: marcaje grabado (filas de signos). */
+export type TexKind = "metal" | "polymer" | "wood" | "fabric" | "rust" | "stipple" | "checker" | "engrave";
 /** Metros que cubre una repetición de la textura: el tamaño de píxel es TILE / tamaño. */
 export const TILE = 0.1;
 /** Tamaños permitidos del nivel de pixelado (px por lado). */
@@ -47,7 +48,21 @@ function paint(kind: TexKind, n: number, wear: number): Uint8Array {
       // Veta: bandas a lo largo de X con ondulación y algún nudo
       const w = y + 6 * (big(x, y) - 0.5) + 2 * Math.sin(x * 0.15);
       v = 0.82 + 0.16 * (0.5 + 0.5 * Math.sin(w * 0.9)) + 0.06 * (fine(x, y) - 0.5);
-    } else if (kind === "fabric") {
+    } else if (kind === "stipple") {
+      // Punteado de agarre: puntos oscuros en retícula desordenada
+      const cx = x % 3, cy = (y + (x >> 2)) % 3;
+      v = 0.95 + 0.04 * (mid(x, y) - 0.5) - (cx === 1 && cy === 1 ? 0.28 : 0);
+    } else if (kind === "checker") {
+      // Rejilla en diamante (cachas de madera): surcos diagonales cruzados sobre la veta
+      const w = y + 6 * (big(x, y) - 0.5);
+      const grain = 0.86 + 0.1 * (0.5 + 0.5 * Math.sin(w * 0.9));
+      const a = (x + y) % 4, b = (x - y + n * 4) % 4;
+      v = grain - (a === 0 || b === 0 ? 0.22 : 0);
+    } else if (kind === "engrave") {
+      // Marcaje: filas de "letras" (bloques de 3×5 px con huecos), como un texto grabado visto de lejos
+      const row = Math.floor(y / 8), ry = y % 8, col = Math.floor(x / 4), rx = x % 4;
+      const on = ry >= 1 && ry <= 5 && rx < 3 && ((Math.imul(col * 73856093 ^ row * 19349663, 0x5bd1e995) >>> (rx * 5 + ry)) & 1) === 1 && (col % 7 !== 6);
+      v = on ? 0.55 : 1.0;
       // Trama cruzada (cinta o tela)
       v = 0.85 + 0.15 * (((x >> 1) + (y >> 1)) % 2 === 0 ? (x % 2) : (y % 2)) + 0.05 * (mid(x, y) - 0.5);
     } else {

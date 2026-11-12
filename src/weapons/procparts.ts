@@ -5,7 +5,8 @@
 import * as THREE from "three";
 import type { Profile } from "./variation";
 
-export type StockKind = "tube" | "skeleton" | "solid";
+/** Culatas: tubo, esqueleto, maciza; y (prompt 05-A) plegable de alambre, de madera, de polímero tipo brace y de carabina. */
+export type StockKind = "tube" | "skeleton" | "solid" | "folding" | "wood" | "polymer" | "carbine";
 export type FrontKind = "tube" | "quad";
 export interface ProcStock { kind: StockKind; at: [number, number]; h: number; w: number; len: number; drop: number }
 export interface ProcFront { kind: FrontKind; at: [number, number]; h: number; w: number; len: number; barrel: number; d: number }
@@ -27,6 +28,10 @@ export function stockProfile(s: ProcStock): Profile {
     if (t > 0.94) return [yc - s.h * 0.65, yc + s.h * 0.45]; // cantonera
     if (s.kind === "tube") return [yc - s.h * 0.12, yc + s.h * 0.12];
     if (s.kind === "skeleton") return [yc - s.h * (0.4 + 0.2 * t), yc + s.h * 0.35];
+    if (s.kind === "folding") return [yc - s.h * (0.15 + 0.45 * t), yc + s.h * 0.3];
+    if (s.kind === "polymer") return [yc - s.h * (0.35 + 0.2 * t), yc + s.h * 0.3];
+    if (s.kind === "carbine") return [yc - s.h * (0.5 + 0.35 * t), yc + s.h * (0.42 + 0.12 * Math.min(1, t * 2))];
+    if (s.kind === "wood") return [yc - s.h * (0.4 + 0.4 * t), yc + s.h * 0.4];
     return [yc - s.h * (0.45 + 0.25 * t), yc + s.h * 0.42];
   });
 }
@@ -57,6 +62,29 @@ export function buildStock(s: ProcStock): THREE.Group {
       g.add(top, lo);
     }
     g.add(box(0.02, s.h * 0.8, s.w * 0.8, ax - 0.01, ay - s.h * 0.02, "procmetal"));
+  } else if (s.kind === "folding") {
+    // Plegable de alambre: varilla superior, diagonal desde abajo de la junta y bisagra
+    for (const z of [-1, 1]) {
+      const zz = z * s.w * 0.3;
+      g.add(rod(new THREE.Vector3(ax, ay + s.h * 0.25, zz), new THREE.Vector3(bx + 0.006, by + s.h * 0.25, zz), 0.0035, 6));
+      g.add(rod(new THREE.Vector3(ax, ay - s.h * 0.15, zz), new THREE.Vector3(bx + 0.006, by - s.h * 0.55, zz), 0.0035, 6));
+    }
+    g.add(box(0.012, s.h * 0.6, s.w * 0.8, ax - 0.006, ay + s.h * 0.05, "procmetal"));
+    const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, s.w * 0.85, 8), new THREE.MeshStandardMaterial({ name: "procmetal" })); hinge.rotation.x = Math.PI / 2; hinge.position.set(ax - 0.012, ay - s.h * 0.15, 0); g.add(hinge);
+  } else if (s.kind === "wood" || s.kind === "polymer" || s.kind === "carbine") {
+    // Maciza de madera (lomo recto y quilla), brace de polímero (fina, con ranura de correa) o de carabina (con carrillera)
+    const sh = new THREE.Shape(), k = s.kind;
+    const topY = (t: number) => ay - s.drop * t + s.h * (k === "carbine" ? 0.42 + 0.12 * Math.min(1, t * 2) : k === "polymer" ? 0.3 : 0.4);
+    const botY = (t: number) => ay - s.drop * t - s.h * (k === "carbine" ? 0.5 + 0.35 * t : k === "polymer" ? 0.35 + 0.2 * t : 0.4 + 0.4 * t);
+    sh.moveTo(ax, topY(0)); for (const t of [0.3, 0.7, 1]) sh.lineTo(ax - s.len * t, topY(t));
+    for (const t of [1, 0.6, 0.25, 0]) sh.lineTo(ax - s.len * t, botY(t)); sh.closePath();
+    if (k === "polymer") { const hx = ax - s.len * 0.5, hy = ay - s.drop * 0.5, sw = s.len * 0.18, shh = s.h * 0.14; const sl = new THREE.Path(); sl.moveTo(hx - sw, hy - shh); sl.lineTo(hx + sw, hy - shh); sl.lineTo(hx + sw, hy + shh); sl.lineTo(hx - sw, hy + shh); sl.closePath(); sh.holes.push(sl); }
+    const depth = s.w * (k === "polymer" ? 0.6 : 0.85);
+    const geo = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.0025, bevelSegments: 2, curveSegments: 6 });
+    geo.translate(0, 0, -depth / 2);
+    g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ name: k === "wood" ? "Wood" : k === "polymer" ? "proctape" : "proc" })));
+    // Unión a la junta (adaptador de metal)
+    g.add(box(0.016, s.h * 0.55, s.w * 0.7, ax - 0.006, ay - s.h * 0.02, "procmetal"));
   } else {
     // Maciza: perfil extruido (lomo recto, quilla que baja hacia la cantonera)
     // Maciza con agujero para el pulgar y quilla que se estrecha hacia la junta

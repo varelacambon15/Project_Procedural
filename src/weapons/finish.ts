@@ -63,8 +63,8 @@ function addTexture(m: THREE.MeshStandardMaterial, kind: TexKind, wear: number) 
 const cache = new Map<string, THREE.MeshStandardMaterial>();
 /** Luminancia mínima (sRGB) de cualquier color de acabado [propuesta, ajustable]. */
 export const MIN_LUM = 0.16;
-function material(f: Paint, slot: Slot): THREE.MeshStandardMaterial {
-  const key = `${f.id}|${slot}`;
+function material(f: Paint, slot: Slot, tex?: TexKind): THREE.MeshStandardMaterial {
+  const key = `${f.id}|${slot}${tex ? "|" + tex : ""}`;
   let m = cache.get(key);
   if (!m) {
     const c = slot === "primary" ? f.color : slot === "secondary" ? f.secondary : slot === "metal" ? f.metal : slot === "accent" ? f.accent : slot === "highlight" ? hex(0xb8692a) : f.secondary;
@@ -74,7 +74,7 @@ function material(f: Paint, slot: Slot): THREE.MeshStandardMaterial {
     if (lumS < MIN_LUM) { const k = MIN_LUM / Math.max(0.01, lumS); for (let i = 0; i < 3; i++) rgb[i] = Math.min(1, rgb[i] * k); }
     m = new THREE.MeshStandardMaterial({ name: slot === "wood" ? "Wood" : slot, vertexColors: true, color: new THREE.Color().setRGB(...rgb, THREE.SRGBColorSpace), flatShading: true, ...PROPS[slot] });
     // Desgaste: más en los acabados oxidados (armas rústicas)
-    addTexture(m, f.id === "rust" && slot !== "wood" ? "rust" : TEX[slot], f.id === "rust" ? 0.8 : f.id === "parkerized" ? 0.4 : 0.2);
+    addTexture(m, tex ?? (f.id === "rust" && slot !== "wood" ? "rust" : TEX[slot]), f.id === "rust" ? 0.8 : f.id === "parkerized" ? 0.4 : 0.2);
     cache.set(key, m);
   }
   return m;
@@ -102,6 +102,11 @@ export function applyFinish(obj: THREE.Object3D, role: PartRole | "sight", f: Pa
     if (/procmetal/.test(m.name)) return material(f, "metal");
     if (/procpad/.test(m.name)) return material(f, "accent");
     if (/proctape/.test(m.name)) return material(f, "secondary");
+    // Texturas de detalle de las armas por código: punteado de agarre, cachas en rejilla, marcajes grabados y óxido
+    if (/procgrip/.test(m.name)) return material(f, "secondary", "stipple");
+    if (/proccheck/.test(m.name)) return material(f, f.wood ? "wood" : "secondary", "checker");
+    if (/procengrave/.test(m.name)) return material(f, slot === "metal" ? "metal" : "primary", "engrave");
+    if (/procrust/.test(m.name)) return material(f, "metal", "rust");
     // Pantallas y marca de simulación: apagadas (acento) salvo en legendarias, que llevan el detalle de color
     if (/procdisplay|simmark/.test(m.name)) return material(f, _legendary ? "highlight" : "accent");
     // Tiras de color de origen (rojo, azul…): en el tono sobrio del arma; solo las legendarias las llevan en color

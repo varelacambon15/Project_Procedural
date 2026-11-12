@@ -5,7 +5,8 @@ import { WeaponGenerator, TYPE_INFO, type BaseType } from "../weapons/generator"
 import { archName, damageText, effectDesc, effectName, paintName, partLabel, rarityName, roleName, typeName } from "../weapons/labels";
 import { setLang, getLang } from "../i18n";
 import { WeaponAssembler, type AssembledWeapon } from "../weapons/assembler";
-import type { Manifest, PartRole, StatKey, WeaponSpec } from "../weapons/types";
+import type { Manifest, PartRole, RarityId, StatKey, WeaponSpec } from "../weapons/types";
+import type { PEra } from "../weapons/pistolgen";
 type WeaponType = BaseType;
 setLang(getLang());
 
@@ -159,6 +160,7 @@ function frame() {
 
 async function boot() {
   const manifest: Manifest = await (await fetch(ASSETS + "manifest.json")).json();
+  const manifestRef = manifest;
   gen = new WeaponGenerator(manifest);
   asm = new WeaponAssembler(gen, ASSETS);
   buildTypeButtons();
@@ -234,11 +236,11 @@ async function boot() {
   };
   // Hoja de lote en tres vistas: n armas que cumplen el filtro, dos por fila, cada una en perfil, tres cuartos y desde
   // abajo, con etiqueta (base, parecido, era, añadidos). Para revisar lotes grandes (pistolas modulares, culatas…).
-  const lotSheet = async (n: number, types: string[], start = 1, layout = "", need = "", sort = "") => {
+  const lotSheet = async (n: number, types: string[], start = 1, layout = "", need = "", sort = "", rarity = "") => {
     const VW = 300, VH = 165, HEAD = 58, per = 2;
     const specs: WeaponSpec[] = [];
     for (let s = start; s < start + 40000 && specs.length < n; s++) {
-      const w = gen.generate(s, types[s % types.length] as never);
+      const w = gen.generate(s, types[s % types.length] as never, (rarity || undefined) as RarityId | undefined);
       if ((layout && w.layout !== layout) || (need && !JSON.stringify(w).includes(need))) continue;
       specs.push(w);
     }
@@ -270,6 +272,149 @@ async function boot() {
         r.render(sc, cam); g.drawImage(r.domElement, x0 + v * VW, y0 + HEAD);
       });
       sc.remove(built.group);
+    }
+    return out.toDataURL("image/png");
+  };
+  // ---------- Hojas del prompt 06 ----------
+  /** Escena de estudio para las hojas (fondo gris, luz suave, borde frío). */
+  const studio = (VW: number, VH: number, bg = 0x3a3d42) => {
+    const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(VW, VH); r.toneMapping = THREE.ACESFilmicToneMapping;
+    const sc = new THREE.Scene(); sc.background = new THREE.Color(bg);
+    sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+    sc.add(new THREE.HemisphereLight(0xffffff, 0x555555, 1.3)); const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(1, 2, 3); sc.add(dl);
+    const rim = new THREE.DirectionalLight(0xbfd8ff, 1.2); rim.position.set(-2, 1, -3); sc.add(rim);
+    return { r, sc };
+  };
+  /** Cámara ortográfica centrada en el arma; `half` fija la escala (misma escala en toda la hoja). */
+  const shoot = (st: { r: THREE.WebGLRenderer; sc: THREE.Scene }, obj: THREE.Object3D, VW: number, VH: number, yaw: number, pitch: number, half?: number, center?: THREE.Vector3) => {
+    obj.rotation.set(pitch, yaw, 0);
+    const b = new THREE.Box3().setFromObject(obj), sz = b.getSize(new THREE.Vector3()), c = center ?? b.getCenter(new THREE.Vector3());
+    const hh = half ?? Math.max((sz.x / 2) * VH / VW, sz.y / 2) * 1.12;
+    const cam = new THREE.OrthographicCamera(-hh * VW / VH, hh * VW / VH, hh, -hh, -10, 10); cam.position.set(c.x, c.y, c.z + 3); cam.lookAt(c);
+    st.r.render(st.sc, cam); return st.r.domElement;
+  };
+  /** Silueta plana (negra sobre blanco) de un arma montada. */
+  const silhouetteOf = (obj: THREE.Object3D) => {
+    const saved: [THREE.Mesh, THREE.Material | THREE.Material[]][] = []; const black = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    obj.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { saved.push([m, m.material]); m.material = black; } });
+    return () => { for (const [m, mt] of saved) m.material = mt; };
+  };
+  const wrapText = (g: CanvasRenderingContext2D, text: string, x: number, y: number, w: number, lh: number, max = 3) => { let line = "", n = 0; for (const word of text.split(" ")) { const t = line ? line + " " + word : word; if (g.measureText(t).width > w && line) { if (n < max - 1) g.fillText(line, x, y + n * lh); n++; line = word; } else line = t; } if (n < max) g.fillText(line, x, y + n * lh); };
+  /**
+   * Hoja de decisión (06-A): por cada base, una fila con el original y sus variantes a ~90, ~80 y ~70 % de parecido,
+   * en las mismas vistas (perfil y tres cuartos) y a la misma escala, más la silueta sola de cada una.
+   */
+  const decisionSheet = async (bases: { arch: string; era: string }[], targets = [1, 0.9, 0.8, 0.7], seed = 7) => {
+    const CW = 360, PH = 190, QH = 130, SH = 110, HEAD = 64, ROWH = HEAD + PH + QH + SH + 10, LBL = 150;
+    const rows = bases.map((b, bi) => targets.map((t, ti) => gen.generatePistolAt(seed + bi * 101 + ti * 7, b.arch, b.era as PEra, t === 1 ? 1 : t, "comun")));
+    // Escala común: la del arma más larga de la hoja
+    const builts = await Promise.all(rows.map((row) => Promise.all(row.map((w) => asm.assemble(w)))));
+    let maxLen = 0; for (const row of builts) for (const bw of row) { bw.group.rotation.set(0, 0, 0); maxLen = Math.max(maxLen, new THREE.Box3().setFromObject(bw.group).getSize(new THREE.Vector3()).x); }
+    const halfP = (maxLen / 2) * (PH / CW) * 1.1, halfQ = halfP * (QH / PH) * 1.25;
+    const st = studio(CW, PH), stQ = studio(CW, QH), stS = studio(CW, SH, 0xf2f2f2);
+    const out = document.createElement("canvas"); out.width = LBL + CW * targets.length; out.height = ROWH * rows.length + 40; const g = out.getContext("2d")!;
+    g.fillStyle = "#15171a"; g.fillRect(0, 0, out.width, out.height);
+    g.fillStyle = "#ddd"; g.font = "bold 20px sans-serif"; g.fillText(`Hoja de decisión · objetivo de parecido por columna: ${targets.map((t) => (t === 1 ? "base" : `~${Math.round(t * 100)} %`)).join(" · ")} · misma escala en toda la hoja`, 12, 27);
+    for (const [ri, row] of rows.entries()) {
+      const y0 = 40 + ri * ROWH;
+      g.fillStyle = "#1e2023"; g.fillRect(0, y0, out.width, ROWH - 10);
+      g.fillStyle = "#e8e8e8"; g.font = "bold 18px sans-serif"; g.fillText(bases[ri].arch, 12, y0 + 30);
+      g.fillStyle = "#aaa"; g.font = "14px sans-serif"; g.fillText(`era ${bases[ri].era}`, 12, y0 + 52); g.fillText(`familia ${row[0].tweaks.pistol?.family}`, 12, y0 + 72);
+      for (const [ci, w] of row.entries()) {
+        const x0 = LBL + ci * CW, bw = builts[ri][ci];
+        const sim = w.lineage?.similarity ?? 1, ch = w.lineage?.changes ?? [];
+        g.fillStyle = ci === 0 ? "#9fd39f" : "#e0e0e0"; g.font = "bold 16px sans-serif";
+        g.fillText(ci === 0 ? "BASE (original)" : `objetivo ~${Math.round(targets[ci] * 100)} % → real ${Math.round(sim * 100)} %`, x0 + 8, y0 + 20);
+        g.fillStyle = "#9aa"; g.font = "12px sans-serif"; wrapText(g, ci === 0 ? `${w.name}` : `${ch.length} cambios: ${ch.join(", ")}`, x0 + 8, y0 + 38, CW - 16, 14, 2);
+        st.sc.add(bw.group); g.drawImage(shoot(st, bw.group, CW, PH, 0, 0, halfP), x0, y0 + HEAD); st.sc.remove(bw.group);
+        stQ.sc.add(bw.group); g.drawImage(shoot(stQ, bw.group, CW, QH, -0.6, 0.25, halfQ), x0, y0 + HEAD + PH); stQ.sc.remove(bw.group);
+        const restore = silhouetteOf(bw.group); stS.sc.add(bw.group); g.drawImage(shoot(stS, bw.group, CW, SH, 0, 0, halfP * (SH / PH)), x0, y0 + HEAD + PH + QH); stS.sc.remove(bw.group); restore();
+        g.strokeStyle = "#2c2f33"; g.strokeRect(x0 + 0.5, y0 + 0.5, CW - 1, ROWH - 11);
+      }
+    }
+    return out.toDataURL("image/png");
+  };
+  /**
+   * Hoja de variedad (06-B): un lote generado como el botín (generateDistinct), con el parecido contra su base y
+   * contra el arma más cercana del lote (en rojo si pasa de `redAt`), y la matriz de parecido del lote al final.
+   */
+  const varietySheet = async (n: number, types: string[], start = 1, redAt = 0.92, distinct = true, rarity = "", need = "") => {
+    const lot: WeaponSpec[] = [];
+    for (let s = start; lot.length < n && s < start + 20000; s++) {
+      const t = types[lot.length % types.length] as BaseType;
+      const w = distinct ? gen.generateDistinct(s * 104729, t, lot, (rarity || undefined) as RarityId | undefined) : gen.generate(s, t, (rarity || undefined) as RarityId | undefined);
+      if (w.layout !== "modular-pistol" || (need && !JSON.stringify(w).includes(need))) continue;
+      lot.push(w);
+    }
+    const M = gen.lotMatrix(lot);
+    const VW = 300, VH = 165, HEAD = 74, per = 2, CW = VW * 3 + 12, CH = VH + HEAD;
+    const MAT = Math.min(900, 22 * n + 60);
+    const out = document.createElement("canvas"); out.width = CW * per; out.height = CH * Math.ceil(lot.length / per) + MAT + 60; const g = out.getContext("2d")!;
+    g.fillStyle = "#15171a"; g.fillRect(0, 0, out.width, out.height);
+    const st = studio(VW, VH);
+    let nearCount = 0;
+    for (const [i, spec] of lot.entries()) {
+      const x0 = (i % per) * CW, y0 = Math.floor(i / per) * CH;
+      const row = M[i].map((v, j) => (j === i ? -1 : v)); const nb = Math.max(...row), nj = row.indexOf(nb);
+      if (nb > redAt) nearCount++;
+      g.fillStyle = "#1e2023"; g.fillRect(x0, y0, CW - 12, HEAD);
+      g.fillStyle = spec.rarity.color; g.font = "bold 16px sans-serif";
+      g.fillText(`${i + 1}. ${spec.name} · ${spec.type} · ${spec.fireMode}${spec.burst ? " ×" + spec.burst : ""} · era ${spec.era ?? "?"}`, x0 + 8, y0 + 19);
+      g.font = "bold 14px sans-serif"; g.fillStyle = "#cfd8cf"; g.fillText(`vs base ${Math.round((spec.lineage?.similarity ?? 1) * 100)} %`, x0 + 8, y0 + 38);
+      g.fillStyle = nb > redAt ? "#ff5a5a" : "#cfd8cf"; g.fillText(`vs más cercana (#${nj + 1}) ${Math.round(nb * 100)} %${nb > redAt ? "  ← casi copia" : ""}`, x0 + 120, y0 + 38);
+      const d = spec.tweaks.pistol!; g.fillStyle = "#9aa"; g.font = "12px sans-serif";
+      g.fillText(`base ${spec.lineage?.base} · ${d.family}${d.cyl ? " · " + d.cyl.cal : ""} · cargador ${d.mag.kind}${spec.tweaks.pstock ? " · culata " + spec.tweaks.pstock.kind : ""}`, x0 + 8, y0 + 54);
+      wrapText(g, `cambios: ${(spec.lineage?.changes ?? []).join(", ") || "—"}`, x0 + 8, y0 + 68, CW - 30, 13, 1);
+      const built = await asm.assemble(spec); st.sc.add(built.group);
+      ([[0, 0], [-0.7, 0.22], [-0.35, -0.7]] as [number, number][]).forEach(([yaw, pitch], v) => g.drawImage(shoot(st, built.group, VW, VH, yaw, pitch), x0 + v * VW, y0 + HEAD));
+      st.sc.remove(built.group);
+    }
+    // Matriz de parecido del lote (verde bajo, rojo por encima de redAt)
+    const my = CH * Math.ceil(lot.length / per) + 20, cell = Math.floor((MAT - 60) / n);
+    g.fillStyle = "#ddd"; g.font = "bold 18px sans-serif"; g.fillText(`Matriz de parecido del lote (${n} armas): ${nearCount} con alguna > ${Math.round(redAt * 100)} % (${Math.round((nearCount / n) * 100)} %)`, 12, my + 10);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const v = M[i][j], x = 50 + j * cell, y = my + 30 + i * cell;
+      g.fillStyle = i === j ? "#333" : v > redAt ? "#d33" : `hsl(${Math.round(120 - Math.max(0, Math.min(1, (v - 0.55) / 0.37)) * 100)},55%,${30 + Math.round(v * 20)}%)`;
+      g.fillRect(x, y, cell - 1, cell - 1);
+      if (cell >= 20 && i !== j) { g.fillStyle = "#fff"; g.font = "9px sans-serif"; g.fillText(String(Math.round(v * 100)), x + 2, y + cell / 2 + 3); }
+    }
+    g.fillStyle = "#aaa"; g.font = "11px sans-serif"; for (let i = 0; i < n; i++) { g.fillText(String(i + 1), 50 + i * cell + 2, my + 26); g.fillText(String(i + 1), 24, my + 30 + i * cell + cell / 2 + 4); }
+    return { url: out.toDataURL("image/png"), near: nearCount, n };
+  };
+  /**
+   * Primeros planos (06-D): armas grandes en tres cuartos y de perfil, con la silueta de un arma real de su categoría
+   * (de los modelos del juego) a la misma escala, para comparar proporciones sin copiarla.
+   */
+  const closeups = async (picks: { arch: string; era: string; target?: number; rarity?: string }[], seed = 3) => {
+    const VW = 760, VH = 420, PW = 380, PH = 210, HEAD = 46;
+    const realOf = (type: string) => manifestRef.weapons.find((w) => w.type === type && !w.excluded && w.profiles?.body && /m1911|glock|beretta|revolver|python|usp/i.test(w.id)) ?? manifestRef.weapons.find((w) => w.type === type && w.profiles?.body);
+    const out = document.createElement("canvas"); out.width = VW + PW; out.height = (VH + HEAD) * picks.length; const g = out.getContext("2d")!;
+    g.fillStyle = "#15171a"; g.fillRect(0, 0, out.width, out.height);
+    const st = studio(VW, VH), stP = studio(PW, PH);
+    for (const [i, pk] of picks.entries()) {
+      const w = gen.generatePistolAt(seed + i * 13, pk.arch, pk.era as PEra, pk.target ?? null, (pk.rarity || "rara") as RarityId);
+      const y0 = i * (VH + HEAD);
+      g.fillStyle = w.rarity.color; g.font = "bold 20px sans-serif"; g.fillText(`${w.name} · ${pk.arch} · era ${pk.era} · ${w.fireMode} · parecido ${Math.round((w.lineage?.similarity ?? 1) * 100)} %`, 10, y0 + 30);
+      const built = await asm.assemble(w); st.sc.add(built.group);
+      g.drawImage(shoot(st, built.group, VW, VH, -0.55, 0.18), 0, y0 + HEAD);
+      st.sc.remove(built.group); stP.sc.add(built.group);
+      built.group.rotation.set(0, 0, 0);
+      const bsz = new THREE.Box3().setFromObject(built.group).getSize(new THREE.Vector3());
+      const half = Math.max((bsz.x / 2) * (PH / PW), bsz.y / 2) * 1.2;
+      g.drawImage(shoot(stP, built.group, PW, PH, 0, 0, half), VW, y0 + HEAD);
+      stP.sc.remove(built.group);
+      // Silueta de un arma real de la categoría, misma escala, debajo
+      const real = realOf(w.type);
+      g.fillStyle = "#f2f2f2"; g.fillRect(VW, y0 + HEAD + PH, PW, VH - PH);
+      if (real?.profiles?.body) {
+        const pr = real.profiles.body, sc = PH / (half * 2), N = pr.top.length, cx = VW + PW / 2, cy = y0 + HEAD + PH + (VH - PH) / 2;
+        const midX = (pr.x0 + pr.x1) / 2, ys = pr.top.filter((v) => v !== null) as number[], yb = pr.bot.filter((v) => v !== null) as number[], midY = (Math.max(...ys) + Math.min(...yb)) / 2;
+        g.save(); g.beginPath(); g.rect(VW, y0 + HEAD + PH, PW, VH - PH); g.clip();
+        g.fillStyle = "#555";
+        for (let k = 0; k < N; k++) { const t = pr.top[k], b = pr.bot[k]; if (t === null || b === null) continue; const x = cx + (pr.x0 + ((pr.x1 - pr.x0) * k) / N - midX) * sc; g.fillRect(x, cy - (t - midY) * sc, Math.ceil(((pr.x1 - pr.x0) / N) * sc) + 1, (t - b) * sc); }
+        g.restore();
+        g.fillStyle = "#333"; g.font = "12px sans-serif"; g.fillText(`silueta real de referencia: ${real.label ?? real.id} (misma escala)`, VW + 8, y0 + VH + HEAD - 8);
+      }
     }
     return out.toDataURL("image/png");
   };
@@ -311,6 +456,6 @@ async function boot() {
     }
     return out.toDataURL("image/png");
   };
-  (window as unknown as Record<string, unknown>).__bench = { lotSheet, simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+  (window as unknown as Record<string, unknown>).__bench = { decisionSheet, varietySheet, closeups, lotSheet, simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
 }
 boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });

@@ -136,7 +136,8 @@ export class WeaponAssembler {
       if (opticAt && spec.optic && !isKit(spec.optic)) { opticTarget = v3(opticAt); opticLength = spec.type === "pistol" ? 0.05 : 0.1; }
     } else if (spec.layout === "modular-pistol" && spec.tweaks?.pistol) {
       // Pistola modular generada por código: la malla sale del diseño (pistolmesh), pieza a pieza con su rol
-      const tw = spec.tweaks, built = buildPistol(tw.pistol!);
+      this.gen.ensureDesign(spec); // (partidas antiguas: diseño al formato actual)
+      const tw = spec.tweaks!, built = buildPistol(tw.pistol!, { legendary: spec.rarity.id === "legendaria" });
       for (const p of built.parts) add(p.object, p.role, { id: `pp-${p.role}`, label: p.role, pack: "proc" } as AssetEntry, PP_EXPLODE[p.role] ?? [0, 0, 0]);
       muzzle = built.muzzle.clone(); muzzleDiameter = tw.pistol!.barrel.d;
       if (built.railAt) { opticTarget = built.railAt.clone(); opticLength = built.railLength; }
@@ -328,6 +329,9 @@ export class WeaponAssembler {
         add(opt, "scope", { id: kp.id, label: kitLabel(kp.id), pack: "kit" } as AssetEntry, [0, 1.4, 0]);
         sight = opticTarget.y + riser + lensY; zoom = accessory(spec.optic)?.zoom ?? 1;
       }
+    } else if (spec.optic?.startsWith("pp-")) {
+      // Óptica integrada de una pistola generada: ya es parte de su malla (corredera)
+      zoom = 2.5;
     } else if (spec.optic && opticTarget && !isKit(spec.optic)) {
       const optE = get(spec.optic);
       const opt = await this.nodes(optE, "scope");

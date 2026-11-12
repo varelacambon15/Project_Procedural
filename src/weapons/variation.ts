@@ -24,7 +24,7 @@ export const midZone = (x0: number, x1: number, f: number, keepA = 0.22, keepB =
 };
 
 /** Pieza en la silueta: su perfil y cómo se coloca (escala, desplazamiento y estirado por zonas en su propio marco). */
-export interface Placed { profile: Profile; scale?: V3; offset?: V3; stretch?: Stretches; pivotY?: number }
+export interface Placed { profile: Profile; scale?: V3; offset?: V3; stretch?: Stretches; pivotY?: number; /** Cuerpo de una pistola generada (su silueta va por tramos aparte). */ isBody?: boolean }
 /** Caja simple (accesorios añadidos: raíl, tambor, linterna, mira…). */
 export interface Box2 { x0: number; x1: number; y0: number; y1: number }
 
