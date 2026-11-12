@@ -468,7 +468,7 @@
    ],
    "file": "quaternius/q-pistol-6.glb",
    "label": "Pistol 6",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "q-revolver-1",
@@ -805,7 +805,7 @@
    "approved": [],
    "file": "quaternius/q-submachinegun-1.glb",
    "label": "SubmachineGun 1",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "q-submachinegun-2",
@@ -974,7 +974,7 @@
    "approved": [],
    "file": "quaternius/q-submachinegun-4.glb",
    "label": "SubmachineGun 4",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "q-submachinegun-5",
@@ -1087,7 +1087,7 @@
    "approved": [],
    "file": "quaternius/q-assaultrifle-1.glb",
    "label": "AssaultRifle 1",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "q-assaultrifle-2",
@@ -1592,7 +1592,7 @@
    "approved": [],
    "file": "quaternius/q-bullpup-1.glb",
    "label": "Bullpup 1",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "q-bullpup-2",
@@ -1649,7 +1649,7 @@
    "approved": [],
    "file": "quaternius/q-bullpup-2.glb",
    "label": "Bullpup 2",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "q-bullpup-3",
@@ -1706,7 +1706,7 @@
    "approved": [],
    "file": "quaternius/q-bullpup-3.glb",
    "label": "Bullpup 3",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "q-shotgun-1",
@@ -1987,7 +1987,7 @@
    "approved": [],
    "file": "quaternius/q-shotgun-sawedoff.glb",
    "label": "Shotgun SawedOff",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "q-shotgun-shortstock",
@@ -2044,7 +2044,7 @@
    "approved": [],
    "file": "quaternius/q-shotgun-shortstock.glb",
    "label": "Shotgun ShortStock",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "q-sniperrifle-1",
@@ -2733,7 +2733,7 @@
    ],
    "file": "cosmo/c-pistol-1.glb",
    "label": "Pistol 1",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-pistol-2",
@@ -2809,7 +2809,7 @@
    ],
    "file": "cosmo/c-pistol-2.glb",
    "label": "Pistol 2",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-pistol-3",
@@ -2885,7 +2885,7 @@
    ],
    "file": "cosmo/c-pistol-3.glb",
    "label": "Pistol 3",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-pistol-4",
@@ -2961,7 +2961,7 @@
    ],
    "file": "cosmo/c-pistol-4.glb",
    "label": "Pistol 4",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-pistol-5",
@@ -3055,7 +3055,7 @@
    ],
    "file": "cosmo/c-pistol-5.glb",
    "label": "Pistol 5",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-pistol-6",
@@ -3131,7 +3131,7 @@
    ],
    "file": "cosmo/c-pistol-6.glb",
    "label": "Pistol 6",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-smg-1",
@@ -3225,7 +3225,7 @@
    ],
    "file": "cosmo/c-smg-1.glb",
    "label": "Subfusil 1",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-smg-2",
@@ -3324,7 +3324,7 @@
    ],
    "file": "cosmo/c-smg-2.glb",
    "label": "Subfusil 2",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-smg-3",
@@ -3405,7 +3405,7 @@
    ],
    "file": "cosmo/c-smg-3.glb",
    "label": "Subfusil 3",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-smg-4",
@@ -3481,7 +3481,7 @@
    ],
    "file": "cosmo/c-smg-4.glb",
    "label": "Subfusil 4",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-smg-5",
@@ -3575,7 +3575,7 @@
    ],
    "file": "cosmo/c-smg-5.glb",
    "label": "Subfusil 5",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-smg-6",
@@ -3674,7 +3674,7 @@
    ],
    "file": "cosmo/c-smg-6.glb",
    "label": "Subfusil 6",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-smg-7",
@@ -3768,7 +3768,7 @@
    ],
    "file": "cosmo/c-smg-7.glb",
    "label": "Subfusil 7",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-smg-8",
@@ -3862,7 +3862,7 @@
    ],
    "file": "cosmo/c-smg-8.glb",
    "label": "Subfusil 8",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-smg-9",
@@ -3919,7 +3919,7 @@
    "approved": [],
    "file": "cosmo/c-smg-9.glb",
    "label": "Subfusil 9",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-smg-10",
@@ -4013,7 +4013,7 @@
    ],
    "file": "cosmo/c-smg-10.glb",
    "label": "Subfusil 10",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-flamethrower",
@@ -4113,7 +4113,7 @@
    ],
    "file": "cosmo/c-flamethrower.glb",
    "label": "Flamethrower",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-rifle-1",
@@ -4207,7 +4207,7 @@
    ],
    "file": "cosmo/c-rifle-1.glb",
    "label": "Fusil 1",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-rifle-2",
@@ -4306,7 +4306,7 @@
    ],
    "file": "cosmo/c-rifle-2.glb",
    "label": "Fusil 2",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-rifle-3",
@@ -4382,7 +4382,7 @@
    ],
    "file": "cosmo/c-rifle-3.glb",
    "label": "Fusil 3",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-rifle-4",
@@ -4476,7 +4476,7 @@
    ],
    "file": "cosmo/c-rifle-4.glb",
    "label": "Fusil 4",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-rifle-5",
@@ -4570,7 +4570,7 @@
    ],
    "file": "cosmo/c-rifle-5.glb",
    "label": "Fusil 5",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-rifle-6",
@@ -4627,7 +4627,7 @@
    "approved": [],
    "file": "cosmo/c-rifle-6.glb",
    "label": "Fusil 6",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-rifle-7",
@@ -4721,7 +4721,7 @@
    ],
    "file": "cosmo/c-rifle-7.glb",
    "label": "Fusil 7",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-shotgun-1",
@@ -4797,7 +4797,7 @@
    ],
    "file": "cosmo/c-shotgun-1.glb",
    "label": "Shotgun 1",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-shotgun-2",
@@ -4854,7 +4854,7 @@
    "approved": [],
    "file": "cosmo/c-shotgun-2.glb",
    "label": "Shotgun 2",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-sniper-0",
@@ -4930,7 +4930,7 @@
    ],
    "file": "cosmo/c-sniper-0.glb",
    "label": "Sniper 0",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-sniper-1",
@@ -5024,7 +5024,7 @@
    ],
    "file": "cosmo/c-sniper-1.glb",
    "label": "Sniper 1",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "c-sniper-2",
@@ -5118,7 +5118,7 @@
    ],
    "file": "cosmo/c-sniper-2.glb",
    "label": "Sniper 2",
-   "excluded": "revisión visual"
+   "excluded": "revisi\u00f3n visual"
   },
   {
    "id": "a-pistol",
@@ -5786,12 +5786,39 @@
      0.0366
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.6,
+      -0.1617,
+      -0.0366
+     ],
+     "max": [
+      0.6,
+      0.1617,
+      0.0366
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.0532,
+      -0.1433,
+      -0.0202
+     ],
+     "max": [
+      0.0716,
+      0.0062,
+      0.0202
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 2016,
    "pack": "modern",
    "approved": [],
    "file": "modern/w-vss.glb",
    "label": "VSS",
-   "quarantine": "Queda un bloque suelto detrás del cajón: se usa como arma entera."
+   "quarantine": "Queda un bloque suelto detr\u00e1s del caj\u00f3n: se usa como arma entera."
   },
   {
    "id": "w-l115",
@@ -5875,6 +5902,69 @@
      0.0411
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.4865,
+      -0.0825,
+      -0.0301
+     ],
+     "max": [
+      -0.047,
+      0.1299,
+      0.0411
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.6,
+      -0.1253,
+      -0.0289
+     ],
+     "max": [
+      -0.4865,
+      0.0212,
+      0.0131
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.4625,
+      -0.1299,
+      -0.0264
+     ],
+     "max": [
+      -0.2,
+      -0.0197,
+      0.0106
+     ]
+    },
+    "front": {
+     "min": [
+      -0.047,
+      -0.0417,
+      -0.0411
+     ],
+     "max": [
+      0.6,
+      0.1085,
+      0.0253
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.1859,
+      -0.0824,
+      -0.0172
+     ],
+     "max": [
+      -0.107,
+      -0.0197,
+      0.0014
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 2970,
    "pack": "modern",
    "joints": {
@@ -6043,6 +6133,69 @@
      0.1005
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.3865,
+      -0.0342,
+      -0.0253
+     ],
+     "max": [
+      -0.0243,
+      0.1579,
+      0.0253
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.6,
+      -0.066,
+      -0.0349
+     ],
+     "max": [
+      -0.3865,
+      0.072,
+      0.0349
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.3425,
+      -0.0947,
+      -0.0154
+     ],
+     "max": [
+      -0.225,
+      0.0155,
+      0.0154
+     ]
+    },
+    "front": {
+     "min": [
+      -0.0243,
+      -0.1579,
+      -0.1005
+     ],
+     "max": [
+      0.6,
+      0.091,
+      0.1005
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.208,
+      -0.0996,
+      -0.0134
+     ],
+     "max": [
+      -0.0843,
+      0.0155,
+      0.0134
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 6810,
    "pack": "modern",
    "joints": {
@@ -6211,6 +6364,69 @@
      0.09
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.4423,
+      -0.0659,
+      -0.076
+     ],
+     "max": [
+      0.0598,
+      0.1633,
+      0.055
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.575,
+      -0.1032,
+      -0.0185
+     ],
+     "max": [
+      -0.4423,
+      0.0971,
+      0.0453
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.4193,
+      -0.1754,
+      -0.0123
+     ],
+     "max": [
+      -0.0958,
+      0,
+      0.039
+     ]
+    },
+    "front": {
+     "min": [
+      0.0598,
+      -0.0535,
+      -0.09
+     ],
+     "max": [
+      0.575,
+      0.1754,
+      0.0443
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.0764,
+      -0.1084,
+      -0.0632
+     ],
+     "max": [
+      0.0023,
+      0,
+      0.09
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 2718,
    "pack": "modern",
    "joints": {
@@ -6379,6 +6595,69 @@
      0.1065
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.3225,
+      -0.1343,
+      0.0456
+     ],
+     "max": [
+      -0.0489,
+      0.1354,
+      0.1065
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.575,
+      -0.0915,
+      0.0515
+     ],
+     "max": [
+      -0.3225,
+      0.0826,
+      0.1006
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.2995,
+      -0.1354,
+      0.0552
+     ],
+     "max": [
+      -0.2156,
+      0.056,
+      0.097
+     ]
+    },
+    "front": {
+     "min": [
+      -0.0489,
+      -0.0466,
+      0.0456
+     ],
+     "max": [
+      0.575,
+      0.1043,
+      0.1065
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.2049,
+      -0.0647,
+      -0.1065
+     ],
+     "max": [
+      -0.1064,
+      0.056,
+      0.061
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 2838,
    "pack": "modern",
    "joints": {
@@ -6532,6 +6811,33 @@
      0.1132
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.25,
+      -0.0677,
+      0.0324
+     ],
+     "max": [
+      0.25,
+      0.0677,
+      0.1132
+     ]
+    },
+    "magazine": {
+     "min": [
+      0.0914,
+      0.0406,
+      -0.1132
+     ],
+     "max": [
+      0.1205,
+      0.0557,
+      0.0435
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1844,
    "pack": "modern",
    "approved": [],
@@ -6606,6 +6912,33 @@
      0.04
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.25,
+      -0.0575,
+      -0.0137
+     ],
+     "max": [
+      0.25,
+      0.0575,
+      0.0137
+     ]
+    },
+    "magazine": {
+     "min": [
+      0.0125,
+      -0.0534,
+      -0.04
+     ],
+     "max": [
+      0.0484,
+      0.0272,
+      0.04
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1524,
    "pack": "modern",
    "approved": [
@@ -6681,6 +7014,33 @@
      0.0174
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.11,
+      -0.0624,
+      -0.0174
+     ],
+     "max": [
+      0.11,
+      0.0682,
+      0.0174
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.1081,
+      -0.0682,
+      -0.0125
+     ],
+     "max": [
+      -0.0401,
+      0.0205,
+      0.0125
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 830,
    "pack": "modern",
    "approved": [
@@ -6739,12 +7099,27 @@
      0.0192
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.45,
+      -0.0765,
+      -0.0192
+     ],
+     "max": [
+      0.45,
+      0.0765,
+      0.0192
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 714,
    "pack": "modern",
    "approved": [],
    "file": "modern/w-garand.glb",
    "label": "M1 Garand",
-   "quarantine": "Al trocear desaparece el cajón: se usa como arma entera."
+   "quarantine": "Al trocear desaparece el caj\u00f3n: se usa como arma entera."
   },
   {
    "id": "w-luger",
@@ -6813,6 +7188,33 @@
      0.0168
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.11,
+      -0.0645,
+      -0.0168
+     ],
+     "max": [
+      0.11,
+      0.0688,
+      0.0168
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.106,
+      -0.0688,
+      -0.0168
+     ],
+     "max": [
+      -0.0254,
+      0.0305,
+      0.0168
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 890,
    "pack": "modern",
    "approved": [
@@ -6903,6 +7305,69 @@
      0.0321
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.2711,
+      -0.0311,
+      -0.0321
+     ],
+     "max": [
+      0.1048,
+      0.1582,
+      0.0321
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.45,
+      -0.057,
+      -0.0219
+     ],
+     "max": [
+      -0.2711,
+      0.0787,
+      0.0294
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.2531,
+      -0.126,
+      -0.022
+     ],
+     "max": [
+      -0.0375,
+      0.0215,
+      0.0295
+     ]
+    },
+    "front": {
+     "min": [
+      0.1048,
+      -0.0007,
+      -0.0246
+     ],
+     "max": [
+      0.45,
+      0.1132,
+      0.0321
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.0371,
+      -0.1582,
+      -0.0151
+     ],
+     "max": [
+      0.0598,
+      0.0215,
+      0.0226
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1788,
    "pack": "modern",
    "joints": {
@@ -7071,6 +7536,69 @@
      0.0239
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.2711,
+      -0.0522,
+      -0.0239
+     ],
+     "max": [
+      0.0641,
+      0.1338,
+      0.0239
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.45,
+      -0.0913,
+      -0.0196
+     ],
+     "max": [
+      -0.2711,
+      0.0838,
+      0.023
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.2531,
+      -0.1197,
+      -0.015
+     ],
+     "max": [
+      -0.0938,
+      0.0168,
+      0.0184
+     ]
+    },
+    "front": {
+     "min": [
+      0.0641,
+      0.0113,
+      -0.0239
+     ],
+     "max": [
+      0.45,
+      0.1301,
+      0.0227
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.0623,
+      -0.1338,
+      -0.0144
+     ],
+     "max": [
+      0.0191,
+      0.0168,
+      0.0177
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 2348,
    "pack": "modern",
    "joints": {
@@ -7239,6 +7767,69 @@
      0.0316
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.2711,
+      -0.0238,
+      -0.0316
+     ],
+     "max": [
+      0.0175,
+      0.1119,
+      0.0316
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.45,
+      -0.0479,
+      -0.0126
+     ],
+     "max": [
+      -0.2711,
+      0.0659,
+      0.0126
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.2531,
+      -0.0811,
+      -0.0189
+     ],
+     "max": [
+      -0.1125,
+      0.018,
+      0.0189
+     ]
+    },
+    "front": {
+     "min": [
+      0.0175,
+      0.0191,
+      -0.0316
+     ],
+     "max": [
+      0.45,
+      0.1105,
+      0.0316
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.0986,
+      -0.1119,
+      -0.0119
+     ],
+     "max": [
+      -0.0275,
+      0.018,
+      0.0119
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 2108,
    "pack": "modern",
    "joints": {
@@ -7407,6 +7998,69 @@
      0.0396
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.1586,
+      -0.0908,
+      -0.0396
+     ],
+     "max": [
+      0.192,
+      0.1725,
+      0.0396
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.45,
+      -0.0802,
+      -0.0234
+     ],
+     "max": [
+      -0.1586,
+      0.121,
+      0.0234
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.1406,
+      -0.1107,
+      -0.0275
+     ],
+     "max": [
+      -0.0938,
+      0.039,
+      0.0275
+     ]
+    },
+    "front": {
+     "min": [
+      0.192,
+      0.0082,
+      -0.0268
+     ],
+     "max": [
+      0.45,
+      0.1563,
+      0.0268
+     ]
+    },
+    "magazine": {
+     "min": [
+      0.0216,
+      -0.1725,
+      -0.0228
+     ],
+     "max": [
+      0.147,
+      0.039,
+      0.0228
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 2172,
    "pack": "modern",
    "joints": {
@@ -7575,6 +8229,69 @@
      0.0289
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.2524,
+      0.0175,
+      -0.0289
+     ],
+     "max": [
+      0.1387,
+      0.1284,
+      0.0289
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.45,
+      -0.04,
+      -0.0181
+     ],
+     "max": [
+      -0.2524,
+      0.0725,
+      0.0181
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.2344,
+      -0.0694,
+      -0.0289
+     ],
+     "max": [
+      -0.0562,
+      0.0706,
+      0.0289
+     ]
+    },
+    "front": {
+     "min": [
+      0.1387,
+      0.0564,
+      -0.0191
+     ],
+     "max": [
+      0.45,
+      0.1364,
+      0.0191
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.052,
+      -0.1364,
+      -0.0174
+     ],
+     "max": [
+      0.0937,
+      0.0706,
+      0.0159
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1828,
    "pack": "modern",
    "joints": {
@@ -7743,6 +8460,69 @@
      0.087
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.2804,
+      -0.1596,
+      -0.0294
+     ],
+     "max": [
+      0.0564,
+      0.1647,
+      0.0294
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.5,
+      -0.0488,
+      -0.0294
+     ],
+     "max": [
+      -0.2804,
+      0.089,
+      0.0294
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.2604,
+      -0.1599,
+      -0.0294
+     ],
+     "max": [
+      -0.1042,
+      0.0093,
+      0.0294
+     ]
+    },
+    "front": {
+     "min": [
+      0.0564,
+      -0.0033,
+      -0.0294
+     ],
+     "max": [
+      0.5,
+      0.1508,
+      0.0294
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.0866,
+      -0.1647,
+      -0.087
+     ],
+     "max": [
+      0.0064,
+      0.0093,
+      0.087
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1538,
    "pack": "modern",
    "joints": {
@@ -7911,6 +8691,69 @@
      0.022
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.1194,
+      -0.0694,
+      -0.022
+     ],
+     "max": [
+      -0.0193,
+      0.0985,
+      0.022
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.25,
+      -0.0707,
+      -0.0174
+     ],
+     "max": [
+      -0.1194,
+      0.1204,
+      0.0174
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.1011,
+      -0.0683,
+      -0.0179
+     ],
+     "max": [
+      -0.0833,
+      0.0182,
+      0.0179
+     ]
+    },
+    "front": {
+     "min": [
+      -0.0193,
+      -0.0096,
+      -0.022
+     ],
+     "max": [
+      0.25,
+      0.1148,
+      0.022
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.0799,
+      -0.1204,
+      -0.008
+     ],
+     "max": [
+      -0.0443,
+      0.0182,
+      0.008
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 2402,
    "pack": "modern",
    "joints": {
@@ -8064,6 +8907,33 @@
      0.0277
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.25,
+      -0.0932,
+      -0.0277
+     ],
+     "max": [
+      0.25,
+      0.0932,
+      0.0277
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.1134,
+      0.0247,
+      -0.0152
+     ],
+     "max": [
+      0.1663,
+      0.05,
+      0.0152
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1236,
    "pack": "modern",
    "approved": [
@@ -8139,6 +9009,33 @@
      0.039
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.25,
+      -0.1226,
+      -0.039
+     ],
+     "max": [
+      0.25,
+      0.1836,
+      0.039
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.0234,
+      -0.1836,
+      -0.0163
+     ],
+     "max": [
+      0.1006,
+      0.0685,
+      0.0163
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1894,
    "pack": "modern",
    "approved": [
@@ -8229,6 +9126,69 @@
      0.0151
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.0256,
+      -0.0353,
+      -0.0133
+     ],
+     "max": [
+      0.1103,
+      0.0985,
+      0.0133
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.25,
+      -0.0379,
+      -0.0151
+     ],
+     "max": [
+      -0.0256,
+      0.1238,
+      0.0151
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.0156,
+      -0.0355,
+      -0.0133
+     ],
+     "max": [
+      0,
+      -0.006,
+      0.0133
+     ]
+    },
+    "front": {
+     "min": [
+      0.1103,
+      0.0309,
+      -0.0133
+     ],
+     "max": [
+      0.25,
+      0.1227,
+      0.0133
+     ]
+    },
+    "magazine": {
+     "min": [
+      0.0101,
+      -0.1238,
+      -0.0081
+     ],
+     "max": [
+      0.0853,
+      -0.006,
+      0.0081
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 2118,
    "pack": "modern",
    "joints": {
@@ -8382,6 +9342,33 @@
      0.0273
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.375,
+      -0.1149,
+      -0.0273
+     ],
+     "max": [
+      0.375,
+      0.1595,
+      0.0273
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.1866,
+      -0.1595,
+      -0.0103
+     ],
+     "max": [
+      -0.0945,
+      -0.0152,
+      0.0163
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1082,
    "pack": "modern",
    "approved": [
@@ -8457,6 +9444,33 @@
      0.0226
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.375,
+      -0.0914,
+      -0.0226
+     ],
+     "max": [
+      0.375,
+      0.1429,
+      0.0226
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.2084,
+      -0.1429,
+      -0.012
+     ],
+     "max": [
+      -0.1252,
+      0.015,
+      0.012
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1596,
    "pack": "modern",
    "approved": [
@@ -8515,6 +9529,21 @@
      0.037
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.5,
+      -0.1443,
+      -0.037
+     ],
+     "max": [
+      0.5,
+      0.1443,
+      0.037
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 2364,
    "pack": "modern",
    "approved": [],
@@ -8571,6 +9600,21 @@
      0.0317
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.31,
+      -0.0786,
+      -0.0317
+     ],
+     "max": [
+      0.31,
+      0.0786,
+      0.0317
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 636,
    "pack": "modern",
    "approved": [],
@@ -8644,6 +9688,33 @@
      0.0181
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.11,
+      -0.0661,
+      -0.0181
+     ],
+     "max": [
+      0.11,
+      0.077,
+      0.0181
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.1067,
+      -0.077,
+      -0.017
+     ],
+     "max": [
+      -0.0328,
+      0.0263,
+      0.0124
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 642,
    "pack": "modern",
    "approved": [
@@ -8702,6 +9773,21 @@
      0.0163
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.13,
+      -0.0552,
+      -0.0163
+     ],
+     "max": [
+      0.13,
+      0.0552,
+      0.0163
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1446,
    "pack": "modern",
    "approved": [],
@@ -8775,6 +9861,33 @@
      0.0177
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.11,
+      -0.0582,
+      -0.0177
+     ],
+     "max": [
+      0.11,
+      0.0658,
+      0.0177
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.0894,
+      -0.0658,
+      -0.0104
+     ],
+     "max": [
+      -0.0373,
+      0.007,
+      0.0104
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 1040,
    "pack": "modern",
    "approved": [
@@ -8850,6 +9963,33 @@
      0.0099
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.1093,
+      -0.0372,
+      -0.0099
+     ],
+     "max": [
+      0.11,
+      0.0437,
+      0.0099
+     ]
+    },
+    "magazine": {
+     "min": [
+      -0.11,
+      -0.0437,
+      -0.0084
+     ],
+     "max": [
+      -0.0687,
+      0.0141,
+      0.008
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 874,
    "pack": "modern",
    "approved": [
@@ -9475,7 +10615,8 @@
    "pack": "misc",
    "approved": [],
    "file": "misc/m-revolver.glb",
-   "label": "Revolver"
+   "label": "Revolver",
+   "excluded": "Textura fotogr\u00e1fica oxidada"
   },
   {
    "id": "m-revolver-l",
@@ -9531,7 +10672,8 @@
    "pack": "misc",
    "approved": [],
    "file": "misc/m-revolver-l.glb",
-   "label": "Long Revolver"
+   "label": "Long Revolver",
+   "excluded": "Textura fotogr\u00e1fica oxidada"
   },
   {
    "id": "v-boltaction-rifles-a-long",
@@ -9628,6 +10770,62 @@
      0.0436
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.4802,
+      -0.047,
+      -0.0418
+     ],
+     "max": [
+      -0.1359,
+      0.0906,
+      0.0436
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.66,
+      -0.0906,
+      -0.0436
+     ],
+     "max": [
+      -0.4802,
+      0.0514,
+      0.0061
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.4538,
+      -0.046,
+      -0.0418
+     ],
+     "max": [
+      -0.4125,
+      0.0328,
+      0.0043
+     ]
+    },
+    "front": {
+     "min": [
+      -0.1359,
+      0.0269,
+      -0.0342
+     ],
+     "max": [
+      0.66,
+      0.0906,
+      -0.0032
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1038,
    "pack": "wp2",
    "joints": {
@@ -9816,6 +11014,62 @@
      0.0492
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.3865,
+      -0.0516,
+      -0.0472
+     ],
+     "max": [
+      -0.0735,
+      0.1015,
+      0.0492
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.6,
+      -0.1021,
+      -0.0492
+     ],
+     "max": [
+      -0.3865,
+      0.058,
+      0.0068
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.3625,
+      -0.0518,
+      -0.0472
+     ],
+     "max": [
+      -0.325,
+      0.0336,
+      0.0048
+     ]
+    },
+    "front": {
+     "min": [
+      -0.0735,
+      0.0303,
+      -0.0385
+     ],
+     "max": [
+      0.6,
+      0.1021,
+      -0.0036
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1002,
    "pack": "wp2",
    "joints": {
@@ -10005,6 +11259,62 @@
      0.0418
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.2009,
+      -0.0436,
+      -0.04
+     ],
+     "max": [
+      0.0171,
+      0.0862,
+      0.0418
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.387,
+      -0.0867,
+      -0.0418
+     ],
+     "max": [
+      -0.2009,
+      0.0492,
+      0.0058
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.1854,
+      -0.044,
+      -0.04
+     ],
+     "max": [
+      -0.1451,
+      0.0215,
+      0.0041
+     ]
+    },
+    "front": {
+     "min": [
+      0.0171,
+      0.0239,
+      -0.0327
+     ],
+     "max": [
+      0.387,
+      0.0867,
+      -0.0031
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1000,
    "pack": "wp2",
    "joints": {
@@ -10189,6 +11499,62 @@
      0.0457
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.4527,
+      -0.0462,
+      -0.0457
+     ],
+     "max": [
+      0.0842,
+      0.102,
+      0.0457
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.66,
+      -0.102,
+      -0.0457
+     ],
+     "max": [
+      -0.4527,
+      0.0587,
+      0.0071
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.4263,
+      -0.0519,
+      -0.0457
+     ],
+     "max": [
+      -0.1925,
+      0.0393,
+      0.0071
+     ]
+    },
+    "front": {
+     "min": [
+      0.0842,
+      0.0391,
+      -0.033
+     ],
+     "max": [
+      0.66,
+      0.0989,
+      -0.0053
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1044,
    "pack": "wp2",
    "joints": {
@@ -10367,6 +11733,62 @@
      0.0533
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.3615,
+      -0.0552,
+      -0.0533
+     ],
+     "max": [
+      0.0515,
+      0.1191,
+      0.0533
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.6,
+      -0.1191,
+      -0.0533
+     ],
+     "max": [
+      -0.3615,
+      0.0685,
+      0.0083
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.3375,
+      -0.0607,
+      -0.0533
+     ],
+     "max": [
+      -0.2,
+      0.0094,
+      0.0083
+     ]
+    },
+    "front": {
+     "min": [
+      0.0515,
+      0.0043,
+      -0.0391
+     ],
+     "max": [
+      0.6,
+      0.1156,
+      -0.0059
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1028,
    "pack": "wp2",
    "joints": {
@@ -10539,6 +11961,62 @@
      0.0401
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.2009,
+      -0.0454,
+      -0.0401
+     ],
+     "max": [
+      0.0332,
+      0.0896,
+      0.0401
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.387,
+      -0.0896,
+      -0.0401
+     ],
+     "max": [
+      -0.2009,
+      0.0516,
+      0.0063
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.1854,
+      -0.0456,
+      -0.0401
+     ],
+     "max": [
+      -0.129,
+      0.0053,
+      0.0063
+     ]
+    },
+    "front": {
+     "min": [
+      0.0332,
+      -0.0012,
+      -0.0294
+     ],
+     "max": [
+      0.387,
+      0.0869,
+      -0.0045
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 942,
    "pack": "wp2",
    "joints": {
@@ -10721,6 +12199,62 @@
      0.0234
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.3601,
+      -0.0627,
+      -0.022
+     ],
+     "max": [
+      -0.0606,
+      0.0804,
+      0.022
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.495,
+      -0.0835,
+      -0.0162
+     ],
+     "max": [
+      -0.3601,
+      0.0502,
+      0.0162
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.3403,
+      -0.0653,
+      -0.0147
+     ],
+     "max": [
+      -0.2681,
+      -0.0061,
+      0.0147
+     ]
+    },
+    "front": {
+     "min": [
+      -0.0606,
+      -0.0092,
+      -0.0234
+     ],
+     "max": [
+      0.495,
+      0.0835,
+      0.0234
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1030,
    "pack": "wp2",
    "joints": {
@@ -10905,6 +12439,62 @@
      0.0238
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.3086,
+      -0.0663,
+      -0.0224
+     ],
+     "max": [
+      -0.0551,
+      0.0819,
+      0.0224
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.45,
+      -0.0851,
+      -0.0165
+     ],
+     "max": [
+      -0.3086,
+      0.0512,
+      0.0165
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.2906,
+      -0.0666,
+      -0.015
+     ],
+     "max": [
+      -0.2437,
+      -0.0168,
+      0.015
+     ]
+    },
+    "front": {
+     "min": [
+      -0.0551,
+      -0.0093,
+      -0.0238
+     ],
+     "max": [
+      0.45,
+      0.0851,
+      0.0238
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1060,
    "pack": "wp2",
    "joints": {
@@ -11089,6 +12679,62 @@
      0.0229
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.2493,
+      -0.0638,
+      -0.0215
+     ],
+     "max": [
+      -0.0313,
+      0.0786,
+      0.0215
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.387,
+      -0.0817,
+      -0.0158
+     ],
+     "max": [
+      -0.2493,
+      0.0493,
+      0.0158
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.2338,
+      -0.0639,
+      -0.0126
+     ],
+     "max": [
+      -0.1935,
+      -0.0308,
+      0.0126
+     ]
+    },
+    "front": {
+     "min": [
+      -0.0313,
+      -0.009,
+      -0.0229
+     ],
+     "max": [
+      0.387,
+      0.0817,
+      0.0229
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1078,
    "pack": "wp2",
    "joints": {
@@ -11273,6 +12919,62 @@
      0.0346
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.3189,
+      -0.044,
+      -0.0346
+     ],
+     "max": [
+      0.1044,
+      0.0922,
+      0.0346
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.495,
+      -0.1029,
+      -0.0206
+     ],
+     "max": [
+      -0.3189,
+      0.0255,
+      0.0207
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.2991,
+      -0.0619,
+      -0.0342
+     ],
+     "max": [
+      -0.1031,
+      0.0276,
+      0.0342
+     ]
+    },
+    "front": {
+     "min": [
+      0.1044,
+      0.0184,
+      -0.0203
+     ],
+     "max": [
+      0.495,
+      0.1029,
+      0.0203
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1718,
    "pack": "wp2",
    "joints": {
@@ -11462,6 +13164,62 @@
      0.0357
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.1774,
+      -0.0265,
+      -0.0357
+     ],
+     "max": [
+      0.1324,
+      0.0951,
+      0.0357
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.45,
+      -0.1061,
+      -0.0213
+     ],
+     "max": [
+      -0.1774,
+      0.0778,
+      0.0213
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.1594,
+      -0.0639,
+      -0.0213
+     ],
+     "max": [
+      -0.0562,
+      -0.0115,
+      0.0213
+     ]
+    },
+    "front": {
+     "min": [
+      0.1324,
+      0.019,
+      -0.0209
+     ],
+     "max": [
+      0.45,
+      0.1061,
+      0.0209
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1674,
    "pack": "wp2",
    "joints": {
@@ -11652,6 +13410,62 @@
      0.0395
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.088,
+      -0.0295,
+      -0.0395
+     ],
+     "max": [
+      0.2106,
+      0.105,
+      0.0395
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.387,
+      -0.1172,
+      -0.0235
+     ],
+     "max": [
+      -0.088,
+      0.0855,
+      0.0235
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.0726,
+      -0.0706,
+      -0.0181
+     ],
+     "max": [
+      0.043,
+      -0.0268,
+      0.0181
+     ]
+    },
+    "front": {
+     "min": [
+      0.2106,
+      0.021,
+      -0.0231
+     ],
+     "max": [
+      0.387,
+      0.1172,
+      0.0231
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "grip",
+    "front"
+   ],
    "triangles": 1668,
    "pack": "wp2",
    "joints": {
@@ -11837,6 +13651,61 @@
      0.0246
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.2626,
+      -0.005,
+      -0.0246
+     ],
+     "max": [
+      0.116,
+      0.0918,
+      0.0246
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.55,
+      -0.0918,
+      -0.0169
+     ],
+     "max": [
+      -0.2626,
+      0.0633,
+      0.0169
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.2406,
+      -0.0461,
+      -0.0197
+     ],
+     "max": [
+      -0.1146,
+      0.0112,
+      0.0198
+     ]
+    },
+    "front": {
+     "min": [
+      0.116,
+      0.0254,
+      -0.0231
+     ],
+     "max": [
+      0.55,
+      0.0819,
+      0.0231
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "front"
+   ],
    "triangles": 1020,
    "pack": "wp2",
    "joints": {
@@ -12021,6 +13890,61 @@
      0.0238
     ]
    },
+   "partBounds": {
+    "receiver": {
+     "min": [
+      -0.1337,
+      -0.0055,
+      -0.0238
+     ],
+     "max": [
+      0.1623,
+      0.0888,
+      0.0238
+     ]
+    },
+    "stock": {
+     "min": [
+      -0.43,
+      -0.0888,
+      -0.0163
+     ],
+     "max": [
+      -0.1337,
+      0.0612,
+      0.0163
+     ]
+    },
+    "grip": {
+     "min": [
+      -0.1165,
+      -0.0446,
+      -0.0117
+     ],
+     "max": [
+      -0.0179,
+      0.0005,
+      0.0117
+     ]
+    },
+    "front": {
+     "min": [
+      0.1623,
+      0.0197,
+      -0.0231
+     ],
+     "max": [
+      0.43,
+      0.0791,
+      0.0231
+     ]
+    }
+   },
+   "wood": [
+    "receiver",
+    "stock",
+    "front"
+   ],
    "triangles": 1108,
    "pack": "wp2",
    "joints": {
@@ -12170,6 +14094,23 @@
      0.0403
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.525,
+      -0.0972,
+      -0.0403
+     ],
+     "max": [
+      0.525,
+      0.0972,
+      0.0403
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 1136,
    "pack": "wp2",
    "approved": [],
@@ -12236,6 +14177,23 @@
      0.0691
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.425,
+      -0.1669,
+      -0.0691
+     ],
+     "max": [
+      0.425,
+      0.1669,
+      0.0691
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 1136,
    "pack": "wp2",
    "approved": [],
@@ -12302,6 +14260,23 @@
      0.0336
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.5,
+      -0.141,
+      -0.0336
+     ],
+     "max": [
+      0.5,
+      0.141,
+      0.0336
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 904,
    "pack": "wp2",
    "approved": [],
@@ -12373,6 +14348,23 @@
      0.0234
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.55,
+      -0.0896,
+      -0.0234
+     ],
+     "max": [
+      0.55,
+      0.0896,
+      0.0234
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 978,
    "pack": "wp2",
    "approved": [],
@@ -12444,6 +14436,23 @@
      0.0222
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.43,
+      -0.0849,
+      -0.0222
+     ],
+     "max": [
+      0.43,
+      0.0849,
+      0.0222
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 978,
    "pack": "wp2",
    "approved": [],
@@ -12510,6 +14519,23 @@
      0.0241
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.5,
+      -0.0995,
+      -0.0241
+     ],
+     "max": [
+      0.5,
+      0.0995,
+      0.0241
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 826,
    "pack": "wp2",
    "approved": [],
@@ -12566,6 +14592,23 @@
      0.0412
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.36,
+      -0.0996,
+      -0.0412
+     ],
+     "max": [
+      0.36,
+      0.0996,
+      0.0412
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 1136,
    "pack": "wp2",
    "approved": [],
@@ -12622,6 +14665,21 @@
      0.0345
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.25,
+      -0.1238,
+      -0.0345
+     ],
+     "max": [
+      0.25,
+      0.1238,
+      0.0345
+     ]
+    }
+   },
+   "wood": [],
    "triangles": 894,
    "pack": "wp2",
    "approved": [],
@@ -12678,6 +14736,23 @@
      0.0538
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.25,
+      -0.1072,
+      -0.0538
+     ],
+     "max": [
+      0.25,
+      0.1072,
+      0.0538
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 926,
    "pack": "wp2",
    "approved": [],
@@ -12734,6 +14809,23 @@
      0.026
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.25,
+      -0.0755,
+      -0.026
+     ],
+     "max": [
+      0.25,
+      0.0755,
+      0.026
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 1524,
    "pack": "wp2",
    "approved": [],
@@ -12790,6 +14882,23 @@
      0.0396
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.25,
+      -0.0575,
+      -0.0396
+     ],
+     "max": [
+      0.25,
+      0.0575,
+      0.0396
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 1556,
    "pack": "wp2",
    "approved": [],
@@ -12846,6 +14955,23 @@
      0.0105
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.121,
+      -0.0497,
+      -0.0105
+     ],
+     "max": [
+      0.121,
+      0.0497,
+      0.0105
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 625,
    "pack": "wp2",
    "approved": [],
@@ -12902,6 +15028,23 @@
      0.0122
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.11,
+      -0.0575,
+      -0.0122
+     ],
+     "max": [
+      0.11,
+      0.0575,
+      0.0122
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 625,
    "pack": "wp2",
    "approved": [],
@@ -12958,6 +15101,23 @@
      0.014
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.0946,
+      -0.0662,
+      -0.014
+     ],
+     "max": [
+      0.0946,
+      0.0662,
+      0.014
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 625,
    "pack": "wp2",
    "approved": [],
@@ -13014,6 +15174,23 @@
      0.0154
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.143,
+      -0.0465,
+      -0.0154
+     ],
+     "max": [
+      0.143,
+      0.0465,
+      0.0154
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 996,
    "pack": "wp2",
    "approved": [],
@@ -13070,6 +15247,23 @@
      0.0172
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.13,
+      -0.0521,
+      -0.0172
+     ],
+     "max": [
+      0.13,
+      0.0521,
+      0.0172
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 996,
    "pack": "wp2",
    "approved": [],
@@ -13126,6 +15320,23 @@
      0.0203
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.1118,
+      -0.0613,
+      -0.0203
+     ],
+     "max": [
+      0.1118,
+      0.0613,
+      0.0203
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 996,
    "pack": "wp2",
    "approved": [],
@@ -13182,6 +15393,23 @@
      0.0188
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.143,
+      -0.0602,
+      -0.0188
+     ],
+     "max": [
+      0.143,
+      0.0602,
+      0.0188
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 1252,
    "pack": "wp2",
    "approved": [],
@@ -13238,6 +15466,23 @@
      0.0227
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.13,
+      -0.0728,
+      -0.0227
+     ],
+     "max": [
+      0.13,
+      0.0728,
+      0.0227
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 1252,
    "pack": "wp2",
    "approved": [],
@@ -13294,6 +15539,23 @@
      0.0265
     ]
    },
+   "partBounds": {
+    "body": {
+     "min": [
+      -0.1118,
+      -0.085,
+      -0.0265
+     ],
+     "max": [
+      0.1118,
+      0.085,
+      0.0265
+     ]
+    }
+   },
+   "wood": [
+    "body"
+   ],
    "triangles": 1252,
    "pack": "wp2",
    "approved": [],

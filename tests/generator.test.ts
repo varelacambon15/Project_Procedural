@@ -136,7 +136,7 @@ describe("armas largas despiezadas", () => {
       expect(longGunOk(r, s, f, g, w.type, w.tweaks)).toBe(true);
     }
     expect(total).toBeGreaterThan(100);
-    expect(mixed / total).toBeGreaterThan(0.65);
+    expect(mixed / total).toBeGreaterThan(0.5);
     expect(cross / total).toBeGreaterThan(0.2);
   });
 });

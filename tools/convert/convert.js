@@ -147,7 +147,16 @@ async function finish(id, type, parts, extra = {}) {
   // Piezas intercambiables aprobadas tras la revisión visual (las demás no se usan sueltas)
   const swappable = ["stock", "grip", "front", "slide", "frame", "barrel", "magazine", "scope"];
   const approved = parts.map((p) => p.role).filter((r) => swappable.includes(r));
-  return { id, type, parts: parts.map((p) => ({ role: p.role, node: p.mesh.name, source: p.source || "" })), ...meta, triangles: Math.round(tris), ...extra, approved, glb };
+  // Caja de cada pieza (por rol) y si es de madera: el generador las usa para la puerta de calidad y el acabado único
+  const partBounds = {}, wood = [];
+  for (const p of parts) {
+    p.mesh.geometry.computeBoundingBox(); const bb = p.mesh.geometry.boundingBox;
+    const cur = partBounds[p.role]; const lo = bb.min.toArray(), hi = bb.max.toArray();
+    partBounds[p.role] = cur ? { min: cur.min.map((v, i) => Math.min(v, lo[i])), max: cur.max.map((v, i) => Math.max(v, hi[i])) } : { min: lo, max: hi };
+    const mats = [].concat(p.mesh.material);
+    if (mats.some((m) => /wood|brown|handle/i.test(m.name || "")) && !wood.includes(p.role)) wood.push(p.role);
+  }
+  return { id, type, parts: parts.map((p) => ({ role: p.role, node: p.mesh.name, source: p.source || "" })), ...meta, partBounds: roundSockets(partBounds), wood, triangles: Math.round(tris), ...extra, approved, glb };
 }
 
 // ---------- OBJ (Quaternius) con separación por componentes conexas ----------

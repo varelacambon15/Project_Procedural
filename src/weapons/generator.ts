@@ -209,6 +209,8 @@ function weighted<T>(r: Rng, arr: T[], w: (x: T) => number): T {
   for (const x of arr) { roll -= w(x); if (roll < 0) return x; }
   return arr[arr.length - 1];
 }
+/** Estilo de cada familia: las piezas se mezclan sobre todo dentro del mismo estilo. */
+const STYLE: Record<string, string> = { modern: "modern", zsky: "modern", asimov: "modern", misc: "modern", kit: "modern", wp2: "vintage", quaternius: "toon" };
 /** Proporción de armas del kit modular en cada tipo que lo admite. */
 const KIT_SHARE: Partial<Record<WeaponType, number>> = { rifle: 0.4, pistol: 0.3, shotgun: 0.4 };
 /** Peso de cada pack al elegir el cuerpo: los modelos más realistas salen más a menudo. */
@@ -385,8 +387,14 @@ export class WeaponGenerator {
         const stocks = donors("stock", (w) => cls(w.type) === cls(type)).filter(fit("rear", 0.7, 1.4));
         const fronts = donors("front", (w) => w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front", 0.7, 1.4));
         const grips = donors("grip", () => true).filter(fit("grip", 0.72, 1.35));
-        // Familia propia o ajena a partes iguales
-        const choose = (list: AssetEntry[]) => { if (!list.length) return base; const own = list.filter((w) => w.pack === base.pack), other = list.filter((w) => w.pack !== base.pack); return pick(r, own.length && (!other.length || r() < 0.5) ? own : other); };
+        // Familia propia (45%), otra familia del mismo estilo (35%) u otro estilo (20%): flexible, pero con predominio coherente
+        const style = (w: AssetEntry) => STYLE[w.pack] ?? "modern";
+        const choose = (list: AssetEntry[]) => {
+          if (!list.length) return base;
+          const own = list.filter((w) => w.pack === base.pack), same = list.filter((w) => w.pack !== base.pack && style(w) === style(base)), other = list.filter((w) => style(w) !== style(base));
+          const x = r(); const order = x < 0.45 ? [own, same, other] : x < 0.8 ? [same, own, other] : [other, same, own];
+          return pick(r, order.find((l) => l.length)!);
+        };
         // Nada de armas genéricas: al menos dos de las tres piezas vienen de otras armas (si no cabe, al menos una)
         for (const need of [2, 1]) {
           for (let tries = 0; tries < 30; tries++) {
@@ -435,12 +443,35 @@ export function pieceScale(recv: AssetEntry, donor: AssetEntry, role: "stock" | 
 }
 const THREE_clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
+/** Silueta vertical (y la anchura de la empuñadura) de una pieza ajena colocada en el cajón, comparada con la original. */
+function shapeOk(recv: AssetEntry, donor: AssetEntry, role: "stock" | "front" | "grip", tw: Tweaks): boolean {
+  if (donor.id === recv.id) return true;
+  const own = recv.partBounds?.[role], db = donor.partBounds?.[role];
+  if (!own || !db || !recv.joints || !donor.joints) return true;
+  const [sx, sy] = pieceScale(recv, donor, role, tw);
+  const face = role === "stock" ? donor.joints.stockFace : role === "front" ? donor.joints.frontFace : donor.joints.gripFace;
+  const at = role === "stock" ? recv.joints.rear : role === "front" ? recv.joints.front : recv.joints.grip;
+  const top = at.pos[1] + (db.max[1] - face.pos[1]) * sy, bottom = at.pos[1] + (db.min[1] - face.pos[1]) * sy;
+  const H = own.max[1] - own.min[1];
+  if (role === "grip") {
+    // Empuñadura: largo y ancho parecidos a la original
+    const len = (db.max[1] - db.min[1]) * sy, wid = (db.max[0] - db.min[0]) * sx;
+    return len < H * 1.25 && len > H * 0.7 && wid < (own.max[0] - own.min[0]) * 1.35;
+  }
+  // Culata y guardamanos: ni por encima ni por debajo de la original más de un 25-35% de su alto
+  return top <= own.max[1] + H * 0.25 && bottom >= own.min[1] - H * (role === "stock" ? 0.35 : 0.3);
+}
+
 export function longGunOk(recv: AssetEntry, stock: AssetEntry, front: AssetEntry, grip: AssetEntry, type: WeaponType, tw: Tweaks = NO_TWEAKS): boolean {
   if (!recv.joints || !stock.joints || !front.joints || !grip.joints) return false;
   const own = (x: AssetEntry) => x.id === recv.id;
   const kS = own(stock) ? 1 : jointScale(recv, stock, "rear"), kF = own(front) ? 1 : jointScale(recv, front, "front"), kG = own(grip) ? 1 : jointScale(recv, grip, "grip");
   // La sección se adapta (solo en un eje), así que se admite más diferencia; aun así nada desproporcionado
   if (!within(kS, 0.7, 1.4) || !within(kF, 0.7, 1.4) || !within(kG, 0.72, 1.35)) return false;
+  // Puerta de forma: cada pieza ajena, ya escalada y colocada en su junta, debe quedar dentro de la silueta de la
+  // pieza original del cajón (con margen). Evita guardamanos a la altura de la mira, empuñaduras enormes o culatas
+  // desproporcionadas.
+  if (!shapeOk(recv, stock, "stock", tw) || !shapeOk(recv, front, "front", tw) || !shapeOk(recv, grip, "grip", tw)) return false;
   const J = recv.joints;
   const stockLen = (stock.joints.stockFace.pos[0] - stock.bounds.min[0]) * pieceScale(recv, stock, "stock", tw)[0];
   const frontLen = (front.bounds.max[0] - front.joints.frontFace.pos[0]) * pieceScale(recv, front, "front", tw)[0];

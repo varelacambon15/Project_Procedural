@@ -26,6 +26,9 @@ export interface AssetEntry {
   approved?: string[];
   /** Si está en cuarentena, el motivo. */
   quarantine?: string;
+  /** Caja de cada pieza por rol, y roles que son de madera. */
+  partBounds?: Partial<Record<PartRole, { min: [number, number, number]; max: [number, number, number] }>>;
+  wood?: PartRole[];
   /** Fuera del botín (revisión visual), con el motivo. */
   excluded?: string;
 }

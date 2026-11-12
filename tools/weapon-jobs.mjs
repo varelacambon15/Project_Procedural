@@ -147,7 +147,7 @@ for (const j of ALL) if (QUARANTINE[j.id]) j.quarantine = QUARANTINE[j.id];
 const EXCLUDED = {
   cosmo: "Estilo ciencia ficción con camuflaje verde: parece de juguete al lado del resto.",
   "q-submachinegun-1": "Bloque tosco.", "q-submachinegun-4": "Bloque tosco.", "q-bullpup-1": "Bloque tosco.", "q-bullpup-2": "Bloque tosco.", "q-bullpup-3": "Bloque tosco.",
-  "q-assaultrifle-1": "Proporciones raras (culata enana).", "q-pistol-6": "Forma rara.", "q-shotgun-sawedoff": "Escala de escopeta larga.", "q-shotgun-shortstock": "Escala de escopeta larga.",
+  "q-assaultrifle-1": "Proporciones raras (culata enana).", "m-revolver": "Textura fotográfica oxidada: no casa con el estilo.", "m-revolver-l": "Textura fotográfica oxidada: no casa con el estilo.", "q-pistol-6": "Forma rara.", "q-shotgun-sawedoff": "Escala de escopeta larga.", "q-shotgun-shortstock": "Escala de escopeta larga.",
 };
 for (const j of ALL) { const why = EXCLUDED[j.id] ?? EXCLUDED[j.pack]; if (why) j.excluded = why; }
 

@@ -171,6 +171,9 @@ export class WeaponAssembler {
         await attach("stock", "rear", "stockFace", [-1.2, 0, 0]);
         const fr = await attach("front", "front", "frontFace", [1.1, 0.2, 0]);
         await attach("grip", "grip", "gripFace", [0, -1, 0]);
+        // Acabado único: las piezas ajenas toman el color del metal/polímero del cajón (la madera conserva el suyo),
+        // así el arma se lee como una sola pieza y no como un parche de colores.
+        unifyFinish(recv, parts.filter((p) => p.from !== bodyE && ["stock", "front", "grip"].includes(p.role)).map((p) => p.object));
         if (fr.donor.sockets.muzzle) {
           const m = fr.donor.sockets.muzzle;
           muzzle = v3(m.pos).multiply(fr.sv).add(fr.node.position);
@@ -333,6 +336,20 @@ function roleOf(o: THREE.Object3D): string | null {
     if (m) return m[1];
   }
   return null;
+}
+
+const isWood = (m: THREE.Material) => /Wood|Handle|Brown/i.test(m.name);
+/** Iguala el color de los materiales no de madera de `objs` al color medio de los de `ref`. */
+function unifyFinish(ref: THREE.Object3D, objs: THREE.Object3D[]) {
+  const mats = (o: THREE.Object3D) => { const out: THREE.MeshStandardMaterial[] = []; o.traverse((n) => { const m = n as THREE.Mesh; if (m.isMesh) out.push(...([] as THREE.Material[]).concat(m.material) as THREE.MeshStandardMaterial[]); }); return out; };
+  const base = mats(ref).filter((m) => !isWood(m) && m.color);
+  if (!base.length) return;
+  const avg = new THREE.Color(0, 0, 0); for (const m of base) avg.add(m.color); avg.multiplyScalar(1 / base.length);
+  for (const o of objs) for (const m of mats(o)) if (!isWood(m) && m.color && !m.map) {
+    // Conserva un poco el contraste propio (metal más claro o más oscuro) pero en el tono del cajón
+    const l = m.color.getHSL({ h: 0, s: 0, l: 0 }).l, la = avg.getHSL({ h: 0, s: 0, l: 0 }).l;
+    m.color.copy(avg).multiplyScalar(THREE.MathUtils.clamp(0.75 + (l - la) * 1.5, 0.6, 1.4));
+  }
 }
 
 /** Pinta una pieza con el color principal o el secundario del acabado (las texturas de paleta se tiñen). */
