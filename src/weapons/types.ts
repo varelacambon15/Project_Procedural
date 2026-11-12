@@ -121,7 +121,14 @@ export interface Tweaks {
   device?: { id: string; at: [number, number] } | null;
   /** Punto de montaje bajo el raíl que queda libre al desmontar el accesorio (se puede volver a montar uno). */
   deviceZone?: [number, number] | null;
+  adds?: Addon[] | null;
 }
+/**
+ * Añadidos estructurales clásicos (valen en cualquier era): banda ventilada sobre el cañón, tetón o contrapeso bajo el
+ * cañón, cubrecañón perforado, bípode plegado y alza de escalera. Caja en coordenadas del
+ * arma antes de centrar: de x0 a x1, de y a y + h.
+ */
+export interface Addon { kind: "rib" | "lug" | "shield" | "bipod" | "ladder" | "handle" | "jacket" | "cheek"; x0: number; x1: number; y: number; h: number }
 export interface EraAdds {
   cover?: [number, number, number, number, number] | null;    // x0, x1, y, alto, ancho
   cell?: [number, number, number, number] | null;             // x, y (alto del pozo), alto, ancho

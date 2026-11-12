@@ -8,6 +8,7 @@ import { KIT_FLIP, isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
 import { accessory, buildFrontSight, buildMuzzle, buildOptic } from "./accessories";
 import { applyFinish } from "./finish";
 import { contactAO } from "./ao";
+import { ADDON_ROLE, buildAddon } from "./addons";
 import { buildAdapter, buildCell, buildCover, buildDisplay, buildFront, buildPatch, buildStock, buildTape, clipX } from "./procparts";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
@@ -378,6 +379,13 @@ export class WeaponAssembler {
       for (const a of ea.adapters ?? []) add(buildAdapter(a[0], a[1], a[2]), "charging", proc("era-adapter"), [0, 0.5, 0]);
       for (const t of ea.tapes ?? []) add(buildTape(t[0], t[1], t[2], t[3], t[4]), "stock", proc("era-tape"), [0, 0.5, 0]);
       for (const p of ea.patches ?? []) add(buildPatch(p[0], p[1], p[2]), "charging", proc("era-patch"), [0, 0, 1]);
+    }
+    // Añadidos estructurales (banda, tetón, cubrecañón, bípode, asa…), en la caja que usó la silueta
+    if (spec.tweaks?.adds?.length) {
+      const rp0 = parts.find((p) => p.role === "receiver" || p.role === "body" || p.role === "frame");
+      const rb = rp0 ? new THREE.Box3().setFromObject(rp0.object) : null;
+      const thick = rb ? Math.min(0.05, (rb.max.z - rb.min.z) * 0.8) : 0.03;
+      for (const a of spec.tweaks.adds) add(buildAddon(a, thick), ADDON_ROLE[a.kind], proc(`add-${a.kind}`), [0, a.y < 0 ? -0.8 : 0.8, 0]);
     }
     // Marca de la simulación: línea fina grabada en el costado del cajón (en todas las armas; con color, solo legendarias)
     {

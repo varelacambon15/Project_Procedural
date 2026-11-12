@@ -8,7 +8,7 @@ import { eraFinishes, rollEra, rollModernization, type Era } from "./eras";
 import { clipProfile, frontProfile, stockProfile, type FrontKind, type StockKind } from "./procparts";
 import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zoneLen, type Box2, type Placed, type Stretch } from "./variation";
 import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
-import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Rarity, type RarityId, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
+import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Addon, type Rarity, type RarityId, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
 
@@ -396,6 +396,7 @@ export class WeaponGenerator {
       if (tw.pfront) put("front", { profile: frontProfile(tw.pfront) });
       const kdev = tw.device ? this.kit.byId.get(tw.device.id) : null;
       if (kdev && tw.device) boxes.push({ x0: tw.device.at[0] + kdev.bounds.min[0], x1: tw.device.at[0] + kdev.bounds.max[0], y0: tw.device.at[1] + kdev.bounds.min[1], y1: tw.device.at[1] + kdev.bounds.max[1] });
+      for (const a of tw.adds ?? []) boxes.push({ x0: a.x0, x1: a.x1, y0: a.y, y1: a.y + a.h });
       addEraBoxes(boxes, tw.eraAdds);
       return { placed, boxes, byRole };
     }
@@ -440,6 +441,7 @@ export class WeaponGenerator {
       }
     }
     if (tw.rail) boxes.push({ x0: tw.rail[0], x1: tw.rail[1], y0: tw.rail[2] - 0.004, y1: tw.rail[2] + 0.012 });
+    for (const a of tw.adds ?? []) boxes.push({ x0: a.x0, x1: a.x1, y0: a.y, y1: a.y + a.h });
     addEraBoxes(boxes, tw.eraAdds);
     const dev = tw.device ? this.kit.byId.get(tw.device.id) : null;
     if (dev && tw.device) boxes.push({ x0: tw.device.at[0] + dev.bounds.min[0], x1: tw.device.at[0] + dev.bounds.max[0], y0: tw.device.at[1] + dev.bounds.min[1], y1: tw.device.at[1] + dev.bounds.max[1] });
@@ -488,7 +490,7 @@ export class WeaponGenerator {
       if (best && best.sim < lo && i % 6 === 5) amp = Math.max(0.35, amp * 0.7);
       if (best && best.sim > hi && i % 4 === 3) amp = Math.min(1.9, amp * 1.2);
       const { tw, barrelLength: bl } = this.rollOps(r, type, layout, parts, tw0, barrelLength, swaps.length, amp, rare, era);
-      if (layout === "modular-long" && base && !tw.pstock && !tw.pfront) {
+      if (layout === "modular-long" && base) {
         const get = (role: string) => this.byId.get(parts.find((p) => p.role === role)!.from)!;
         if (!longGunOk(base, get("stock"), get("front"), get("grip"), type, tw)) continue;
       }
@@ -508,7 +510,7 @@ export class WeaponGenerator {
       if (d === 0) break;
     }
     // Si ninguna cae en la banda, se elige al azar entre las casi mejores (no siempre la más extrema): más variedad
-    if (best && best.d > 0) { const near = cands.filter((c) => c.d <= best!.d + 0.012); best = near[Math.floor(r() * near.length)]; }
+    if (best && best.d > 0) { const near = cands.filter((c) => c.d <= best!.d + 0.05); best = near[Math.floor(r() * near.length)]; }
     return best ? { tweaks: best.tw, similarity: best.sim, barrelLength: best.bl, changes: best.ch } : { tweaks: tw0, similarity: 1, barrelLength, changes: [] };
   }
 
@@ -521,7 +523,7 @@ export class WeaponGenerator {
 
   private rollOps(r: Rng, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw0: Tweaks, barrelLength: number, swaps: number, amp = 1, rare: { nostock: boolean; hgStock: boolean } = { nostock: true, hgStock: true }, era: Era = "modern"): { tw: Tweaks; barrelLength: number } {
     const long = type !== "pistol" && type !== "revolver";
-    const tw: Tweaks = { ...tw0, rail: null, drum: false, device: null, nostock: false, magLen: 1, stockH: 1, fold: false, pstock: null, pfront: null, cutRear: null, cutFront: null };
+    const tw: Tweaks = { ...tw0, rail: null, drum: false, device: null, nostock: false, magLen: 1, stockH: 1, fold: false, pstock: null, pfront: null, cutRear: null, cutFront: null, adds: null };
     let bl = barrelLength;
     // Valor al azar en [lo, hi] pero lejos de 1: cada cambio elegido se tiene que notar
     // `amp` < 1 acerca el rango a 1 (cambios más suaves) cuando el arma se aleja demasiado de su base
@@ -586,6 +588,26 @@ export class WeaponGenerator {
       void sStock; void sHand; // el kit conserva solo sus piezas reales (sistema modular propio)
       if (type === "pistol" && !parts.some((p) => this.kit.byId.get(p.from)?.slot === "Device")) ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) });
     }
+    // Añadidos estructurales clásicos (cambian la silueta con piezas, no deformándola): se colocan más abajo sobre la
+    // silueta ya estirada. Valen en cualquier era, así las armas clásicas también llegan a sus 3 cambios.
+    const wantAdd = (k: Addon["kind"]) => ops.push({ id: `add-${k}`, run: () => { tw.adds = [...(tw.adds ?? []), { kind: k, x0: 0, x1: 0, y: 0, h: 0 }]; } });
+    const sawedGun = /sawed|sawoff|mini|shotgun-03/.test(parts[0].from);
+    if (layout === "body") {
+      if (type === "revolver") { wantAdd("rib"); wantAdd("lug"); }
+      if (type === "pistol") wantAdd("lug");
+      if (type === "shotgun") { if (!sawedGun) wantAdd("shield"); wantAdd("rib"); }
+      if (type === "smg") wantAdd("shield"); // camisa perforada del cañón, clásica en subfusiles
+      if (type === "rifle" || type === "sniper") wantAdd("ladder");
+      if (type === "lmg" || type === "sniper") wantAdd("bipod");
+    } else if (layout === "modular-long" && (type === "lmg" || type === "sniper")) wantAdd("bipod");
+    // Kit modular (fusiles): bípode plegado (más variedad entre armas del kit). Sin lanzagranadas: descartado (05).
+    if (layout === "kit" && type === "rifle") wantAdd("bipod");
+    // Añadidos grandes (cambian de verdad la silueta): asa, camisa y carrillera
+    if (layout !== "kit") {
+      if (type === "rifle" || type === "bullpup" || type === "lmg") wantAdd("handle");
+      if (type === "lmg" || (type === "smg" && layout === "modular-long")) wantAdd("jacket");
+      if ((type === "sniper" || type === "rifle") && layout === "modular-long") wantAdd("cheek");
+    }
     // Cargador alargado o de tambor solo donde el cargador va por debajo (no en armas con cargador superior, como el P90)
     const magBelow = !!base?.sockets.magazine && base.sockets.magazine.pos[1] < (base.bounds.min[1] + base.bounds.max[1]) / 2;
     if (magBelow && type !== "shotgun") ops.push({ id: "mag", run: () => { if (["smg", "rifle", "lmg"].includes(type) && r() < 0.35) tw.drum = true; else tw.magLen = 1.22 + r() * 0.28; } });
@@ -633,7 +655,68 @@ export class WeaponGenerator {
         }
       }
     }
+    if (tw.adds?.length) tw.adds = this.placeAdds(layout, type, parts, tw, bl, [...new Set(tw.adds.map((a) => a.kind))]);
     return { tw, barrelLength: bl };
+  }
+
+  /**
+   * Coloca los añadidos clásicos sobre la silueta ya estirada: el tramo del cañón es la parte delantera fina (desde la
+   * boca hacia atrás mientras la sección sea baja); la empuñadura, las columnas más bajas de la mitad trasera. Cada
+   * añadido toma su medida del arma (proporcional) y se apoya en un punto lógico (encima o debajo del cañón, bajo la
+   * empuñadura, delante del cajón).
+   */
+  private placeAdds(layout: WeaponSpec["layout"], type: BaseType, parts: PartPick[], tw: Tweaks, bl: number, kinds: Addon["kind"][]): Addon[] | null {
+    const save = tw.adds; tw.adds = null;
+    const { byRole } = this.placedParts(layout, parts, tw, bl);
+    tw.adds = save;
+    const zone = byRole.get(layout === "body" ? "body" : "front");
+    if (!zone) return null;
+    const bins = new Map<number, { x: number; lo: number; hi: number }>();
+    for (const [x, lo, hi] of spans([zone])) {
+      const k = Math.round(x / 0.006), b = bins.get(k);
+      if (!b) bins.set(k, { x: k * 0.006, lo, hi }); else { b.lo = Math.min(b.lo, lo); b.hi = Math.max(b.hi, hi); }
+    }
+    const cols = [...bins.values()].sort((a, b) => a.x - b.x);
+    if (cols.length < 5) return null;
+    const xMin = cols[0].x, xMax = cols[cols.length - 1].x, L = xMax - xMin;
+    const Hmax = Math.max(...cols.map((c) => c.hi - c.lo));
+    let i = cols.length - 1;
+    while (i > 0 && cols[i - 1].hi - cols[i - 1].lo <= Math.max(0.035, Hmax * 0.42) && cols[i - 1].x > xMin + L * 0.25) i--;
+    let seg = layout === "body" ? cols.slice(i) : cols;
+    if (xMax - seg[0].x < 0.04) seg = cols.filter((c) => c.x >= xMax - L * 0.3);
+    const sx0 = seg[0].x, sL = xMax - sx0;
+    const top = Math.max(...seg.map((c) => c.hi)), bot = Math.min(...seg.map((c) => c.lo));
+    const hs = seg.map((c) => c.hi - c.lo).sort((a, b) => a - b), bh = Math.max(0.008, Math.min(0.03, hs[Math.floor(hs.length / 2)]));
+    const out: Addon[] = [];
+    // Medidas locales del tramo que ocupa cada añadido (si el contorno no es uniforme ahí, no se pone: flotaría)
+    const local = (x0: number, x1: number) => {
+      const cs = cols.filter((c) => c.x >= x0 && c.x <= x1); if (cs.length < 2) return null;
+      const tops = cs.map((c) => c.hi), bots = cs.map((c) => c.lo);
+      return { top: Math.max(...tops), bot: Math.min(...bots), flatTop: Math.max(...tops) - Math.min(...tops) < 0.012, flatBot: Math.max(...bots) - Math.min(...bots) < 0.012 };
+    };
+    for (const k of kinds) {
+      if (k === "rib") { const x0 = sx0 + 0.004, x1 = xMax - 0.003, l = local(x0, x1); if (l?.flatTop) out.push({ kind: k, x0, x1, y: l.top - 0.001, h: 0.006 }); }
+      else if (k === "lug") { const h = Math.min(0.02, Math.max(0.009, bh * 0.6)), x0 = type === "revolver" ? sx0 + 0.003 : xMax - sL * 0.55, x1 = xMax - 0.004, l = local(x0, x1); if (l?.flatBot) out.push({ kind: k, x0, x1, y: l.bot - h + 0.002, h }); }
+      else if (k === "shield") { const h = Math.min(0.02, Math.max(0.01, bh * 0.75)), x0 = sx0 + sL * 0.12, x1 = sx0 + sL * 0.7, l = local(x0, x1); if (l?.flatTop) out.push({ kind: k, x0, x1, y: l.top - h * 0.55, h }); }
+      else if (k === "bipod") { const x0 = sx0 + sL * 0.25, x1 = sx0 + sL * 0.8, l = local(x0, x1); if (l) out.push({ kind: k, x0, x1, y: l.bot - 0.013, h: 0.012 }); }
+      else if (k === "jacket") {
+        out.push({ kind: k, x0: sx0 + sL * 0.05, x1: xMax - sL * 0.08, y: bot - bh * 0.35, h: top - bot + bh * 0.7 });
+      } else if (k === "handle" || k === "cheek") {
+        // Asa sobre el centro del cajón; carrillera sobre la culata
+        const role = k === "handle" ? (layout === "body" ? "body" : "receiver") : "stock";
+        const pz = byRole.get(role); if (!pz) continue;
+        const sp = spans([pz]); const xs = sp.map((p) => p[0]); const a = Math.min(...xs), b = Math.max(...xs), l = b - a;
+        const x0 = k === "handle" ? (layout === "body" ? a + l * 0.32 : a + l * 0.25) : a + l * 0.35, x1 = k === "handle" ? (layout === "body" ? a + l * 0.5 : a + l * 0.7) : b - l * 0.12;
+        const tops = sp.filter((p) => p[0] >= x0 && p[0] <= x1).map((p) => p[2]); if (!tops.length) continue;
+        const H = Math.max(...cols.map((c) => c.hi)) - Math.min(...cols.map((c) => c.lo));
+        out.push({ kind: k, x0, x1, y: Math.max(...tops) - 0.002, h: k === "handle" ? Math.min(0.045, Math.max(0.025, H * 0.3)) : 0.02 });
+      } else if (k === "ladder") {
+        const x0 = sx0 - 0.07, c = cols.filter((cc) => Math.abs(cc.x - x0) < 0.012);
+        if (c.length) out.push({ kind: k, x0, x1: x0 + 0.034, y: Math.max(...c.map((cc) => cc.hi)) - 0.002, h: 0.028 });
+      }
+    }
+    const ok = out.filter((a) => a.x1 - a.x0 > 0.012);
+    return ok.length ? ok : null;
   }
 
   /**
@@ -742,6 +825,7 @@ export function changesOf(layout: WeaponSpec["layout"], t: Tweaks, barrelLength:
   if (t.pstock) c.push(`stock-${t.pstock.kind}`);
   if (t.pfront) c.push(`front-${t.pfront.kind}`);
   if (t.device) c.push("device");
+  for (const a of t.adds ?? []) if (!c.includes(a.kind)) c.push(a.kind);
   return c;
 }
 
@@ -819,11 +903,13 @@ export function longGunOk(recv: AssetEntry, stock: AssetEntry, front: AssetEntry
   // Puerta de forma: cada pieza ajena, ya escalada y colocada en su junta, debe quedar dentro de la silueta de la
   // pieza original del cajón (con margen). Evita guardamanos a la altura de la mira, empuñaduras enormes o culatas
   // desproporcionadas.
-  if (tw.nostock) return shapeOk(recv, front, "front", tw) && shapeOk(recv, grip, "grip", tw);
-  if (!shapeOk(recv, stock, "stock", tw) || !shapeOk(recv, front, "front", tw) || !shapeOk(recv, grip, "grip", tw)) return false;
+  // Una culata o un guardamanos por código sustituye a la pieza del modelo: se mide la pieza por código, no la sustituida
+  const pS = tw.pstock ?? null, pF = tw.pfront ?? null;
+  if (tw.nostock) return (pF ? true : shapeOk(recv, front, "front", tw)) && shapeOk(recv, grip, "grip", tw);
+  if ((!pS && !shapeOk(recv, stock, "stock", tw)) || (!pF && !shapeOk(recv, front, "front", tw)) || !shapeOk(recv, grip, "grip", tw)) return false;
   const J = recv.joints;
-  const stockLen = zoneLen((stock.joints.stockFace.pos[0] - stock.bounds.min[0]) * pieceScale(recv, stock, "stock", tw)[0], tw.stock);
-  const frontLen = zoneLen((front.bounds.max[0] - front.joints.frontFace.pos[0]) * pieceScale(recv, front, "front", tw)[0], tw.front, 0.6);
+  const stockLen = pS ? pS.len : zoneLen((stock.joints.stockFace.pos[0] - stock.bounds.min[0]) * pieceScale(recv, stock, "stock", tw)[0], tw.stock);
+  const frontLen = pF ? pF.len + pF.barrel : zoneLen((front.bounds.max[0] - front.joints.frontFace.pos[0]) * pieceScale(recv, front, "front", tw)[0], tw.front, 0.6);
   const len = (J.front.pos[0] - J.rear.pos[0]) + stockLen + frontLen;
   const target = TYPE_LENGTH[type] ?? 0.9;
   // Longitud total del tipo y proporciones: ni culatas enanas ni guardamanos desmesurados

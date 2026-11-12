@@ -138,12 +138,14 @@ describe("armas largas despiezadas", () => {
     expect(total).toBeGreaterThan(100);
   });
 
-  it("reconocible pero nuevo: la mayoría entre 70 y 80 %; una minoría (≤10 %) hasta 88 % con 3+ añadidos visibles", () => {
+  // Banda decidida por el usuario: prompt 03, parte A (70–90 %, minoría puntual hasta ~95 % con 3+ añadidos visibles),
+  // confirmada en el prompt 05 ("lo que queda en 83–90 % está dentro").
+  it("reconocible pero nuevo: la mayoría entre 70 y 90 %; una minoría (≤10 %) hasta 95 % con 3+ añadidos visibles", () => {
     const ws = many(800);
-    const ADD = ["rail", "device", "drum", "mag-ext"];
+    const ADD = ["rail", "device", "drum", "mag-ext", "rib", "lug", "shield", "bipod", "ladder", "handle", "jacket", "cheek"];
     const sim = (w: WeaponSpec) => w.lineage!.similarity;
-    const band = ws.filter((w) => sim(w) >= 0.7 && sim(w) <= 0.8).length;
-    const exception = ws.filter((w) => sim(w) > 0.8 && sim(w) <= 0.88 && w.lineage!.changes.filter((c) => ADD.includes(c)).length >= 3).length;
+    const band = ws.filter((w) => sim(w) >= 0.7 && sim(w) <= 0.9).length;
+    const exception = ws.filter((w) => sim(w) > 0.9 && sim(w) <= 0.95 && w.lineage!.changes.filter((c) => ADD.includes(c)).length >= 3).length;
     expect(band / ws.length).toBeGreaterThan(0.85);
     expect(exception / ws.length).toBeLessThanOrEqual(0.1);
     expect((band + exception) / ws.length).toBeGreaterThan(0.95);
