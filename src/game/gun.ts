@@ -10,6 +10,7 @@ import type { Item } from "./inventory";
 import type { Dummy, Element, Zone } from "./dummies";
 import { Arms } from "./arms";
 import { audio, out, out as masterOut } from "./audio";
+import { ViewAnimator, animParams, ease, phaseAt, tri, type AnimInput, type MovingPart, type Phase } from "./anim";
 
 const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3, smg: 1.8, rifle: 2.2, bullpup: 2.4, shotgun: 2.6, sniper: 2.9, launcher: 3.2, lmg: 4.4, flamethrower: 2.8 };
 
@@ -31,13 +32,8 @@ export interface Control { fire: boolean; aim: boolean; moving: number; sprintin
  * Recarga como máquina de fases con nombre. Duraciones en fracción del tiempo total de recarga, que ya se escala con
  * el manejo y los efectos. Retocar una recarga es cambiar estos datos, no el código.
  */
-export const RELOAD_PHASES: [string, number][] = [["tilt", 0.14], ["grab", 0.12], ["out", 0.14], ["pouch", 0.16], ["in", 0.2], ["rack", 0.14], ["settle", 0.1]];
-interface PhaseState { id: string; t: number }
-export function phaseAt(phases: [string, number][], p: number): PhaseState {
-  let acc = 0;
-  for (const [id, d] of phases) { if (p <= acc + d) return { id, t: THREE.MathUtils.clamp((p - acc) / d, 0, 1) }; acc += d; }
-  return { id: phases[phases.length - 1][0], t: 1 };
-}
+export const RELOAD_PHASES: [string, number][] = animParams("rifle").reload.phases;
+export { phaseAt };
 
 /** Patrón de retroceso (vertical, horizontal) por disparo de una ráfaga, determinista por arma. */
 const patterns = new Map<number, [number, number][]>();
@@ -55,8 +51,6 @@ export function recoilPattern(seed: number): [number, number][] {
 const casingGeo = { small: new THREE.CylinderGeometry(0.0045, 0.0045, 0.02, 6), big: new THREE.CylinderGeometry(0.007, 0.007, 0.06, 6), shell: new THREE.CylinderGeometry(0.0095, 0.0095, 0.065, 8) };
 const brassMat = new THREE.MeshStandardMaterial({ color: 0xc8a050, metalness: 0.85, roughness: 0.3 });
 const shellMat = new THREE.MeshStandardMaterial({ color: 0xa02a1e, roughness: 0.6 });
-const ease = (x: number) => x * x * (3 - 2 * x);
-const tri = (x: number, a: number, b: number) => (x <= a || x >= b ? 0 : Math.sin(((x - a) / (b - a)) * Math.PI));
 
 export class Gun {
   readonly viewmodel = new THREE.Group();
@@ -72,14 +66,19 @@ export class Gun {
   private triggerHeld = false;
   private equipT = 0; private equipDur = 0.45;
   recoil = 0; recoilYaw = 0;
-  private kick = 0; private kickRoll = 0;
+  /** Capa de animación procedural (lógica pura, parámetros por clase en data/anim.json). */
+  readonly anim = new ViewAnimator();
+  private moving: Partial<Record<MovingPart, AssembledPart>> = {};
+  private holsterT = 0; private pending: { item: Item | null; rebuild: boolean } | null = null;
+  /** Para capturas: coloca el arma en su pose al instante, sin suavizado. */
+  snap = false;
+  /** Para capturas y pruebas: fuerza campos de la entrada de animación (p. ej. { reload: 0.4, dt: 0 }). */
+  poseOverride: Partial<AnimInput> | null = null;
   aimT = 0;
   private shotCount = 0;
   private burstLeft = 0; private burstTimer = 0;
   private cycleT = 0;
   private inspectT = 0;
-  private sprintBlend = 0;
-  private swayV = new THREE.Vector2(); private landT = 0; private wasGrounded = true; private bobT = 0;
   /** Efectos de rareza del arma en mano (módulos de datos por eventos; ver weapons/effects.ts). */
   private fx: EffectRunner<Dummy, THREE.Vector3> | null = null;
   /** Último daño hecho por cada arma (para el efecto "relevo") y enemigos inestables (explotan al morir). */
@@ -99,7 +98,7 @@ export class Gun {
   private audio: AudioContext | null = null;
   hitmarker = 0; critmarker = 0; killmarker = 0;
   private arms: Arms;
-  private reloadPhase: PhaseState | null = null;
+  private reloadPhase: Phase | null = null;
   private sprayIndex = 0; private sprayT = 0;
   private casings: { mesh: THREE.Mesh; vel: THREE.Vector3; spin: THREE.Vector3; t: number }[] = [];
 
@@ -127,14 +126,26 @@ export class Gun {
     return this.cache.get(item.uid)!;
   }
 
+  /** Cambia de arma: primero guarda la actual (gesto inverso a sacarla) y luego saca la nueva. */
   async equip(item: Item | null, rebuild = false) {
+    if (this.model && item !== this.item && !rebuild) {
+      this.pending = { item, rebuild };
+      if (this.holsterT <= 0) this.holsterT = this.anim.p.holster * (this.fx?.equipFast() ? 0.5 : 1);
+      this.reloadT = 0; this.burstLeft = 0; this.inspectT = 0;
+      return;
+    }
+    this.pending = null; this.holsterT = 0;
+    return this.doEquip(item, rebuild);
+  }
+  private async doEquip(item: Item | null, rebuild: boolean) {
     this.item = item; this.reloadT = 0; this.burstLeft = 0; this.inspectT = 0;
     this.fx = item ? new EffectRunner<Dummy, THREE.Vector3>(item.spec) : null;
     if (item && this.fx) { const now = performance.now() / 1000; this.fx.equip([...this.lastDealt].some(([uid, t]) => uid !== item.uid && now - t < 4)); }
     this.equipDur = item && this.fx?.equipFast() ? 0.22 : 0.3 + (1 - (item?.spec.stats.manejo ?? 60) / 100) * 0.35;
     this.equipT = this.equipDur;
-    if (this.model) { this.holder.remove(this.model.group); this.model = null; this.mag = null; }
+    if (this.model) { this.holder.remove(this.model.group); this.model = null; this.mag = null; this.moving = {}; }
     if (!item) return;
+    this.anim.setClass(item.spec.type);
     // Tipo de mira y aumentos (solo dependen del arma: se fijan ya, antes de cargar el modelo)
     const opt = accessory(item.spec.optic);
     if (opt) { this.sight = opt.id === "acc:reddot" ? "dot" : opt.id === "acc:holo" ? "holo" : "scope"; this.zoom = opt.zoom ?? 1; }
@@ -151,6 +162,8 @@ export class Gun {
     m.group.rotation.y = Math.PI / 2; // +X (boca) hacia -Z de la cámara
     this.sightY = m.sightY ?? new THREE.Box3().setFromObject(m.group).max.y;
     this.mag = m.parts.find((p) => p.role === "magazine") ?? null;
+    this.moving = {};
+    for (const role of ["slide", "pump", "charging"] as MovingPart[]) { const part = m.parts.find((p) => p.role === role); if (part) this.moving[role] = part; }
     this.model = m;
     this.holder.add(m.group);
     this.flash.position.set(0, m.muzzle.y, -m.muzzle.x);
@@ -220,12 +233,13 @@ export class Gun {
   update(dt: number, c: Control) {
     const s = this.spec, it = this.item;
     this.cooldown -= dt; this.equipT = Math.max(0, this.equipT - dt); this.cycleT = Math.max(0, this.cycleT - dt);
+    if (this.holsterT > 0) { this.holsterT -= dt; if (this.holsterT <= 0 && this.pending) { const pnd = this.pending; this.pending = null; this.holsterT = 0; void this.doEquip(pnd.item, pnd.rebuild); } }
     this.fx?.tick(dt, { aiming: this.aimT > 0.6, firing: c.fire, sprinting: c.sprinting });
     this.hitmarker = Math.max(0, this.hitmarker - dt); this.critmarker = Math.max(0, this.critmarker - dt); this.killmarker = Math.max(0, this.killmarker - dt);
     if (this.reloadT > 0) { this.reloadT -= dt; if (this.reloadT <= 0 && it && s) { it.ammo = s.stats.cargador; this.sfx("cycle"); this.fx?.reloadEnd(); } }
     if (c.inspect && s && this.reloadT <= 0 && this.aimT < 0.2) this.inspectT = 2.6;
     this.inspectT = Math.max(0, this.inspectT - dt);
-    const busy = this.equipT > 0 || this.reloadT > 0 || c.sprinting;
+    const busy = this.equipT > 0 || this.reloadT > 0 || c.sprinting || this.pending !== null;
     const canAim = !!s && !c.sprinting && this.reloadT <= 0;
     const adsSpeed = 6 + (s?.stats.manejo ?? 50) / 9 + (this.fx?.equipFast() ? 6 : 0);
     this.aimT += ((c.aim && canAim ? 1 : 0) - this.aimT) * Math.min(1, dt * adsSpeed);
@@ -254,69 +268,29 @@ export class Gun {
     const handling = s?.stats.manejo ?? 50;
     this.recoil += (0 - this.recoil) * Math.min(1, dt * (5 + handling / 12));
     this.recoilYaw += (0 - this.recoilYaw) * Math.min(1, dt * 8);
-    this.kick += (0 - this.kick) * Math.min(1, dt * 13); this.kickRoll += (0 - this.kickRoll) * Math.min(1, dt * 10);
 
-    // ---------- Animación ----------
-    const len = this.model?.length ?? 0.3;
-    const handgun = s?.type === "pistol" || s?.type === "revolver";
-    const ads = this.aimT;
-    const hip = new THREE.Vector3(0.15, -0.155, -(len * 0.5 + (handgun ? 0.2 : 0.08)));
-    const aim = new THREE.Vector3(0, -this.sightY, -(len * 0.5 + (handgun ? 0.24 : 0.07)));
-    const pos = hip.lerp(aim, ease(ads));
-    const rot = new THREE.Euler(0, 0, 0);
-    // Sprint táctico (estilo MW): el arma se gira y baja; las pistolas se levantan
-    this.sprintBlend = THREE.MathUtils.lerp(this.sprintBlend, c.sprinting && this.reloadT <= 0 ? 1 : 0, Math.min(1, dt * 9));
-    const sk = this.sprintBlend;
-    if (handgun) { pos.add(new THREE.Vector3(-0.05 * sk, 0.06 * sk, 0.05 * sk)); rot.x += 0.9 * sk; }
-    else { pos.add(new THREE.Vector3(-0.07 * sk, -0.02 * sk, 0.06 * sk)); rot.y += 0.75 * sk; rot.z += 0.35 * sk; rot.x += 0.12 * sk; }
-    // Balanceo al andar (en ocho), menor apuntando
-    this.bobT += dt * (c.sprinting ? 13 : 8.5) * Math.min(1, c.moving);
-    const bobAmp = (1 - ads * 0.85) * Math.min(1, c.moving) * (c.sprinting ? 1.8 : 1) * (c.grounded ? 1 : 0.2);
-    pos.x += Math.sin(this.bobT) * 0.008 * bobAmp; pos.y += Math.abs(Math.cos(this.bobT)) * 0.007 * bobAmp;
-    rot.z += Math.sin(this.bobT) * 0.012 * bobAmp;
-    // Respiración en reposo
-    const tNow = performance.now() / 1000;
-    pos.y += Math.sin(tNow * 1.6) * 0.0016 * (1 - ads * 0.8); rot.x += Math.sin(tNow * 1.3) * 0.004 * (1 - ads * 0.8);
-    // Salto y aterrizaje
-    if (c.grounded && !this.wasGrounded) this.landT = 0.25;
-    this.wasGrounded = c.grounded; this.landT = Math.max(0, this.landT - dt);
-    pos.y += THREE.MathUtils.clamp(-c.vy * 0.004, -0.02, 0.02) - (this.landT > 0 ? tri(1 - this.landT / 0.25, 0, 1) * 0.025 : 0);
-    // Retroceso visual: atrás, arriba y algo de giro
-    pos.z += this.kick * (handgun ? 0.035 : 0.05) * (1 - ads * 0.4); pos.y += this.kick * 0.008;
-    rot.x += this.kick * (handgun ? 0.2 : 0.07); rot.z += this.kickRoll;
-    // Corredera / cerrojo tras disparar
-    if (this.cycleT > 0) { const k = tri(1 - this.cycleT / 0.45, 0.1, 0.9); rot.z += 0.25 * k; rot.x += 0.12 * k; pos.y -= 0.02 * k; }
-    // Recarga por fases con nombre (datos en RELOAD_PHASES). Las fases mueven el arma, el cargador y la mano izquierda.
-    let reloadPhase: PhaseState | null = null;
-    if (this.reloadT > 0 && s) {
-      reloadPhase = phaseAt(RELOAD_PHASES, 1 - this.reloadT / this.reloadDur);
-      const { id, t } = reloadPhase;
-      const tilt = id === "tilt" ? ease(t) : id === "settle" ? 1 - ease(t) : 1;
-      rot.z += 0.5 * tilt; rot.x += 0.22 * tilt; pos.y -= 0.045 * tilt; pos.x -= 0.025 * tilt;
-      if (id === "rack") { const k = tri(t, 0, 1); pos.z += 0.035 * k; rot.x -= 0.12 * k; }
-      if (this.mag) {
-        const drop = id === "out" ? ease(t) : id === "pouch" ? 1 : id === "in" ? 1 - ease(t) : 0;
-        this.mag.object.position.copy(this.mag.base).add(new THREE.Vector3(-0.01, -0.2 * drop, 0));
-        this.mag.object.visible = id !== "pouch";
-      }
-    } else if (this.mag) { this.mag.object.position.copy(this.mag.base); this.mag.object.visible = true; }
-    this.reloadPhase = reloadPhase;
-    // Inspección: mostrar el lateral del arma
-    if (this.inspectT > 0) { const k = tri(1 - this.inspectT / 2.6, 0, 1); rot.y += -1.1 * ease(Math.min(1, k * 1.4)); rot.z += 0.45 * k; pos.x -= 0.06 * k; pos.z += 0.05 * k; pos.y += 0.03 * k; }
-    // Sacar el arma
-    if (this.equipT > 0) { const k = this.equipT / this.equipDur; pos.y -= 0.3 * ease(k); rot.x -= 0.9 * ease(k); rot.z += 0.3 * k; }
-
-    this.holder.position.lerp(pos, Math.min(1, dt * 22));
+    // ---------- Animación (capa procedural: src/game/anim.ts) ----------
+    const pose = this.anim.update({
+      dt, time: performance.now() / 1000, ads: this.aimT, moving: c.moving, sprinting: c.sprinting, grounded: c.grounded, vy: c.vy,
+      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, sightY: this.sightY,
+      reload: this.reloadT > 0 && s ? 1 - this.reloadT / this.reloadDur : null,
+      draw: this.equipT > 0 ? this.equipT / this.equipDur : 0,
+      holster: this.pending ? 1 - Math.max(0, this.holsterT) / Math.max(0.01, this.anim.p.holster) : 0,
+      inspect: this.inspectT > 0 ? 1 - this.inspectT / 2.6 : null,
+      cycle: this.cycleT > 0 ? 1 - this.cycleT / 0.45 : null, empty: !!it && it.ammo <= 0,
+      ...this.poseOverride,
+    });
+    this.reloadPhase = pose.phase;
+    if (this.mag) { this.mag.object.position.copy(this.mag.base).add(new THREE.Vector3(...pose.mag.offset)); this.mag.object.visible = pose.mag.visible; }
+    // Piezas móviles: la pieza retrocede a lo largo del arma (+X = boca)
+    for (const [role, part] of Object.entries(this.moving) as [MovingPart, AssembledPart][]) part.object.position.copy(part.base).add(new THREE.Vector3(-pose.parts[role], 0, 0));
+    const follow = this.snap ? 1 : 0;
+    this.holder.position.lerp(new THREE.Vector3(...pose.pos), Math.max(follow, Math.min(1, dt * 22)));
     this.holder.rotation.set(
-      THREE.MathUtils.lerp(this.holder.rotation.x, rot.x, Math.min(1, dt * 18)),
-      THREE.MathUtils.lerp(this.holder.rotation.y, rot.y, Math.min(1, dt * 14)),
-      THREE.MathUtils.lerp(this.holder.rotation.z, rot.z, Math.min(1, dt * 16)));
-    // Inercia al girar la cámara: el arma se queda un poco atrás
-    const swayK = 1 - ads * 0.75;
-    this.swayV.x += (THREE.MathUtils.clamp(c.lookX * 2.2, -0.08, 0.08) - this.swayV.x) * Math.min(1, dt * 10);
-    this.swayV.y += (THREE.MathUtils.clamp(c.lookY * 2.2, -0.06, 0.06) - this.swayV.y) * Math.min(1, dt * 10);
-    this.sway.rotation.set(-this.swayV.y * swayK, this.swayV.x * swayK, this.swayV.x * 1.4 * swayK);
-    this.sway.position.set(-this.swayV.x * 0.15 * swayK, this.swayV.y * 0.1 * swayK, 0);
+      THREE.MathUtils.lerp(this.holder.rotation.x, pose.rot[0], Math.max(follow, Math.min(1, dt * 18))),
+      THREE.MathUtils.lerp(this.holder.rotation.y, pose.rot[1], Math.max(follow, Math.min(1, dt * 14))),
+      THREE.MathUtils.lerp(this.holder.rotation.z, pose.rot[2], Math.max(follow, Math.min(1, dt * 16))));
+    this.sway.rotation.set(...pose.swayRot); this.sway.position.set(...pose.swayPos);
     // Con visor de aumento, al apuntar del todo se ve a través del visor (el arma se oculta)
     this.viewmodel.visible = !(this.sight === "scope" && this.aimT > 0.9);
     this.arms.visible = this.viewmodel.visible && !!this.model;
@@ -380,8 +354,23 @@ export class Gun {
     const camQ = this.camera.getWorldQuaternion(new THREE.Quaternion()).invert();
     const orient = camQ.multiply(this.holder.getWorldQuaternion(new THREE.Quaternion())).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.35, 0, 0)));
     let left: THREE.Vector3 | null = h.support.clone();
-    const ph = this.reloadPhase;
-    if (ph) {
+    const ph = this.reloadPhase, style = this.anim.p.reload.style;
+    const pouch = h.magwell.clone().add(new THREE.Vector3(-0.02, -0.25, 0.04));
+    const pumpOff = new THREE.Vector3(-(this.moving.pump ? this.moving.pump.base.x - this.moving.pump.object.position.x : 0), 0, 0);
+    if (ph && style === "shells") {
+      // Cartucho a cartucho: la mano va de la cartuchera a la ventana de carga y empuja
+      if (ph.id === "shell") left = ph.t < 0.5 ? pouch.clone().lerp(h.magwell, ease(ph.t * 2)) : h.magwell.clone().add(new THREE.Vector3(0.02 * tri(ph.t, 0.5, 1), 0.01 * tri(ph.t, 0.5, 1), 0));
+      else if (ph.id === "rack") left = h.support.clone().add(pumpOff);
+      else if (ph.id === "settle") left = h.magwell.clone().lerp(h.support, ease(ph.t));
+      else left = h.support.clone().lerp(h.magwell, ease(ph.t));
+    } else if (ph && style === "cylinder") {
+      // Revólver: la mano abre el tambor, lo vacía, mete los cartuchos y lo cierra
+      if (ph.id === "open") left = h.support.clone().lerp(h.magwell, ease(ph.t));
+      else if (ph.id === "eject") left = h.magwell.clone();
+      else if (ph.id === "load") { const k = (ph.t * 3) % 1; left = pouch.clone().lerp(h.magwell, ease(Math.min(1, k * 1.6))); }
+      else if (ph.id === "close") left = h.magwell.clone().add(new THREE.Vector3(0, 0, -0.03 * tri(ph.t, 0, 1)));
+      else if (ph.id === "settle") left = h.magwell.clone().lerp(h.support, ease(ph.t));
+    } else if (ph) {
       const mag = this.mag ? this.mag.object.position.clone().sub(this.mag.base) : new THREE.Vector3();
       const atMag = h.magwell.clone().add(mag);
       if (ph.id === "grab") left = h.support.clone().lerp(atMag, ease(ph.t));
@@ -391,7 +380,7 @@ export class Gun {
       else if (ph.id === "rack") left = h.charge.clone().add(new THREE.Vector3(-0.05 * tri(ph.t, 0, 1), 0.01, 0.03));
       else if (ph.id === "settle") left = h.charge.clone().lerp(h.support, ease(ph.t));
     } else if (this.cycleT > 0 && this.spec?.fireMode === "pump") {
-      left = h.support.clone().add(new THREE.Vector3(-0.07 * tri(1 - this.cycleT / 0.45, 0, 1), 0, 0));
+      left = this.moving.pump ? h.support.clone().add(pumpOff) : h.support.clone().add(new THREE.Vector3(-0.07 * tri(1 - this.cycleT / 0.45, 0, 1), 0, 0));
     } else if (this.cycleT > 0 && this.spec?.fireMode === "bolt") {
       left = h.charge.clone().add(new THREE.Vector3(-0.04 * tri(1 - this.cycleT / 0.45, 0, 1), 0.02, 0.04));
     }
@@ -417,14 +406,15 @@ export class Gun {
     const origin0 = this.camera.getWorldPosition(new THREE.Vector3());
     const nearCount = this.hooks.dummies().filter((d) => d.alive && d.center.distanceTo(origin0) < 8).length;
     const mods = fx.shot({ fullMag, ammoFrac, aiming: this.aimT > 0.6, nearCount, pellets: PELLETS[s.type] ?? 1 });
-    const kickPower = (s.type === "sniper" || s.type === "shotgun" ? 2.2 : s.type === "revolver" ? 2 : s.type === "pistol" ? 1.2 : 0.7) * (1.4 - s.stats.manejo / 100) * (1 - this.aimT * 0.35) * mods.recoil;
+    const rp = this.anim.p.recoil;
+    const kickPower = rp.power * (1.4 - s.stats.manejo / 100) * (1 - this.aimT * 0.35) * mods.recoil;
     // Patrón de retroceso propio del arma: subida dominante + deriva lateral determinista (con un poco de ruido)
     const pat = recoilPattern(s.statSeed), i = Math.min(this.sprayIndex++, pat.length - 1);
     const lateral = accessory(s.muzzle)?.id === "acc:compensator" || accessory(s.muzzle)?.id === "acc:brake" ? 0.55 : 1;
-    this.recoil += 0.011 * kickPower * pat[i][0];
-    this.recoilYaw += 0.006 * kickPower * (pat[i][1] * lateral + (Math.random() - 0.5) * 0.3);
+    this.recoil += rp.vertical * kickPower * pat[i][0];
+    this.recoilYaw += rp.horizontal * kickPower * (pat[i][1] * lateral + (Math.random() - 0.5) * 0.3);
     this.sprayT = 0;
-    this.kick = Math.min(1, this.kick + 0.65); this.kickRoll += (Math.random() - 0.5) * 0.08 * kickPower;
+    this.anim.shot(Math.min(1.4, kickPower / rp.power));
     const element = mods.element as Element;
     const pellets = mods.pellets;
     const spreadDeg = this.spread(moving) * mods.spread;

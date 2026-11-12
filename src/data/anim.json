@@ -1,0 +1,538 @@
+{
+  "_doc": "Capa de animación procedural del arma en primera persona. 'default' se mezcla con cada clase. Distancias en metros, ángulos en radianes. kick = muelle (rigidez k, amortiguación zeta, 'peak' = altura del pico por disparo); recoil = retroceso de cámara (jugabilidad: power por clase, sin cambiar los valores de antes). reload.phases = fracciones del tiempo de recarga (que sale del manejo y los efectos). cycle.part = pieza que se mueve al disparar (slide, pump, charging).",
+  "default": {
+    "hip": [
+      0.15,
+      -0.155,
+      0.08
+    ],
+    "aimZ": 0.07,
+    "adsRoll": 0.06,
+    "kick": {
+      "k": 380,
+      "zeta": 0.72,
+      "peak": 0.65,
+      "back": 0.05,
+      "up": 0.008,
+      "pitch": 0.07,
+      "roll": 0.04
+    },
+    "recoil": {
+      "power": 0.7,
+      "vertical": 0.011,
+      "horizontal": 0.006
+    },
+    "sway": {
+      "gain": 2.2,
+      "maxX": 0.08,
+      "maxY": 0.06,
+      "lag": 10,
+      "adsKeep": 0.25
+    },
+    "bob": {
+      "walk": 8.5,
+      "sprint": 13,
+      "x": 0.008,
+      "y": 0.007,
+      "roll": 0.012
+    },
+    "breath": {
+      "y": 0.0016,
+      "pitch": 0.004
+    },
+    "sprint": {
+      "pos": [
+        -0.07,
+        -0.02,
+        0.06
+      ],
+      "rot": [
+        0.12,
+        0.75,
+        0.35
+      ],
+      "speed": 9
+    },
+    "draw": {
+      "drop": 0.32,
+      "pitch": 0.4,
+      "roll": 0.6
+    },
+    "holster": 0.16,
+    "reload": {
+      "style": "mag",
+      "phases": [
+        [
+          "tilt",
+          0.14
+        ],
+        [
+          "grab",
+          0.12
+        ],
+        [
+          "out",
+          0.14
+        ],
+        [
+          "pouch",
+          0.16
+        ],
+        [
+          "in",
+          0.2
+        ],
+        [
+          "rack",
+          0.14
+        ],
+        [
+          "settle",
+          0.1
+        ]
+      ],
+      "tilt": [
+        0.22,
+        0,
+        0.5
+      ],
+      "drop": [
+        -0.025,
+        -0.045,
+        0
+      ],
+      "mag": [
+        -0.01,
+        -0.2,
+        0
+      ],
+      "rackPart": "charging",
+      "rackTravel": 0.045
+    },
+    "cycle": {
+      "part": "",
+      "travel": 0,
+      "time": 0.07,
+      "lockEmpty": false
+    }
+  },
+  "classes": {
+    "pistol": {
+      "hip": [
+        0.15,
+        -0.155,
+        0.2
+      ],
+      "aimZ": 0.24,
+      "adsRoll": 0.03,
+      "kick": {
+        "k": 520,
+        "zeta": 0.55,
+        "peak": 0.7,
+        "back": 0.035,
+        "up": 0.01,
+        "pitch": 0.2,
+        "roll": 0.06
+      },
+      "recoil": {
+        "power": 1.2
+      },
+      "sprint": {
+        "pos": [
+          -0.04,
+          0.03,
+          0.05
+        ],
+        "rot": [
+          0.55,
+          0.15,
+          0.25
+        ]
+      },
+      "draw": {
+        "drop": 0.26,
+        "pitch": 0.8,
+        "roll": 0.2
+      },
+      "holster": 0.12,
+      "reload": {
+        "phases": [
+          [
+            "tilt",
+            0.12
+          ],
+          [
+            "grab",
+            0.1
+          ],
+          [
+            "out",
+            0.14
+          ],
+          [
+            "pouch",
+            0.18
+          ],
+          [
+            "in",
+            0.2
+          ],
+          [
+            "rack",
+            0.16
+          ],
+          [
+            "settle",
+            0.1
+          ]
+        ],
+        "tilt": [
+          0.18,
+          0,
+          0.6
+        ],
+        "rackPart": "slide",
+        "rackTravel": 0.03
+      },
+      "cycle": {
+        "part": "slide",
+        "travel": 0.028,
+        "time": 0.06,
+        "lockEmpty": true
+      }
+    },
+    "revolver": {
+      "hip": [
+        0.15,
+        -0.155,
+        0.2
+      ],
+      "aimZ": 0.24,
+      "adsRoll": 0.03,
+      "kick": {
+        "k": 300,
+        "zeta": 0.6,
+        "peak": 0.95,
+        "back": 0.04,
+        "up": 0.014,
+        "pitch": 0.32,
+        "roll": 0.05
+      },
+      "recoil": {
+        "power": 2
+      },
+      "sprint": {
+        "pos": [
+          -0.04,
+          0.03,
+          0.05
+        ],
+        "rot": [
+          0.55,
+          0.15,
+          0.25
+        ]
+      },
+      "reload": {
+        "style": "cylinder",
+        "phases": [
+          [
+            "tilt",
+            0.12
+          ],
+          [
+            "open",
+            0.12
+          ],
+          [
+            "eject",
+            0.14
+          ],
+          [
+            "load",
+            0.36
+          ],
+          [
+            "close",
+            0.12
+          ],
+          [
+            "settle",
+            0.14
+          ]
+        ],
+        "tilt": [
+          0.1,
+          0,
+          0.75
+        ],
+        "rackPart": "",
+        "rackTravel": 0
+      },
+      "cycle": {
+        "part": "",
+        "travel": 0
+      }
+    },
+    "smg": {
+      "hip": [
+        0.15,
+        -0.15,
+        0.06
+      ],
+      "kick": {
+        "k": 560,
+        "zeta": 0.8,
+        "peak": 0.4,
+        "back": 0.04,
+        "pitch": 0.05,
+        "roll": 0.05
+      },
+      "bob": {
+        "x": 0.009
+      },
+      "holster": 0.14,
+      "cycle": {
+        "part": "charging",
+        "travel": 0.012,
+        "time": 0.04
+      }
+    },
+    "rifle": {
+      "cycle": {
+        "part": "charging",
+        "travel": 0.01,
+        "time": 0.05
+      }
+    },
+    "bullpup": {
+      "hip": [
+        0.15,
+        -0.15,
+        0.02
+      ],
+      "reload": {
+        "mag": [
+          0.0,
+          -0.18,
+          0
+        ],
+        "tilt": [
+          0.28,
+          0,
+          0.35
+        ]
+      },
+      "cycle": {
+        "part": "charging",
+        "travel": 0.01,
+        "time": 0.05
+      }
+    },
+    "shotgun": {
+      "kick": {
+        "k": 220,
+        "zeta": 0.6,
+        "peak": 1,
+        "back": 0.07,
+        "up": 0.012,
+        "pitch": 0.12,
+        "roll": 0.05
+      },
+      "recoil": {
+        "power": 2.2
+      },
+      "reload": {
+        "style": "shells",
+        "phases": [
+          [
+            "tilt",
+            0.12
+          ],
+          [
+            "shell",
+            0.17
+          ],
+          [
+            "shell",
+            0.17
+          ],
+          [
+            "shell",
+            0.17
+          ],
+          [
+            "shell",
+            0.17
+          ],
+          [
+            "rack",
+            0.12
+          ],
+          [
+            "settle",
+            0.08
+          ]
+        ],
+        "tilt": [
+          0.12,
+          0,
+          0.6
+        ],
+        "rackPart": "pump",
+        "rackTravel": 0.08
+      },
+      "cycle": {
+        "part": "pump",
+        "travel": 0.08,
+        "time": 0.45
+      }
+    },
+    "sniper": {
+      "hip": [
+        0.15,
+        -0.16,
+        0.06
+      ],
+      "kick": {
+        "k": 180,
+        "zeta": 0.7,
+        "peak": 1,
+        "back": 0.075,
+        "up": 0.012,
+        "pitch": 0.1,
+        "roll": 0.03
+      },
+      "recoil": {
+        "power": 2.2
+      },
+      "sway": {
+        "adsKeep": 0.15
+      },
+      "holster": 0.2,
+      "reload": {
+        "rackTravel": 0.06
+      },
+      "cycle": {
+        "part": "charging",
+        "travel": 0.06,
+        "time": 0.45
+      }
+    },
+    "lmg": {
+      "hip": [
+        0.16,
+        -0.17,
+        0.04
+      ],
+      "kick": {
+        "k": 300,
+        "zeta": 0.9,
+        "peak": 0.45,
+        "back": 0.045,
+        "pitch": 0.05,
+        "roll": 0.03
+      },
+      "bob": {
+        "x": 0.011,
+        "y": 0.009,
+        "roll": 0.016
+      },
+      "sprint": {
+        "pos": [
+          -0.08,
+          -0.05,
+          0.07
+        ],
+        "rot": [
+          0.2,
+          0.6,
+          0.45
+        ],
+        "speed": 6
+      },
+      "holster": 0.24,
+      "reload": {
+        "phases": [
+          [
+            "tilt",
+            0.16
+          ],
+          [
+            "grab",
+            0.1
+          ],
+          [
+            "out",
+            0.14
+          ],
+          [
+            "pouch",
+            0.18
+          ],
+          [
+            "in",
+            0.18
+          ],
+          [
+            "rack",
+            0.14
+          ],
+          [
+            "settle",
+            0.1
+          ]
+        ],
+        "tilt": [
+          0.3,
+          0,
+          0.4
+        ],
+        "mag": [
+          -0.02,
+          -0.24,
+          0
+        ]
+      }
+    },
+    "launcher": {
+      "hip": [
+        0.16,
+        -0.16,
+        0.06
+      ],
+      "kick": {
+        "k": 160,
+        "zeta": 0.75,
+        "peak": 1,
+        "back": 0.09,
+        "up": 0.02,
+        "pitch": 0.14,
+        "roll": 0.02
+      },
+      "holster": 0.24,
+      "reload": {
+        "rackTravel": 0
+      }
+    },
+    "flamethrower": {
+      "hip": [
+        0.16,
+        -0.17,
+        0.06
+      ],
+      "kick": {
+        "k": 600,
+        "zeta": 0.9,
+        "peak": 0.12,
+        "back": 0.01,
+        "pitch": 0.01,
+        "roll": 0.01
+      },
+      "holster": 0.22,
+      "reload": {
+        "rackTravel": 0
+      }
+    }
+  }
+}
