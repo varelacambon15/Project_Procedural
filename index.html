@@ -4,9 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Proving Grounds</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="./src/game/game.css">
+  <link rel="stylesheet" href="./src/game/menus.css">
 </head>
 <body>
   <div id="game"></div>
@@ -20,7 +19,7 @@
   <div id="dmgflash"></div>
   <div class="hud" id="weaponhud">
     <span id="wtype"></span><span id="wname"></span><span id="ammo"></span>
-    <div id="slots"></div>
+    <div id="slots"></div><span id="crhud"></span>
   </div>
   <div class="hud" id="prompt" hidden></div>
   <div class="hud" id="toast"></div>
@@ -29,56 +28,50 @@
   <div id="scope"><div class="lens"><i class="h"></i><i class="v"></i><i class="c"></i></div></div>
   <div id="reddot"></div>
 
-  <div class="screen" id="start">
-    <div class="start">
-      <div class="toprow">
-        <span class="eyebrow" data-i18n="ui.eyebrow"></span>
-        <label class="langsel"><span data-i18n="ui.language"></span> <select id="lang"></select></label>
+  <div class="screen title" id="start">
+    <div class="term startwrap">
+      <div class="brandcol">
+        <div class="brand"><span class="simline"><span class="sim">SIM//</span><span id="start-mode"></span></span>
+          <h1 id="start-title" data-i18n="ui.title"></h1><span class="ver" id="start-ver"></span></div>
+        <nav class="mainmenu" id="start-menu"></nav>
+        <p id="start-text" class="note"></p>
       </div>
-      <h1 id="start-title" data-i18n="ui.title"></h1>
-      <p id="start-text" data-i18n="ui.intro"></p>
-      <div class="ctrl">
-        <dl><h3 data-i18n="ui.kbm"></h3>
-          <dt>WASD</dt><dd data-i18n="c.move"></dd><dt>Mouse</dt><dd data-i18n="c.look"></dd><dt>LMB / RMB</dt><dd data-i18n="c.fire"></dd>
-          <dt>R</dt><dd data-i18n="c.reload"></dd><dt>1 · 2 · Q · wheel</dt><dd data-i18n="c.swap"></dd><dt>Shift · Space</dt><dd data-i18n="c.sprint"></dd>
-          <dt>F</dt><dd data-i18n="c.inspect"></dd><dt>E</dt><dd data-i18n="c.use"></dd><dt>Tab</dt><dd data-i18n="c.inv"></dd><dt>Esc</dt><dd data-i18n="c.pause"></dd>
-        </dl>
-        <dl><h3 data-i18n="ui.pad"></h3>
-          <dt>Sticks</dt><dd data-i18n="c.sticks"></dd><dt>RT / LT</dt><dd data-i18n="c.fire"></dd>
-          <dt>Ⓧ</dt><dd data-i18n="c.reload"></dd><dt>Ⓨ</dt><dd data-i18n="c.swap"></dd><dt>Ⓐ · L3</dt><dd data-i18n="c.sprint"></dd>
-          <dt>D-pad ↓</dt><dd data-i18n="c.inspect"></dd><dt>Ⓑ</dt><dd data-i18n="c.use"></dd><dt>View</dt><dd data-i18n="c.inv"></dd><dt>Start</dt><dd data-i18n="c.pause"></dd>
-          <dt data-i18n="c.menus"></dt><dd data-i18n="c.menus.d"></dd>
-        </dl>
-      </div>
-      <div><button class="btn" id="play" type="button" data-i18n="ui.play"></button></div>
+      <section class="panel sub" id="start-sub"></section>
+      <footer class="foot" id="start-foot"></footer>
     </div>
   </div>
 
   <div class="screen" id="inventory" hidden>
-    <div class="frame">
-      <header><h1 data-i18n="ui.inventory"></h1><span class="keys" data-i18n="ui.invKeys"></span></header>
-      <div class="inv">
-        <section><h2 style="margin-bottom:10px" data-i18n="ui.equipped"></h2><div class="equip" id="inv-equip"></div></section>
-        <section><h2 style="margin-bottom:10px" data-i18n="ui.backpack"></h2><div class="pack" id="inv-pack"></div></section>
-      </div>
-      <div class="inv-foot" id="inv-foot"></div>
-      <div id="inv-dropzone" data-i18n="ui.dropZone"></div>
-      <div><button class="btn ghost" data-close="1" type="button" data-i18n="ui.resume"></button></div>
+    <div class="term">
+      <header class="termbar"><span class="sim">SIM//</span><h1 data-i18n="ui.inventory"></h1><span class="credits" id="inv-credits"></span><button type="button" class="btn ghost sm" data-close="1" data-i18n="ui.back"></button></header>
+      <div class="inv2" id="inv-body"></div>
+      <footer class="foot" id="inv-foot"></footer>
     </div>
   </div>
 
   <div class="screen" id="workbench" hidden>
-    <div class="frame">
-      <header><h1 data-i18n="ui.workbench"></h1><span class="keys" data-i18n="ui.benchKeys"></span></header>
-      <div class="bench">
-        <section><h2 style="margin-bottom:10px" data-i18n="ui.yourWeapons"></h2><div class="wlist" id="wb-list"></div></section>
-        <section style="display:grid;gap:12px"><div class="preview" id="wb-preview"><span class="tag" data-i18n="ui.drag"></span></div><div id="wb-card"></div></section>
-        <section><h2 style="margin-bottom:10px" data-i18n="ui.parts"></h2><div class="slotsbox" id="wb-slots"></div></section>
+    <div class="term wide">
+      <header class="termbar"><span class="sim">SIM//</span><h1 id="ws-title"></h1><span class="credits" id="ws-credits"></span><button type="button" class="btn ghost sm" data-close="1" data-i18n="ui.back"></button></header>
+      <div class="ws">
+        <section class="panel wl"><h2 data-i18n="ui.yourWeapons"></h2><div class="tiles list" id="ws-list"></div></section>
+        <section class="panel view"><div class="viewport big" id="ws-view"><div class="tags" id="ws-tags"></div></div><div id="ws-card"></div></section>
+        <section class="panel side" id="ws-side"></section>
       </div>
-      <div><button class="btn ghost" data-close="1" type="button" data-i18n="ui.resume"></button></div>
+      <footer class="foot" id="ws-foot"></footer>
     </div>
   </div>
 
+  <div class="screen" id="shop" hidden>
+    <div class="term">
+      <header class="termbar"><span class="sim">SIM//</span><h1 data-i18n="shop.title"></h1><span class="lvl" id="shop-level"></span><span class="credits" id="shop-credits"></span><button type="button" class="btn ghost sm" data-close="1" data-i18n="ui.back"></button></header>
+      <div class="shopgrid"><section class="tiers" id="shop-tiers"></section><section class="panel hist"><h2 data-i18n="shop.history"></h2><ol id="shop-history"></ol></section></div>
+      <div class="reveal" id="shop-reveal" hidden></div>
+      <footer class="foot" id="shop-foot"></footer>
+    </div>
+  </div>
+
+  <div class="screen modal" id="dialog" hidden></div>
+  <div class="hud" id="savedot" hidden></div>
   <div id="tooltip" hidden></div>
   <div id="vcursor" hidden></div>
   <script type="module" src="./src/game/main.ts"></script>

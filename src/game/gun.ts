@@ -10,6 +10,7 @@ import type { Item } from "./inventory";
 import type { Dummy, Element, Zone } from "./dummies";
 import { Arms } from "./arms";
 import { audio, out, out as masterOut } from "./audio";
+import { settings } from "./settings";
 import { ViewAnimator, animParams, ease, phaseAt, tri, type AnimInput, type MovingPart, type Phase } from "./anim";
 
 const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3, smg: 1.8, rifle: 2.2, bullpup: 2.4, shotgun: 2.6, sniper: 2.9, launcher: 3.2, lmg: 4.4, flamethrower: 2.8 };
@@ -72,6 +73,8 @@ export class Gun {
   private holsterT = 0; private pending: { item: Item | null; rebuild: boolean } | null = null;
   /** Para capturas: coloca el arma en su pose al instante, sin suavizado. */
   snap = false;
+  /** Oculta el arma y los brazos (menús). */
+  hidden = false;
   /** Para capturas y pruebas: fuerza campos de la entrada de animación (p. ej. { reload: 0.4, dt: 0 }). */
   poseOverride: Partial<AnimInput> | null = null;
   aimT = 0;
@@ -292,8 +295,8 @@ export class Gun {
       THREE.MathUtils.lerp(this.holder.rotation.z, pose.rot[2], Math.max(follow, Math.min(1, dt * 16))));
     this.sway.rotation.set(...pose.swayRot); this.sway.position.set(...pose.swayPos);
     // Con visor de aumento, al apuntar del todo se ve a través del visor (el arma se oculta)
-    this.viewmodel.visible = !(this.sight === "scope" && this.aimT > 0.9);
-    this.arms.visible = this.viewmodel.visible && !!this.model;
+    this.viewmodel.visible = !this.hidden && !(this.sight === "scope" && this.aimT > 0.9);
+    this.arms.visible = this.viewmodel.visible && !!this.model && settings.arms;
     if (this.model) this.updateHands();
 
     // Efectos
@@ -529,6 +532,7 @@ export class Gun {
   }
   /** Impacto en la sala: agujero cuadrado oscuro (se desvanece), marca de rejilla que destella y chispas de datos. */
   private decal(hit: THREE.Intersection, scorch = false) {
+    if (!settings.impactFx) return; // ajuste: marcas y chispas de impacto
     if (!hit.face) return;
     const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
     const g = new THREE.Group();
@@ -542,6 +546,7 @@ export class Gun {
   }
   /** Chispas de datos: cuadraditos claros que saltan del impacto y caen. */
   spark(at: THREE.Vector3, n: THREE.Vector3, count: number, color = 0xcff6f8) {
+    if (!settings.impactFx) return;
     for (let i = 0; i < count; i++) {
       const m = new THREE.Mesh(SPARK_GEO, new THREE.MeshBasicMaterial({ color, transparent: true }));
       m.position.copy(at);

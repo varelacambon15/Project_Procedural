@@ -6,9 +6,10 @@ export interface Settings {
   screenShake: boolean;
   impactFx: boolean;     // marcas y chispas de impacto
   volume: number;        // 0..1
+  arms: boolean;         // brazos low-poly en primera persona
 }
 const KEY = "pp.settings";
-const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8 };
+const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, arms: true };
 const listeners = new Set<(s: Settings) => void>();
 
 function load(): Settings {

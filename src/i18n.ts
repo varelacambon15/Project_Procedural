@@ -147,7 +147,11 @@ const es: Dict = {
   "ui.loadError": "No se pudo cargar el juego: {e}",
 };
 
+import { MENUS_EN, MENUS_ES } from "./i18n-menus";
+Object.assign(en, MENUS_EN); Object.assign(es, MENUS_ES);
 const DICTS: Record<Lang, Dict> = { en, es };
+/** ¿Existe la clave en ese idioma? (para el test de textos completos) */
+export const hasKey = (l: Lang, key: string) => key in DICTS[l];
 export const LANGS: { id: Lang; name: string }[] = [{ id: "en", name: "English" }, { id: "es", name: "Español" }];
 
 function initial(): Lang { try { const v = localStorage.getItem("lang"); if (v === "en" || v === "es") return v; } catch { /* sin almacenamiento */ } return "en"; }
@@ -158,8 +162,7 @@ export const getLang = () => lang;
 export function setLang(l: Lang) {
   lang = l;
   try { localStorage.setItem("lang", l); } catch { /* sin almacenamiento */ }
-  document.documentElement.lang = l;
-  applyStatic();
+  if (typeof document !== "undefined") { document.documentElement.lang = l; applyStatic(); }
   for (const f of listeners) f();
 }
 export const onLang = (f: () => void) => { listeners.push(f); };

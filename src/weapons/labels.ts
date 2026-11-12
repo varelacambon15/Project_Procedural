@@ -1,3 +1,4 @@
+import { KIT_ALIAS } from "./accessories";
 // Textos visibles de las armas, traducidos según el idioma elegido.
 import { t } from "../i18n";
 import { PELLETS } from "./generator";
@@ -13,6 +14,21 @@ export const effectDesc = (e: Effect) => t(`fx.${e.id}.d`, { v: e.value ?? "" })
 export const paintName = (p: Paint) => t(`paint.${p.id}`);
 export const slotName = (slot: string) => t(`slot.${slot}`);
 export const roleName = (role: string) => t(`role.${role}`);
+
+/**
+ * Nombre de un accesorio para el jugador (sin nombres de los packs ni de modelos reales): el tipo traducido y, si hay
+ * varias versiones del mismo, una marca de variante (A/B, I/II) y el calibre de los dispositivos de boca del kit.
+ */
+export function accName(id: string) {
+  if (id.startsWith("acc:")) return t(`acc.${id.slice(4)}`);
+  const ALIAS: Record<string, string> = { reddot: "reddot", reflex: "reflex", holographic: "holo", magnified: "acog", scope: "scope6", suppressor: "suppressor-l", foregrip: "foregrip", flashlight: "flashlight", laser: "laser", laserlight: "laserlight" };
+  const att = /^k-(?:att|device)-([a-z]+)-(east|west|\d+)$/.exec(id);
+  if (att) return `${t(`acc.${ALIAS[att[1]] ?? att[1]}`)} ${att[2] === "east" ? "A" : att[2] === "west" ? "B" : att[2] === "01" ? "I" : "II"}`;
+  const md = /^k-muzzledevice-(\w+)-0(\d)$/.exec(id);
+  if (md) return `${t(`acc.${(KIT_ALIAS[id] ?? "acc:brake").slice(4)}`)} · ${md[1] === "556" ? "5.56" : md[1]}`;
+  if (KIT_ALIAS[id]) return `${t(`acc.${KIT_ALIAS[id].slice(4)}`)} R`;
+  return t("acc.factory");
+}
 
 /** Nombre de una pieza: accesorio propio (traducido) o modelo del pack. */
 export function partLabel(byId: Map<string, { label: string }>, id: string) {
