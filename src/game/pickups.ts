@@ -8,7 +8,11 @@ export interface Pickup {
   item: Item; root: THREE.Group; model: THREE.Group | null; vel: THREE.Vector3; resting: boolean; t: number;
   /** Efecto de simulación: se compila de abajo arriba al aparecer y se desintegra al caducar. */
   clip: THREE.Plane; scan: THREE.Mesh; compileT: number; age: number; expires: number | null; dissolveT: number;
+  /** Partículas que suben por el haz (más cuanto más rara); null en blancas y verdes. */
+  motes: THREE.Points | null;
 }
+const LEVEL: Record<string, number> = { comun: 0, poco: 1, rara: 2, epica: 3, legendaria: 4 };
+const MOTES = [0, 0, 6, 10, 18];
 export interface SpawnOptions { compile?: boolean; expires?: number | null }
 
 const beamGeo = new THREE.CylinderGeometry(0.012, 0.035, 2.6, 10, 1, true);
@@ -30,8 +34,20 @@ export class Pickups {
     const scan = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.36, 32), new THREE.MeshBasicMaterial({ color: 0x9fe8ee, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
     scan.rotation.x = -Math.PI / 2;
     root.add(beam, ring, light, scan);
+    // Cuanto más rara, más alto y más visible el haz, con partículas que suben (se distingue de lejos)
+    const lvl = LEVEL[item.spec.rarity.id] ?? 0;
+    beam.scale.set(1 + lvl * 0.15, 1 + lvl * 0.2, 1 + lvl * 0.15); beam.position.y = 1.3 * (1 + lvl * 0.2);
+    (beam.material as THREE.MeshBasicMaterial).opacity = 0.16 + lvl * 0.05;
+    let motes: THREE.Points | null = null;
+    if (MOTES[lvl]) {
+      const pos = new Float32Array(MOTES[lvl] * 3);
+      for (let i = 0; i < MOTES[lvl]; i++) { const a = Math.random() * Math.PI * 2, r = 0.05 + Math.random() * 0.12; pos.set([Math.cos(a) * r, Math.random() * 2.4, Math.sin(a) * r], i * 3); }
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      motes = new THREE.Points(g, new THREE.PointsMaterial({ color, size: 0.035, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
+      root.add(motes);
+    }
     this.scene.add(root);
-    const p: Pickup = { item, root, model: null, vel: vel.clone(), resting: vel.lengthSq() === 0, t: Math.random() * 6, clip: new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e6), scan, compileT: opts.compile ? 0 : -1, age: 0, expires: opts.expires ?? null, dissolveT: -1 };
+    const p: Pickup = { motes, item, root, model: null, vel: vel.clone(), resting: vel.lengthSq() === 0, t: Math.random() * 6, clip: new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e6), scan, compileT: opts.compile ? 0 : -1, age: 0, expires: opts.expires ?? null, dissolveT: -1 };
     this.list.push(p);
     this.asm.assemble(item.spec).then((built) => {
       if (!this.list.includes(p)) return;
@@ -50,6 +66,14 @@ export class Pickups {
   remove(p: Pickup) {
     const i = this.list.indexOf(p); if (i < 0) return;
     this.list.splice(i, 1); this.scene.remove(p.root);
+    // Libera lo propio de esta arma (materiales clonados con su plano de recorte, partículas)
+    p.root.traverse((o) => {
+      const m = o as THREE.Mesh; if (!m.isMesh && !(o as THREE.Points).isPoints) return;
+      if (o === p.motes) p.motes.geometry.dispose();
+      const mats = Array.isArray(m.material) ? m.material : [m.material];
+      for (const x of mats) if (x.clippingPlanes?.includes(p.clip) || o === p.motes || o === p.scan || o.name === "beam" || o.name === "ring") x.dispose();
+    });
+    if (p.scan.geometry) p.scan.geometry.dispose();
   }
 
   update(dt: number) {
@@ -83,6 +107,16 @@ export class Pickups {
         p.model.position.y = 0.45 + Math.sin(p.t * 2) * 0.05;
       }
       const ring = p.root.getObjectByName("ring")!; ring.scale.setScalar(1 + Math.sin(p.t * 3) * 0.08);
+      if (p.motes) {
+        const a = p.motes.geometry.getAttribute("position") as THREE.BufferAttribute;
+        for (let i = 0; i < a.count; i++) { let y = a.getY(i) + dt * (0.5 + (i % 3) * 0.2); if (y > 2.4) y = 0; a.setY(i, y); }
+        a.needsUpdate = true;
+      }
+      // Aviso antes de caducar: en los últimos 10 s el haz y el anillo parpadean, cada vez más rápido
+      if (p.expires != null && p.dissolveT < 0) {
+        const left = p.expires - p.age;
+        p.root.visible = left > 10 || Math.sin(p.t * (6 + (10 - left) * 1.6)) > -0.6;
+      }
     }
   }
 

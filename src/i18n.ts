@@ -33,6 +33,7 @@ const en: Dict = {
   "fx.verdict": "Final Verdict", "fx.verdict.d": "Precision hits explode.",
   "fx.echochamber": "Echo Chamber", "fx.echochamber.d": "Every 4th shot echoes twice.",
   // Rarezas y tipos
+  "ui.lootDrop": "{r} drop: {n}",
   "rarity.comun": "Common", "rarity.poco": "Uncommon", "rarity.rara": "Rare", "rarity.epica": "Epic", "rarity.legendaria": "Legendary",
   "type.pistol": "Pistol", "type.revolver": "Revolver", "type.smg": "SMG", "type.rifle": "Rifle", "type.bullpup": "Bullpup",
   "type.shotgun": "Shotgun", "type.sniper": "Sniper Rifle", "type.launcher": "Launcher", "type.flamethrower": "Flamethrower", "type.lmg": "Machine Gun",
@@ -107,6 +108,7 @@ const es: Dict = {
   "fx.stormcaller": "Llamada de la tormenta", "fx.stormcaller.d": "Cada baja invoca un rayo que golpea a todos los enemigos a menos de 8 m.",
   "fx.verdict": "Veredicto final", "fx.verdict.d": "Los impactos de precisión explotan.",
   "fx.echochamber": "Cámara de eco", "fx.echochamber.d": "Cada 4.º disparo se repite dos veces.",
+  "ui.lootDrop": "Botín {r}: {n}",
   "rarity.comun": "Común", "rarity.poco": "Poco común", "rarity.rara": "Rara", "rarity.epica": "Épica", "rarity.legendaria": "Legendaria",
   "type.pistol": "Pistola", "type.revolver": "Revólver", "type.smg": "Subfusil", "type.rifle": "Fusil", "type.bullpup": "Bullpup",
   "type.shotgun": "Escopeta", "type.sniper": "Francotirador", "type.launcher": "Lanzacohetes", "type.flamethrower": "Lanzallamas", "type.lmg": "Ametralladora",

@@ -9,6 +9,7 @@ import { accessory } from "../weapons/accessories";
 import type { Item } from "./inventory";
 import type { Dummy, Element, Zone } from "./dummies";
 import { Arms } from "./arms";
+import { audio, out, out as masterOut } from "./audio";
 
 const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3, smg: 1.8, rifle: 2.2, bullpup: 2.4, shotgun: 2.6, sniper: 2.9, launcher: 3.2, lmg: 4.4, flamethrower: 2.8 };
 
@@ -158,8 +159,8 @@ export class Gun {
 
   private sfx(kind: "shot" | "reload" | "hit" | "crit" | "kill" | "empty" | "cycle" | "boom" | "sig", type?: WeaponType, quiet = false) {
     try {
-      this.audio ??= new AudioContext();
-      const a = this.audio, t = a.currentTime, g = a.createGain(); g.connect(a.destination);
+      this.audio ??= audio();
+      const a = this.audio, t = a.currentTime, g = a.createGain(); g.connect(out());
       if (kind === "shot" && type) { this.layeredShot(a, type, quiet); return; }
       if (kind === "shot" || kind === "boom") {
         const len = kind === "boom" ? 0.6 : type === "sniper" || type === "shotgun" || type === "revolver" ? 0.38 : 0.16;
@@ -180,13 +181,13 @@ export class Gun {
   }
 
   /** Ruido blanco con envolvente, filtrado. */
-  private noise(a: AudioContext, len: number, decay: number, filter: BiquadFilterType, freq: number, gain: number, when: number, rate = 1, out: AudioNode = a.destination) {
+  private noise(a: AudioContext, len: number, decay: number, filter: BiquadFilterType, freq: number, gain: number, when: number, rate = 1, dest: AudioNode = out()) {
     const buf = a.createBuffer(1, Math.max(1, Math.floor(a.sampleRate * len)), a.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, decay);
     const src = a.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
     const f = a.createBiquadFilter(); f.type = filter; f.frequency.value = freq;
     const g = a.createGain(); g.gain.value = gain;
-    src.connect(f); f.connect(g); g.connect(out); src.start(when);
+    src.connect(f); f.connect(g); g.connect(dest); src.start(when);
   }
   /**
    * Disparo por capas: ataque (chasquido), cuerpo (explosión filtrada por tipo), cola (eco, más larga bajo la
@@ -202,7 +203,7 @@ export class Gun {
     // cola: eco con retardo; bajo techo, más corta y más presente
     const delay = a.createDelay(); delay.delayTime.value = indoor ? 0.06 : 0.14;
     const fb = a.createGain(); fb.gain.value = indoor ? 0.35 : 0.25; delay.connect(fb); fb.connect(delay);
-    const out = a.createGain(); out.gain.value = quiet ? 0.25 : 0.5; delay.connect(out); out.connect(a.destination);
+    const out = a.createGain(); out.gain.value = quiet ? 0.25 : 0.5; delay.connect(out); out.connect(masterOut());
     this.noise(a, len * (indoor ? 1.6 : 2.4), 2, "lowpass", indoor ? 900 : 600, gain * 0.35, t + 0.01, pitch, delay);
     setTimeout(() => { delay.disconnect(); fb.disconnect(); }, 2000);
     this.noise(a, 0.03, 2, "bandpass", 3200, 0.06, t + 0.035, pitch * 1.3);                // mecánica

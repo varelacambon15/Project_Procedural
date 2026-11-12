@@ -1,0 +1,14 @@
+{
+  "_doc": "Botín de enemigos (propuestas a ajustar jugando). chance: probabilidad de soltar arma por baja según el origen. floor: suelo anti-escasez (si pasan tantas bajas o tantos segundos de combate sin arma, la siguiente suelta una). cap: tope anti-lluvia (como mucho 1 arma cada minInterval s y como mucho maxOnGround armas de botín en el suelo; el excedente se descarta). rarity: pesos de rareza por origen. expireSeconds: si no se recoge, se desvanece.",
+  "chance": { "small": 0.08, "normal": 0.1, "big": 0.25, "waveEnd": 0.6 },
+  "floor": { "kills": 25, "seconds": 180 },
+  "cap": { "minInterval": 9, "maxOnGround": 4 },
+  "combatWindow": 5,
+  "rarity": {
+    "small":   { "comun": 52, "poco": 30, "rara": 13, "epica": 4.5, "legendaria": 0.5 },
+    "normal":  { "comun": 48, "poco": 31, "rara": 15, "epica": 5.2, "legendaria": 0.8 },
+    "big":     { "comun": 30, "poco": 32, "rara": 23, "epica": 12, "legendaria": 3 },
+    "waveEnd": { "comun": 25, "poco": 32, "rara": 25, "epica": 14, "legendaria": 4 }
+  },
+  "expireSeconds": 60
+}

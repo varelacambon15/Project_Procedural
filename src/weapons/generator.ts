@@ -8,7 +8,7 @@ import { eraFinishes, rollEra, rollModernization, type Era } from "./eras";
 import { clipProfile, frontProfile, stockProfile, type FrontKind, type StockKind } from "./procparts";
 import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zoneLen, type Box2, type Placed, type Stretch } from "./variation";
 import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
-import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Rarity, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
+import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Rarity, type RarityId, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
 
@@ -220,7 +220,7 @@ export class WeaponGenerator {
     return [...ACCESSORIES.filter((a) => a.kind === "muzzle" && (!a.quiet || type === "pistol")).map((a) => a.id), ...realSuppressors(this.kit, type)];
   }
 
-  generate(seed: number, wanted?: BaseType): WeaponSpec {
+  generate(seed: number, wanted?: BaseType, forceRarity?: RarityId): WeaponSpec {
     const r = mulberry32(seed);
     const type = wanted ?? pick(r, this.types);
     const pool = this.byType.get(type);
@@ -281,7 +281,9 @@ export class WeaponGenerator {
     const regular = info.archetypes.filter((a) => a.w > 0);
     const arch = hint?.arch && (r() < 0.7 || hint.strict) ? info.archetypes.find((a) => a.id === hint.arch) ?? regular[0] : weighted(r, regular, (a) => a.w);
     // Rareza (antes que el modo: los modos raros son exclusivos de moradas y legendarias)
-    const rarity = rollRarity(r);
+    // La tirada se hace siempre (misma secuencia aleatoria); el botín y la tienda pueden fijar la rareza.
+    const rolled = rollRarity(r);
+    const rarity = forceRarity ? RARITIES.find((x) => x.id === forceRarity) ?? rolled : rolled;
     // Kit de modernización (la era ya se decidió antes de las variaciones)
     const modLevel = rollModernization(r, era, rarity.id);
     // Modo de disparo: el de la variante o, en moradas y legendarias, a veces uno "raro" para su tipo
@@ -456,14 +458,14 @@ export class WeaponGenerator {
    * Arma para un lote (cofre, botín): no repite la base de las armas recientes y no se parece de perfil más de
    * BATCH_MAX_SIMILARITY a ninguna del mismo tipo. Determinista para la misma semilla y el mismo lote.
    */
-  generateDistinct(seed: number, wanted: BaseType | undefined, recent: WeaponSpec[]): WeaponSpec {
+  generateDistinct(seed: number, wanted: BaseType | undefined, recent: WeaponSpec[], forceRarity?: RarityId): WeaponSpec {
     for (let i = 0; i < 16; i++) {
-      const w = this.generate(seed + i * 7919, wanted);
+      const w = this.generate(seed + i * 7919, wanted, forceRarity);
       if (recent.some((x) => x.parts[0].from === w.parts[0].from)) continue;
       if (recent.some((x) => x.type === w.type && this.likeness(x, w) > BATCH_MAX_SIMILARITY)) continue;
       return w;
     }
-    return this.generate(seed, wanted);
+    return this.generate(seed, wanted, forceRarity);
   }
 
   /** Parecido de silueta entre dos armas (1 = idénticas de perfil). */

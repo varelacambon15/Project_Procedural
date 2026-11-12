@@ -18,6 +18,8 @@ import { Gun } from "./gun";
 import { Inventory, makeItem, type Item } from "./inventory";
 import { InventoryScreen, WorkbenchScreen, MenuCursor, Thumbnails, weaponCard } from "./ui";
 import { Pickups, type Pickup } from "./pickups";
+import { LOOT, LootDirector, type LootSource } from "../weapons/loot";
+import { lootChime } from "./audio";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const ASSETS = "./weapons/";
@@ -87,11 +89,14 @@ async function boot() {
       sim.hits++; sim.log.push([now, dealt]); sim.distance = point.distanceTo(camera.position);
       if (!sim.firstHit.has(d)) sim.firstHit.set(d, now);
       if (element === "fuego" || element === "electrico") d.applyStatus(element, dmg);
+      if (!d.respawn) loot.combat(gameTime);
       return dealt;
     },
     onKill(d) {
       if (d.kind.boss) toast(t("ui.bossDown"));
       const t0 = sim.firstHit.get(d); if (t0 != null) { sim.ttk = performance.now() / 1000 - t0; sim.firstHit.delete(d); }
+      // Botín: solo los enemigos de las oleadas (los blancos de práctica reaparecen y no sueltan nada)
+      if (!d.respawn) { const sc = d.kind.scale ?? 1; dropLoot(d.kind.boss || sc >= 1.3 ? "big" : sc < 0.85 ? "small" : "normal", d.group.position); }
     },
     onShot() { sim.shots++; sim.lastShot = performance.now() / 1000; },
   });
@@ -195,7 +200,25 @@ async function boot() {
     onAllDone: () => toast(t("ui.wavesDone")),
     onPlayerHit: (dmg) => { if (php.hit(dmg)) { waves.stop(); php.reset(); toast(t("ui.simReset")); } $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on"); },
   });
-  let hooksWaveEnd: (i: number, last: Dummy | null) => void = () => undefined;
+  const hooksWaveEnd = (_i: number, last: Dummy | null) => dropLoot("waveEnd", last?.group.position ?? new THREE.Vector3(0, 0, 8));
+
+  // ---------- Botín de enemigos ----------
+  // Probabilidad, suelo, tope y rarezas en src/data/loot.json; la lógica (sin dibujo) en weapons/loot.ts.
+  const loot = new LootDirector(Math.random);
+  let gameTime = 0;
+  const LEVEL: Record<string, number> = { comun: 0, poco: 1, rara: 2, epica: 3, legendaria: 4 };
+  function dropLoot(source: LootSource, at: THREE.Vector3) {
+    const onGround = pickups.list.filter((p) => p.expires != null).length;
+    const rarity = loot.kill(source, gameTime, onGround);
+    if (!rarity) return;
+    const types = gen.types;
+    const spec = gen.generateDistinct(Math.floor(Math.random() * 1e9), types[Math.floor(Math.random() * types.length)], recentDrops, rarity);
+    recentDrops.push(spec); if (recentDrops.length > 6) recentDrops.shift();
+    const a = Math.random() * Math.PI * 2;
+    pickups.spawn(makeItem(spec), at.clone().setY(1.1), new THREE.Vector3(Math.cos(a) * 1.2, 3.4, Math.sin(a) * 1.2), { compile: true, expires: LOOT.expireSeconds });
+    lootChime(LEVEL[rarity] ?? 0);
+    if (LEVEL[rarity] >= 3) toast(t("ui.lootDrop", { r: t(`rarity.${rarity}`), n: spec.name }));
+  }
   function healthHud() {
     const el = $("phealth"); const show = waves.active || php.value < php.max;
     el.hidden = !show; if (!show) return;
@@ -295,7 +318,7 @@ async function boot() {
     toastTimer -= dt; if (toastTimer <= 0) $("toast").classList.remove("show");
 
     pickups.update(dt);
-    if (state === "play") { waves.update(dt); php.update(dt); }
+    if (state === "play") { waves.update(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime); }
     healthHud();
     {
       const now = performance.now() / 1000;
@@ -318,7 +341,7 @@ async function boot() {
   addEventListener("keydown", (e) => { if (e.code === "KeyX" && state === "inventory") invScreen.scrapHovered(); if (e.code === "KeyG" && state === "inventory") invScreen.dropHovered(); });
   player.applyCamera(camera, 0);
   frame();
-  (window as unknown as Record<string, unknown>).__game = { debug, gen, inv, gun, pickups, pickUp, player, dummies, waves, php, bench, openChest, openScreen, resume, setLang, get state() { return state; }, set state(v: State) { state = v; } };
+  (window as unknown as Record<string, unknown>).__game = { debug, gen, inv, gun, pickups, pickUp, player, dummies, waves, php, bench, loot, dropLoot, openChest, openScreen, resume, setLang, get state() { return state; }, set state(v: State) { state = v; } };
 }
 
 boot().catch((e) => { $("start-text").textContent = t("ui.loadError", { e: e.message }); console.error(e); });
