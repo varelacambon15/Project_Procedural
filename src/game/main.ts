@@ -28,6 +28,7 @@ setLang(getLang());
 
 // ---------- Render ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.localClippingEnabled = true; // escaneo de los muñecos de la simulación
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
@@ -36,6 +37,8 @@ const scene = new THREE.Scene();
 const weaponEnv = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 const camera = new THREE.PerspectiveCamera(75, 1, 0.02, 300);
 scene.add(camera);
+// Luz de borde ligada a la cámara: perfila el arma en primera persona para que las oscuras no se pierdan en la sala
+const rim = new THREE.DirectionalLight(0xbfd8ff, 0.4); rim.position.set(0.8, 0.6, -1.2); camera.add(rim); camera.add(rim.target); rim.target.position.set(0, -0.2, 0.5);
 const world = buildRange(scene);
 function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
@@ -60,14 +63,24 @@ async function boot() {
   const asm = new WeaponAssembler(gen, ASSETS);
   asm.preloadKit();
 
+  // Estadísticas de la sala (cuadro de datos de la pared)
+  const sim = { shots: 0, hits: 0, log: [] as [number, number][], distance: null as number | null, ttk: null as number | null, firstHit: new Map<Dummy, number>(), lastShot: -100 };
   const gun = new Gun(camera, scene, asm, world.shootables, {
     dummies: () => dummies,
     onHit(d, _zone, point, dmg, element, crit) {
       const dealt = d.damage(dmg, element, crit, point);
+      // Estadísticas de la sala de simulación
+      const now = performance.now() / 1000;
+      sim.hits++; sim.log.push([now, dealt]); sim.distance = point.distanceTo(camera.position);
+      if (!sim.firstHit.has(d)) sim.firstHit.set(d, now);
       if (element === "fuego" || element === "electrico") d.applyStatus(element, dmg);
       return dealt;
     },
-    onKill(d) { if (d.kind.boss) toast(t("ui.bossDown")); },
+    onKill(d) {
+      if (d.kind.boss) toast(t("ui.bossDown"));
+      const t0 = sim.firstHit.get(d); if (t0 != null) { sim.ttk = performance.now() / 1000 - t0; sim.firstHit.delete(d); }
+    },
+    onShot() { sim.shots++; sim.lastShot = performance.now() / 1000; },
   });
   gun.env = weaponEnv;
   const pickups = new Pickups(scene, asm, world.colliders);
@@ -79,12 +92,8 @@ async function boot() {
   inv.add(makeItem(starter("shotgun", 70)));
   inv.add(makeItem(starter("smg", 90)));
   // Caja de piezas inicial, para probar el banco desde el principio.
-  for (const [type, modular] of [["pistol", true], ["pistol", true], ["rifle", false], ["rifle", false], ["smg", false], ["shotgun", false], ["sniper", false]] as [BaseType, boolean][]) {
-    for (let s = 500 + inv.parts.length * 7; ; s++) {
-      const w = gen.generate(s, type);
-      if ((w.layout === "modular-pistol") !== modular) continue;
-      inv.parts.push(...scrap(w).parts); break;
-    }
+  for (const type of ["pistol", "pistol", "rifle", "rifle", "smg", "shotgun", "sniper"] as BaseType[]) {
+    inv.parts.push(...scrap(gen.generate(500 + inv.parts.length * 7, type)).parts);
   }
   for (const id of ["acc:reddot", "acc:holo", "acc:acog", "acc:compensator", "acc:suppressor-s"]) inv.parts.push({ uid: 9000 + inv.parts.length, role: id.includes("dot") || id.includes("holo") || id.includes("acog") ? "scope" : "muzzle", from: id });
   inv.onChange(() => { if (gun.item !== inv.current) gun.equip(inv.current); renderSlots(); });
@@ -249,6 +258,12 @@ async function boot() {
     toastTimer -= dt; if (toastTimer <= 0) $("toast").classList.remove("show");
 
     pickups.update(dt);
+    {
+      const now = performance.now() / 1000;
+      while (sim.log.length && now - sim.log[0][0] > 3) sim.log.shift();
+      const dps = sim.log.reduce((a, x) => a + x[1], 0) / 3;
+      world.update(dt, { dps, ttk: sim.ttk, accuracy: sim.shots ? Math.min(1, sim.hits / sim.shots) : null, distance: sim.distance, message: t(now - sim.lastShot < 2 ? "sim.active" : "sim.calibrating") });
+    }
     // Miras: visor a pantalla completa o retícula de punto rojo / holográfica
     const scopeOn = state === "play" && gun.sight === "scope" && gun.aimT > 0.9;
     $("scope").classList.toggle("on", scopeOn);

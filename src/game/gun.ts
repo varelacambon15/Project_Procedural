@@ -11,9 +11,15 @@ import { Arms } from "./arms";
 
 const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3, smg: 1.8, rifle: 2.2, bullpup: 2.4, shotgun: 2.6, sniper: 2.9, launcher: 3.2, lmg: 4.4, flamethrower: 2.8 };
 
+const DECAL_GEO = new THREE.PlaneGeometry(0.045, 0.045);
+const GLYPH_GEO = (() => { const g = new THREE.PlaneGeometry(0.16, 0.006); const v = new THREE.PlaneGeometry(0.006, 0.16); const p1 = g.attributes.position.array as Float32Array, p2 = v.attributes.position.array as Float32Array; const out = new THREE.BufferGeometry(); const pos = new Float32Array(p1.length + p2.length); pos.set(p1); pos.set(p2, p1.length); out.setAttribute("position", new THREE.BufferAttribute(pos, 3)); const i1 = Array.from(g.index!.array), i2 = Array.from(v.index!.array).map((x) => x + 4); out.setIndex([...i1, ...i2]); return out; })();
+const SPARK_GEO = new THREE.BoxGeometry(0.012, 0.012, 0.012);
+
 export interface ShotHooks {
   onHit(d: Dummy, zone: Zone, point: THREE.Vector3, dmg: number, element: Element, crit: boolean): number;
   onKill?(d: Dummy): void;
+  /** Cada disparo (para las estadísticas de la sala: precisión). */
+  onShot?(): void;
   dummies(): Dummy[];
 }
 export interface Control { fire: boolean; aim: boolean; moving: number; sprinting: boolean; lookX: number; lookY: number; vy: number; grounded: boolean; inspect: boolean }
@@ -82,7 +88,8 @@ export class Gun {
   private flashLight = new THREE.PointLight(0xffc27a, 0, 6, 2);
   private flash: THREE.Mesh;
   private tracers: { line: THREE.Line; t: number; max: number }[] = [];
-  private decals: THREE.Mesh[] = [];
+  private decals: { mesh: THREE.Object3D; t: number; glyph: THREE.Mesh }[] = [];
+  private sparks: { mesh: THREE.Mesh; v: THREE.Vector3; t: number }[] = [];
   private bursts: { mesh: THREE.Mesh; t: number }[] = [];
   private ray = new THREE.Raycaster();
   private audio: AudioContext | null = null;
@@ -321,6 +328,18 @@ export class Gun {
       const tr = this.tracers[i]; tr.t -= dt; (tr.line.material as THREE.LineBasicMaterial).opacity = Math.max(0, tr.t / tr.max);
       if (tr.t <= 0) { this.scene.remove(tr.line); tr.line.geometry.dispose(); this.tracers.splice(i, 1); }
     }
+    // Marcas de impacto: la rejilla destella un instante; el agujero se desvanece pasados ~15 s
+    for (let i = this.decals.length - 1; i >= 0; i--) {
+      const d = this.decals[i]; d.t += dt;
+      (d.glyph.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.9 - d.t * 1.2);
+      if (d.t > 15) { const o = Math.max(0, 1 - (d.t - 15) / 3); d.mesh.traverse((x) => { const m = (x as THREE.Mesh).material as THREE.MeshBasicMaterial | undefined; if (m && x !== d.glyph) m.opacity = 0.85 * o; }); }
+      if (d.t > 18) { this.scene.remove(d.mesh); this.decals.splice(i, 1); }
+    }
+    for (let i = this.sparks.length - 1; i >= 0; i--) {
+      const p = this.sparks[i]; p.t -= dt; p.v.y -= 9 * dt; p.mesh.position.addScaledVector(p.v, dt);
+      (p.mesh.material as THREE.MeshBasicMaterial).opacity = Math.min(1, p.t * 4);
+      if (p.t <= 0) { this.scene.remove(p.mesh); this.sparks.splice(i, 1); }
+    }
     for (let i = this.bursts.length - 1; i >= 0; i--) {
       const b = this.bursts[i]; b.t -= dt; b.mesh.scale.setScalar(1 + (0.35 - b.t) * 9); (b.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, b.t / 0.35);
       if (b.t <= 0) { this.scene.remove(b.mesh); this.bursts.splice(i, 1); }
@@ -383,6 +402,7 @@ export class Gun {
     const lowAmmo = it.ammo <= Math.ceil(s.stats.cargador * 0.25);
     if (!echo) { it.ammo--; this.cooldown = 60 / (s.stats.cadencia * (this.frenzyT > 0 ? 1.5 : 1)); }
     this.shotCount++;
+    if (!echo) this.hooks.onShot?.();
     if (s.fireMode === "pump" || s.fireMode === "bolt") { this.cycleT = 0.45; setTimeout(() => { this.sfx("cycle"); if (this.item === it) this.ejectCasing(); }, 220); }
     else if (!echo) this.ejectCasing();
     const quiet = !!accessory(s.muzzle)?.quiet;
@@ -463,6 +483,7 @@ export class Gun {
   private applyHit(d: Dummy, zone: Zone, point: THREE.Vector3, dmg: number, element: Element, crit: boolean, sound: boolean) {
     const alive = d.alive;
     this.hooks.onHit(d, zone, point, dmg, element, crit);
+    this.spark(point, this.camera.position.clone().sub(point).normalize(), crit ? 6 : 3, element === "fuego" ? 0xffa060 : element === "electrico" ? 0xbfe8ff : crit ? 0xffe08a : 0xcff6f8);
     if (crit) this.critmarker = 0.15; else this.hitmarker = 0.12;
     if (alive && !d.alive) {
       this.killmarker = 0.35; this.sfx("kill");
@@ -509,12 +530,27 @@ export class Gun {
     const line = new THREE.Line(g, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 1 }));
     this.scene.add(line); this.tracers.push({ line, t: life, max: life });
   }
+  /** Impacto en la sala: agujero cuadrado oscuro (se desvanece), marca de rejilla que destella y chispas de datos. */
   private decal(hit: THREE.Intersection) {
     if (!hit.face) return;
     const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
-    const m = new THREE.Mesh(new THREE.CircleGeometry(0.03, 8), new THREE.MeshBasicMaterial({ color: 0x1a1a1a, transparent: true, opacity: 0.8, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
-    m.position.copy(hit.point).addScaledVector(n, 0.003); m.lookAt(hit.point.clone().add(n));
-    this.scene.add(m); this.decals.push(m);
-    if (this.decals.length > 120) { const old = this.decals.shift()!; this.scene.remove(old); old.geometry.dispose(); }
+    const g = new THREE.Group();
+    const hole = new THREE.Mesh(DECAL_GEO, new THREE.MeshBasicMaterial({ color: 0x0b0c0d, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
+    const glyph = new THREE.Mesh(GLYPH_GEO, new THREE.MeshBasicMaterial({ color: 0x8fe6ec, transparent: true, opacity: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -5 }));
+    g.add(hole, glyph);
+    g.position.copy(hit.point).addScaledVector(n, 0.003); g.lookAt(hit.point.clone().add(n)); g.rotateZ(Math.random() * 0.3);
+    this.scene.add(g); this.decals.push({ mesh: g, t: 0, glyph });
+    if (this.decals.length > 120) { const old = this.decals.shift()!; this.scene.remove(old.mesh); }
+    this.spark(hit.point, n, 5);
+  }
+  /** Chispas de datos: cuadraditos claros que saltan del impacto y caen. */
+  spark(at: THREE.Vector3, n: THREE.Vector3, count: number, color = 0xcff6f8) {
+    for (let i = 0; i < count; i++) {
+      const m = new THREE.Mesh(SPARK_GEO, new THREE.MeshBasicMaterial({ color, transparent: true }));
+      m.position.copy(at);
+      const v = n.clone().multiplyScalar(1.2 + Math.random() * 1.5).add(new THREE.Vector3((Math.random() - 0.5) * 1.6, Math.random() * 1.2, (Math.random() - 0.5) * 1.6));
+      this.scene.add(m); this.sparks.push({ mesh: m, v, t: 0.3 + Math.random() * 0.2 });
+    }
+    while (this.sparks.length > 80) { const o = this.sparks.shift()!; this.scene.remove(o.mesh); }
   }
 }

@@ -19,10 +19,17 @@ export const KINDS: Record<string, Kind> = {
 const ELEMENT_COLOR: Record<string, string> = { fuego: "#f07a2a", electrico: "#5cc8f0", explosive: "#ffb060" };
 const BURN_DPS_CAP = 60; // tope de daño por segundo de la quemadura
 
-const skin = new THREE.MeshStandardMaterial({ color: 0xc98c55, roughness: 0.75 });
-const skinDark = new THREE.MeshStandardMaterial({ color: 0xa96f3f, roughness: 0.8 });
-const vest = new THREE.MeshStandardMaterial({ color: 0x4d5440, roughness: 0.7, metalness: 0.2 });
-const standMat = new THREE.MeshStandardMaterial({ color: 0x2b2d30, roughness: 0.5, metalness: 0.7 });
+// Maniquí de simulación: cuerpo oscuro con una rejilla de luz tenue (textura pixelada) y peana metálica
+function gridTexture() {
+  const c = document.createElement("canvas"); c.width = 16; c.height = 16; const g = c.getContext("2d")!;
+  g.fillStyle = "#000"; g.fillRect(0, 0, 16, 16); g.fillStyle = "#2a8a90"; g.fillRect(0, 0, 16, 1); g.fillRect(0, 0, 1, 16);
+  const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 6);
+  return t;
+}
+const GRID = gridTexture();
+const mat = (color: number, emissive = 0.55) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.3, emissive: 0xffffff, emissiveMap: GRID, emissiveIntensity: emissive });
+const skin = mat(0x39424b), skinDark = mat(0x2c333a, 0.4), vest = mat(0x4a4436, 0.25);
+const standMat = new THREE.MeshStandardMaterial({ color: 0x23262a, roughness: 0.5, metalness: 0.7 });
 
 export class Dummy {
   readonly group = new THREE.Group();
@@ -37,6 +44,7 @@ export class Dummy {
   /** Aturdimiento breve de la descarga eléctrica (no se apila). */
   private stunT = 0;
   readonly bar: HTMLDivElement;
+  private clip!: THREE.Plane; private scan!: THREE.Mesh; private top = 2.4;
   private path: { a: THREE.Vector3; b: THREE.Vector3; speed: number; t: number } | null = null;
   private onDamage: (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => void;
 
@@ -47,6 +55,19 @@ export class Dummy {
     this.body.scale.setScalar(kind.scale ?? 1);
     this.group.add(this.body);
     this.build(kind);
+    // Cada muñeco usa sus propias copias de material con un plano de recorte: así se materializa y se desintegra
+    // de arriba abajo con una línea de escaneo, sin afectar a los demás.
+    this.top = 2.4 * (kind.scale ?? 1);
+    this.clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), this.top);
+    const cache = new Map<THREE.Material, THREE.Material>();
+    this.body.traverse((o) => {
+      const m = o as THREE.Mesh; if (!m.isMesh) return;
+      const src = m.material as THREE.Material;
+      if (!cache.has(src)) { const c = src.clone(); c.clippingPlanes = [this.clip]; cache.set(src, c); }
+      m.material = cache.get(src)!;
+    });
+    this.scan = new THREE.Mesh(new THREE.RingGeometry(0.36 * (kind.scale ?? 1), 0.42 * (kind.scale ?? 1), 32), new THREE.MeshBasicMaterial({ color: 0x9fe8ee, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+    this.scan.rotation.x = -Math.PI / 2; this.group.add(this.scan);
     this.bar = document.createElement("div");
     this.bar.className = "hpbar" + (kind.boss ? " boss" : "");
     this.bar.innerHTML = `<div class="hpname"><b>${kind.level}</b> <span class="nm">${t(`dummy.${kind.key}`)}</span></div><div class="hptrack"><i class="hp"></i></div>`;
@@ -76,7 +97,7 @@ export class Dummy {
     const armR = this.part(cap(0.065, 0.5), skin, 0.3, 1.58, 0, "limb"); armR.rotation.z = -0.18;
     this.part(new THREE.CylinderGeometry(0.06, 0.07, 0.1, 10), skinDark, 0, 1.98, 0, "body");
     this.part(new THREE.SphereGeometry(0.13, 16, 12), skin, 0, 2.13, 0, "head").scale.set(1, 1.12, 1.02);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.08, 24), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.08, 24), new THREE.MeshBasicMaterial({ color: 0xe8a040 }));
     ring.position.set(0, 1.7, 0.145); this.body.add(ring);
     // Los muñecos más duros llevan chaleco (solo estética: no es una capa de armadura)
     if (kind.key !== "basic") this.part(new THREE.BoxGeometry(0.46, 0.48, 0.34), vest, 0, 1.68, 0, "body");
@@ -118,12 +139,19 @@ export class Dummy {
     }
     this.flash = Math.max(0, this.flash - dt);
     this.body.position.x = this.flash > 0 || this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0;
+    // Escaneo: al morir se desintegra de arriba abajo; al reaparecer se compila de abajo arriba
+    const wy = this.group.getWorldPosition(new THREE.Vector3()).y;
+    const sm = this.scan.material as THREE.MeshBasicMaterial;
     if (!this.alive) {
       this.deadT += dt;
-      if (this.deadT < 0.5) this.body.rotation.x = -(this.deadT / 0.5) * 1.45;
-      else if (this.deadT > 3.2 && this.deadT < 4) this.body.rotation.x = -1.45 * (1 - (this.deadT - 3.2) / 0.8);
-      else if (this.deadT >= 4) { this.alive = true; this.body.rotation.x = 0; for (const l of this.layers) l.value = l.max; }
-    }
+      let h = this.top;
+      if (this.deadT < 0.7) h = this.top * (1 - this.deadT / 0.7);
+      else if (this.deadT < 3.2) h = 0;
+      else if (this.deadT < 4) h = this.top * ((this.deadT - 3.2) / 0.8);
+      else { this.alive = true; for (const l of this.layers) l.value = l.max; }
+      this.clip.constant = wy + h;
+      this.scan.position.y = h; sm.opacity = h > 0.02 && h < this.top - 0.02 ? 0.9 : 0;
+    } else { this.clip.constant = wy + this.top + 1; sm.opacity = 0; }
     const b = this.bar;
     const hp = this.layers[this.layers.length - 1];
     b.querySelector<HTMLElement>(".hp")!.style.width = `${Math.max(0, (hp.value / hp.max) * 100)}%`;
