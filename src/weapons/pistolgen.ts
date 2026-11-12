@@ -125,7 +125,7 @@ export const PISTOL_MUTATIONS: Mutation[] = [
     if (k === "front") { d.frame.dust = Math.max(d.frame.dust, 1); d.frame.vgrip = "none"; }
   } },
   { id: "grip-shape", structural: true, run: (d, r) => { d.grip.shape = other(r, ["straight", "flared", "hump", "raked", "bird"] as const, d.grip.shape); if (d.grip.shape === "raked") d.grip.angle = Math.max(d.grip.angle, 0.42); } },
-  { id: "guard", structural: true, run: (d, r) => (d.frame.guard = other(r, ["round", "square", "hook"] as const, d.frame.guard)) },
+  { id: "guard", structural: true, run: (d, r) => (d.frame.guard = other(r, d.family === "revolver" ? (["round", "square"] as const) : (["round", "square", "hook"] as const), d.frame.guard)) },
   { id: "top", structural: true, run: (d, r) => (d.slide.top = other(r, d.era === "classic" ? (["iron", "high", "rib"] as const) : (["iron", "high", "rail", "rib", "optic"] as const), d.slide.top)) },
   { id: "compact", structural: true, run: (d, _r, a) => { const k = Math.max(0.62, 1 - 0.2 * a); d.slide.len = Math.max(0.12, d.slide.len * k); d.grip.len = Math.max(0.064, d.grip.len * k); d.barrel.ext *= 0.5; } },
   { id: "frame-full", structural: true, run: (d) => { d.frame.full = !d.frame.full; if (d.frame.full) d.frame.dust = 1; } },
@@ -190,8 +190,8 @@ export function gripPoly(d: PistolDesign): Pt[] {
       return [[g.TB[0] - 0.016, -fh * 0.1], g.TF, g.BF, g.BB, back(0.55, 0.005), back(0.15, 0.002)];
     case "raked": // de escoba: redondeada abajo y atrás
       return [g.TB, g.TF, lerp(g.TF, g.BF, 0.85), [g.BF[0] - 0.006, g.BF[1] - 0.004], lerp(g.BB, g.BF, 0.3), [g.BB[0] - 0.004, g.BB[1] + 0.012], back(0.5, 0.006)];
-    case "bird": // pico de pájaro: lomo curvo y talón que se cierra hacia delante
-      return [g.TB, g.TF, lerp(g.TF, g.BF, 0.8), [g.BF[0] - 0.004, g.BF[1]], lerp(g.BB, g.BF, 0.35), [g.BB[0] - 0.006, g.BB[1] + 0.01], back(0.55, 0.009), back(0.2, 0.004)];
+    case "bird": // pico de pájaro: lomo muy curvo y talón que se cierra hacia delante
+      return [g.TB, g.TF, lerp(g.TF, g.BF, 0.45), lerp(g.TF, g.BF, 0.8), [g.BF[0] - 0.006, g.BF[1] + 0.002], lerp(g.BB, g.BF, 0.4), [g.BB[0] - 0.009, g.BB[1] + 0.012], back(0.72, 0.013), back(0.45, 0.012), back(0.2, 0.006)];
     case "flared": return [g.TB, g.TF, g.BF, g.BB, back(0.5, 0.004)];
     default: {
       // Recta de polímero moderna: estrías para los dedos en el frente

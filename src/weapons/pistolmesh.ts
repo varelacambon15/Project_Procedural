@@ -293,9 +293,8 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
 /** Armazón superior del revólver: ventana del tambor, puente con muesca de mira y marcaje. */
 function buildRevolverFrame(g: THREE.Object3D, d: PistolDesign, poly: Pt[], depth: number) {
   const rf = revFrame(d), c = d.cyl!;
-  // Por secciones, redondeado arriba (puente) y abajo; el tambor, más ancho que el armazón, ocupa la ventana
-  void c;
-  g.add(lofted(poly, "frame", { half: () => depth / 2, rTop: 0.65, rBot: 0.45, segs: 2, n: 24, wear: 1.22 }));
+  // Por secciones, redondeado arriba (puente) y abajo, con la ventana del tambor abierta
+  g.add(lofted(poly, "frame", { half: () => depth / 2, rTop: 0.65, rBot: 0.45, segs: 2, n: 24, wear: 1.22, hole: { x0: rf.xc0 - 0.0005, x1: rf.xc1 + 0.0005, y0: rf.by - c.r - 0.0008, y1: rf.by + c.r + 0.0008 } }));
   g.add(box(0.008, 0.0016, 0.004, 0.012, rf.top + 0.0004, 0, "procpad")); // muesca de mira en el puente
   g.add(box(rf.xf - 0.01, 0.0008, 0.0006, rf.xf / 2, rf.top - 0.003, -(depth / 2 + 0.0002), "procengrave"));
 }

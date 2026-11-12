@@ -34,6 +34,8 @@ export interface LoftOpts {
   origin?: P2; angle?: number;
   /** Desgaste en esquinas (aclarado del color de vértice). */
   wear?: number;
+  /** Ventana pasante (en coordenadas locales): en ese tramo la pieza se parte en una parte de arriba y otra de abajo. */
+  hole?: { x0: number; x1: number; y0: number; y1: number };
 }
 
 /** Sección (y, z) de un rectángulo de esquinas redondeadas; siempre el mismo número de puntos. */
@@ -85,7 +87,8 @@ export function loftPoly(poly: P2[], o: LoftOpts): THREE.BufferGeometry {
   const pos: number[] = [], ctr: number[] = [];
   const W = (u: number, v: number, z: number): [number, number, number] => [ox + u * ca - v * sa, oy + u * sa + v * ca, z];
   const tri = (a: number[], b: number[], c: number[], cen: number[]) => { pos.push(...a, ...b, ...c); for (let i = 0; i < 3; i++) ctr.push(...cen); };
-  let run: { u: number; s: P2[]; mid: number }[] = [];
+  type St = { u: number; s: P2[]; mid: number };
+  let run: St[] = [];
   const flush = () => {
     if (run.length >= 2) {
       const m = run[0].s.length;
@@ -106,13 +109,22 @@ export function loftPoly(poly: P2[], o: LoftOpts): THREE.BufferGeometry {
     }
     run = [];
   };
+  // Con ventana: tres tiras (fuera de la ventana, por encima y por debajo de ella), cada una con sus tramos
+  const H = o.hole;
+  if (H) for (const x of [H.x0, H.x1]) { st.push({ u: x - E, c: cutPoly(local, x - E) }, { u: x + E, c: cutPoly(local, x + E) }); }
+  st.sort((a, b) => a.u - b.u);
+  const runs: { main: St[]; up: St[]; lo: St[] } = { main: [], up: [], lo: [] };
+  const close = (k: keyof typeof runs) => { run = runs[k]; flush(); runs[k] = []; };
   for (const { u, c } of st) {
-    if (!c) { flush(); continue; }
-    // Medio ancho en la x del mundo (para estrechamientos en planta)
-    const [wx] = W(u, (c[0] + c[1]) / 2, 0);
-    run.push({ u, s: section(c[0], c[1], o.half(wx), o.rTop, o.rBot, segs), mid: (c[0] + c[1]) / 2 });
+    const inHole = !!H && u > H.x0 && u < H.x1;
+    if (!c) { close("main"); close("up"); close("lo"); continue; }
+    const [wx] = W(u, (c[0] + c[1]) / 2, 0), hw = o.half(wx);
+    if (!inHole) { close("up"); close("lo"); runs.main.push({ u, s: section(c[0], c[1], hw, o.rTop, o.rBot, segs), mid: (c[0] + c[1]) / 2 }); continue; }
+    close("main");
+    if (c[1] > H!.y1 + 1e-4) runs.up.push({ u, s: section(Math.max(c[0], H!.y1), c[1], hw, o.rTop, 0.15, segs), mid: (Math.max(c[0], H!.y1) + c[1]) / 2 }); else close("up");
+    if (c[0] < H!.y0 - 1e-4) runs.lo.push({ u, s: section(c[0], Math.min(c[1], H!.y0), hw, 0.15, o.rBot, segs), mid: (c[0] + Math.min(c[1], H!.y0)) / 2 }); else close("lo");
   }
-  flush();
+  close("main"); close("up"); close("lo");
   return finish(pos, ctr, o.wear ?? 1.2);
 }
 
