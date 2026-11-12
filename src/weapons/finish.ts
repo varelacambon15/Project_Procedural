@@ -62,7 +62,7 @@ function material(f: Paint, slot: Slot): THREE.MeshStandardMaterial {
   let m = cache.get(key);
   if (!m) {
     const c = slot === "primary" ? f.color : slot === "secondary" ? f.secondary : slot === "metal" ? f.metal : slot === "accent" ? f.accent : slot === "highlight" ? hex(0xb8692a) : f.secondary;
-    m = new THREE.MeshStandardMaterial({ name: slot === "wood" ? "Wood" : slot, color: new THREE.Color().setRGB(...(c ?? [0.15, 0.15, 0.15]), THREE.SRGBColorSpace), flatShading: true, ...PROPS[slot] });
+    m = new THREE.MeshStandardMaterial({ name: slot === "wood" ? "Wood" : slot, vertexColors: true, color: new THREE.Color().setRGB(...(c ?? [0.15, 0.15, 0.15]), THREE.SRGBColorSpace), flatShading: true, ...PROPS[slot] });
     addDetail(m, DETAIL[slot]);
     cache.set(key, m);
   }
@@ -92,5 +92,10 @@ export function applyFinish(obj: THREE.Object3D, role: PartRole | "sight", f: Pa
     else if ((slot === "primary") && lums.length > 1 && lum(m) === darkest) s = "metal";
     return material(f, s);
   };
-  for (const m of meshes) m.material = Array.isArray(m.material) ? m.material.map(pick) : pick(m.material);
+  for (const m of meshes) {
+    m.material = Array.isArray(m.material) ? m.material.map(pick) : pick(m.material);
+    // Oclusión horneada en los vértices; las piezas hechas por código (sin hornear) van sin oscurecer
+    const g = m.geometry;
+    if (!g.attributes.color) g.setAttribute("color", new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 3).fill(1), 3));
+  }
 }

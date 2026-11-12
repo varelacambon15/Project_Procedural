@@ -10,6 +10,8 @@
 import * as THREE from "three";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { MeshBVH } from "three-mesh-bvh";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const TARGET_LENGTH = { lmg: 1.15, pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, launcher: 1.1, flamethrower: 0.95, accessory: null };
 
@@ -141,6 +143,40 @@ const CONNECTOR_TYPES = { muzzle: "barrel_thread", magazine: "mag_well", optic: 
   rear: "stock_mount", front: "handguard_mount", grip: "grip_mount", stockFace: "stock_mount", frontFace: "handguard_mount", gripFace: "grip_mount" };
 
 
+/**
+ * Oclusión ambiental horneada en los vértices (atributo de color, gris): desde cada vértice se lanzan rayos en la
+ * semiesfera de su normal contra todas las mallas de la pieza; los rincones y huecos quedan más oscuros.
+ */
+function bakeAO(meshes, rays = 24, maxDist = 0.035, strength = 0.75) {
+  const geos = meshes.map((m) => { const g = (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone()); for (const k of Object.keys(g.attributes)) if (k !== "position") g.deleteAttribute(k); return g; });
+  if (!geos.length) return;
+  const merged = mergeGeometries(geos, false);
+  const bvh = new MeshBVH(merged);
+  const ray = new THREE.Ray(), dir = new THREE.Vector3(), t1 = new THREE.Vector3(), t2 = new THREE.Vector3(), n = new THREE.Vector3(), p = new THREE.Vector3();
+  // Direcciones fijas (espiral de Fibonacci en la semiesfera +Z), giradas hacia cada normal
+  const dirs = Array.from({ length: rays }, (_, i) => { const z = 1 - (i + 0.5) / rays, r = Math.sqrt(1 - z * z), a = i * 2.39996; return new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r, z); });
+  const q = new THREE.Quaternion(), Z = new THREE.Vector3(0, 0, 1);
+  for (const m of meshes) {
+    const g = m.geometry; if (!g.attributes.normal) g.computeVertexNormals();
+    const pos = g.attributes.position, nor = g.attributes.normal, col = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) {
+      p.fromBufferAttribute(pos, i); n.fromBufferAttribute(nor, i).normalize();
+      q.setFromUnitVectors(Z, n);
+      let hit = 0;
+      for (const d of dirs) {
+        dir.copy(d).applyQuaternion(q);
+        ray.origin.copy(p).addScaledVector(n, 0.0006); ray.direction.copy(dir);
+        const h = bvh.raycastFirst(ray, THREE.DoubleSide, 0.0002, maxDist);
+        if (h) hit += 1 - h.distance / maxDist * 0.5;
+      }
+      const ao = 1 - strength * Math.min(1, hit / rays * 1.6);
+      col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = ao;
+    }
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  }
+  t1.set(0, 0, 0); t2.set(0, 0, 0);
+}
+
 /** Perfil lateral de un conjunto de mallas: en N franjas a lo largo de X, el punto más alto y el más bajo (silueta). */
 function profileOf(meshes, N = 24) {
   const b = boxOf(meshes); const x0 = b.min.x, x1 = b.max.x, L = Math.max(1e-6, x1 - x0);
@@ -165,6 +201,7 @@ async function finish(id, type, parts, extra = {}) {
   for (const [k, v] of Object.entries(meta.sockets)) v.type = CONNECTOR_TYPES[k] ?? k;
   if (extra.joints) for (const [k, v] of Object.entries(extra.joints)) v.type = CONNECTOR_TYPES[k] ?? k;
   const tris = parts.reduce((s, p) => s + p.mesh.geometry.attributes.position.count / 3, 0);
+  bakeAO(parts.map((p) => p.mesh));
   const glb = await exportGLB(parts);
   // Piezas intercambiables aprobadas tras la revisión visual (las demás no se usan sueltas)
   const swappable = ["stock", "grip", "front", "slide", "frame", "barrel", "magazine", "scope"];
@@ -487,6 +524,7 @@ async function convertKitPart(job) {
   }
   const box = boxOf(parts.map((p) => p.mesh));
   const tris = parts.reduce((s, p) => s + p.mesh.geometry.attributes.position.count / 3, 0);
+  bakeAO(parts.map((p) => p.mesh));
   const glb = await exportGLB(parts);
   return { id: job.id, slot: job.slot, caliber: job.caliber, sockets, profile: profileOf(parts.map((p) => p.mesh), 16), bounds: { min: box.min.toArray().map((v) => +v.toFixed(4)), max: box.max.toArray().map((v) => +v.toFixed(4)) }, triangles: Math.round(tris), glb };
 }

@@ -26,7 +26,7 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const base = `http://127.0.0.1:${server.address().port}`;
 
-const html = `<!doctype html><meta charset="utf-8"><script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script><script type="module" src="/tools/convert/convert.js"></script>`;
+const html = `<!doctype html><meta charset="utf-8"><script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/","three-mesh-bvh":"/node_modules/three-mesh-bvh/build/index.module.js"}}</script><script type="module" src="/tools/convert/convert.js"></script>`;
 await writeFile(path.join(ROOT, "tools/convert/index.html"), html);
 
 const { chromium } = require("playwright");
