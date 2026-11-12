@@ -122,6 +122,8 @@ export interface Tweaks {
   /** Punto de montaje bajo el raíl que queda libre al desmontar el accesorio (se puede volver a montar uno). */
   deviceZone?: [number, number] | null;
   adds?: Addon[] | null;
+  /** Pistola modular generada por código: su diseño completo (piezas y parámetros). */
+  pistol?: import("./pistolgen").PistolDesign | null;
 }
 /**
  * Añadidos estructurales clásicos (valen en cualquier era): banda ventilada sobre el cañón, tetón o contrapeso bajo el

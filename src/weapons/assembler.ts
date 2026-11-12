@@ -9,6 +9,9 @@ import { accessory, buildFrontSight, buildMuzzle, buildOptic } from "./accessori
 import { applyFinish } from "./finish";
 import { contactAO } from "./ao";
 import { ADDON_ROLE, buildAddon } from "./addons";
+import { buildPistol } from "./pistolmesh";
+/** Despiece de las pistolas generadas por código. */
+const PP_EXPLODE: Record<string, [number, number, number]> = { slide: [0, 1.2, 0], barrel: [1.4, 0.6, 0], frame: [0, 0, 0], grip: [-0.3, -0.8, 0], magazine: [0, -1.6, 0], trigger: [-0.8, 0.4, 0] };
 import { buildAdapter, buildCell, buildCover, buildDisplay, buildFront, buildPatch, buildStock, buildTape, clipX } from "./procparts";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
@@ -131,6 +134,16 @@ export class WeaponAssembler {
       if (kd && spec.tweaks?.device) { const dev = await this.kitNode(kd); dev.scale.setScalar(DEVICE_SCALE(spec.type)); dev.position.set(spec.tweaks.device.at[0], spec.tweaks.device.at[1] + 0.002, 0); add(dev, "device", { id: kd.id, label: kitLabel(kd.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
       if (mz) { muzzle = v3(mz); muzzleDiameter = spec.type === "shotgun" ? 0.026 : spec.type === "pistol" ? 0.014 : 0.018; }
       if (opticAt && spec.optic && !isKit(spec.optic)) { opticTarget = v3(opticAt); opticLength = spec.type === "pistol" ? 0.05 : 0.1; }
+    } else if (spec.layout === "modular-pistol" && spec.tweaks?.pistol) {
+      // Pistola modular generada por código: la malla sale del diseño (pistolmesh), pieza a pieza con su rol
+      const tw = spec.tweaks, built = buildPistol(tw.pistol!);
+      for (const p of built.parts) add(p.object, p.role, { id: `pp-${p.role}`, label: p.role, pack: "proc" } as AssetEntry, PP_EXPLODE[p.role] ?? [0, 0, 0]);
+      muzzle = built.muzzle.clone(); muzzleDiameter = tw.pistol!.barrel.d;
+      if (built.railAt) { opticTarget = built.railAt.clone(); opticLength = built.railLength; }
+      sightKit = built.sightY;
+      if (tw.pstock) add(buildStock(tw.pstock), "stock", { id: `proc-stock-${tw.pstock.kind}`, label: "Stock", pack: "proc" } as AssetEntry, [-1.2, 0, 0]);
+      const kd = tw.device ? this.gen.kit.byId.get(tw.device.id) : null;
+      if (kd && tw.device) { const dev = await this.kitNode(kd); dev.scale.setScalar(DEVICE_SCALE(spec.type)); dev.position.set(tw.device.at[0], tw.device.at[1] + 0.002, 0); add(dev, "device", { id: kd.id, label: kitLabel(kd.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
     } else if (spec.layout === "modular-pistol") {
       const frameE = get(spec.parts.find((p) => p.role === "frame")!.from);
       const slideE = get(spec.parts.find((p) => p.role === "slide")!.from);

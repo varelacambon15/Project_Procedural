@@ -232,6 +232,47 @@ async function boot() {
     }
     return out.toDataURL("image/png");
   };
+  // Hoja de lote en tres vistas: n armas que cumplen el filtro, dos por fila, cada una en perfil, tres cuartos y desde
+  // abajo, con etiqueta (base, parecido, era, añadidos). Para revisar lotes grandes (pistolas modulares, culatas…).
+  const lotSheet = async (n: number, types: string[], start = 1, layout = "", need = "", sort = "") => {
+    const VW = 300, VH = 165, HEAD = 58, per = 2;
+    const specs: WeaponSpec[] = [];
+    for (let s = start; s < start + 40000 && specs.length < n; s++) {
+      const w = gen.generate(s, types[s % types.length] as never);
+      if ((layout && w.layout !== layout) || (need && !JSON.stringify(w).includes(need))) continue;
+      specs.push(w);
+    }
+    if (sort === "era") specs.sort((a, b) => String(a.era).localeCompare(String(b.era)));
+    const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(VW, VH); r.toneMapping = THREE.ACESFilmicToneMapping;
+    const sc = new THREE.Scene(); sc.background = new THREE.Color(0x3a3d42);
+    sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+    sc.add(new THREE.HemisphereLight(0xffffff, 0x555555, 1.3)); const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(1, 2, 3); sc.add(dl);
+    const rim = new THREE.DirectionalLight(0xbfd8ff, 1.2); rim.position.set(-2, 1, -3); sc.add(rim);
+    const CW = VW * 3 + 12, CH = VH + HEAD;
+    const out = document.createElement("canvas"); out.width = CW * per; out.height = CH * Math.ceil(specs.length / per); const g = out.getContext("2d")!;
+    g.fillStyle = "#15171a"; g.fillRect(0, 0, out.width, out.height);
+    for (const [i, spec] of specs.entries()) {
+      const x0 = (i % per) * CW, y0 = Math.floor(i / per) * CH;
+      g.fillStyle = "#1e2023"; g.fillRect(x0, y0, CW - 12, HEAD);
+      g.fillStyle = spec.rarity.color; g.font = "bold 17px sans-serif";
+      g.fillText(`${i + 1}. ${spec.name} · ${spec.type} · era ${spec.era ?? "?"} · parecido ${Math.round((spec.lineage?.similarity ?? 1) * 100)} %`, x0 + 8, y0 + 20);
+      g.fillStyle = "#c8c8c8"; g.font = "13px sans-serif";
+      const ch = spec.lineage?.changes ?? [];
+      g.fillText(`base ${spec.lineage?.base ?? spec.parts[0].from} · ${ch.length} cambios`, x0 + 8, y0 + 38);
+      g.fillStyle = "#9aa"; g.fillText(`añadidos: ${ch.join(", ") || "—"}`.slice(0, 150), x0 + 8, y0 + 53);
+      const built = await asm.assemble(spec); sc.add(built.group);
+      const views: [number, number][] = [[0, 0], [-0.7, 0.22], [-0.35, -0.7]];
+      views.forEach(([yaw, pitch], v) => {
+        built.group.rotation.set(pitch, yaw, 0);
+        const b = new THREE.Box3().setFromObject(built.group), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+        const half = Math.max((sz.x / 2) * VH / VW, sz.y / 2) * 1.12;
+        const cam = new THREE.OrthographicCamera(-half * VW / VH, half * VW / VH, half, -half, -10, 10); cam.position.set(c.x, c.y, c.z + 3); cam.lookAt(c);
+        r.render(sc, cam); g.drawImage(r.domElement, x0 + v * VW, y0 + HEAD);
+      });
+      sc.remove(built.group);
+    }
+    return out.toDataURL("image/png");
+  };
   // Hoja de parecido (Parte A): armas cerca de cada objetivo de parecido con su base, grandes y en tres vistas.
   const simSheet = async (targets: number[], perTarget: number, types: string[], startSeed = 1) => {
     const VW = 400, VH = 220, HEAD = 70, cols = 3;
@@ -270,6 +311,6 @@ async function boot() {
     }
     return out.toDataURL("image/png");
   };
-  (window as unknown as Record<string, unknown>).__bench = { simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+  (window as unknown as Record<string, unknown>).__bench = { lotSheet, simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
 }
 boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });
