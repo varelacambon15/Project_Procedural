@@ -26,6 +26,8 @@ export interface AssetEntry {
   approved?: string[];
   /** Si está en cuarentena, el motivo. */
   quarantine?: string;
+  /** Fuera del botín (revisión visual), con el motivo. */
+  excluded?: string;
 }
 export interface Manifest { convention: string; weapons: AssetEntry[]; kit?: import("./kit").KitPart[] }
 

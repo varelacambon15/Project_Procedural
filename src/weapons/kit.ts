@@ -43,6 +43,8 @@ export const KIT_MODS: Record<string, Partial<Stats>> = {
   "k-device-foregrip-01": { manejo: 5, precision: 2 }, "k-device-foregrip-02": { manejo: 7 },
   "k-device-flashlight-01": { manejo: 2 }, "k-device-laser-01": { precision: 5 }, "k-device-laserlight-01": { precision: 3, manejo: 2 },
 };
+/** Piezas que el pack trae orientadas al revés (la mira holográfica tiene la ventana delante): se giran 180°. */
+export const KIT_FLIP = new Set(["k-optic-rear-rail-01"]);
 export const isKit = (id: string | null | undefined): id is string => !!id && id.startsWith("k-");
 const FOREGRIP = /foregrip/;
 

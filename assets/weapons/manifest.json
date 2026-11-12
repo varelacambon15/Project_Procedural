@@ -467,7 +467,8 @@
     "frame"
    ],
    "file": "quaternius/q-pistol-6.glb",
-   "label": "Pistol 6"
+   "label": "Pistol 6",
+   "excluded": "revisión visual"
   },
   {
    "id": "q-revolver-1",
@@ -803,7 +804,8 @@
    "pack": "quaternius",
    "approved": [],
    "file": "quaternius/q-submachinegun-1.glb",
-   "label": "SubmachineGun 1"
+   "label": "SubmachineGun 1",
+   "excluded": "revisión visual"
   },
   {
    "id": "q-submachinegun-2",
@@ -971,7 +973,8 @@
    "pack": "quaternius",
    "approved": [],
    "file": "quaternius/q-submachinegun-4.glb",
-   "label": "SubmachineGun 4"
+   "label": "SubmachineGun 4",
+   "excluded": "revisión visual"
   },
   {
    "id": "q-submachinegun-5",
@@ -1083,7 +1086,8 @@
    "pack": "quaternius",
    "approved": [],
    "file": "quaternius/q-assaultrifle-1.glb",
-   "label": "AssaultRifle 1"
+   "label": "AssaultRifle 1",
+   "excluded": "revisión visual"
   },
   {
    "id": "q-assaultrifle-2",
@@ -1587,7 +1591,8 @@
    "pack": "quaternius",
    "approved": [],
    "file": "quaternius/q-bullpup-1.glb",
-   "label": "Bullpup 1"
+   "label": "Bullpup 1",
+   "excluded": "revisión visual"
   },
   {
    "id": "q-bullpup-2",
@@ -1643,7 +1648,8 @@
    "pack": "quaternius",
    "approved": [],
    "file": "quaternius/q-bullpup-2.glb",
-   "label": "Bullpup 2"
+   "label": "Bullpup 2",
+   "excluded": "revisión visual"
   },
   {
    "id": "q-bullpup-3",
@@ -1699,7 +1705,8 @@
    "pack": "quaternius",
    "approved": [],
    "file": "quaternius/q-bullpup-3.glb",
-   "label": "Bullpup 3"
+   "label": "Bullpup 3",
+   "excluded": "revisión visual"
   },
   {
    "id": "q-shotgun-1",
@@ -1979,7 +1986,8 @@
    "pack": "quaternius",
    "approved": [],
    "file": "quaternius/q-shotgun-sawedoff.glb",
-   "label": "Shotgun SawedOff"
+   "label": "Shotgun SawedOff",
+   "excluded": "revisión visual"
   },
   {
    "id": "q-shotgun-shortstock",
@@ -2035,7 +2043,8 @@
    "pack": "quaternius",
    "approved": [],
    "file": "quaternius/q-shotgun-shortstock.glb",
-   "label": "Shotgun ShortStock"
+   "label": "Shotgun ShortStock",
+   "excluded": "revisión visual"
   },
   {
    "id": "q-sniperrifle-1",
@@ -2723,7 +2732,8 @@
     "magazine"
    ],
    "file": "cosmo/c-pistol-1.glb",
-   "label": "Pistol 1"
+   "label": "Pistol 1",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-pistol-2",
@@ -2798,7 +2808,8 @@
     "magazine"
    ],
    "file": "cosmo/c-pistol-2.glb",
-   "label": "Pistol 2"
+   "label": "Pistol 2",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-pistol-3",
@@ -2873,7 +2884,8 @@
     "magazine"
    ],
    "file": "cosmo/c-pistol-3.glb",
-   "label": "Pistol 3"
+   "label": "Pistol 3",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-pistol-4",
@@ -2948,7 +2960,8 @@
     "magazine"
    ],
    "file": "cosmo/c-pistol-4.glb",
-   "label": "Pistol 4"
+   "label": "Pistol 4",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-pistol-5",
@@ -3041,7 +3054,8 @@
     "magazine"
    ],
    "file": "cosmo/c-pistol-5.glb",
-   "label": "Pistol 5"
+   "label": "Pistol 5",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-pistol-6",
@@ -3116,7 +3130,8 @@
     "magazine"
    ],
    "file": "cosmo/c-pistol-6.glb",
-   "label": "Pistol 6"
+   "label": "Pistol 6",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-smg-1",
@@ -3209,7 +3224,8 @@
     "scope"
    ],
    "file": "cosmo/c-smg-1.glb",
-   "label": "Subfusil 1"
+   "label": "Subfusil 1",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-smg-2",
@@ -3307,7 +3323,8 @@
     "magazine"
    ],
    "file": "cosmo/c-smg-2.glb",
-   "label": "Subfusil 2"
+   "label": "Subfusil 2",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-smg-3",
@@ -3387,7 +3404,8 @@
     "magazine"
    ],
    "file": "cosmo/c-smg-3.glb",
-   "label": "Subfusil 3"
+   "label": "Subfusil 3",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-smg-4",
@@ -3462,7 +3480,8 @@
     "magazine"
    ],
    "file": "cosmo/c-smg-4.glb",
-   "label": "Subfusil 4"
+   "label": "Subfusil 4",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-smg-5",
@@ -3555,7 +3574,8 @@
     "scope"
    ],
    "file": "cosmo/c-smg-5.glb",
-   "label": "Subfusil 5"
+   "label": "Subfusil 5",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-smg-6",
@@ -3653,7 +3673,8 @@
     "scope"
    ],
    "file": "cosmo/c-smg-6.glb",
-   "label": "Subfusil 6"
+   "label": "Subfusil 6",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-smg-7",
@@ -3746,7 +3767,8 @@
     "magazine"
    ],
    "file": "cosmo/c-smg-7.glb",
-   "label": "Subfusil 7"
+   "label": "Subfusil 7",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-smg-8",
@@ -3839,7 +3861,8 @@
     "scope"
    ],
    "file": "cosmo/c-smg-8.glb",
-   "label": "Subfusil 8"
+   "label": "Subfusil 8",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-smg-9",
@@ -3895,7 +3918,8 @@
    "pack": "cosmo",
    "approved": [],
    "file": "cosmo/c-smg-9.glb",
-   "label": "Subfusil 9"
+   "label": "Subfusil 9",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-smg-10",
@@ -3988,7 +4012,8 @@
     "magazine"
    ],
    "file": "cosmo/c-smg-10.glb",
-   "label": "Subfusil 10"
+   "label": "Subfusil 10",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-flamethrower",
@@ -4087,7 +4112,8 @@
     "magazine"
    ],
    "file": "cosmo/c-flamethrower.glb",
-   "label": "Flamethrower"
+   "label": "Flamethrower",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-rifle-1",
@@ -4180,7 +4206,8 @@
     "magazine"
    ],
    "file": "cosmo/c-rifle-1.glb",
-   "label": "Fusil 1"
+   "label": "Fusil 1",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-rifle-2",
@@ -4278,7 +4305,8 @@
     "scope"
    ],
    "file": "cosmo/c-rifle-2.glb",
-   "label": "Fusil 2"
+   "label": "Fusil 2",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-rifle-3",
@@ -4353,7 +4381,8 @@
     "magazine"
    ],
    "file": "cosmo/c-rifle-3.glb",
-   "label": "Fusil 3"
+   "label": "Fusil 3",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-rifle-4",
@@ -4446,7 +4475,8 @@
     "magazine"
    ],
    "file": "cosmo/c-rifle-4.glb",
-   "label": "Fusil 4"
+   "label": "Fusil 4",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-rifle-5",
@@ -4539,7 +4569,8 @@
     "scope"
    ],
    "file": "cosmo/c-rifle-5.glb",
-   "label": "Fusil 5"
+   "label": "Fusil 5",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-rifle-6",
@@ -4595,7 +4626,8 @@
    "pack": "cosmo",
    "approved": [],
    "file": "cosmo/c-rifle-6.glb",
-   "label": "Fusil 6"
+   "label": "Fusil 6",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-rifle-7",
@@ -4688,7 +4720,8 @@
     "scope"
    ],
    "file": "cosmo/c-rifle-7.glb",
-   "label": "Fusil 7"
+   "label": "Fusil 7",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-shotgun-1",
@@ -4763,7 +4796,8 @@
     "magazine"
    ],
    "file": "cosmo/c-shotgun-1.glb",
-   "label": "Shotgun 1"
+   "label": "Shotgun 1",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-shotgun-2",
@@ -4819,7 +4853,8 @@
    "pack": "cosmo",
    "approved": [],
    "file": "cosmo/c-shotgun-2.glb",
-   "label": "Shotgun 2"
+   "label": "Shotgun 2",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-sniper-0",
@@ -4894,7 +4929,8 @@
     "scope"
    ],
    "file": "cosmo/c-sniper-0.glb",
-   "label": "Sniper 0"
+   "label": "Sniper 0",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-sniper-1",
@@ -4987,7 +5023,8 @@
     "scope"
    ],
    "file": "cosmo/c-sniper-1.glb",
-   "label": "Sniper 1"
+   "label": "Sniper 1",
+   "excluded": "revisión visual"
   },
   {
    "id": "c-sniper-2",
@@ -5080,7 +5117,8 @@
     "scope"
    ],
    "file": "cosmo/c-sniper-2.glb",
-   "label": "Sniper 2"
+   "label": "Sniper 2",
+   "excluded": "revisión visual"
   },
   {
    "id": "a-pistol",
@@ -5753,7 +5791,7 @@
    "approved": [],
    "file": "modern/w-vss.glb",
    "label": "VSS",
-   "quarantine": "Queda un bloque suelto detr\u00e1s del caj\u00f3n: se usa como arma entera."
+   "quarantine": "Queda un bloque suelto detrás del cajón: se usa como arma entera."
   },
   {
    "id": "w-l115",
@@ -6706,7 +6744,7 @@
    "approved": [],
    "file": "modern/w-garand.glb",
    "label": "M1 Garand",
-   "quarantine": "Al trocear desaparece el caj\u00f3n: se usa como arma entera."
+   "quarantine": "Al trocear desaparece el cajón: se usa como arma entera."
   },
   {
    "id": "w-luger",
@@ -8496,41 +8534,41 @@
    "sockets": {
     "muzzle": {
      "pos": [
-      0.5,
-      0.0806,
+      0.31,
+      0.0499,
       0
      ],
-     "diameter": 0.0658,
+     "diameter": 0.0408,
      "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
-      0.1267,
+      0.0786,
       0
      ],
      "type": "top_surface"
     },
     "rail": {
      "pos": [
-      -0.04,
-      0.1211,
+      -0.0248,
+      0.0751,
       0
      ],
-     "length": 0.32,
+     "length": 0.1984,
      "type": "rail_top"
     }
    },
    "bounds": {
     "min": [
-     -0.5,
-     -0.1267,
-     -0.0511
+     -0.31,
+     -0.0786,
+     -0.0317
     ],
     "max": [
-     0.5,
-     0.1267,
-     0.0511
+     0.31,
+     0.0786,
+     0.0317
     ]
    },
    "triangles": 636,
@@ -13835,41 +13873,41 @@
    "sockets": {
     "muzzle": {
      "pos": [
-      0.5,
-      0.1075,
+      0.325,
+      0.0699,
       0
      ],
-     "diameter": 0.0557,
+     "diameter": 0.0362,
      "type": "barrel_thread"
     },
     "top": {
      "pos": [
       0,
-      0.1353,
+      0.088,
       0
      ],
      "type": "top_surface"
     },
     "rail": {
      "pos": [
-      -0.04,
-      0.0915,
+      -0.026,
+      0.0595,
       0
      ],
-     "length": 0.32,
+     "length": 0.208,
      "type": "rail_top"
     }
    },
    "bounds": {
     "min": [
-     -0.5,
-     -0.1353,
-     -0.0584
+     -0.325,
+     -0.088,
+     -0.0379
     ],
     "max": [
-     0.5,
-     0.1353,
-     0.0584
+     0.325,
+     0.088,
+     0.0379
     ]
    },
    "triangles": 456,

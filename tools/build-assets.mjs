@@ -64,6 +64,7 @@ if (args[0] === "--tree") {
     delete out.glb;
     const entry = { ...out, file: rel, label: job.label || job.id };
     if (job.quarantine) { entry.quarantine = job.quarantine; entry.approved = []; }
+    if (job.excluded) entry.excluded = job.excluded;
     manifest.weapons.push(entry);
     console.log(`✓ ${rel.padEnd(52)} ${String(out.triangles).padStart(6)} tris  ${out.parts.map((p) => p.role).join(",")}`);
   }

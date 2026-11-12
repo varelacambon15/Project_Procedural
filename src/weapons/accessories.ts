@@ -89,8 +89,11 @@ export function buildOptic(id: string, rail: number, L: number): { group: THREE.
   let h = 0.03;
   if (id === "acc:reddot") {
     base(0.05);
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.03), poly); body.position.set(0, 0.023, 0); g.add(body);
-    const hood = tube(0.016, 0.03, steel, -0.015, 20); hood.position.y = 0.04; g.add(hood);
+    // Cuerpo bajo y capuchón hueco: se mira a través de él
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.016, 0.026), poly); body.position.set(0, 0.016, 0); g.add(body);
+    const hoodGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.03, 20, 1, true);
+    const hoodMat = steel.clone(); hoodMat.side = THREE.DoubleSide;
+    const hood = new THREE.Mesh(hoodGeo, hoodMat); hood.rotation.z = -Math.PI / 2; hood.position.set(0, 0.04, 0); g.add(hood);
     const lens = new THREE.Mesh(new THREE.CircleGeometry(0.013, 20), glass()); lens.rotation.y = Math.PI / 2; lens.position.set(0.016, 0.04, 0); g.add(lens);
     const dot = new THREE.Mesh(new THREE.SphereGeometry(0.0012, 6, 4), redDot()); dot.position.set(0.01, 0.04, 0); g.add(dot);
     h = 0.04;

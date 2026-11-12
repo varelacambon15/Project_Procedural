@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { WeaponGenerator, RARITIES, TYPE_INFO, powerScore, computeStats } from "../src/weapons/generator";
+import { WeaponGenerator, RARITIES, TYPE_INFO, EFFECTS_L, powerScore, computeStats } from "../src/weapons/generator";
 import type { Manifest, WeaponSpec } from "../src/weapons/types";
 
 const manifest: Manifest = JSON.parse(readFileSync(new URL("../assets/weapons/manifest.json", import.meta.url), "utf8"));
@@ -102,9 +102,14 @@ describe("WeaponGenerator", () => {
 
   it("solo las legendarias tienen nombre propio; el resto, designación técnica", () => {
     for (const w of many(500)) {
-      if (w.rarity.id === "legendaria") expect(w.name).not.toMatch(/^[A-Z]{2}-\d/);
-      else expect(w.name).toMatch(/^[A-Z]{2}-\d+/);
+      if (w.rarity.id === "legendaria") expect(EFFECTS_L.some((d) => d.name === w.name)).toBe(true);
+      else expect(EFFECTS_L.some((d) => d.name === w.name)).toBe(false);
     }
+  });
+
+  it("los nombres son variados", () => {
+    const names = many(400).filter((w) => w.rarity.id !== "legendaria").map((w) => w.name);
+    expect(new Set(names).size / names.length).toBeGreaterThan(0.85);
   });
 
   it("las rarezas salen en proporciones razonables", () => {
@@ -116,18 +121,22 @@ describe("WeaponGenerator", () => {
 });
 
 describe("armas largas despiezadas", () => {
-  it("mezclan piezas de otras armas de la misma familia y pasan la puerta de calidad", async () => {
+  it("mezclan piezas de otras armas (también de otras familias), nunca son genéricas y pasan la puerta de calidad", async () => {
     const { longGunOk } = await import("../src/weapons/generator");
-    let mixed = 0, total = 0;
+    let mixed = 0, total = 0, cross = 0;
     for (const t of ["rifle", "smg", "shotgun", "sniper", "lmg"] as const) for (const w of many(300, t)) {
       if (w.layout !== "modular-long") continue;
       total++;
       const get = (role: string) => gen.byId.get(w.parts.find((p) => p.role === role)!.from)!;
       const [r, s, g, f] = ["receiver", "stock", "grip", "front"].map(get);
-      for (const x of [s, g, f]) expect(x.pack).toBe(r.pack);
-      if (new Set([r, s, g, f]).size > 1) { mixed++; expect(longGunOk(r, s, f, g, w.type, w.tweaks)).toBe(true); }
+      const foreign = [s, g, f].filter((x) => x !== r).length;
+      expect(foreign).toBeGreaterThanOrEqual(1);
+      if (foreign >= 2) mixed++;
+      if ([s, g, f].some((x) => x.pack !== r.pack)) cross++;
+      expect(longGunOk(r, s, f, g, w.type, w.tweaks)).toBe(true);
     }
     expect(total).toBeGreaterThan(100);
-    expect(mixed / total).toBeGreaterThan(0.45);
+    expect(mixed / total).toBeGreaterThan(0.65);
+    expect(cross / total).toBeGreaterThan(0.2);
   });
 });

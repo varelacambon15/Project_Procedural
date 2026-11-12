@@ -1,5 +1,5 @@
 // Banco de trabajo: piezas sueltas, compatibilidad, montaje/desmontaje y desguace (lógica pura).
-import { PAINTS, jointScale, longGunOk, type WeaponGenerator } from "./generator";
+import { PAINTS, longGunOk, type WeaponGenerator } from "./generator";
 import { accessory } from "./accessories";
 import type { Paint, PartRole, WeaponSpec } from "./types";
 import { KIT_ROLE, isKit } from "./kit";
@@ -74,12 +74,10 @@ export function fits(gen: WeaponGenerator, w: WeaponSpec, slot: Slot, part: Part
   if (slot === "stock" || slot === "grip" || slot === "front") {
     // Misma familia, junta compatible y la puerta de calidad del conjunto
     const recv = gen.byId.get(w.parts[0].from)!;
-    if (w.layout !== "modular-long" || !src.modular || src.pack !== recv.pack) return false;
+    if (w.layout !== "modular-long" || !src.modular || src.quarantine) return false;
     const cur = (role: string) => gen.byId.get(w.parts.find((p) => p.role === role)!.from)!;
     const next = { stock: cur("stock"), grip: cur("grip"), front: cur("front"), [slot]: src };
-    const joint = slot === "stock" ? "rear" : slot;
-    const k = jointScale(recv, src, joint);
-    return k > 0.75 && k < 1.35 && longGunOk(recv, next.stock, next.front, next.grip, w.type, w.tweaks);
+    return longGunOk(recv, next.stock, next.front, next.grip, w.type, w.tweaks);
   }
   return w.layout === "modular-pistol" && src.parts.some((p) => p.role === slot);
 }

@@ -95,7 +95,7 @@ ALL.push(
   w("f2000", "F2000", "bullpup", "^FN2000$", "^FN2000_Magazine$"),
   w("famas", "FAMAS", "bullpup", "^Famas$", "^Famas_Magazine$"),
   w("spas12", "SPAS-12", "shotgun", "^Spas-12$", null),
-  w("sawedoff", "Sawed-off", "shotgun", "^SawedOff_(Hold|Barrel)$", null),
+  { ...w("sawedoff", "Sawed-off", "shotgun", "^SawedOff_(Hold|Barrel)$", null), hint: { ...WHINT, lengthMul: 0.62 } },
   w("glock17", "Glock 17", "pistol", "^Glock17$", "^Pistol_Magazine_1$"),
   w("revolver", "Revolver", "revolver", "^Revolver(_Magazine)?$", null),
   w("deagle", "Desert Eagle", "pistol", "^Deagle$", "^Pistol_Magazine_2$"),
@@ -125,11 +125,11 @@ ALL.push(
   ...["A-Long", "A-Medium", "A-Short", "B-Long", "B-Medium", "B-Short"].map((v) => W2("Pistols", `Revolver-${v}`, "revolver")),
 );
 // Descartados por no encajar: Lanchester (orientación invertida) y el revólver retorcido (modelo de broma).
-const ZS = (file, type) => ({ kind: "fbx", pack: "zsky", id: "z-" + file.toLowerCase().replace(/_/g, "-"), label: file.replace(/_/g, " "), fbx: `raw/zsky/${file}.fbx`, type });
+const ZS = (file, type, hint) => ({ hint, kind: "fbx", pack: "zsky", id: "z-" + file.toLowerCase().replace(/_/g, "-"), label: file.replace(/_/g, " "), fbx: `raw/zsky/${file}.fbx`, type });
 ALL.push(
   ...[1, 2].map((i) => ZS(`AssaultRifle_0${i}`, "rifle")), ZS("AssaultRifle_03", "bullpup"),
   ...[1, 2, 3, 4, 5].map((i) => ZS(`SubmachineGun_0${i}`, "smg")),
-  ...[1, 2, 3].map((i) => ZS(`Shotgun_0${i}`, "shotgun")),
+  ...[1, 2, 3].map((i) => ZS(`Shotgun_0${i}`, "shotgun", i === 3 ? { lengthMul: 0.65 } : undefined)),
   ...[1, 2].map((i) => ZS(`SniperRifle_0${i}`, "sniper")),
   ...[1, 2, 3].map((i) => ZS(`Pistol_0${i}`, "pistol")),
   ...[1, 2].map((i) => ZS(`Revolver_0${i}`, "revolver")),
@@ -142,6 +142,14 @@ const QUARANTINE = {
   "w-vss": "Queda un bloque suelto detrás del cajón: se usa como arma entera.",
 };
 for (const j of ALL) if (QUARANTINE[j.id]) j.quarantine = QUARANTINE[j.id];
+
+// Fuera del botín (revisión visual): estilo que no casa o modelos toscos. Se conservan convertidos por si acaso.
+const EXCLUDED = {
+  cosmo: "Estilo ciencia ficción con camuflaje verde: parece de juguete al lado del resto.",
+  "q-submachinegun-1": "Bloque tosco.", "q-submachinegun-4": "Bloque tosco.", "q-bullpup-1": "Bloque tosco.", "q-bullpup-2": "Bloque tosco.", "q-bullpup-3": "Bloque tosco.",
+  "q-assaultrifle-1": "Proporciones raras (culata enana).", "q-pistol-6": "Forma rara.", "q-shotgun-sawedoff": "Escala de escopeta larga.", "q-shotgun-shortstock": "Escala de escopeta larga.",
+};
+for (const j of ALL) { const why = EXCLUDED[j.id] ?? EXCLUDED[j.pack]; if (why) j.excluded = why; }
 
 // --- Modular Firearms Pack (sschocolate): piezas sueltas con sockets propios, se montan por sockets ---
 // Cada pieza encaja en el socket del mismo nombre de otra pieza del mismo calibre (o de calibre "any").

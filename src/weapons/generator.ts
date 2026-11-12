@@ -230,11 +230,12 @@ export class WeaponGenerator {
     this.kit = new KitIndex(manifest.kit ?? []);
     for (const w of manifest.weapons) {
       this.byId.set(w.id, w);
+      if (w.excluded) continue; // se puede leer (armas guardadas), pero no sale en el botín
       if (!this.byType.has(w.type)) this.byType.set(w.type, []);
       this.byType.get(w.type)!.push(w);
     }
     // Miras de modelo (las de cosmo vienen separadas). Los accesorios de Quaternius ya no se usan: hay accesorios propios.
-    this.scopes = manifest.weapons.filter((w) => w.type !== "accessory" && w.parts.some((p) => p.role === "scope"));
+    this.scopes = manifest.weapons.filter((w) => !w.excluded && w.type !== "accessory" && w.parts.some((p) => p.role === "scope"));
   }
 
   /** Tipos que salen en el botín. Lanzallamas y lanzacohetes quedan fuera por ahora (como la minigun). */
@@ -284,26 +285,22 @@ export class WeaponGenerator {
     } else {
       const bodies = pool.filter((w) => w.parts.some((p) => p.role === "body" || p.role === "receiver"));
       if (!bodies.length) throw new Error(`No bodies of type ${type}`);
-      const base = weighted(r, bodies, (x) => (PACK_WEIGHT[x.pack] ?? 1) * (x.modular ? 2 : 1));
-      if (base.modular) {
+      let candidates = bodies;
+      let base = weighted(r, candidates, (x) => (PACK_WEIGHT[x.pack] ?? 1) * (x.modular ? 2 : 1));
+      let chosen: { stock: AssetEntry; front: AssetEntry; grip: AssetEntry } | null = null;
+      // Arma larga despiezada: si el cajón no admite ninguna pieza ajena (arma genérica), se elige otro
+      while (base.modular) {
         tweaks = rollTweaks(r);
-        // Arma larga despiezada: cajón de una, culata, empuñadura y guardamanos de otras de la misma familia,
-        // siempre que pasen la puerta de calidad (proporciones y longitud total).
+        chosen = this.mixLong(r, base, type, tweaks);
+        if (chosen) break;
+        const rest = candidates.filter((x) => x !== base);
+        if (!rest.length) { chosen = { stock: base, front: base, grip: base }; break; } // sin alternativa: el arma tal cual
+        candidates = rest;
+        base = weighted(r, candidates, (x) => (PACK_WEIGHT[x.pack] ?? 1) * (x.modular ? 2 : 1));
+      }
+      if (base.modular && chosen) {
         layout = "modular-long";
         parts.push({ role: "receiver", from: base.id });
-        // Solo piezas aprobadas, de la misma familia y con una unión del mismo tipo
-        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && w.pack === base.pack && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)));
-        const cls = (t: WeaponType) => (t === "smg" ? "compact" : "long");
-        // Solo piezas cuya junta encaja con la del cajón (sección parecida); luego se comprueba el conjunto.
-        const fit = (joint: "rear" | "front" | "grip", lo: number, hi: number) => (w: AssetEntry) => w.id === base.id || within(jointScale(base, w, joint), lo, hi);
-        const stocks = donors("stock", (w) => cls(w.type) === cls(type)).filter(fit("rear", 0.8, 1.25));
-        const fronts = donors("front", (w) => w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front", 0.78, 1.3));
-        const grips = donors("grip", () => true).filter(fit("grip", 0.8, 1.25));
-        let chosen = { stock: base, front: base, grip: base };
-        for (let tries = 0; tries < 16; tries++) {
-          const c = { stock: r() < 0.8 ? pick(r, stocks) : base, front: r() < 0.75 ? pick(r, fronts) : base, grip: r() < 0.8 ? pick(r, grips) : base };
-          if (longGunOk(base, c.stock, c.front, c.grip, type, tweaks)) { chosen = c; break; }
-        }
         parts.push({ role: "stock", from: chosen.stock.id }, { role: "grip", from: chosen.grip.id }, { role: "front", from: chosen.front.id });
       } else { parts.push({ role: "body", from: base.id }); tweaks = { ...NO_TWEAKS, body: 0.97 + r() * 0.06 }; }
       if (base.sockets.magazine) {
@@ -375,6 +372,32 @@ export class WeaponGenerator {
     return this.refresh(spec);
   }
 
+  /**
+   * Piezas de un arma larga despiezada: cajón de una, culata, empuñadura y guardamanos de otras armas (de su familia
+   * o de otra), siempre que pasen la puerta de calidad. Al menos dos de las tres piezas son ajenas (o una, si no cabe);
+   * si no hay ninguna combinación, null.
+   */
+  private mixLong(r: Rng, base: AssetEntry, type: BaseType, tweaks: Tweaks): { stock: AssetEntry; front: AssetEntry; grip: AssetEntry } | null {
+        // Piezas aprobadas con una unión del mismo tipo, de su familia o de otra (se adaptan a la junta: pieceScale)
+        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && !w.excluded && w.id !== base.id && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)) && !w.quarantine);
+        const cls = (t: WeaponType) => (t === "smg" ? "compact" : "long");
+        const fit = (joint: "rear" | "front" | "grip", lo: number, hi: number) => (w: AssetEntry) => within(jointScale(base, w, joint), lo, hi);
+        const stocks = donors("stock", (w) => cls(w.type) === cls(type)).filter(fit("rear", 0.7, 1.4));
+        const fronts = donors("front", (w) => w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front", 0.7, 1.4));
+        const grips = donors("grip", () => true).filter(fit("grip", 0.72, 1.35));
+        // Familia propia o ajena a partes iguales
+        const choose = (list: AssetEntry[]) => { if (!list.length) return base; const own = list.filter((w) => w.pack === base.pack), other = list.filter((w) => w.pack !== base.pack); return pick(r, own.length && (!other.length || r() < 0.5) ? own : other); };
+        // Nada de armas genéricas: al menos dos de las tres piezas vienen de otras armas (si no cabe, al menos una)
+        for (const need of [2, 1]) {
+          for (let tries = 0; tries < 30; tries++) {
+            const c = { stock: r() < 0.85 ? choose(stocks) : base, front: r() < 0.85 ? choose(fronts) : base, grip: r() < 0.85 ? choose(grips) : base };
+            const foreign = [c.stock, c.front, c.grip].filter((x) => x !== base).length;
+            if (foreign >= need && longGunOk(base, c.stock, c.front, c.grip, type, tweaks)) return c;
+          }
+        }
+        return null;
+  }
+
   /** Recalcula estadísticas y nombre técnico (tras generar o tras cambiar piezas en el banco). */
   refresh(spec: WeaponSpec): WeaponSpec {
     spec.stats = computeStats(spec);
@@ -396,15 +419,31 @@ export function jointScale(recv: AssetEntry, donor: AssetEntry, joint: "rear" | 
  * Puerta de calidad de un arma larga montada con piezas de varias: las secciones de cada junta deben ser parecidas
  * (para no deformar las piezas) y la longitud total debe quedar dentro del rango del tipo.
  */
+/**
+ * Escala de una pieza donada para que encaje en la junta del cajón. La sección de la junta se iguala exactamente
+ * (alto en culata y guardamanos, largo en la empuñadura) y el grosor se ajusta al del cajón; el largo de la pieza
+ * apenas cambia, así una pieza de otra familia se adapta sin deformarse. Incluye las variaciones leves (tweaks).
+ */
+export function pieceScale(recv: AssetEntry, donor: AssetEntry, role: "stock" | "front" | "grip", tw: Tweaks = NO_TWEAKS): [number, number, number] {
+  const len = role === "stock" ? tw.stock : role === "front" ? tw.front : tw.grip;
+  if (donor.id === recv.id) return role === "grip" ? [tw.grip, tw.grip, 1] : [len, 1, 1];
+  const k = jointScale(recv, donor, role === "stock" ? "rear" : role);
+  const thick = (recv.bounds.max[2] - recv.bounds.min[2]) / Math.max(1e-4, donor.bounds.max[2] - donor.bounds.min[2]);
+  const sz = THREE_clamp(thick, 0.75, 1.35);
+  const mild = THREE_clamp(k, 0.88, 1.14);
+  return role === "grip" ? [k * tw.grip, mild * tw.grip, sz] : [mild * len, k, sz];
+}
+const THREE_clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+
 export function longGunOk(recv: AssetEntry, stock: AssetEntry, front: AssetEntry, grip: AssetEntry, type: WeaponType, tw: Tweaks = NO_TWEAKS): boolean {
   if (!recv.joints || !stock.joints || !front.joints || !grip.joints) return false;
   const own = (x: AssetEntry) => x.id === recv.id;
   const kS = own(stock) ? 1 : jointScale(recv, stock, "rear"), kF = own(front) ? 1 : jointScale(recv, front, "front"), kG = own(grip) ? 1 : jointScale(recv, grip, "grip");
-  // Secciones muy parecidas: así las piezas apenas se reescalan y el conjunto se ve natural
-  if (!within(kS, 0.8, 1.25) || !within(kF, 0.78, 1.3) || !within(kG, 0.8, 1.25)) return false;
+  // La sección se adapta (solo en un eje), así que se admite más diferencia; aun así nada desproporcionado
+  if (!within(kS, 0.7, 1.4) || !within(kF, 0.7, 1.4) || !within(kG, 0.72, 1.35)) return false;
   const J = recv.joints;
-  const stockLen = (stock.joints.stockFace.pos[0] - stock.bounds.min[0]) * kS * tw.stock;
-  const frontLen = (front.bounds.max[0] - front.joints.frontFace.pos[0]) * kF * tw.front;
+  const stockLen = (stock.joints.stockFace.pos[0] - stock.bounds.min[0]) * pieceScale(recv, stock, "stock", tw)[0];
+  const frontLen = (front.bounds.max[0] - front.joints.frontFace.pos[0]) * pieceScale(recv, front, "front", tw)[0];
   const len = (J.front.pos[0] - J.rear.pos[0]) + stockLen + frontLen;
   const target = TYPE_LENGTH[type] ?? 0.9;
   // Longitud total del tipo y proporciones: ni culatas enanas ni guardamanos desmesurados
@@ -413,7 +452,7 @@ export function longGunOk(recv: AssetEntry, stock: AssetEntry, front: AssetEntry
 
 /** Variaciones leves de las piezas (deterministas por semilla). */
 function rollTweaks(r: Rng): Tweaks {
-  return { stock: 0.9 + r() * 0.22, front: 0.88 + r() * 0.26, grip: 0.94 + r() * 0.12, gripAngle: -0.08 + r() * 0.14, body: 1 };
+  return { stock: 0.86 + r() * 0.3, front: 0.85 + r() * 0.33, grip: 0.92 + r() * 0.18, gripAngle: -0.1 + r() * 0.18, body: 1 };
 }
 
 export function computeStats(spec: WeaponSpec): Stats {
@@ -484,15 +523,37 @@ function applyBudget(s: Stats, spec: WeaponSpec) {
   if (leftover > 0) s.dano *= 1 + leftover / (POWER_WEIGHTS.dano * (s.dano / base.dano));
 }
 
+/** Palabras para los nombres de modelo (posapocalíptico, en inglés como las legendarias). */
+const NAME_WORDS = ["Jackal", "Hornet", "Drifter", "Scrapper", "Vulture", "Coyote", "Badger", "Marauder", "Nomad", "Warden", "Harrier", "Mongrel",
+  "Bulldog", "Ferret", "Viper", "Kestrel", "Raven", "Ironside", "Outrider", "Rustback", "Dustrunner", "Hellcat", "Magpie", "Wolverine",
+  "Prowler", "Longhorn", "Sidewinder", "Gravedigger", "Tinker", "Brigand", "Lynx", "Mule", "Hound", "Scorpion", "Tumbleweed", "Ember",
+  "Bastion", "Sparrow", "Rattler", "Bandit", "Grizzly", "Wraith", "Pike", "Hammerhead", "Junker", "Sawtooth", "Gunsmoke", "Patriot"];
+const PREFIX = ["M", "K", "X", "R", "T", "V", "Z", "SR", "KR", "MK"];
+
+/**
+ * Designación de las armas no legendarias. Varios estilos (código de serie, nombre de modelo, modelo con número…)
+ * elegidos de forma estable según las piezas, así dos armas parecidas rara vez se llaman igual.
+ */
 export function technicalName(spec: WeaponSpec): string {
   const info = TYPE_INFO[spec.type as BaseType];
   const body = spec.parts[0].from;
+  const h = hashString(spec.parts.map((p) => p.from).join("|") + spec.archetype + spec.statSeed);
+  const pickH = <T,>(arr: readonly T[], salt: number) => arr[(h >>> salt) % arr.length];
   const series = info.letter + "KRVMCLDTX"[hashString(body + spec.archetype) % 9];
   const cal = info.calibers[hashString(spec.parts[1]?.from ?? body) % info.calibers.length];
   const L = spec.barrelLength;
   const mode = spec.fireMode === "burst" ? `B${spec.burst}` : spec.modeShift === "auto" || spec.archetype === "machine" ? "A" : spec.modeShift === "semi" ? "S" : spec.archetype === "marksman" ? "DMR" : "";
   const acc = accessory(spec.muzzle);
-  const suffix = (L > 1.3 ? "L" : L < 0.95 ? "C" : "") + mode + (acc?.quiet ? " SD" : "") + (spec.optic && spec.optic !== body ? " O" : "");
+  const tags = (L > 1.3 ? "L" : L < 0.95 ? "C" : "") + mode;
+  const extra = (acc?.quiet ? " SD" : "") + (spec.optic && spec.optic !== body ? " O" : "");
   const mark = spec.rarity.id === "rara" ? " Mk II" : spec.rarity.id === "epica" ? " Mk III" : "";
-  return `${series}-${cal}${suffix}${mark}`;
+  const word = pickH(NAME_WORDS, 3), num = 2 + ((h >>> 11) % 97);
+  const styles = [
+    () => `${series}-${cal}${tags}${extra}${mark}`,                                  // AR-556B3 SD
+    () => `${word} ${cal}${tags ? "-" + tags : ""}${extra}${mark}`,                    // Jackal 762-DMR
+    () => `${pickH(PREFIX, 17)}${num} ${word}${extra}${mark}`,                         // M14 Drifter
+    () => `${word}-${num}${tags}${extra}${mark}`,                                     // Vulture-22C
+    () => `${series}${num} "${word}"${extra}${mark}`,                                  // AK47 "Coyote"
+  ];
+  return pickH(styles, 23)();
 }

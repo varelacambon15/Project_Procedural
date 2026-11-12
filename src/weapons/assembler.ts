@@ -2,8 +2,8 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { NO_TWEAKS, type AssetEntry, type PartRole, type WeaponSpec } from "./types";
-import { TYPE_LENGTH, jointScale, type WeaponGenerator } from "./generator";
-import { isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
+import { TYPE_LENGTH, pieceScale, type WeaponGenerator } from "./generator";
+import { KIT_FLIP, isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
 import { accessory, buildMuzzle, buildOptic } from "./accessories";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
@@ -100,6 +100,7 @@ export class WeaponAssembler {
       for (const [i, pl] of placements.entries()) {
         const node = nodes[i];
         node.position.set(...pl.pos); node.scale.x = pl.stretch;
+        if (KIT_FLIP.has(pl.part.id)) node.rotation.y = Math.PI;
         const role: PartRole = pl.role === "sight" ? "scope" : pl.role;
         add(node, role, { id: pl.part.id, label: kitLabel(pl.part.id), pack: "kit" } as AssetEntry, KIT_EXPLODE[pl.role] ?? [0, 0.6, 0]);
         if (KIT_PRIMARY.has(pl.role)) paint(node, spec);
@@ -147,14 +148,13 @@ export class WeaponAssembler {
         const J = bodyE.joints!;
         const recv = await this.nodes(bodyE, "receiver");
         add(recv, "receiver", bodyE, [0, 0, 0]); paint(recv, spec);
-        const thick = (bodyE.bounds.max[2] - bodyE.bounds.min[2]);
         const tw = spec.tweaks ?? NO_TWEAKS;
         // Cada pieza se escala a la sección de su junta y recibe su variación leve (largo, tamaño, ángulo).
         const attach = async (role: "stock" | "front" | "grip", joint: "rear" | "front" | "grip", face: "stockFace" | "frontFace" | "gripFace", explode: [number, number, number]) => {
           const donor = get(spec.parts.find((p) => p.role === role)!.from);
           const node = await this.nodes(donor, role);
-          const k = donor === bodyE ? 1 : THREE.MathUtils.clamp(jointScale(bodyE, donor, joint), 0.6, 1.6);
-          const sv = role === "stock" ? new THREE.Vector3(k * tw.stock, k, k) : role === "front" ? new THREE.Vector3(k * tw.front, k, k) : new THREE.Vector3(k * tw.grip, k * tw.grip, k);
+          const sv = new THREE.Vector3(...pieceScale(bodyE, donor, role, tw));
+          const k = sv.y;
           node.scale.copy(sv);
           const anchor = v3(J[joint].pos);
           if (role === "grip") {
@@ -171,14 +171,6 @@ export class WeaponAssembler {
         await attach("stock", "rear", "stockFace", [-1.2, 0, 0]);
         const fr = await attach("front", "front", "frontFace", [1.1, 0.2, 0]);
         await attach("grip", "grip", "gripFace", [0, -1, 0]);
-        // Remates de unión: un anillo de acero en el guardamanos y una placa en la culata, para que no se vea el corte
-        for (const [j, w] of [["front", 0.012], ["rear", 0.008]] as const) {
-          const h = J[j].size![0];
-          const legendary = spec.rarity.id === "legendaria";
-          const collar = new THREE.Mesh(new THREE.BoxGeometry(w, h * 1.06, thick * 0.92), new THREE.MeshStandardMaterial({ name: "Steel", color: legendary ? 0x3a2410 : 0x1e1f21, metalness: 0.75, roughness: legendary ? 0.3 : 0.4, emissive: legendary ? 0xf08a24 : 0x000000, emissiveIntensity: legendary ? 0.35 : 0 }));
-          collar.position.set(J[j].pos[0], J[j].pos[1], 0);
-          recv.add(collar);
-        }
         if (fr.donor.sockets.muzzle) {
           const m = fr.donor.sockets.muzzle;
           muzzle = v3(m.pos).multiply(fr.sv).add(fr.node.position);
@@ -269,6 +261,7 @@ export class WeaponAssembler {
     // Centrar y guardar posiciones base para el despiece.
     const box = new THREE.Box3().setFromObject(group);
     const center = box.getCenter(new THREE.Vector3());
+    center.z = 0; // el eje del arma (cañón, mira) está en z = 0: así al apuntar la mira queda centrada
     const length = box.max.x - box.min.x;
     for (const p of parts) { p.object.position.sub(center); p.base.copy(p.object.position); p.explode.multiplyScalar(length * 0.18); }
     const muzzleOut = (muzzle ?? new THREE.Vector3(box.max.x, center.y, 0)).clone().sub(center);
