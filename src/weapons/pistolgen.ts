@@ -54,7 +54,7 @@ const rev = (cal: RevolverCal, len: number, o: Over = {}): Arch["d"] => {
   const c = REVOLVER_CAL[cal];
   const d = base({ ...o, slide: { len: c.len + 0.045, h: c.r * 2 + 0.008, w: 0.02, style: "round", nose: "flat", rear: "round", serr: 0, port: false, top: "iron", ...o.slide },
     barrel: { ext: len, d: c.d, profile: "round", ...o.barrel }, frame: { dust: 1, h: c.h, guard: "round", ...o.frame },
-    grip: { angle: 0.42, len: 0.088, depth: 0.04, shape: "bird", panels: "wood", ...o.grip }, mag: { kind: "none", len: 0 }, hammer: o.hammer ?? "spur" });
+    grip: { angle: 0.42, len: 0.088, depth: 0.036, shape: "bird", panels: "wood", ...o.grip }, mag: { kind: "none", len: 0 }, hammer: o.hammer ?? "spur" });
   d.cyl = { r: c.r, len: c.len, lug: "none", rib: "none", ...o.cyl, cal };
   return d;
 };
@@ -133,11 +133,13 @@ export const PISTOL_MUTATIONS: Mutation[] = [
   { id: "barrel-guard", structural: true, run: (d, r, a) => { d.barrel.guard = !d.barrel.guard; if (d.barrel.guard) d.barrel.ext = Math.max(d.barrel.ext, (0.07 + r() * 0.06) * Math.min(1.6, a)); } },
   { id: "nose", structural: true, run: (d, r) => (d.slide.nose = other(r, ["flat", "bevel", "step", "taper"] as const, d.slide.nose)) },
   { id: "lug", structural: true, run: (d, r) => { if (d.cyl) d.cyl.lug = other(r, ["none", "half", "full"] as const, d.cyl.lug); } },
+  // Revólver: cañón con camisa gruesa (tetón completo y banda) o fino de origen
+  { id: "rshroud", structural: true, run: (d) => { if (!d.cyl) return; const on = d.barrel.profile !== "bull"; d.barrel.profile = on ? "bull" : "round"; d.cyl.lug = on ? "full" : "none"; d.cyl.rib = on ? "vent" : "none"; } },
   { id: "cyl", structural: true, run: (d, r) => { if (!d.cyl) return; const k = other(r, ["light", "medium", "heavy", "magnum"] as const, d.cyl.cal); const c = REVOLVER_CAL[k]; d.cyl = { ...d.cyl, cal: k, r: c.r, len: c.len }; d.barrel.d = c.d; d.frame.h = c.h; d.slide.h = c.r * 2 + 0.008; d.slide.len = c.len + 0.045; } },
   // --- De medida o detalle ---
   { id: "slide-len", structural: false, run: (d, r, a) => (d.slide.len = Math.min(0.27, Math.max(0.13, d.slide.len * away(r, 1 - 0.2 * a, 1 + 0.3 * a, 0.1)))) },
   { id: "slide-h", structural: false, run: (d, r, a) => (d.slide.h = Math.min(0.045, Math.max(0.025, d.slide.h * away(r, 1 - 0.12 * a, 1 + 0.2 * a, 0.07)))) },
-  { id: "barrel-ext", structural: false, run: (d, r, a) => (d.barrel.ext = d.family === "revolver" ? Math.min(0.2, Math.max(0.045, d.barrel.ext * away(r, 0.55, 1.6, 0.25))) : d.barrel.ext > 0.012 ? 0 : 0.015 + r() * 0.04 * a) },
+  { id: "barrel-ext", structural: false, run: (d, r, a) => (d.barrel.ext = d.family === "revolver" ? Math.min(0.22, Math.max(0.04, d.barrel.ext * away(r, Math.max(0.3, 1 - 0.45 * a), 1 + 0.6 * a, 0.25))) : d.barrel.ext > 0.012 ? 0 : 0.015 + r() * 0.04 * a) },
   { id: "comp", structural: false, run: (d, r) => (d.barrel.comp = d.barrel.comp === "none" ? (r() < 0.5 ? "block" : "ported") : "none") },
   { id: "dust", structural: false, run: (d, r) => (d.frame.dust = d.frame.dust > 0.8 ? 0.62 + r() * 0.1 : 0.86 + r() * 0.1) },
   { id: "grip-angle", structural: false, run: (d, r) => (d.grip.angle = Math.min(0.55, Math.max(0.14, d.grip.angle + (r() < 0.5 ? -1 : 1) * (0.06 + r() * 0.06)))) },
@@ -148,8 +150,8 @@ export const PISTOL_MUTATIONS: Mutation[] = [
   { id: "rib", structural: false, run: (d, r) => { if (d.cyl) d.cyl.rib = other(r, ["none", "solid", "vent"] as const, d.cyl.rib); } },
 ];
 export const STRUCTURAL = new Set(PISTOL_MUTATIONS.filter((m) => m.structural).map((m) => m.id));
-const REV_ONLY = new Set(["lug", "cyl", "rib"]);
-const AUTO_ONLY = new Set(["slide-style", "mag", "compact", "frame-full", "vgrip", "nose", "dust", "slide-h", "comp", "rear", "slide-len"]);
+const REV_ONLY = new Set(["lug", "cyl", "rib", "rshroud"]);
+const AUTO_ONLY = new Set(["slide-style", "mag", "compact", "frame-full", "vgrip", "nose", "dust", "slide-h", "rear", "slide-len", "top", "barrel-guard"]);
 /** Mutaciones que no pegan con una era o una familia (clásica sin raíl ni óptica ni petaca; revólver sin cargador…). */
 export function mutationAllowed(id: string, era: PEra, d: PistolDesign) {
   const revolver = d.family === "revolver";
@@ -188,7 +190,12 @@ export function gripPoly(d: PistolDesign): Pt[] {
     case "bird": // pico de pájaro: lomo curvo y talón que se cierra hacia delante
       return [g.TB, g.TF, lerp(g.TF, g.BF, 0.8), [g.BF[0] - 0.004, g.BF[1]], lerp(g.BB, g.BF, 0.35), [g.BB[0] - 0.006, g.BB[1] + 0.01], back(0.55, 0.009), back(0.2, 0.004)];
     case "flared": return [g.TB, g.TF, g.BF, g.BB, back(0.5, 0.004)];
-    default: return [g.TB, g.TF, g.BF, g.BB];
+    default: {
+      // Recta de polímero moderna: estrías para los dedos en el frente
+      if (d.grip.panels !== "polymer" || d.family === "revolver") return [g.TB, g.TF, g.BF, g.BB];
+      const ca = Math.cos(d.grip.angle), sa = Math.sin(d.grip.angle), front = (t: number, o: number): Pt => { const p = lerp(g.TF, g.BF, t); return [p[0] + o * ca, p[1] - o * sa]; };
+      return [g.TB, g.TF, front(0.2, 0), front(0.3, 0.0025), front(0.42, 0), front(0.52, 0.0025), front(0.64, 0), front(0.74, 0.0025), front(0.86, 0), g.BF, g.BB];
+    }
   }
 }
 const guardX = (d: PistolDesign) => gripCorners(d).TF[0];

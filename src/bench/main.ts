@@ -309,8 +309,9 @@ async function boot() {
     const rows = bases.map((b, bi) => targets.map((t, ti) => gen.generatePistolAt(seed + bi * 101 + ti * 7, b.arch, b.era as PEra, t === 1 ? 1 : t, "comun")));
     // Escala común: la del arma más larga de la hoja
     const builts = await Promise.all(rows.map((row) => Promise.all(row.map((w) => asm.assemble(w)))));
-    let maxLen = 0; for (const row of builts) for (const bw of row) { bw.group.rotation.set(0, 0, 0); maxLen = Math.max(maxLen, new THREE.Box3().setFromObject(bw.group).getSize(new THREE.Vector3()).x); }
-    const halfP = (maxLen / 2) * (PH / CW) * 1.1, halfQ = halfP * (QH / PH) * 1.25;
+    let maxLen = 0, maxH = 0; for (const row of builts) for (const bw of row) { bw.group.rotation.set(0, 0, 0); const sz = new THREE.Box3().setFromObject(bw.group).getSize(new THREE.Vector3()); maxLen = Math.max(maxLen, sz.x); maxH = Math.max(maxH, sz.y); }
+    // Misma escala en toda la hoja, que quepa el arma más larga y la más alta
+    const halfP = Math.max((maxLen / 2) * (PH / CW), maxH / 2) * 1.1, halfQ = Math.max((maxLen / 2) * (QH / CW), maxH / 2) * 1.2, halfS = Math.max((maxLen / 2) * (SH / CW), maxH / 2) * 1.08;
     const st = studio(CW, PH), stQ = studio(CW, QH), stS = studio(CW, SH, 0xf2f2f2);
     const out = document.createElement("canvas"); out.width = LBL + CW * targets.length; out.height = ROWH * rows.length + 40; const g = out.getContext("2d")!;
     g.fillStyle = "#15171a"; g.fillRect(0, 0, out.width, out.height);
@@ -328,7 +329,7 @@ async function boot() {
         g.fillStyle = "#9aa"; g.font = "12px sans-serif"; wrapText(g, ci === 0 ? `${w.name}` : `${ch.length} cambios: ${ch.join(", ")}`, x0 + 8, y0 + 38, CW - 16, 14, 2);
         st.sc.add(bw.group); g.drawImage(shoot(st, bw.group, CW, PH, 0, 0, halfP), x0, y0 + HEAD); st.sc.remove(bw.group);
         stQ.sc.add(bw.group); g.drawImage(shoot(stQ, bw.group, CW, QH, -0.6, 0.25, halfQ), x0, y0 + HEAD + PH); stQ.sc.remove(bw.group);
-        const restore = silhouetteOf(bw.group); stS.sc.add(bw.group); g.drawImage(shoot(stS, bw.group, CW, SH, 0, 0, halfP * (SH / PH)), x0, y0 + HEAD + PH + QH); stS.sc.remove(bw.group); restore();
+        const restore = silhouetteOf(bw.group); stS.sc.add(bw.group); g.drawImage(shoot(stS, bw.group, CW, SH, 0, 0, halfS), x0, y0 + HEAD + PH + QH); stS.sc.remove(bw.group); restore();
         g.strokeStyle = "#2c2f33"; g.strokeRect(x0 + 0.5, y0 + 0.5, CW - 1, ROWH - 11);
       }
     }

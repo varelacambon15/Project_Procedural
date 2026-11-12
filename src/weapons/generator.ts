@@ -7,7 +7,7 @@ import { EFFECTS_A, EFFECTS_B, EFFECTS_L, legalWith } from "./effects";
 import { eraFinishes, rollEra, rollModernization, type Era } from "./eras";
 import { clipProfile, frontProfile, stockProfile, type FrontKind, type StockKind } from "./procparts";
 import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zoneLen, type Box2, type Placed, type Stretch } from "./variation";
-import { PISTOL_ARCHES, PISTOL_MUTATIONS, STRUCTURAL, archDesign, archesFor, designEntry, designKey, designSpans, gripCorners, mutationAllowed, upgradeDesign, type PEra, type PistolDesign } from "./pistolgen";
+import { PISTOL_ARCHES, PISTOL_MUTATIONS, STRUCTURAL, archDesign, archesFor, designEntry, designKey, designPolys, designSpans, gripCorners, mutationAllowed, upgradeDesign, type PEra, type PistolDesign } from "./pistolgen";
 import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
 import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Addon, type Rarity, type RarityId, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
@@ -562,7 +562,9 @@ export class WeaponGenerator {
       const d: PistolDesign = structuredClone(d0);
       const ops = [...shuffle(structural).slice(0, nS), ...shuffle(detail).slice(0, 1 + Math.floor(r() * 3))];
       const ch: string[] = [];
-      for (const m of ops) { if (!mutationAllowed(m.id, era, d)) continue; const before = JSON.stringify(d); m.run(d, r, amp); if (JSON.stringify(d) !== before) ch.push(m.id); }
+      // Un cambio cuenta solo si se ve: altera el perfil de alguna pieza (o el estriado del cañón a la vista)
+      const seen = (x: PistolDesign) => JSON.stringify(designPolys(x)) + (x.barrel.ext > 0 ? x.barrel.profile : "");
+      for (const m of ops) { if (!mutationAllowed(m.id, era, d)) continue; const before = seen(d); m.run(d, r, amp); if (seen(d) !== before) ch.push(m.id); }
       const tw: Tweaks = { ...NO_TWEAKS, pistol: d };
       // Culata de hombro (~12 %; en carbinas, más): en el armazón (modernas) o en el talón de la empuñadura (clásicas)
       if (wantStock) { tw.pstock = pistolStock(r, d); ch.push(`stock-${tw.pstock.kind}`); }

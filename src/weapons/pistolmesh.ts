@@ -21,7 +21,18 @@ function extrude(poly: Pt[], depth: number, name: string, holes: Pt[][] = [], be
   const d = Math.max(0.0015, depth - b * 2);
   const g = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: b > 0, bevelThickness: b, bevelSize: b, bevelOffset: -b, bevelSegments: segs, curveSegments: 6 });
   g.translate(0, 0, -d / 2);
+  if (b > 0) edgeWear(g, name);
   return new THREE.Mesh(g, mat(name));
+}
+/**
+ * Desgaste en aristas: los vértices de los chaflanes (normal entre el canto y la cara) se aclaran un poco, como el
+ * pavonado o la pintura gastados en los bordes. Va en el color de vértice (la oclusión de contacto lo respeta).
+ */
+function edgeWear(g: THREE.BufferGeometry, name: string) {
+  const nor = g.attributes.normal, n = nor.count, col = new Float32Array(n * 3).fill(1);
+  const k = /wood|check/i.test(name) ? 1.08 : /tape|grip/i.test(name) ? 1.1 : 1.22;
+  for (let i = 0; i < n; i++) { const z = Math.abs(nor.getZ(i)); if (z > 0.15 && z < 0.95) col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = k; }
+  g.setAttribute("color", new THREE.BufferAttribute(col, 3));
 }
 function box(w: number, h: number, d: number, x: number, y: number, z: number, name: string) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(name)); m.position.set(x, y, z); return m;
@@ -68,7 +79,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
           // Aligeramientos: ventanas en la mitad delantera
           const holes: Pt[][] = [];
           for (let i = 0; i < d.slide.cuts; i++) { const x0 = L * (0.5 + i * 0.14), x1 = x0 + L * 0.09; holes.push([[x0, h * 0.55], [x1, h * 0.55], [x1, h * 0.85], [x0, h * 0.85]]); }
-          s.add(extrude(p.poly, p.depth, "slide", holes, round ? 0.0045 : 0.0018, round ? 3 : 2));
+          s.add(extrude(p.poly, p.depth, "slide", holes, round ? 0.0045 : 0.0026, round ? 3 : 2));
         }
         // Estrías: ranuras oscuras atrás (y delante en las modernas)
         const sw = p.depth / 2;
@@ -98,7 +109,12 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         // Junta corredera-armazón visible cuando son del mismo material (clásica)
         if (fm === "frame") for (const z of [-1, 1]) s.add(box(L * 0.95, 0.0009, 0.0006, L * 0.5, 0.0004, z * (sw + 0.0001), "procpad"));
         // Detalle de legendaria: filete de incrustación a lo largo de la corredera
-        if (look.legendary) for (const z of [-1, 1]) s.add(box(L * 0.82, 0.0014, 0.0006, L * 0.5, h * 0.82, z * (sw + 0.0003), "procdisplay"));
+        if (look.legendary) {
+          for (const z of [-1, 1]) s.add(box(L * 0.82, 0.0014, 0.0006, L * 0.5, h * 0.82, z * (sw + 0.0003), "procdisplay"));
+          // Grabado de volutas en todo el costado y punto de mira con inserto
+          for (const z of [-1, 1]) s.add(box(L * 0.5, h * 0.42, 0.0005, L * 0.36, h * 0.42, z * (sw + 0.00025), "procengrave"));
+          s.add(box(0.0026, 0.0026, 0.0028, L - 0.012, h + 0.004, 0, "procdisplay"));
+        }
         break;
       }
       case "frame": {
@@ -150,7 +166,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         if (d.grip.panels === "tape" || d.extra.wrap) {
           for (const t of [0.3, 0.5, 0.7]) {
             const x = gc.TB[0] + (gc.BB[0] - gc.TB[0]) * t + d.grip.depth / 2, y = gc.TB[1] + (gc.BB[1] - gc.TB[1]) * t;
-            const band = box(d.grip.depth * 1.02, 0.006, p.depth * 1.03, x, y, 0, "proctape"); band.rotation.z = -d.grip.angle; g.add(band);
+            const band = box(d.grip.depth * 0.94, 0.005, p.depth * 1.04, x - 0.001, y, 0, "proctape"); band.rotation.z = -d.grip.angle; g.add(band);
           }
         }
         // Brocal ensanchado en la base (abertura del cargador) en las de cargador en la empuñadura
@@ -159,10 +175,16 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
           const well: Pt[] = [[gc.BB[0] - 0.002 + ox, gc.BB[1] + oy], [gc.BB[0] - 0.002, gc.BB[1]], [gc.BF[0] + 0.002, gc.BF[1]], [gc.BF[0] + 0.002 + ox, gc.BF[1] + oy]];
           g.add(extrude(well, p.depth * 1.12, fm, [], 0.001));
         }
+        if (look.legendary) { const cx = (gc.TB[0] + gc.BF[0]) / 2, cy = (gc.TB[1] + gc.BF[1]) / 2; for (const z of [-1, 1]) g.add(disc(0.0055, 0.0012, cx, cy, z * (zh + 0.0035), "procdisplay", 12)); }
         if (d.grip.butt === "lanyard" || (d.era === "classic" && !rev)) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.006, 0.0015, 4, 8), mat("procmetal")); ring.position.set(gc.BB[0] + 0.004, gc.BB[1] - 0.004, 0); g.add(ring); }
         break;
       }
-      case "mag": buildMag(G("magazine"), d, p.poly, p.depth); break;
+      case "mag": {
+        buildMag(G("magazine"), d, p.poly, p.depth);
+        // Cargador delante del guardamonte: su brocal (caja del armazón donde entra)
+        if (d.mag.kind === "front") { const x0 = Math.min(...p.poly.map((q) => q[0])), x1 = Math.max(...p.poly.map((q) => q[0])); G("frame").add(extrude([[x0 - 0.003, -fh + 0.001], [x1 + 0.003, -fh + 0.001], [x1 + 0.002, -fh - 0.016], [x0 - 0.002, -fh - 0.016]], p.depth * 1.3, fm, [], 0.0012, 2)); }
+        break;
+      }
       case "barrel": {
         const b = G("barrel"); const r = (p.poly[2][1] - p.poly[0][1]) / 2, x0 = p.poly[0][0], len = p.poly[1][0] - x0, y = (p.poly[0][1] + p.poly[2][1]) / 2;
         if (d.barrel.shroud) { b.add(tube(r, len, x0, y, "barrel", 8)); for (let k = 0; k < 3; k++) b.add(box(0.004, r * 2.05, r * 1.4, x0 + len * (0.25 + k * 0.25), y, 0, "procpad")); }
