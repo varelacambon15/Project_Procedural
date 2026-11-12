@@ -120,7 +120,8 @@ export function kitPlacements(kit: KitIndex, spec: Pick<WeaponSpec, "parts" | "o
           child = role ? byRole.get(role) ?? null : null; childRole = role ?? "sight";
           if (key === "Barrel") k = spec.barrelLength || 1;
           if (key === "Handguard") k = spec.tweaks?.front ?? 1;
-          if (key === "Stock") { if (spec.tweaks?.nostock) continue; k = spec.tweaks?.stock ?? 1; }
+          if (key === "Stock") { if (spec.tweaks?.nostock || spec.tweaks?.pstock) continue; k = spec.tweaks?.stock ?? 1; }
+          if (key === "Handguard" && spec.tweaks?.pfront) continue;
         }
         if (child) place(child, childRole, p, k);
       }
@@ -162,7 +163,7 @@ export function rollKit(kit: KitIndex, r: Rng, type: WeaponType): { parts: PartP
   const platform = pick(platforms);
   const parts: PartPick[] = [{ role: "receiver", from: platform.id }];
   const cal = platform.caliber;
-  const want = (slot: string, first = false) => { const o = kit.options(slot, cal, type); if (o.length) parts.push({ role: KIT_ROLE[slot], from: (first ? o[0] : pick(o)).id }); };
+  const want = (slot: string, first = false) => { const o = kit.options(slot, cal, type).filter((p) => slot !== "Device" || p.id.startsWith("k-device")); if (o.length) parts.push({ role: KIT_ROLE[slot], from: (first ? o[0] : pick(o)).id }); };
   // Una base y poco más: la configuración de serie (primera variante de cada pieza) y 1-2 piezas cambiadas
   const slots = Object.keys(platform.sockets).filter((slot) => KIT_ROLE[slot] && slot !== "Sights_Rear" && slot !== "Device");
   for (const slot of slots) want(slot, true);
@@ -176,7 +177,7 @@ export function rollKit(kit: KitIndex, r: Rng, type: WeaponType): { parts: PartP
   }
   // Accesorio bajo el raíl: a veces (en el guardamanos, el guardamanos del corredero o la plataforma)
   const hosts = parts.map((p) => kit.byId.get(p.from)!).filter((p) => p.sockets.Device);
-  if (hosts.length && r() < 0.45) want("Device");
+  if (hosts.length && r() < 0.6) want("Device");
   const { barrelLength, front } = kitLengths(r, type, parts);
   const stock = type !== "pistol" ? 0.92 + r() * 0.16 : 1;
   return { parts, barrelLength, front, stock };

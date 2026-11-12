@@ -33,7 +33,7 @@ export function stockProfile(s: ProcStock): Profile {
 /** Silueta del guardamanos y el cañón que sobresale. */
 export function frontProfile(f: ProcFront): Profile {
   const [ax, ay] = f.at, x1 = ax + f.len + f.barrel;
-  return profileFrom(ax, x1, (x) => (x <= ax + f.len ? [ay - f.h * 0.48, ay + f.h * 0.48] : [ay - f.d / 2, ay + f.d / 2]));
+  return profileFrom(ax, Math.max(x1, ax + f.len), (x) => (x <= ax + f.len ? [ay - f.h * 0.48, ay + f.h * 0.48] : f.barrel > 0 ? [ay - f.d / 2, ay + f.d / 2] : null));
 }
 
 const box = (w: number, h: number, d: number, x: number, y: number, name = "proc") => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ name })); m.position.set(x, y, 0); return m; };
@@ -94,6 +94,7 @@ export function buildFront(f: ProcFront): { group: THREE.Group; barrel: THREE.Gr
     g.add(box(0.012, f.h * 0.95, f.h * 0.95, ax + f.len - 0.006, ay, "cap"));
   }
   const barrel = new THREE.Group();
+  if (f.barrel <= 0) return { group: g, barrel, muzzle: new THREE.Vector3(ax + f.len, ay, 0) };
   const bl = f.barrel + 0.02;
   const b = new THREE.Mesh(new THREE.CylinderGeometry(f.d / 2, f.d / 2, bl, 12), new THREE.MeshStandardMaterial({ name: "barrel" }));
   b.rotation.z = -Math.PI / 2; b.position.set(ax + f.len + bl / 2 - 0.02, ay, 0); barrel.add(b);

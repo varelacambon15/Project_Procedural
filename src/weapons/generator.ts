@@ -239,12 +239,12 @@ export class WeaponGenerator {
   opticOptions(spec: Pick<WeaponSpec, "type" | "parts">): string[] {
     const procedural = () => ACCESSORIES.filter((a) => a.kind === "optic" && (!a.for || a.for.includes(spec.type))).map((a) => a.id);
     // Las miras reales (Flat Gun Attachments) sustituyen a las hechas por código; se conservan solo las de aumento sin equivalente
-    if (isKit(spec.parts[0].from)) return kitOpticOptions(this.kit, spec, []);
+    if (isKit(spec.parts[0].from)) return kitOpticOptions(this.kit, spec, spec.type === "pistol" ? ["acc:reddot"] : procedural());
     const body = this.byId.get(spec.parts[0].from);
     if (!body?.sockets.rail || spec.type === "sniper" || spec.type === "launcher" || spec.type === "flamethrower") return [];
     if (body.parts.some((p) => p.role === "scope")) return [];
-    void procedural;
-    return realOptics(this.kit, spec.type);
+    // Miras reales (preferidas al generar) y las hechas por código como alternativa
+    return [...realOptics(this.kit, spec.type), ...procedural()];
   }
   muzzleOptions(spec: Pick<WeaponSpec, "type" | "parts">): string[] {
     const type = spec.type, bodyId = spec.parts[0]?.from;
@@ -306,6 +306,7 @@ export class WeaponGenerator {
     const varied = this.vary(r, type, layout, parts, tweaks, barrelLength);
     tweaks = varied.tweaks; barrelLength = varied.barrelLength;
 
+
     // 2. Variante: la propia del modelo (70%) o cualquiera del tipo
     const hint = MODEL_HINTS[body.id];
     const regular = info.archetypes.filter((a) => a.w > 0);
@@ -332,7 +333,7 @@ export class WeaponGenerator {
     if (arch.id === "marksman" && slots.includes("optic")) slots.sort((x) => (x === "optic" ? -1 : 1)); else if (r() < 0.5) slots.reverse();
     for (const slot of slots) {
       if (nAcc <= 0) break;
-      if (slot === "optic") optic = pick(r, opticOpts); else muzzle = pick(r, muzzleOpts);
+      if (slot === "optic") { const real = opticOpts.filter(isKit); optic = real.length && r() < 0.75 ? pick(r, real) : pick(r, opticOpts); } else muzzle = pick(r, muzzleOpts);
       nAcc--;
     }
 
@@ -409,6 +410,8 @@ export class WeaponGenerator {
     if (layout === "kit") {
       const { placements } = kitPlacements(this.kit, { parts, optic: null, muzzle: null, barrelLength, tweaks: tw });
       for (const pl of placements) if (pl.part.profile) put(pl.role, { profile: pl.part.profile, offset: pl.pos, scale: [pl.stretch, pl.role === "magazine" ? tw.magLen ?? 1 : 1, 1] });
+      if (tw.pstock && !tw.nostock) put("stock", { profile: stockProfile(tw.pstock) });
+      if (tw.pfront) put("front", { profile: frontProfile(tw.pfront) });
       const kdev = tw.device ? this.kit.byId.get(tw.device.id) : null;
       if (kdev && tw.device) boxes.push({ x0: tw.device.at[0] + kdev.bounds.min[0], x1: tw.device.at[0] + kdev.bounds.max[0], y0: tw.device.at[1] + kdev.bounds.min[1], y1: tw.device.at[1] + kdev.bounds.max[1] });
       return { placed, boxes, byRole };
@@ -492,12 +495,15 @@ export class WeaponGenerator {
     const ref = this.baseSilhouette(layout, parts);
     const [lo, hi] = SIMILARITY_RANGE;
     let best: { tw: Tweaks; bl: number; sim: number; d: number; ch: string[] } | null = null;
+    const cands: { tw: Tweaks; bl: number; sim: number; d: number; ch: string[] }[] = [];
     let amp = 1;
+    // Cambios llamativos solo en una parte de las armas (si no, el generador los usaría siempre para alejarse de la base)
+    const rare = { nostock: r() < 0.3, hgStock: r() < 0.4 };
     for (let i = 0; i < 40; i++) {
       // Si la mejor tirada hasta ahora se aleja demasiado de la base, las siguientes cambian con menos amplitud
       if (best && best.sim < lo && i % 6 === 5) amp = Math.max(0.35, amp * 0.7);
       if (best && best.sim > hi && i % 4 === 3) amp = Math.min(1.9, amp * 1.2);
-      const { tw, barrelLength: bl } = this.rollOps(r, type, layout, parts, tw0, barrelLength, swaps.length, amp);
+      const { tw, barrelLength: bl } = this.rollOps(r, type, layout, parts, tw0, barrelLength, swaps.length, amp, rare);
       if (layout === "modular-long" && base && !tw.pstock && !tw.pfront) {
         const get = (role: string) => this.byId.get(parts.find((p) => p.role === role)!.from)!;
         if (!longGunOk(base, get("stock"), get("front"), get("grip"), type, tw)) continue;
@@ -506,15 +512,19 @@ export class WeaponGenerator {
         // Con piezas por código: largo total razonable para el tipo
         const sp = this.silhouette(layout, parts, tw, bl); const xs = sp.map((p) => p[0]);
         const L = Math.max(...xs) - Math.min(...xs), ref = TYPE_LENGTH[type] ?? 0.9;
-        if (L / ref < 0.75 || L / ref > 1.3) continue;
+        const handgun = type === "pistol" || type === "revolver";
+        if (L / ref < 0.75 || L / ref > (handgun && tw.pstock ? 2.1 : 1.3)) continue;
       }
       const ch = changesOf(layout, tw, bl, swaps);
       const sim = similarity(ref, this.silhouette(layout, parts, tw, bl));
       // Mínimo 3 cambios; dentro de eso, el parecido más cercano al rango buscado
       const d = (ch.length < 3 ? 1 : 0) + (sim < lo ? lo - sim : sim > hi ? sim - hi : 0);
-      if (!best || d < best.d) best = { tw, bl, sim, d, ch };
+      const c = { tw, bl, sim, d, ch }; cands.push(c);
+      if (!best || d < best.d) best = c;
       if (d === 0) break;
     }
+    // Si ninguna cae en la banda, se elige al azar entre las casi mejores (no siempre la más extrema): más variedad
+    if (best && best.d > 0) { const near = cands.filter((c) => c.d <= best!.d + 0.012); best = near[Math.floor(r() * near.length)]; }
     return best ? { tweaks: best.tw, similarity: best.sim, barrelLength: best.bl, changes: best.ch } : { tweaks: tw0, similarity: 1, barrelLength, changes: [] };
   }
 
@@ -525,7 +535,7 @@ export class WeaponGenerator {
     return parts.slice(1).filter((p) => p.from !== baseId && !(layout === "kit" && defaults.some((d) => d.from === p.from)));
   }
 
-  private rollOps(r: Rng, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw0: Tweaks, barrelLength: number, swaps: number, amp = 1): { tw: Tweaks; barrelLength: number } {
+  private rollOps(r: Rng, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw0: Tweaks, barrelLength: number, swaps: number, amp = 1, rare: { nostock: boolean; hgStock: boolean } = { nostock: true, hgStock: true }): { tw: Tweaks; barrelLength: number } {
     const long = type !== "pistol" && type !== "revolver";
     const tw: Tweaks = { ...tw0, rail: null, drum: false, device: null, nostock: false, magLen: 1, stockH: 1, fold: false, pstock: null, pfront: null, cutRear: null, cutFront: null };
     let bl = barrelLength;
@@ -545,7 +555,7 @@ export class WeaponGenerator {
       ops.push({ id: "grip", run: () => { tw.grip = away(0.9, 1.14, 0.06); tw.gripAngle = (r() < 0.5 ? -1 : 1) * (0.05 + r() * 0.06); } });
       // Sin culata solo en armas cortas (subfusiles y escopetas de menos de ~75 cm): en una larga se ve raro
       const len = base ? base.bounds.max[0] - base.bounds.min[0] : 1;
-      if ((type === "smg" || type === "shotgun") && len < 0.75) ops.push({ id: "nostock", run: () => (tw.nostock = true) });
+      if ((type === "smg" || type === "shotgun") && len < 0.75) if (rare.nostock) ops.push({ id: "nostock", run: () => (tw.nostock = true) });
       const J = base?.joints;
       const thick = base ? (base.bounds.max[2] - base.bounds.min[2]) * 0.7 : 0.03;
       if (J) {
@@ -554,7 +564,7 @@ export class WeaponGenerator {
         const st = this.byId.get(parts.find((p) => p.role === "stock")?.from ?? "")?.partBounds?.stock;
         if (type === "smg" && st && st.max[1] - st.min[1] < 0.07) ops.push({ id: "fold", run: () => (tw.fold = true) });
         ops.push({ id: "pstock", run: () => (tw.pstock = procStock(r, type, [J.rear.pos[0], J.rear.pos[1]], J.rear.size?.[0] ?? 0.05, thick)) });
-        if (type !== "sniper") ops.push({ id: "pfront", run: () => (tw.pfront = procFront(r, type, [J.front.pos[0], J.front.pos[1]], J.front.size?.[0] ?? 0.05, thick)) });
+        ops.push({ id: "pfront", run: () => (tw.pfront = procFront(r, type, [J.front.pos[0], J.front.pos[1]], J.front.size?.[0] ?? 0.05, thick)) });
       }
     } else if (layout === "body") {
       // Las recortadas no se alargan (dejarían de ser recortadas): solo se pueden acortar un poco
@@ -562,18 +572,34 @@ export class WeaponGenerator {
       ops.push({ id: "barrel", run: () => (tw.body = sawed ? 0.82 + r() * 0.1 : long ? away(0.75, 1.4) : away(0.82, 1.32)) });
       // Armas enteras largas: se corta el cuerpo y se pone culata o guardamanos por código (solo si la sección es fina)
       const prof = base?.profiles?.body;
+      // Armas cortas: culata de hombro opcional (pistolas ametralladoras, carabinas de revólver)
+      if (!long && prof && rare.hgStock) {
+        const L = prof.x1 - prof.x0, n = prof.top.length;
+        ops.push({ id: "pstock", run: () => {
+          // Se engancha detrás de la empuñadura, a media altura de la parte trasera
+          const k = Math.min(n - 1, Math.floor(n * 0.06)); const t = prof.top[k], b = prof.bot[k];
+          if (t == null || b == null) return;
+          const y = b + (t - b) * 0.35;
+          tw.pstock = { kind: r() < 0.5 ? "tube" : "skeleton", at: [prof.x0 + L * 0.04, y], h: 0.032, w: 0.024, len: 0.17 + r() * 0.08, drop: 0.012 + r() * 0.02 };
+        } });
+      }
       if (long && prof && !sawed) {
         const col = (x: number) => { const n = prof.top.length, k = Math.min(n - 1, Math.max(0, Math.floor(((x - prof.x0) / (prof.x1 - prof.x0)) * n))); const t = prof.top[k], b = prof.bot[k]; return t == null || b == null ? null : { y: (t + b) / 2, h: t - b }; };
         const L = prof.x1 - prof.x0, thick = base ? (base.bounds.max[2] - base.bounds.min[2]) * 0.7 : 0.03;
-        ops.push({ id: "pfront", run: () => { const x = prof.x0 + L * (0.6 + r() * 0.08); const c = col(x); if (c && c.h < 0.09 && c.h > 0.015) { tw.cutFront = x; tw.body = 1; tw.pfront = procFront(r, type, [x, c.y], c.h, thick); } } });
+        const maxH = type === "bullpup" ? 0.11 : 0.09;
+        ops.push({ id: "pfront", run: () => { const x = prof.x0 + L * (0.6 + r() * 0.08); const c = col(x); if (c && c.h < maxH && c.h > 0.015) { tw.cutFront = x; tw.body = 1; tw.pfront = procFront(r, type, [x, c.y], c.h, thick); } } });
         if (type !== "sniper") ops.push({ id: "pstock", run: () => { const x = prof.x0 + L * (0.22 + r() * 0.08); const c = col(x); if (c && c.h < 0.09 && c.h > 0.015) { tw.cutRear = x; tw.stock = 1; tw.pstock = procStock(r, type, [x, c.y], c.h, thick); } } });
       }
       if (long) ops.push({ id: "stock", run: () => (tw.stock = away(0.75, 1.3)) });
     } else {
       ops.push({ id: "barrel", run: () => { const k = kitLengths(r, type, parts); bl = k.barrelLength; tw.front = k.front; } });
       if (type !== "pistol") ops.push({ id: "stock", run: () => (tw.stock = away(0.8, 1.2, 0.08)) });
-      if (type === "shotgun" || type === "rifle") ops.push({ id: "nostock", run: () => (tw.nostock = true) });
+      if (type === "shotgun" || type === "rifle") if (rare.nostock) ops.push({ id: "nostock", run: () => (tw.nostock = true) });
       if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = 1.2 + r() * 0.3) });
+      // Culata y guardamanos por código sobre los sockets de la plataforma (el cañón real del kit se conserva)
+      const plat = this.kit.byId.get(parts[0].from);
+      const sStock = plat?.sockets.Stock?.[0], sHand = plat?.sockets.Handguard?.[0];
+      void sStock; void sHand; // el kit conserva solo sus piezas reales (sistema modular propio)
       if (type === "pistol" && !parts.some((p) => this.kit.byId.get(p.from)?.slot === "Device")) ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) });
     }
     // Cargador alargado o de tambor solo donde el cargador va por debajo (no en armas con cargador superior, como el P90)
@@ -637,7 +663,7 @@ function procStock(r: Rng, type: BaseType, at: [number, number], h: number, w: n
 /** Guardamanos por código con cañón que sobresale. */
 function procFront(r: Rng, type: BaseType, at: [number, number], h: number, w: number) {
   const kinds: FrontKind[] = ["quad", "tube"];
-  const len = ({ smg: [0.09, 0.16], rifle: [0.2, 0.32], shotgun: [0.22, 0.34], lmg: [0.24, 0.34] } as Record<string, [number, number]>)[type] ?? [0.2, 0.3];
+  const len = ({ smg: [0.09, 0.16], rifle: [0.2, 0.32], shotgun: [0.22, 0.34], lmg: [0.24, 0.34], sniper: [0.26, 0.38], bullpup: [0.12, 0.2] } as Record<string, [number, number]>)[type] ?? [0.2, 0.3];
   const hh = Math.min(0.065, Math.max(0.028, h * 0.95));
   return { kind: kinds[Math.floor(r() * kinds.length)], at, h: hh, w: Math.min(0.05, Math.max(0.024, w)), len: len[0] + r() * (len[1] - len[0]), barrel: (type === "smg" ? 0.03 : 0.05) + r() * 0.1, d: type === "shotgun" ? 0.022 : Math.min(0.02, Math.max(0.012, hh * 0.3)) };
 }
@@ -653,7 +679,7 @@ export function changesOf(layout: WeaponSpec["layout"], t: Tweaks, barrelLength:
     if (far(t.grip, 0.05) || Math.abs(t.gripAngle) > 0.04) c.push("grip");
   }
   if (layout === "body" && far(t.body)) c.push("barrel-len");
-  if (layout === "body" && far(t.stock)) c.push("stock-len");
+  if (layout === "body" && far(t.stock) && !t.pstock) c.push("stock-len");
   if (layout === "kit") { if (far(barrelLength, 0.06) || far(t.front, 0.06)) c.push("barrel-len"); if (!t.nostock && t.stock !== undefined && far(t.stock, 0.06)) c.push("stock-len"); }
   if (t.rail) c.push("rail");
   if (t.drum) c.push("drum");

@@ -50,9 +50,8 @@ export function spans(parts: Placed[], boxes: Box2[] = []): [number, number, num
 /** Parecido de dos siluetas en una rejilla que cubre ambas (coincidencia con tolerancia). 1 = idénticas. */
 export function similarity(a: [number, number, number][], b: [number, number, number][]): number {
   if (!a.length || !b.length) return 0;
-  const all = a.concat(b);
-  const xmin = Math.min(...all.map((s) => s[0])), xmax = Math.max(...all.map((s) => s[0]));
-  const ymin = Math.min(...all.map((s) => s[1])), ymax = Math.max(...all.map((s) => s[2]));
+  let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+  for (const sp of [a, b]) for (const s of sp) { if (s[0] < xmin) xmin = s[0]; if (s[0] > xmax) xmax = s[0]; if (s[1] < ymin) ymin = s[1]; if (s[2] > ymax) ymax = s[2]; }
   const raster = (sp: [number, number, number][]) => {
     const g = new Uint8Array(W * H);
     const cols: [number, number][][] = Array.from({ length: W }, () => []);
@@ -68,10 +67,11 @@ export function similarity(a: [number, number, number][], b: [number, number, nu
   const A = raster(a), B = raster(b);
   // Coincidencia con tolerancia (±TOL celdas): cuenta qué parte de cada silueta cae cerca de la otra. Es más fiel a lo
   // que ve el ojo que la intersección exacta, que castiga mucho los desplazamientos pequeños en piezas finas.
+  // Dilatación cuadrada (±TOL) en dos pasadas separables: mismo resultado, mucho más rápida
   const dil = (g: Uint8Array) => {
-    const o = new Uint8Array(W * H);
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (g[r * W + c])
-      for (let dr = -TOL; dr <= TOL; dr++) for (let dc = -TOL; dc <= TOL; dc++) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < H && cc >= 0 && cc < W) o[rr * W + cc] = 1; }
+    const h = new Uint8Array(W * H), o = new Uint8Array(W * H);
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (g[r * W + c]) for (let cc = Math.max(0, c - TOL); cc <= Math.min(W - 1, c + TOL); cc++) h[r * W + cc] = 1;
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (h[r * W + c]) for (let rr = Math.max(0, r - TOL); rr <= Math.min(H - 1, r + TOL); rr++) o[rr * W + c] = 1;
     return o;
   };
   const Ad = dil(A), Bd = dil(B);

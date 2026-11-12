@@ -123,6 +123,9 @@ export class WeaponAssembler {
         const slide = parts.find((p) => p.role === "slide");
         sightKit = frontSightTop !== null ? frontSightTop - 0.002 : slide ? new THREE.Box3().setFromObject(slide.object).max.y + 0.002 : null;
       }
+      // Culata y guardamanos por código sobre los sockets de la plataforma
+      if (spec.tweaks?.pstock && !spec.tweaks.nostock) add(buildStock(spec.tweaks.pstock), "stock", { id: `proc-stock-${spec.tweaks.pstock.kind}`, label: "Stock", pack: "proc" } as AssetEntry, [-1.2, 0, 0]);
+      if (spec.tweaks?.pfront) add(buildFront(spec.tweaks.pfront).group, "front", { id: `proc-front-${spec.tweaks.pfront.kind}`, label: "Handguard", pack: "proc" } as AssetEntry, [1.1, 0.2, 0]);
       const kd = spec.tweaks?.device ? this.gen.kit.byId.get(spec.tweaks.device.id) : null;
       if (kd && spec.tweaks?.device) { const dev = await this.kitNode(kd); dev.scale.setScalar(DEVICE_SCALE(spec.type)); dev.position.set(spec.tweaks.device.at[0], spec.tweaks.device.at[1] + 0.002, 0); add(dev, "device", { id: kd.id, label: kitLabel(kd.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
       if (mz) { muzzle = v3(mz); muzzleDiameter = spec.type === "shotgun" ? 0.026 : spec.type === "pistol" ? 0.014 : 0.018; }
