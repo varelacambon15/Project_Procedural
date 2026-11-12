@@ -88,6 +88,10 @@ export interface WeaponSpec {
   /** Era (solo aspecto) y nivel de modernización 0-3. */
   era?: "classic" | "modern" | "rustic" | "scifi";
   modLevel?: number;
+  /** Nombre elegido por el jugador (solo cosmético). Si falta, se muestra `name` (el generado, que se conserva). */
+  customName?: string | null;
+  /** Poder sin rareza del arma tal como salió (referencia de su banda de poder al montar y desmontar accesorios). */
+  bandRef?: number;
 }
 
 /**
@@ -115,6 +119,8 @@ export interface Tweaks {
   /** Añadidos de era y de kit de modernización (posiciones antes de centrar). */
   eraAdds?: EraAdds | null;
   device?: { id: string; at: [number, number] } | null;
+  /** Punto de montaje bajo el raíl que queda libre al desmontar el accesorio (se puede volver a montar uno). */
+  deviceZone?: [number, number] | null;
 }
 export interface EraAdds {
   cover?: [number, number, number, number, number] | null;    // x0, x1, y, alto, ancho
