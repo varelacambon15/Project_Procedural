@@ -528,7 +528,6 @@ const NAME_WORDS = ["Jackal", "Hornet", "Drifter", "Scrapper", "Vulture", "Coyot
   "Bulldog", "Ferret", "Viper", "Kestrel", "Raven", "Ironside", "Outrider", "Rustback", "Dustrunner", "Hellcat", "Magpie", "Wolverine",
   "Prowler", "Longhorn", "Sidewinder", "Gravedigger", "Tinker", "Brigand", "Lynx", "Mule", "Hound", "Scorpion", "Tumbleweed", "Ember",
   "Bastion", "Sparrow", "Rattler", "Bandit", "Grizzly", "Wraith", "Pike", "Hammerhead", "Junker", "Sawtooth", "Gunsmoke", "Patriot"];
-const PREFIX = ["M", "K", "X", "R", "T", "V", "Z", "SR", "KR", "MK"];
 
 /**
  * Designación de las armas no legendarias. Varios estilos (código de serie, nombre de modelo, modelo con número…)
@@ -538,7 +537,6 @@ export function technicalName(spec: WeaponSpec): string {
   const info = TYPE_INFO[spec.type as BaseType];
   const body = spec.parts[0].from;
   const h = hashString(spec.parts.map((p) => p.from).join("|") + spec.archetype + spec.statSeed);
-  const pickH = <T,>(arr: readonly T[], salt: number) => arr[(h >>> salt) % arr.length];
   const series = info.letter + "KRVMCLDTX"[hashString(body + spec.archetype) % 9];
   const cal = info.calibers[hashString(spec.parts[1]?.from ?? body) % info.calibers.length];
   const L = spec.barrelLength;
@@ -547,13 +545,25 @@ export function technicalName(spec: WeaponSpec): string {
   const tags = (L > 1.3 ? "L" : L < 0.95 ? "C" : "") + mode;
   const extra = (acc?.quiet ? " SD" : "") + (spec.optic && spec.optic !== body ? " O" : "");
   const mark = spec.rarity.id === "rara" ? " Mk II" : spec.rarity.id === "epica" ? " Mk III" : "";
-  const word = pickH(NAME_WORDS, 3), num = 2 + ((h >>> 11) % 97);
+  // Generador estable por arma: letras (1-4), números de largo variable, mezclas, o un nombre
+  const q = mulberry32(h);
+  const LET = "ABCDEFGHJKLMNPRSTVWXZ";
+  const letters = (n: number) => Array.from({ length: n }, () => LET[Math.floor(q() * LET.length)]).join("");
+  const digits = (n: number) => String(Math.floor(q() * 9) + 1) + Array.from({ length: n - 1 }, () => Math.floor(q() * 10)).join("");
+  const nL = () => 1 + Math.floor(q() * 4), nD = () => 1 + Math.floor(q() * 4);
+  const word = NAME_WORDS[Math.floor(q() * NAME_WORDS.length)];
+  const sfx = (tags ? (q() < 0.5 ? "-" : "") + tags : "") + extra + mark;
   const styles = [
-    () => `${series}-${cal}${tags}${extra}${mark}`,                                  // AR-556B3 SD
-    () => `${word} ${cal}${tags ? "-" + tags : ""}${extra}${mark}`,                    // Jackal 762-DMR
-    () => `${pickH(PREFIX, 17)}${num} ${word}${extra}${mark}`,                         // M14 Drifter
-    () => `${word}-${num}${tags}${extra}${mark}`,                                     // Vulture-22C
-    () => `${series}${num} "${word}"${extra}${mark}`,                                  // AK47 "Coyote"
+    () => `${series}-${cal}${tags}${extra}${mark}`,                          // AR-556B3 SD
+    () => `${letters(nL())}${digits(nD())}${sfx}`,                           // K7, XRT4410
+    () => `${letters(nL())}-${digits(nD())}${sfx}`,                          // MK-33
+    () => `${letters(nL())}-${digits(nD())}${letters(1)}${extra}${mark}`,     // VS-121C
+    () => `${digits(nD())}${letters(1 + Math.floor(q() * 2))}${extra}${mark}`,// 770R
+    () => `${letters(1)}${digits(nD())}-${letters(nL())}${extra}${mark}`,     // T85-PRK
+    () => `${word} ${digits(1 + Math.floor(q() * 3))}${extra}${mark}`,       // Vulture 22
+    () => `${word}${extra}${mark}`,                                          // Coyote
+    () => `${letters(1 + Math.floor(q() * 2))}${digits(1 + Math.floor(q() * 2))} ${word}${extra}${mark}`, // M14 Drifter
+    () => `${word} ${cal}${tags ? "-" + tags : ""}${extra}${mark}`,          // Jackal 762-DMR
   ];
-  return pickH(styles, 23)();
+  return styles[Math.floor(q() * styles.length)]();
 }
