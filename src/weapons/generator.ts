@@ -7,8 +7,9 @@ import { EFFECTS_A, EFFECTS_B, EFFECTS_L, legalWith } from "./effects";
 import { eraFinishes, rollEra, rollModernization, type Era } from "./eras";
 import { clipProfile, frontProfile, stockProfile, type FrontKind, type StockKind } from "./procparts";
 import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zoneLen, type Box2, type Placed, type Stretch } from "./variation";
-import { PISTOL_ARCHES, PISTOL_MUTATIONS, STRUCTURAL, archDesign, archesFor, designEntry, designKey, designPolys, designSpans, gripCorners, mutationAllowed, upgradeDesign, type PEra, type PistolDesign } from "./pistolgen";
+import { CAL_EFFECT, PISTOL_ARCHES, PISTOL_MUTATIONS, STRUCTURAL, archDesign, archesFor, designEntry, designKey, designPolys, designSpans, gripCorners, mutationAllowed, upgradeDesign, type PEra, type PistolDesign } from "./pistolgen";
 import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
+import { ensureGrip } from "./grip";
 import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Addon, type Rarity, type RarityId, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
@@ -321,7 +322,9 @@ export class WeaponGenerator {
 
 
     // 2. Variante: la propia del modelo (70%) o cualquiera del tipo
-    const hint = MODEL_HINTS[body.id] ?? (layout === "modular-pistol" ? PP_HINTS[parts[0].from.split("-")[1]] : undefined);
+    // Revólveres generados: la variante sale del calibre (ligero → rápida, medio → estándar, pesado/mágnum → pesada)
+    const cal = tweaks.pistol?.cyl?.cal;
+    const hint = MODEL_HINTS[body.id] ?? (layout === "modular-pistol" ? (cal ? { arch: CAL_EFFECT[cal].arch, strict: true } : PP_HINTS[parts[0].from.split("-")[1]]) : undefined);
     const regular = info.archetypes.filter((a) => a.w > 0);
     const arch = hint?.arch && (r() < 0.7 || hint.strict) ? info.archetypes.find((a) => a.id === hint.arch) ?? regular[0] : weighted(r, regular, (a) => a.w);
     // Rareza (antes que el modo: los modos raros son exclusivos de moradas y legendarias)
@@ -923,6 +926,7 @@ export class WeaponGenerator {
   /** Recalcula estadísticas (tras generar o tras cambiar piezas en el banco). */
   refresh(spec: WeaponSpec): WeaponSpec {
     this.ensureDesign(spec);
+    ensureGrip(spec); // el agarre sigue a las piezas y accesorios (taller incluido)
     spec.stats = computeStats(spec);
     if (spec.rarity.id !== "legendaria") spec.name = technicalName(spec);
     return spec;
@@ -1095,6 +1099,9 @@ export function computeStats(spec: WeaponSpec): Stats {
   const kitMag = spec.layout === "kit" ? kitMagazine(spec) : null;
   s.cargador = kitMag ? kitMag * (a.cargador ?? 1) : hint?.mag && hint.arch === a.id ? hint.mag : (hint?.mag ?? s.cargador) * (a.cargador ?? 1);
   s.precision += a.precision ?? 0; s.manejo += a.manejo ?? 0;
+  // Calibre del revólver generado (ajuste fino sobre su variante)
+  const calFx = spec.tweaks?.pistol?.cyl ? CAL_EFFECT[spec.tweaks.pistol.cyl.cal] : null;
+  if (calFx) { const m = calFx.mods; s.dano *= m.dano ?? 1; s.cadencia *= m.cadencia ?? 1; s.cargador *= m.cargador ?? 1; s.manejo += m.manejo ?? 0; }
   // Modo de disparo raro
   const sh = shiftOf(spec);
   if (sh) { s.dano *= sh.dano ?? 1; s.cadencia *= sh.cadencia ?? 1; s.cargador *= sh.cargador ?? 1; s.precision += sh.precision ?? 0; s.manejo += sh.manejo ?? 0; }
@@ -1175,7 +1182,8 @@ export function technicalName(spec: WeaponSpec): string {
   const body = spec.parts[0].from;
   const h = hashString(spec.parts.map((p) => p.from).join("|") + spec.archetype + spec.statSeed);
   const series = info.letter + "KRVMCLDTX"[hashString(body + spec.archetype) % 9];
-  const cal = info.calibers[hashString(spec.parts[1]?.from ?? body) % info.calibers.length];
+  const cyl = spec.tweaks?.pistol?.cyl;
+  const cal = cyl ? CAL_EFFECT[cyl.cal].label : info.calibers[hashString(spec.parts[1]?.from ?? body) % info.calibers.length];
   const L = spec.barrelLength;
   const mode = spec.fireMode === "burst" ? `B${spec.burst}` : spec.modeShift === "auto" || spec.archetype === "machine" ? "A" : spec.modeShift === "semi" ? "S" : spec.archetype === "marksman" ? "DMR" : "";
   const acc = accessory(spec.muzzle);

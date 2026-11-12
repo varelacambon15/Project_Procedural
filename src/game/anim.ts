@@ -78,7 +78,12 @@ export class ViewAnimator {
   private swayX = 0; private swayY = 0;
   private shotT = 1;
 
-  setClass(type: string) { this.p = animParams(type); this.kx = this.kv = this.roll = 0; this.shotT = 1; }
+  /** Clase del arma y postura del perfil de agarre (las cortas con culata van al hombro). */
+  setClass(type: string, stance?: string) {
+    const st = (data as unknown as { stances?: Record<string, unknown> }).stances?.[stance ?? ""];
+    this.p = st && stance === "shoulder" && (type === "pistol" || type === "revolver") ? merge(animParams(type), st) : animParams(type);
+    this.kx = this.kv = this.roll = 0; this.shotT = 1;
+  }
 
   /** Un disparo: impulso al muelle (para que el pico sea ≈ peak · fuerza) y algo de giro aleatorio. */
   shot(strength = 1, rand = Math.random) {

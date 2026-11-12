@@ -10,6 +10,7 @@ import { applyFinish } from "./finish";
 import { contactAO } from "./ao";
 import { ADDON_ROLE, buildAddon } from "./addons";
 import { buildPistol } from "./pistolmesh";
+import type { Support } from "./grip";
 /** Despiece de las pistolas generadas por código. */
 const PP_EXPLODE: Record<string, [number, number, number]> = { slide: [0, 1.2, 0], barrel: [1.4, 0.6, 0], frame: [0, 0, 0], grip: [-0.3, -0.8, 0], magazine: [0, -1.6, 0], trigger: [-0.8, 0.4, 0] };
 import { buildAdapter, buildCell, buildCover, buildDisplay, buildFront, buildPatch, buildStock, buildTape, clipX } from "./procparts";
@@ -22,7 +23,9 @@ export interface AssembledWeapon {
   /** Aumentos de la mira (1 = sin mira). */ zoom: number;
   /** Puntos de agarre (coordenadas del grupo): mano derecha en la empuñadura, izquierda en el guardamanos,
    *  pozo del cargador y palanca de carga. Los usan los brazos (IK) y las animaciones de recarga. */
-  handles: { grip: THREE.Vector3; support: THREE.Vector3; magwell: THREE.Vector3; charge: THREE.Vector3 };
+  handles: { grip: THREE.Vector3; support: THREE.Vector3; magwell: THREE.Vector3; charge: THREE.Vector3;
+    /** Punto de la mano de apoyo para cada soporte del perfil de agarre (05-E); null si el arma no lo tiene. */
+    anchors: Record<Support, THREE.Vector3 | null> };
 }
 
 const v3 = (a: readonly number[]) => new THREE.Vector3(a[0], a[1], a[2]);
@@ -479,7 +482,22 @@ export class WeaponAssembler {
       : new THREE.Vector3(box.min.x + L * 0.68, center.y - H * 0.05, 0);
     const magwell = magBox ? new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.min.y + (magBox.max.y - magBox.min.y) * 0.2, 0) : grip.clone().add(new THREE.Vector3(L * 0.1, -H * 0.1, 0));
     const charge = new THREE.Vector3(handgun ? box.min.x + L * 0.25 : box.min.x + L * 0.5, box.max.y - H * 0.15, 0);
-    return { grip, support, magwell, charge };
+    // Anclajes de la mano de apoyo por soporte (perfil de agarre): cada uno sobre su pieza
+    const dev = part("device"), db = dev ? boxOf(dev.object) : null;
+    const fr = part("frame") ?? part("body"), frb = fr ? boxOf(fr.object) : null;
+    const pump = part("pump"), pb = pump ? boxOf(pump.object) : null;
+    const front = part("front"), fb2 = front ? boxOf(front.object) : null;
+    const anchors: Record<Support, THREE.Vector3 | null> = {
+      none: null,
+      // Dos manos en la empuñadura: la de apoyo envuelve a la principal, algo por delante y por debajo
+      grip: grip.clone().add(new THREE.Vector3(0.012, -0.018, 0)),
+      front: fb2 ? new THREE.Vector3(fb2.min.x + (fb2.max.x - fb2.min.x) * 0.35, fb2.min.y + (fb2.max.y - fb2.min.y) * 0.2, 0) : handgun ? null : support.clone(),
+      vgrip: db ? new THREE.Vector3((db.min.x + db.max.x) / 2, db.min.y + (db.max.y - db.min.y) * 0.45, 0) : null,
+      mag: magBox ? new THREE.Vector3(magBox.max.x - (magBox.max.x - magBox.min.x) * 0.3, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.4, 0) : null,
+      frame: frb ? new THREE.Vector3(frb.min.x + (frb.max.x - frb.min.x) * 0.72, frb.min.y + 0.004, 0) : null,
+      pump: pb ? new THREE.Vector3((pb.min.x + pb.max.x) / 2, pb.min.y + (pb.max.y - pb.min.y) * 0.2, 0) : null,
+    };
+    return { grip, support, magwell, charge, anchors };
   }
 }
 

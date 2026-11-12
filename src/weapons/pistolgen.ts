@@ -29,6 +29,17 @@ export interface PistolDesign {
   extra: { cell: boolean; rivets: boolean; wrap: boolean; patch?: boolean; fairing?: boolean };
 }
 export type RevolverCal = "light" | "medium" | "heavy" | "magnum";
+/**
+ * Efecto de cada calibre de revólver (05-E) además de su variante de estadísticas (ligero → rápida, medio → estándar,
+ * pesado y mágnum → pesada): un ajuste fino que deja el poder base casi igual (más daño = menos cadencia, más
+ * retroceso y peor manejo, que alarga la recarga). `recoil` multiplica el retroceso al disparar. Nombre del calibre.
+ */
+export const CAL_EFFECT: Record<RevolverCal, { arch: string; mods: { dano?: number; cadencia?: number; cargador?: number; manejo?: number }; recoil: number; label: string }> = {
+  light: { arch: "quick", mods: { dano: 0.95, cargador: 7 / 6 }, recoil: 0.75, label: "38" },
+  medium: { arch: "standard", mods: {}, recoil: 1, label: "357" },
+  heavy: { arch: "heavy", mods: {}, recoil: 1.3, label: "454" },
+  magnum: { arch: "heavy", mods: { dano: 1.1, cadencia: 0.86, manejo: -5, cargador: 5 / 6 }, recoil: 1.6, label: "500" },
+};
 /** Medidas por calibre de revólver (radio y largo del tambor, diámetro del cañón, alto del armazón). */
 export const REVOLVER_CAL: Record<RevolverCal, { r: number; len: number; d: number; h: number }> = {
   light: { r: 0.0155, len: 0.034, d: 0.012, h: 0.017 },

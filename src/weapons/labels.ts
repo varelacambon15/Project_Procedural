@@ -7,6 +7,10 @@ import { isKit, kitLabel } from "./kit";
 
 export const rarityName = (s: WeaponSpec) => t(`rarity.${s.rarity.id}`);
 export const typeName = (type: string) => t(`type.${type}`);
+/** Calibre del revólver generado (ligero, medio, pesado o mágnum) o null. */
+export const calName = (s: WeaponSpec) => (s.tweaks?.pistol?.cyl ? t(`cal.${s.tweaks.pistol.cyl.cal}`) : null);
+/** Agarre del arma (perfil 05-E). */
+export const holdName = (s: WeaponSpec) => (s.hold ? t(`hold.${s.hold.variant}`) : "");
 export const archName = (s: WeaponSpec) => (s.modeShift ? t(`shift.${s.modeShift}`) : t(`arch.${s.archetype}`));
 export const modeName = (s: WeaponSpec) => t(`mode.${s.fireMode}`) + (s.fireMode === "burst" ? ` ×${s.burst}` : "");
 export const effectName = (e: Effect) => t(`fx.${e.id}`);

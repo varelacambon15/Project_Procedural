@@ -5,7 +5,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { TYPE_INFO } from "../../weapons/generator";
 import type { WeaponAssembler } from "../../weapons/assembler";
 import type { StatKey, WeaponSpec } from "../../weapons/types";
-import { archName, damageText, effectDesc, effectName, modeName, rarityName, typeName } from "../../weapons/labels";
+import { archName, calName, holdName, damageText, effectDesc, effectName, modeName, rarityName, typeName } from "../../weapons/labels";
 import { displayName } from "../../weapons/naming";
 import { t } from "../../i18n";
 import type { Item } from "../inventory";
@@ -44,7 +44,7 @@ export function weaponCard(s: WeaponSpec, cmp?: WeaponSpec | null, title = "", o
     ${title ? `<span class="vs">${title}</span>` : ""}
     <span class="rar">${rarityName(s)} · ${typeName(s.type)} · ${eraName(s)} · ${t("label.level")} ${s.level}</span>
     <span class="nm">${nameOf(s)}</span>${renamed}
-    <span class="meta">${archName(s)} · ${modeName(s)}</span>
+    <span class="meta">${archName(s)} · ${modeName(s)}${calName(s) ? ` · ${calName(s)}` : ""}${s.hold ? ` · ${holdName(s)}` : ""}</span>
     <div class="big"><strong>${damageText(s)}</strong><span>${t("label.damage")}</span>${cmp && Math.abs(dd) >= 0.5 ? `<span class="${dd > 0 ? "up" : "down"}">${dd > 0 ? "+" : ""}${Math.round(dd)}</span>` : ""}</div>
     <div class="stats">${STATS.map(([k, f]) => {
       const pct = Math.max(4, Math.min(100, (s.stats[k] / (k === "precision" || k === "manejo" ? 100 : base[k] * 1.8)) * 100));

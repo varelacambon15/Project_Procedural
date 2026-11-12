@@ -1,6 +1,8 @@
 // Arma en mano: modos de disparo, habilidades, apuntado con mira y animaciones procedurales
 // (inercia, balanceo, sprint táctico, salto, retroceso, recarga con cargador, corredera/cerrojo, inspección).
 import * as THREE from "three";
+import type { Support } from "../weapons/grip";
+import { CAL_EFFECT } from "../weapons/pistolgen";
 import type { WeaponAssembler, AssembledWeapon, AssembledPart } from "../weapons/assembler";
 import type { WeaponType } from "../weapons/types";
 import { PELLETS } from "../weapons/generator";
@@ -148,7 +150,7 @@ export class Gun {
     this.equipT = this.equipDur;
     if (this.model) { this.holder.remove(this.model.group); this.model = null; this.mag = null; this.moving = {}; }
     if (!item) return;
-    this.anim.setClass(item.spec.type);
+    this.anim.setClass(item.spec.type, item.spec.hold?.stance);
     // Tipo de mira y aumentos (solo dependen del arma: se fijan ya, antes de cargar el modelo)
     const opt = accessory(item.spec.optic);
     if (opt) { this.sight = opt.id === "acc:reddot" ? "dot" : opt.id === "acc:holo" ? "holo" : "scope"; this.zoom = opt.zoom ?? 1; }
@@ -284,7 +286,13 @@ export class Gun {
       ...this.poseOverride,
     });
     this.reloadPhase = pose.phase;
-    if (this.mag) { this.mag.object.position.copy(this.mag.base).add(new THREE.Vector3(...pose.mag.offset)); this.mag.object.visible = pose.mag.visible; }
+    if (this.mag) {
+      this.mag.object.position.copy(this.mag.base).add(new THREE.Vector3(...pose.mag.offset)); this.mag.object.visible = pose.mag.visible;
+      // Revólver: el tambor bascula hacia la izquierda (−Z del arma) mientras está abierto
+      const ph = pose.phase, cyl = this.anim.p.reload.style === "cylinder" && ph ? (ph.id === "open" ? ease(ph.t) : ph.id === "eject" || ph.id === "load" ? 1 : ph.id === "close" ? 1 - ease(ph.t) : 0) : 0;
+      this.mag.object.position.add(new THREE.Vector3(0, -0.006 * cyl, -0.032 * cyl));
+      this.mag.object.rotation.x = -0.45 * cyl;
+    }
     // Piezas móviles: la pieza retrocede a lo largo del arma (+X = boca)
     for (const [role, part] of Object.entries(this.moving) as [MovingPart, AssembledPart][]) part.object.position.copy(part.base).add(new THREE.Vector3(-pose.parts[role], 0, 0));
     const follow = this.snap ? 1 : 0;
@@ -296,7 +304,8 @@ export class Gun {
     this.sway.rotation.set(...pose.swayRot); this.sway.position.set(...pose.swayPos);
     // Con visor de aumento, al apuntar del todo se ve a través del visor (el arma se oculta)
     this.viewmodel.visible = !this.hidden && !(this.sight === "scope" && this.aimT > 0.9);
-    this.arms.visible = this.viewmodel.visible && !!this.model && settings.arms;
+    // Manos obligatorias (05-E): siempre que se ve el arma
+    this.arms.visible = this.viewmodel.visible && !!this.model;
     if (this.model) this.updateHands();
 
     // Efectos
@@ -356,34 +365,45 @@ export class Gun {
     const toCam = (p: THREE.Vector3) => this.camera.worldToLocal(m.group.localToWorld(p.clone()));
     const camQ = this.camera.getWorldQuaternion(new THREE.Quaternion()).invert();
     const orient = camQ.multiply(this.holder.getWorldQuaternion(new THREE.Quaternion())).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.35, 0, 0)));
-    let left: THREE.Vector3 | null = h.support.clone();
+    // Mano de apoyo según el perfil de agarre: su soporte en la cadera y al apuntar (con transición suave); sin soporte,
+    // la mano baja fuera de la vista (pistola a una mano)
+    const hold = this.spec?.hold, A = h.anchors, k = ease(Math.min(1, Math.max(0, this.aimT)));
+    const at = (s: Support | undefined) => (!s || s === "none" ? null : (A[s] ?? A.grip ?? h.support).clone());
+    const rest = h.grip.clone().add(new THREE.Vector3(-0.05, -0.24, -0.12));
+    const hipP = at(hold?.hip ?? "front"), adsP = at(hold?.ads ?? "front");
+    let base: THREE.Vector3 | null = hipP && adsP ? hipP.lerp(adsP, k) : adsP ? (k < 0.03 ? null : rest.clone().lerp(adsP, k)) : hipP ? (k > 0.97 ? null : hipP.lerp(rest, k)) : null;
+    if (!hold && !base) base = h.support.clone();
+    const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
+    let left: THREE.Vector3 | null = base;
     const ph = this.reloadPhase, style = this.anim.p.reload.style;
     const pouch = h.magwell.clone().add(new THREE.Vector3(-0.02, -0.25, 0.04));
     const pumpOff = new THREE.Vector3(-(this.moving.pump ? this.moving.pump.base.x - this.moving.pump.object.position.x : 0), 0, 0);
     if (ph && style === "shells") {
       // Cartucho a cartucho: la mano va de la cartuchera a la ventana de carga y empuja
       if (ph.id === "shell") left = ph.t < 0.5 ? pouch.clone().lerp(h.magwell, ease(ph.t * 2)) : h.magwell.clone().add(new THREE.Vector3(0.02 * tri(ph.t, 0.5, 1), 0.01 * tri(ph.t, 0.5, 1), 0));
-      else if (ph.id === "rack") left = h.support.clone().add(pumpOff);
-      else if (ph.id === "settle") left = h.magwell.clone().lerp(h.support, ease(ph.t));
-      else left = h.support.clone().lerp(h.magwell, ease(ph.t));
+      else if (ph.id === "rack") left = sup.clone().add(pumpOff);
+      else if (ph.id === "settle") left = h.magwell.clone().lerp(sup, ease(ph.t));
+      else left = sup.clone().lerp(h.magwell, ease(ph.t));
     } else if (ph && style === "cylinder") {
-      // Revólver: la mano abre el tambor, lo vacía, mete los cartuchos y lo cierra
-      if (ph.id === "open") left = h.support.clone().lerp(h.magwell, ease(ph.t));
-      else if (ph.id === "eject") left = h.magwell.clone();
-      else if (ph.id === "load") { const k = (ph.t * 3) % 1; left = pouch.clone().lerp(h.magwell, ease(Math.min(1, k * 1.6))); }
-      else if (ph.id === "close") left = h.magwell.clone().add(new THREE.Vector3(0, 0, -0.03 * tri(ph.t, 0, 1)));
-      else if (ph.id === "settle") left = h.magwell.clone().lerp(h.support, ease(ph.t));
+      // Revólver: la mano bascula el tambor (sale a la izquierda), lo vacía, mete un cargador rápido y lo cierra
+      const cyl = this.mag ? this.mag.object.position.clone().sub(this.mag.base) : new THREE.Vector3();
+      const atCyl = h.magwell.clone().add(cyl);
+      if (ph.id === "open") left = sup.clone().lerp(atCyl, ease(ph.t));
+      else if (ph.id === "eject") left = atCyl;
+      else if (ph.id === "load") left = ph.t < 0.45 ? atCyl.clone().lerp(pouch, ease(ph.t / 0.45)) : pouch.clone().lerp(atCyl, ease(Math.min(1, (ph.t - 0.45) / 0.4)));
+      else if (ph.id === "close") left = atCyl.clone().add(new THREE.Vector3(0, 0, 0.02 * tri(ph.t, 0, 1)));
+      else if (ph.id === "settle") left = atCyl.clone().lerp(sup, ease(ph.t));
     } else if (ph) {
       const mag = this.mag ? this.mag.object.position.clone().sub(this.mag.base) : new THREE.Vector3();
       const atMag = h.magwell.clone().add(mag);
-      if (ph.id === "grab") left = h.support.clone().lerp(atMag, ease(ph.t));
+      if (ph.id === "grab") left = sup.clone().lerp(atMag, ease(ph.t));
       else if (ph.id === "out") left = atMag;
       else if (ph.id === "pouch") left = ph.t < 0.5 ? atMag.add(new THREE.Vector3(0, -0.25 * ph.t, 0)) : null;
       else if (ph.id === "in") left = atMag;
       else if (ph.id === "rack") left = h.charge.clone().add(new THREE.Vector3(-0.05 * tri(ph.t, 0, 1), 0.01, 0.03));
-      else if (ph.id === "settle") left = h.charge.clone().lerp(h.support, ease(ph.t));
+      else if (ph.id === "settle") left = h.charge.clone().lerp(sup, ease(ph.t));
     } else if (this.cycleT > 0 && this.spec?.fireMode === "pump") {
-      left = this.moving.pump ? h.support.clone().add(pumpOff) : h.support.clone().add(new THREE.Vector3(-0.07 * tri(1 - this.cycleT / 0.45, 0, 1), 0, 0));
+      left = this.moving.pump ? sup.clone().add(pumpOff) : sup.clone().add(new THREE.Vector3(-0.07 * tri(1 - this.cycleT / 0.45, 0, 1), 0, 0));
     } else if (this.cycleT > 0 && this.spec?.fireMode === "bolt") {
       left = h.charge.clone().add(new THREE.Vector3(-0.04 * tri(1 - this.cycleT / 0.45, 0, 1), 0.02, 0.04));
     }
@@ -410,7 +430,9 @@ export class Gun {
     const nearCount = this.hooks.dummies().filter((d) => d.alive && d.center.distanceTo(origin0) < 8).length;
     const mods = fx.shot({ fullMag, ammoFrac, aiming: this.aimT > 0.6, nearCount, pellets: PELLETS[s.type] ?? 1 });
     const rp = this.anim.p.recoil;
-    const kickPower = rp.power * (1.4 - s.stats.manejo / 100) * (1 - this.aimT * 0.35) * mods.recoil;
+    // (el calibre del revólver cambia el retroceso: el mágnum patea, el ligero apenas)
+    const calKick = s.tweaks?.pistol?.cyl ? CAL_EFFECT[s.tweaks.pistol.cyl.cal].recoil : 1;
+    const kickPower = rp.power * (1.4 - s.stats.manejo / 100) * (1 - this.aimT * 0.35) * mods.recoil * calKick;
     // Patrón de retroceso propio del arma: subida dominante + deriva lateral determinista (con un poco de ruido)
     const pat = recoilPattern(s.statSeed), i = Math.min(this.sprayIndex++, pat.length - 1);
     const lateral = accessory(s.muzzle)?.id === "acc:compensator" || accessory(s.muzzle)?.id === "acc:brake" ? 0.55 : 1;

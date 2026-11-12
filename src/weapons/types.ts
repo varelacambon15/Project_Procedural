@@ -90,6 +90,8 @@ export interface WeaponSpec {
   modLevel?: number;
   /** Nombre elegido por el jugador (solo cosmético). Si falta, se muestra `name` (el generado, que se conserva). */
   customName?: string | null;
+  /** Perfil de agarre (05-E): mano de apoyo en cadera y al apuntar, y postura. Se guarda con el arma. */
+  hold?: import("./grip").GripProfile | null;
   /** Poder sin rareza del arma tal como salió (referencia de su banda de poder al montar y desmontar accesorios). */
   bandRef?: number;
 }

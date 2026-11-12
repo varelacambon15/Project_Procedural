@@ -230,7 +230,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
       case "handguard": {
         // Guardamanos de carbina con ventilación y raíl inferior
         const x0 = p.poly[0][0], x1 = p.poly[1][0];
-        const hg = G("barrel"); hg.add(lofted(p.poly, d.era === "rustic" ? "procmetal" : "proctape", { half: () => p.depth / 2, rTop: 0.55, rBot: 0.45, segs: 2, n: 12 }));
+        const hg = G("front"); hg.add(lofted(p.poly, d.era === "rustic" ? "procmetal" : "proctape", { half: () => p.depth / 2, rTop: 0.55, rBot: 0.45, segs: 2, n: 12 }));
         for (let x = x0 + 0.012; x < x1 - 0.014; x += 0.018) for (const z of [-1, 1]) hg.add(box(0.01, (h * 0.45 + fh * 0.2) * 0.9, 0.0012, x + 0.005, (h * 0.45 - fh * 0.2) / 2, z * (p.depth / 2 + 0.0001), "procpad"));
         for (let x = x0 + 0.006; x < x1 - 0.004; x += 0.008) hg.add(box(0.004, 0.003, p.depth * 0.5, x, -fh * 0.8 - 0.002, 0, "procmetal"));
         break;
@@ -279,7 +279,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         for (let x = x0 + 0.003; x < x1 - 0.002; x += 0.008) f.add(box(0.004, 0.003, w * 0.6, x, -fh - 0.0055, 0, "procmetal"));
         break;
       }
-      case "vgrip": G("grip").add(lofted(p.poly, "procgrip", { origin: [p.poly[0][0], p.poly[0][1]], angle: -Math.PI / 2, half: () => p.depth / 2, rTop: 0.7, rBot: 0.7, segs: 2, n: 8 })); break;
+      case "vgrip": G("device").add(lofted(p.poly, "procgrip", { origin: [p.poly[0][0], p.poly[0][1]], angle: -Math.PI / 2, half: () => p.depth / 2, rTop: 0.7, rBot: 0.7, segs: 2, n: 8 })); break;
       case "cell": {
         const f = G("frame"); f.add(extrude(p.poly, p.depth, "proctape", [], 0.0015));
         const x0 = p.poly[3][0], x1 = p.poly[1][0];
