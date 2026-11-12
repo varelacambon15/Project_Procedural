@@ -107,7 +107,8 @@ export function applyFinish(obj: THREE.Object3D, role: PartRole | "sight", f: Pa
     if (/procgrip/.test(m.name)) return material(f, "secondary", "stipple");
     // Acero a la vista de las armas por código (cañón, tambor, martillo): algo más claro que el armazón, para que se lea
     if (/procsteel/.test(m.name)) return material(f, "metal", undefined, 2.2);
-    if (/proccheck/.test(m.name)) return material(f, f.wood ? "wood" : "secondary", "checker");
+    // Cachas de madera en rejilla: siempre madera (nogal si el acabado no la trae), es la seña de las clásicas
+    if (/proccheck/.test(m.name)) return f.wood ? material(f, "wood", "checker") : material({ ...f, id: `${f.id}+walnut`, secondary: hex(0x553b2a), wood: true }, "wood", "checker");
     if (/procengrave/.test(m.name)) return material(f, slot === "metal" ? "metal" : "primary", "engrave");
     if (/procrust/.test(m.name)) return material(f, "metal", "rust");
     // Pantallas y marca de simulación: apagadas (acento) salvo en legendarias, que llevan el detalle de color
