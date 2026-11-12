@@ -908,7 +908,7 @@ function pistolStock(r: Rng, d: PistolDesign): import("./procparts").ProcStock {
   const heel = d.era === "classic" || d.era === "rustic" || d.family === "frontmag" || d.family === "revolver";
   const kinds: StockKind[] = d.era === "classic" ? ["wood", "folding"] : d.era === "rustic" ? ["wood", "tube", "skeleton", "folding"] : d.era === "scifi" ? ["polymer", "skeleton", "carbine"] : ["skeleton", "tube", "folding", "polymer", "carbine"];
   const kind = kinds[Math.floor(r() * kinds.length)];
-  const len = (d.family === "carbine" ? 0.19 : 0.16) + r() * 0.05;
+  const len = (d.family === "carbine" ? 0.17 : 0.14) + r() * 0.045;
   if (heel) { const g = gripCorners(d); return { kind, at: [g.BB[0] + 0.004, g.BB[1] + 0.022], h: 0.034, w: 0.022, len, drop: -(0.03 + r() * 0.02) }; }
   return { kind, at: [0.004, -d.frame.h * 0.45], h: 0.032, w: 0.022, len, drop: 0.012 + r() * 0.018 };
 }

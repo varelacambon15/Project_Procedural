@@ -54,7 +54,7 @@ const rev = (cal: RevolverCal, len: number, o: Over = {}): Arch["d"] => {
   const c = REVOLVER_CAL[cal];
   const d = base({ ...o, slide: { len: c.len + 0.045, h: c.r * 2 + 0.008, w: 0.02, style: "round", nose: "flat", rear: "round", serr: 0, port: false, top: "iron", ...o.slide },
     barrel: { ext: len, d: c.d, profile: "round", ...o.barrel }, frame: { dust: 1, h: c.h, guard: "round", ...o.frame },
-    grip: { angle: 0.42, len: 0.088, depth: 0.036, shape: "bird", panels: "wood", ...o.grip }, mag: { kind: "none", len: 0 }, hammer: o.hammer ?? "spur" });
+    grip: { angle: 0.45, len: 0.08, depth: 0.036, shape: "bird", panels: "wood", ...o.grip }, mag: { kind: "none", len: 0 }, hammer: o.hammer ?? "spur" });
   d.cyl = { r: c.r, len: c.len, lug: "none", rib: "none", ...o.cyl, cal };
   return d;
 };
@@ -78,8 +78,8 @@ export const PISTOL_ARCHES: Arch[] = [
   // Revólveres por calibre (ligero, medio, pesado y mágnum)
   { id: "rlight", label: "Snub", family: "revolver", eras: ["classic", "modern", "rustic"], d: rev("light", 0.05, { hammer: "bobbed" }) },
   { id: "rmedium", label: "Revolver", family: "revolver", eras: ["classic", "modern", "rustic"], d: rev("medium", 0.1, { cyl: { lug: "half", rib: "solid" } }) },
-  { id: "rheavy", label: "Heavy Revolver", family: "revolver", eras: ["modern", "rustic", "scifi"], d: rev("heavy", 0.13, { cyl: { lug: "full", rib: "solid" }, grip: { shape: "flared", panels: "polymer", angle: 0.36 } }) },
-  { id: "rmagnum", label: "Magnum", family: "revolver", eras: ["modern", "classic", "scifi"], d: rev("magnum", 0.165, { cyl: { lug: "full", rib: "vent" }, grip: { shape: "flared", panels: "polymer", angle: 0.36, len: 0.096 } }) },
+  { id: "rheavy", label: "Heavy Revolver", family: "revolver", eras: ["modern", "rustic", "scifi"], d: rev("heavy", 0.13, { cyl: { lug: "full", rib: "solid" }, grip: { shape: "flared", panels: "polymer", angle: 0.4, len: 0.086 } }) },
+  { id: "rmagnum", label: "Magnum", family: "revolver", eras: ["modern", "classic", "scifi"], d: rev("magnum", 0.165, { cyl: { lug: "full", rib: "vent" }, grip: { shape: "flared", panels: "polymer", angle: 0.4, len: 0.09 } }) },
 ];
 export const archOf = (id: string) => PISTOL_ARCHES.find((a) => a.id === id) ?? PISTOL_ARCHES[0];
 export const archIdOf = (assetId: string) => assetId.replace(/^pp-/, "").split("-")[0];
@@ -192,10 +192,17 @@ export function gripPoly(d: PistolDesign): Pt[] {
       return [g.TB, g.TF, lerp(g.TF, g.BF, 0.85), [g.BF[0] - 0.006, g.BF[1] - 0.004], lerp(g.BB, g.BF, 0.3), [g.BB[0] - 0.004, g.BB[1] + 0.012], back(0.5, 0.006)];
     case "bird": // pico de pájaro: lomo muy curvo y talón que se cierra hacia delante
       return [g.TB, g.TF, lerp(g.TF, g.BF, 0.45), lerp(g.TF, g.BF, 0.8), [g.BF[0] - 0.006, g.BF[1] + 0.002], lerp(g.BB, g.BF, 0.4), [g.BB[0] - 0.009, g.BB[1] + 0.012], back(0.72, 0.013), back(0.45, 0.012), back(0.2, 0.006)];
-    case "flared": return [g.TB, g.TF, g.BF, g.BB, back(0.5, 0.004)];
+    case "flared": {
+      // Revólver con empuñadura de goma: estrías para los dedos y culo redondeado
+      if (d.family === "revolver" && d.grip.panels === "polymer") {
+        const ca = Math.cos(d.grip.angle), sa = Math.sin(d.grip.angle), front = (t: number, o: number): Pt => { const p = lerp(g.TF, g.BF, t); return [p[0] + o * ca, p[1] - o * sa]; };
+        return [g.TB, g.TF, front(0.22, 0), front(0.34, 0.003), front(0.48, 0), front(0.6, 0.003), front(0.74, 0), front(0.92, 0.002), [g.BF[0] - 0.006, g.BF[1] - 0.002], [g.BB[0] + 0.004, g.BB[1] - 0.002], back(0.85, 0.004), back(0.5, 0.006)];
+      }
+      return [g.TB, g.TF, g.BF, g.BB, back(0.5, 0.004)];
+    }
     default: {
       // Recta de polímero moderna: estrías para los dedos en el frente
-      if (d.grip.panels !== "polymer" || d.family === "revolver") return [g.TB, g.TF, g.BF, g.BB];
+      if (d.grip.panels !== "polymer") return [g.TB, g.TF, g.BF, g.BB];
       const ca = Math.cos(d.grip.angle), sa = Math.sin(d.grip.angle), front = (t: number, o: number): Pt => { const p = lerp(g.TF, g.BF, t); return [p[0] + o * ca, p[1] - o * sa]; };
       return [g.TB, g.TF, front(0.2, 0), front(0.3, 0.0025), front(0.42, 0), front(0.52, 0.0025), front(0.64, 0), front(0.74, 0.0025), front(0.86, 0), g.BF, g.BB];
     }

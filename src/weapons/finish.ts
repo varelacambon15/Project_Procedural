@@ -63,8 +63,8 @@ function addTexture(m: THREE.MeshStandardMaterial, kind: TexKind, wear: number) 
 const cache = new Map<string, THREE.MeshStandardMaterial>();
 /** Luminancia mínima (sRGB) de cualquier color de acabado [propuesta, ajustable]. */
 export const MIN_LUM = 0.16;
-function material(f: Paint, slot: Slot, tex?: TexKind): THREE.MeshStandardMaterial {
-  const key = `${f.id}|${slot}${tex ? "|" + tex : ""}`;
+function material(f: Paint, slot: Slot, tex?: TexKind, bright = 1): THREE.MeshStandardMaterial {
+  const key = `${f.id}|${slot}${tex ? "|" + tex : ""}${bright !== 1 ? "|b" + bright : ""}`;
   let m = cache.get(key);
   if (!m) {
     const c = slot === "primary" ? f.color : slot === "secondary" ? f.secondary : slot === "metal" ? f.metal : slot === "accent" ? f.accent : slot === "highlight" ? hex(0xb8692a) : f.secondary;
@@ -72,6 +72,7 @@ function material(f: Paint, slot: Slot, tex?: TexKind): THREE.MeshStandardMateri
     const rgb = (c ?? [0.15, 0.15, 0.15]).slice() as RGB;
     const lumS = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
     if (lumS < MIN_LUM) { const k = MIN_LUM / Math.max(0.01, lumS); for (let i = 0; i < 3; i++) rgb[i] = Math.min(1, rgb[i] * k); }
+    if (bright !== 1) for (let i = 0; i < 3; i++) rgb[i] = Math.min(1, rgb[i] * bright);
     m = new THREE.MeshStandardMaterial({ name: slot === "wood" ? "Wood" : slot, vertexColors: true, color: new THREE.Color().setRGB(...rgb, THREE.SRGBColorSpace), flatShading: true, ...PROPS[slot] });
     // Desgaste: más en los acabados oxidados (armas rústicas)
     addTexture(m, tex ?? (f.id === "rust" && slot !== "wood" ? "rust" : TEX[slot]), f.id === "rust" ? 0.8 : f.id === "parkerized" ? 0.4 : 0.2);
@@ -104,6 +105,8 @@ export function applyFinish(obj: THREE.Object3D, role: PartRole | "sight", f: Pa
     if (/proctape/.test(m.name)) return material(f, "secondary");
     // Texturas de detalle de las armas por código: punteado de agarre, cachas en rejilla, marcajes grabados y óxido
     if (/procgrip/.test(m.name)) return material(f, "secondary", "stipple");
+    // Acero a la vista de las armas por código (cañón, tambor, martillo): algo más claro que el armazón, para que se lea
+    if (/procsteel/.test(m.name)) return material(f, "metal", undefined, 2.2);
     if (/proccheck/.test(m.name)) return material(f, f.wood ? "wood" : "secondary", "checker");
     if (/procengrave/.test(m.name)) return material(f, slot === "metal" ? "metal" : "primary", "engrave");
     if (/procrust/.test(m.name)) return material(f, "metal", "rust");

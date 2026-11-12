@@ -34,6 +34,8 @@ export interface LoftOpts {
   origin?: P2; angle?: number;
   /** Desgaste en esquinas (aclarado del color de vértice). */
   wear?: number;
+  /** Estaciones extra (en x local), p. ej. a ambos lados de cada ranura de unas estrías. */
+  extraX?: number[];
   /** Ventana pasante (en coordenadas locales): en ese tramo la pieza se parte en una parte de arriba y otra de abajo. */
   hole?: { x0: number; x1: number; y0: number; y1: number };
 }
@@ -83,6 +85,7 @@ export function loftPoly(poly: P2[], o: LoftOpts): THREE.BufferGeometry {
   const xs = new Set<number>();
   for (let i = 0; i <= n; i++) xs.add(u0 + E + ((u1 - u0 - 2 * E) * i) / n);
   for (const u of us) for (const d of [-E, E]) if (u + d > u0 && u + d < u1) xs.add(u + d);
+  for (const u of o.extraX ?? []) if (u > u0 && u < u1) xs.add(u);
   const st = [...xs].sort((a, b) => a - b).map((u) => ({ u, c: cutPoly(local, u) }));
   const pos: number[] = [], ctr: number[] = [];
   const W = (u: number, v: number, z: number): [number, number, number] => [ox + u * ca - v * sa, oy + u * sa + v * ca, z];

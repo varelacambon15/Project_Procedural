@@ -11,7 +11,7 @@
 import * as THREE from "three";
 import { boreY, designPolys, gripCorners, magFrame, muzzleOf, revFrame, type PistolDesign, type Pt } from "./pistolgen";
 import type { PartRole } from "./types";
-import { guardPath, loftPoly, sweep, type LoftOpts } from "./loft";
+import { cutPoly, guardPath, loftPoly, sweep, type LoftOpts } from "./loft";
 
 const mat = (name: string) => new THREE.MeshStandardMaterial({ name });
 /** Pieza por secciones (loft.ts) con su material. */
@@ -85,15 +85,24 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
           // Por secciones: canto superior biselado (losa moderna), redondeado (clásica) o en cuña (carenado sci-fi);
           // la corredera se estrecha un poco en el morro
           const st = d.slide.style, hw = p.depth / 2;
-          s.add(lofted(p.poly, "slide", { half: (x) => hw * (x > L * 0.82 ? 1 - 0.1 * Math.min(1, (x - L * 0.82) / (L * 0.18)) : 1), rTop: round ? 0.8 : st === "shroud" ? 0.55 : st === "open" ? 0.45 : 0.38, rBot: 0.1, segs: round ? 3 : st === "slab" ? 1 : 2, n: 30, wear: 1.25 }));
+          // Estrías talladas: la corredera se estrecha en cada ranura (atrás; delante también en las modernas)
+          const grooves: [number, number][] = [];
+          if (d.slide.serr >= 1) for (let k = 0; k < 7; k++) grooves.push([0.008 + k * 0.0042, 0.008 + k * 0.0042 + 0.0018]);
+          if (d.slide.serr === 2) for (let k = 0; k < 5; k++) grooves.push([L - 0.042 + k * 0.0042, L - 0.042 + k * 0.0042 + 0.0018]);
+          const taper = (x: number) => hw * (x > L * 0.82 ? 1 - 0.1 * Math.min(1, (x - L * 0.82) / (L * 0.18)) : 1);
+          s.add(lofted(p.poly, "slide", {
+            half: (x) => taper(x) - (grooves.some(([a, b]) => x > a && x < b) ? 0.0009 : 0),
+            extraX: grooves.flatMap(([a, b]) => [a - 1e-5, a + 1e-5, b - 1e-5, b + 1e-5]),
+            rTop: round ? 0.8 : st === "shroud" ? 0.55 : st === "open" ? 0.45 : 0.38, rBot: 0.1, segs: round ? 3 : st === "slab" ? 1 : 2, n: 30, wear: 1.3,
+          }));
           // Aligeramientos: ventanas oscuras en la mitad delantera
           for (let i = 0; i < d.slide.cuts; i++) for (const z of [-1, 1]) s.add(box(L * 0.09, h * 0.3, 0.001, L * (0.545 + i * 0.14), h * 0.7, z * (hw + 0.0002), "procpad"));
         }
         // Estrías: ranuras oscuras atrás (y delante en las modernas)
         const sw = p.depth / 2;
+        const topAt = (x: number) => cutPoly(p.poly, Math.min(Math.max(x, 0.001), L - 0.001))?.[1] ?? h;
         const serr = (xa: number, n: number) => { for (let k = 0; k < n; k++) for (const z of [-1, 1]) s.add(box(0.0016, h * 0.6, 0.0008, xa + k * 0.0042, h * 0.5, z * (sw + 0.0001), "procpad")); };
-        if (d.slide.style !== "tube" && d.slide.serr >= 1) serr(0.007, 7);
-        if (d.slide.style !== "tube" && d.slide.serr === 2) serr(L - 0.042, 5);
+        if (d.slide.style === "tube" && d.slide.serr >= 1) serr(0.007, 7); // (en la de tubo, sobre el bloque de recámara)
         // Ventana de expulsión (lado derecho): hueco oscuro con el capuchón del cañón a la vista y extractor detrás
         if (d.slide.port && d.slide.style !== "open") {
           s.add(box(L * 0.2, h * 0.34, 0.001, L * 0.43, h * 0.7, sw + 0.0001, "procpad"));
@@ -105,9 +114,11 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         // Miras: muesca trasera (dos postes) y punto de mira; altas para silenciador
         if (d.slide.top === "iron" || d.slide.top === "rib" || d.slide.top === "high") {
           const tall = d.slide.top === "high" ? 0.011 : 0.005;
-          s.add(box(0.004, tall, 0.0026, L - 0.012, h + tall / 2, 0, "procmetal"));
-          for (const z of [-1, 1]) s.add(box(0.007, tall, w * 0.22, 0.013, h + tall / 2, z * w * 0.2, "procmetal"));
-          s.add(box(0.007, tall * 0.4, w * 0.62, 0.013, h + tall * 0.2, 0, "procmetal"));
+          // Apoyadas en la corredera donde de verdad está su lomo (morro inclinado o trasera en chaflán)
+          const fx = L - 0.012 - (d.slide.nose === "step" ? 0.012 : 0), fy = topAt(fx) - 0.0006, ry = topAt(0.013) - 0.0006;
+          s.add(box(0.004, tall, 0.0026, fx, fy + tall / 2, 0, "procmetal"));
+          for (const z of [-1, 1]) s.add(box(0.007, tall, w * 0.22, 0.013, ry + tall / 2, z * w * 0.2, "procmetal"));
+          s.add(box(0.007, tall * 0.4, w * 0.62, 0.013, ry + tall * 0.2, 0, "procmetal"));
           sightY = h + tall * 0.8;
         }
         // Aletas sci-fi en ángulo
@@ -121,7 +132,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
           for (const z of [-1, 1]) s.add(box(L * 0.82, 0.0014, 0.0006, L * 0.5, h * 0.82, z * (sw + 0.0003), "procdisplay"));
           // Grabado de volutas en todo el costado y punto de mira con inserto
           for (const z of [-1, 1]) s.add(box(L * 0.5, h * 0.42, 0.0005, L * 0.36, h * 0.42, z * (sw + 0.00025), "procengrave"));
-          s.add(box(0.0026, 0.0026, 0.0028, L - 0.012, h + 0.004, 0, "procdisplay"));
+          s.add(box(0.0026, 0.0026, 0.0028, L - 0.012, topAt(L - 0.012) + 0.004, 0, "procdisplay"));
         }
         break;
       }
@@ -204,7 +215,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         const b = G("barrel"); const r = (p.poly[2][1] - p.poly[0][1]) / 2, x0 = p.poly[0][0], len = p.poly[1][0] - x0, y = (p.poly[0][1] + p.poly[2][1]) / 2;
         if (d.barrel.shroud) { b.add(tube(r, len, x0, y, "barrel", 8)); for (let k = 0; k < 3; k++) b.add(box(0.004, r * 2.05, r * 1.4, x0 + len * (0.25 + k * 0.25), y, 0, "procpad")); }
         else {
-          b.add(tube(r, len, x0, y, "barrel", 14));
+          b.add(tube(r, len, x0, y, "procsteel", 14));
           b.add(tube(r * 1.08, 0.003, x0 + len - 0.003, y, "procmetal", 14)); // corona de la boca
           if (d.barrel.profile === "fluted") for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2 + 0.4; b.add(box(len * 0.7, 0.0012, 0.0012, x0 + len * 0.5, y + Math.cos(a) * r * 0.98, Math.sin(a) * r * 0.98, "procpad")); }
           if (rev) b.add(box(0.003, 0.006, 0.002, x0 + len - 0.008, y + r + 0.003, 0, "procmetal")); // punto de mira
@@ -221,14 +232,14 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         break;
       }
       case "comp": {
-        const c = G("barrel"); c.add(lofted(p.poly, "barrel", { half: () => p.depth / 2, rTop: 0.45, rBot: 0.35, segs: 2, n: 8 }));
+        const c = G("barrel"); c.add(lofted(p.poly, "procsteel", { half: () => p.depth / 2, rTop: 0.45, rBot: 0.35, segs: 2, n: 8 }));
         const x0 = p.poly[0][0], top = Math.max(...p.poly.map((q) => q[1]));
         if (d.barrel.comp === "ported") for (let k = 0; k < 3; k++) c.add(box(0.004, 0.003, p.depth * 0.6, x0 + 0.008 + k * 0.008, top - 0.0005, 0, "procpad"));
         else for (const z of [-1, 1]) c.add(box(0.01, (top - p.poly[0][1]) * 0.5, 0.001, x0 + 0.014, (top + p.poly[0][1]) / 2, z * (p.depth / 2 + 0.0002), "procpad"));
         break;
       }
       case "hammer": {
-        const hm = G("trigger"); hm.add(extrude(p.poly, p.depth, look.legendary ? "procdisplay" : "procmetal", [], 0.0006));
+        const hm = G("trigger"); hm.add(extrude(p.poly, p.depth, look.legendary ? "procdisplay" : "procsteel", [], 0.0006));
         // Estrías del pulgar en la espuela
         if (d.hammer === "spur") for (let k = 0; k < 3; k++) hm.add(box(0.0012, 0.0012, p.depth * 1.05, p.poly[0][0] + 0.003 + k * 0.003, p.poly[0][1] - 0.0004, 0, "procpad"));
         break;
@@ -237,8 +248,8 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         const s = G(rev ? "barrel" : "slide");
         if (rev) {
           // Banda del cañón del revólver: maciza o ventilada (postes)
-          if (d.cyl!.rib === "vent") { const x0 = p.poly[0][0], x1 = p.poly[1][0], y0 = p.poly[0][1], y1 = p.poly[2][1]; s.add(box(x1 - x0, 0.002, p.depth, (x0 + x1) / 2, y1 - 0.001, 0, "barrel")); for (let x = x0 + 0.006; x < x1 - 0.004; x += 0.012) s.add(box(0.004, y1 - y0, p.depth * 0.8, x, (y0 + y1) / 2, 0, "barrel")); }
-          else s.add(extrude(p.poly, p.depth, "barrel", [], 0.0006));
+          if (d.cyl!.rib === "vent") { const x0 = p.poly[0][0], x1 = p.poly[1][0], y0 = p.poly[0][1], y1 = p.poly[2][1]; s.add(box(x1 - x0, 0.002, p.depth, (x0 + x1) / 2, y1 - 0.001, 0, "procsteel")); for (let x = x0 + 0.008; x < x1 - 0.004; x += 0.02) s.add(box(0.003, y1 - y0, p.depth * 0.7, x, (y0 + y1) / 2, 0, "procsteel")); }
+          else s.add(extrude(p.poly, p.depth, "procsteel", [], 0.0006));
           break;
         }
         if (d.slide.top === "rail") {
@@ -280,7 +291,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         break;
       }
       case "cyl": buildCylinder(G("magazine"), d, p.poly); break;
-      case "lug": G("barrel").add(extrude(p.poly, p.depth, "barrel", [], 0.0015, 2)); break;
+      case "lug": G("barrel").add(lofted(p.poly, "procsteel", { half: () => p.depth / 2, rTop: 0.2, rBot: 0.6, segs: 2, n: 10 })); break;
     }
   }
   // Revólver sin tetón completo: varilla expulsora bajo el cañón
@@ -301,7 +312,7 @@ function buildRevolverFrame(g: THREE.Object3D, d: PistolDesign, poly: Pt[], dept
 /** Tambor del revólver: cilindro con acanaladuras, recámaras en la cara delantera y estrella detrás. */
 function buildCylinder(g: THREE.Object3D, d: PistolDesign, poly: Pt[]) {
   const c = d.cyl!, x0 = poly[0][0], x1 = poly[1][0], y = (poly[0][1] + poly[2][1]) / 2;
-  g.add(tube(c.r, x1 - x0, x0, y, "procmetal", 18));
+  g.add(tube(c.r, x1 - x0, x0, y, "procsteel", 18));
   for (let k = 0; k < 6; k++) {
     const a = (k / 6) * Math.PI * 2 + Math.PI / 6;
     const fl = box((x1 - x0) * 0.6, 0.0035, 0.0035, (x0 + x1) / 2 + 0.002, y + Math.cos(a) * c.r * 0.96, Math.sin(a) * c.r * 0.96, "procpad"); fl.rotation.x = a; g.add(fl);
