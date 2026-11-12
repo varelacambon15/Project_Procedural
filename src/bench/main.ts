@@ -199,6 +199,34 @@ async function boot() {
     }
     return { url: out.toDataURL("image/png"), names };
   };
-  (window as unknown as Record<string, unknown>).__bench = { sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+  // Escaparate: armas grandes en tres cuartos, con nombre y rareza (para enseñar resultados).
+  const showcase = async (picks: { type: string; layout?: string; cross?: boolean; start: number }[]) => {
+    const CW = 640, CH = 300;
+    const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(CW, CH); r.toneMapping = THREE.ACESFilmicToneMapping;
+    const sc = new THREE.Scene(); sc.background = new THREE.Color(0x2b2d31);
+    sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+    sc.add(new THREE.HemisphereLight(0xffffff, 0x555555, 1.3)); const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(1, 2, 3); sc.add(dl);
+    const out = document.createElement("canvas"); out.width = CW * 2; out.height = CH * Math.ceil(picks.length / 2); const g = out.getContext("2d")!;
+    for (const [i, pk] of picks.entries()) {
+      let spec = gen.generate(pk.start, pk.type as never);
+      for (let s = pk.start; s < pk.start + 3000; s++) {
+        const w = gen.generate(s, pk.type as never);
+        const packs = new Set(w.parts.map((p) => gen.byId.get(p.from)?.pack ?? "kit"));
+        if ((!pk.layout || w.layout === pk.layout) && (!pk.cross || packs.size > 1)) { spec = w; break; }
+      }
+      const built = await asm.assemble(spec); sc.add(built.group);
+      built.group.rotation.set(0.12, -0.5, 0);
+      const b = new THREE.Box3().setFromObject(built.group), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+      const half = Math.max((sz.x / 2) * CH / CW, sz.y / 2) * 1.25;
+      const cam = new THREE.OrthographicCamera(-half * CW / CH, half * CW / CH, half, -half, -10, 10); cam.position.set(c.x, c.y - half * 0.08, c.z + 3); cam.lookAt(c.x, c.y - half * 0.08, c.z);
+      r.render(sc, cam); const x = (i % 2) * CW, y = Math.floor(i / 2) * CH; g.drawImage(r.domElement, x, y);
+      sc.remove(built.group);
+      g.fillStyle = spec.rarity.color; g.font = "bold 22px sans-serif"; g.fillText(spec.name, x + 14, y + 32);
+      g.fillStyle = "#bbb"; g.font = "14px sans-serif"; g.fillText(`${spec.rarity.id} · ${spec.type} · ${spec.fireMode}`, x + 14, y + 54);
+      g.fillStyle = "#777"; g.font = "12px monospace"; g.fillText(spec.parts.map((p) => p.from.replace(/^[a-z]-/, "")).slice(0, 4).join(" + ").slice(0, 86), x + 14, y + CH - 12);
+    }
+    return out.toDataURL("image/png");
+  };
+  (window as unknown as Record<string, unknown>).__bench = { showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
 }
 boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });
