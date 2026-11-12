@@ -1,13 +1,108 @@
 {
-  "_doc": "[C] Propuesta de economía de la máquina expendedora (punto de decisión: ajústalo jugando). Precios en créditos; 'floor' = rareza mínima del nivel (suelo relativo: por encima del suelo se reparten los pesos normales de rareza); 'unlock' = créditos gastados en la máquina para desbloquear el nivel (progreso de la máquina). Ingresos: créditos por baja en las oleadas y por fin de oleada; al desguazar se cobra el valor de chatarra del arma.",
+  "_doc": "[C] Economía de la tienda (05-D): escaparate de armas (5 ranuras, se renueva cada 'refreshMinutes' de tiempo de juego, cada arma se vende una vez; precio por rareza y nivel) y dos cajas (común con suelo verde y muy poca morada; avanzada con suelo azul, legendaria muy rara y garantía: una legendaria como mucho tras 'pity' cajas avanzadas). 'tiers' es la máquina con niveles anterior (sustituida; se conserva por compatibilidad de partidas). Ingresos: por baja y por fin de oleada; al desguazar, el valor de chatarra. 'simulation' = suposiciones de la simulación de una hora.",
   "startCredits": 150,
   "tiers": [
-    { "id": "t1", "price": 60, "floor": "comun", "unlock": 0 },
-    { "id": "t2", "price": 160, "floor": "poco", "unlock": 200 },
-    { "id": "t3", "price": 420, "floor": "rara", "unlock": 700 },
-    { "id": "t4", "price": 950, "floor": "epica", "unlock": 1800 }
+    {
+      "id": "t1",
+      "price": 60,
+      "floor": "comun",
+      "unlock": 0
+    },
+    {
+      "id": "t2",
+      "price": 160,
+      "floor": "poco",
+      "unlock": 200
+    },
+    {
+      "id": "t3",
+      "price": 420,
+      "floor": "rara",
+      "unlock": 700
+    },
+    {
+      "id": "t4",
+      "price": 950,
+      "floor": "epica",
+      "unlock": 1800
+    }
   ],
-  "income": { "small": 3, "normal": 5, "big": 15, "boss": 40, "waveEnd": 25 },
+  "income": {
+    "small": 3,
+    "normal": 5,
+    "big": 15,
+    "boss": 40,
+    "waveEnd": 25
+  },
   "historySize": 8,
-  "revealSeconds": 1.4
+  "revealSeconds": 1.4,
+  "showcase": {
+    "refreshMinutes": 15,
+    "slots": [
+      [
+        "comun",
+        "poco"
+      ],
+      [
+        "comun",
+        "poco"
+      ],
+      [
+        "poco",
+        "rara"
+      ],
+      [
+        "poco",
+        "rara"
+      ],
+      [
+        "rara",
+        "epica"
+      ]
+    ],
+    "price": {
+      "comun": 45,
+      "poco": 120,
+      "rara": 420,
+      "epica": 1300
+    },
+    "levelStep": 0.04
+  },
+  "crates": {
+    "common": {
+      "price": 140,
+      "odds": {
+        "poco": 0.7,
+        "rara": 0.27,
+        "epica": 0.03
+      }
+    },
+    "advanced": {
+      "price": 650,
+      "odds": {
+        "rara": 0.6,
+        "epica": 0.36,
+        "legendaria": 0.04
+      },
+      "pity": 15
+    }
+  },
+  "scrap": {
+    "comun": 5,
+    "poco": 10,
+    "rara": 20,
+    "epica": 40,
+    "legendaria": 80
+  },
+  "simulation": {
+    "minutes": 60,
+    "killsPerMinute": 5,
+    "mix": {
+      "small": 0.3,
+      "normal": 0.6,
+      "big": 0.1
+    },
+    "waveSeconds": 150,
+    "runs": 300
+  }
 }

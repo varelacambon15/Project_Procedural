@@ -138,8 +138,10 @@ async function boot() {
   const shop = new ShopScreen(inv, () => shopState, {
     close: () => { resume(); autosave(); }, toast, chime: (l) => lootChime(l),
     deliver: (rarity) => deliverPurchase(rarity),
+    deliverSpec: (spec) => deliverSpec(spec),
+    gameTime: () => playSeconds,
     equipNow: (spec) => { const it = inv.all.find((x) => x.spec === spec); const w = it && inv.find(it.uid); if (it && w) { if (w.area === "pack") inv.move(w, { area: "equip", index: inv.active }); else inv.active = w.index; inv.changed(); } },
-  });
+  }, gen, thumbs);
   const start = new StartScreen(view, {
     mode: () => (inGame ? "pause" : "title"),
     play: () => resume(), newGame: () => { newGame(); resume(); },
@@ -271,8 +273,11 @@ async function boot() {
     return spec;
   }
   /** Compra: el arma va a la mochila; si no cabe, la máquina la compila en su bandeja (efecto de escaneo). */
-  function deliverPurchase(rarity: RarityId): { spec: WeaponSpec; where: "pack" | "equip" | "tray" } {
-    const spec = rollWeapon(rarity), it = makeItem(spec);
+  function deliverPurchase(rarity: RarityId): { spec: WeaponSpec; where: "pack" | "equip" | "tray" } { return deliverSpec(rollWeapon(rarity)); }
+  /** Entrega un arma de la tienda: a la mochila; si no cabe, la máquina la compila en su bandeja. */
+  function deliverSpec(spec: WeaponSpec): { spec: WeaponSpec; where: "pack" | "equip" | "tray" } {
+    gen.refresh(spec);
+    const it = makeItem(spec);
     machineT = 0; world.chestGlow.color.set(spec.rarity.color);
     if (inv.add(it)) return { spec, where: inv.find(it.uid)!.area };
     const pos = world.interactables.find((i) => i.id === "chest")!.position;
@@ -513,7 +518,7 @@ async function boot() {
   (window as unknown as Record<string, unknown>).__game = {
     debug, gen, inv, gun, pickups, pickUp, player, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
     loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn,
-    openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
+    cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };
 }
 

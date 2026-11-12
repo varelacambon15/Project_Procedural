@@ -131,7 +131,7 @@ const es: Dict = {
   "rc.stat.dmg": "daño", "rc.stat.rate": "cadencia", "rc.stat.crit": "daño crítico", "rc.stat.spread": "dispersión", "rc.stat.recoil": "retroceso", "rc.stat.reload": "tiempo de recarga", "rc.stat.mag": "capacidad del cargador", "rc.stat.range": "alcance",
   "rc.Stat.dmg": "Daño", "rc.Stat.rate": "Cadencia", "rc.Stat.crit": "Críticos", "rc.Stat.spread": "Agrupación", "rc.Stat.recoil": "Firmeza", "rc.Stat.reload": "Recarga ágil", "rc.Stat.mag": "Cargador grande", "rc.Stat.range": "Largo alcance",
   "rc.up": "+{v} % de {s}", "rc.down": "−{v} % de {s}", "rc.buff": "{b} durante {d} s",
-  "rc.cond.always": "", "rc.cond.aiming": "al apuntar", "rc.cond.hip": "desde la cadera", "rc.cond.still": "quieto", "rc.cond.moving": "en movimiento", "rc.cond.near": "con 3+ enemigos cerca", "rc.cond.lowammo": "con poco cargador",
+  "rc.cond.always": "", "rc.cond.aiming": "al apuntar", "rc.cond.hip": "desde la cadera", "rc.cond.still": "estando quieto", "rc.cond.moving": "en movimiento", "rc.cond.near": "con 3+ enemigos cerca", "rc.cond.lowammo": "con poco cargador",
   "rc.cond.afterkill": "tras una baja", "rc.cond.afterreload": "tras recargar", "rc.cond.big": "contra objetivos grandes", "rc.cond.nth": "cada {n}.º disparo", "rc.cond.chance": "el {c} % de los impactos",
   "rc.name": "{S} {c}", "rc.risky": "{n} · a tope",
   "rc.trig.onHit": "Al impactar", "rc.trig.onCrit": "Al acertar un crítico", "rc.trig.onKill": "Al abatir", "rc.trig.onReloadEnd": "Al recargar", "rc.trig.onShot": "", "rc.trig.passive": "",

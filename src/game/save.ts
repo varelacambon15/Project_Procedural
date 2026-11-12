@@ -80,7 +80,14 @@ export function parseSave(text: string | null): LoadResult {
   if (!Array.isArray(raw.weapons)) return { ok: false, error: "invalid" };
   const weapons = raw.weapons.filter(validWeapon);
   const bank = Array.isArray(raw.bank) ? (raw.bank as unknown[]).filter((a): a is AccItem => isObj(a) && typeof a.id === "string" && ["optic", "muzzle", "device"].includes(a.kind as string)) : [];
-  const shop = isObj(raw.shop) ? { spent: Number(raw.shop.spent) || 0, history: Array.isArray(raw.shop.history) ? (raw.shop.history as Purchase[]).slice(0, 20) : [] } : { spent: 0, history: [] };
+  const shop: ShopState = isObj(raw.shop) ? { spent: Number(raw.shop.spent) || 0, history: Array.isArray(raw.shop.history) ? (raw.shop.history as Purchase[]).slice(0, 20) : [] } : { spent: 0, history: [] };
+  // Escaparate (semilla, ronda, contador y vendidas) y garantía de la caja avanzada: solo si vienen y son válidos
+  if (isObj(raw.shop) && isObj(raw.shop.showcase)) {
+    const sc = raw.shop.showcase as Record<string, unknown>;
+    if ([sc.seed, sc.round, sc.refreshAt].every((x) => Number.isFinite(Number(x))) && Array.isArray(sc.sold))
+      shop.showcase = { seed: Number(sc.seed), round: Number(sc.round), refreshAt: Number(sc.refreshAt), sold: (sc.sold as unknown[]).map(Boolean) };
+  }
+  if (isObj(raw.shop) && Number.isFinite(Number(raw.shop.pity))) shop.pity = Math.max(0, Math.floor(Number(raw.shop.pity)));
   const num = (x: unknown, def: number) => (typeof x === "number" && Number.isFinite(x) ? x : def);
   const data: SaveData = {
     version: SAVE_VERSION, savedAt: typeof raw.savedAt === "string" ? raw.savedAt : new Date(0).toISOString(), name: typeof raw.name === "string" ? raw.name.slice(0, 32) : "",
