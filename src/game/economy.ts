@@ -53,7 +53,14 @@ export function simulate(minutes = SIM.minutes, seed = 1, o: { killsPerMinute?: 
     const rar = showcaseRarities(sc);
     const opts = rar.map((x, i) => ({ x, i, p: showcasePrice(x, 8) })).filter((v) => !sc.sold[v.i] && rank(v.x) > rank(best) && v.p <= credits).sort((a, b) => rank(b.x) - rank(a.x));
     if (opts.length) { sc.sold[opts[0].i] = true; pay(opts[0].p, t); got(opts[0].x, "shop", t); continue; }
-    const upcoming = rar.some((x, i) => !sc.sold[i] && rank(x) > rank(best)); // ahorra si en el escaparate hay algo mejor
+    // Ahorra si en el escaparate hay algo mejor… salvo que la caja común salga más barata por mejora esperada
+    // (precio / probabilidad de sacar azul o más) que esa ranura: entonces se arriesga con la caja
+    const better = rar.map((x, i) => ({ x, i })).filter((v) => !sc.sold[v.i] && rank(v.x) > rank(best));
+    const odds = CRATES.common.odds as Partial<Record<RarityId, number>>;
+    const pUp = Object.entries(odds).filter(([k]) => rank(k as RarityId) > rank(best)).reduce((s, [, v]) => s + (v ?? 0), 0);
+    const cheapest = Math.min(...better.map((v) => showcasePrice(v.x, 8)));
+    const crateWorth = pUp > 0 && CRATES.common.price / pUp < cheapest;
+    const upcoming = better.length > 0 && !(rank(best) <= rank("poco") && crateWorth);
     if (rank(best) <= rank("poco") && !upcoming && credits >= CRATES.common.price) {
       const c = openCrate(st, credits, "common", r); if (c.ok) { crates.common++; pay(c.price, t); got(c.rarity, "crate", t); }
     } else if (rank(best) >= rank("rara") && !upcoming && credits >= CRATES.advanced.price) {

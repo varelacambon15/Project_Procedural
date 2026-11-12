@@ -64,24 +64,24 @@
       "comun": 45,
       "poco": 120,
       "rara": 420,
-      "epica": 1300
+      "epica": 1500
     },
     "levelStep": 0.04
   },
   "crates": {
     "common": {
-      "price": 140,
+      "price": 120,
       "odds": {
-        "poco": 0.7,
-        "rara": 0.27,
-        "epica": 0.03
+        "poco": 0.685,
+        "rara": 0.3,
+        "epica": 0.015
       }
     },
     "advanced": {
-      "price": 650,
+      "price": 850,
       "odds": {
-        "rara": 0.6,
-        "epica": 0.36,
+        "rara": 0.68,
+        "epica": 0.28,
         "legendaria": 0.04
       },
       "pity": 15
