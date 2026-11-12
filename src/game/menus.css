@@ -21,6 +21,7 @@
   background: radial-gradient(ellipse at 50% 40%, rgba(6, 12, 14, 0.62), rgba(3, 5, 6, 0.9)); color: var(--t-ink); font-family: var(--mono); font-size: var(--fs); pointer-events: auto; overflow: hidden; }
 /* Líneas de barrido (baratas: sin desenfoque de fondo) */
 .screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.16) 2px 3px); }
+.screen:not(.title):not(.modal) { background: radial-gradient(ellipse at 50% 40%, rgba(5, 10, 12, 0.86), rgba(2, 4, 5, 0.96)); }
 .screen.modal { z-index: 40; background: rgba(2, 4, 5, 0.78); }
 .screen h1, .screen h2, .screen h3 { margin: 0; font-family: var(--display); font-weight: 400; }
 .screen h1 { font-size: 30px; letter-spacing: 0; text-transform: uppercase; line-height: 1; }
@@ -149,11 +150,11 @@ button { font: inherit; color: inherit; }
 .mi.on { color: var(--sim); }
 .sub { display: grid; align-content: start; gap: 12px; overflow: auto; }
 .sub[data-panel="show"] { padding: 0; overflow: hidden; align-content: stretch; }
-.show { position: relative; height: 100%; min-height: 320px; }
+.showcase { position: relative; height: 100%; min-height: 320px; }
 .viewport { position: relative; min-height: 0; background: radial-gradient(ellipse at 50% 58%, color-mix(in srgb, var(--c, var(--sim)) 14%, transparent), transparent 70%); }
 .viewport canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
 .viewport canvas:active { cursor: grabbing; }
-.show .viewport { position: absolute; inset: 0; }
+.showcase .viewport { position: absolute; inset: 0; }
 .showcap { position: absolute; left: 16px; bottom: 14px; right: 16px; display: grid; gap: 4px; pointer-events: none; }
 .showcap .rar { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
 .showcap b { font-family: var(--display); font-weight: 400; font-size: 30px; }
@@ -243,7 +244,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 18px; background: v
 .shopgrid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(260px, 1fr); grid-template-rows: minmax(0, 1fr); gap: var(--gap); min-height: 0; }
 .tiers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); align-content: start; }
 .tier { position: relative; display: grid; gap: 10px; align-content: start; padding: 14px; background: var(--t-panel); border: 1px solid var(--t-line); border-top: 3px solid var(--c); }
-.tier.locked { opacity: 0.55; }
+.tier.locked > * { opacity: 0.5; filter: saturate(0.4); }
 .tier .th { display: grid; gap: 2px; }
 .tier .tn { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--t-dim); }
 .tier .tname { font-family: var(--display); font-size: 30px; line-height: 1; text-transform: uppercase; }

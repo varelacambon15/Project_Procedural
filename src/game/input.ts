@@ -37,11 +37,16 @@ export class Input {
     addEventListener("mouseup", (e) => { if (e.button === 0) this.mouse.left = false; if (e.button === 2) this.mouse.right = false; });
     addEventListener("wheel", (e) => { if (this.locked) this.mouse.wheel += Math.sign(e.deltaY); }, { passive: true });
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    document.addEventListener("pointerlockchange", () => { if (this.locked && !this.wantLock) document.exitPointerLock(); });
   }
 
+  /** Olvida las teclas pulsadas (al volver de un menú, para que Esc o E no actúen dos veces). */
+  flush() { this.pressed.clear(); this.mouse.wheel = 0; }
   get locked() { return document.pointerLockElement === this.canvas; }
-  lock() { try { const p = this.canvas.requestPointerLock() as unknown as Promise<void> | undefined; p?.catch?.(() => {}); } catch { /* el navegador puede negarse */ } }
-  unlock() { if (this.locked) document.exitPointerLock(); }
+  /** Si el juego quiere el ratón capturado. Una captura que llega tarde (ya en un menú) se suelta enseguida. */
+  private wantLock = false;
+  lock() { this.wantLock = true; try { const p = this.canvas.requestPointerLock() as unknown as Promise<void> | undefined; p?.catch?.(() => {}); } catch { /* el navegador puede negarse */ } }
+  unlock() { this.wantLock = false; if (this.locked) document.exitPointerLock(); }
 
   pad(): Gamepad | null { for (const p of navigator.getGamepads?.() ?? []) if (p?.connected) return p; return null; }
 

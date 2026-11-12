@@ -78,6 +78,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: #0d0e0f; col
 #prompt kbd { color: #1a1206; background: var(--amber); padding: 1px 7px; margin-right: 8px; font-family: var(--display); font-weight: 700; }
 #toast { z-index: 45; left: 50%; top: 22%; transform: translateX(-50%); font-family: var(--display); font-size: 20px; letter-spacing: 0; padding: 8px 16px; background: var(--panel); border: 1px solid var(--line); opacity: 0; transition: opacity .12s; }
 #toast.show { opacity: 1; }
+body.in-menu #toast { top: auto; bottom: 72px; }
 
 /* Tarjeta de botín */
 #loot { left: 50%; top: 24%; transform: translateX(-50%); width: 300px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--c); box-shadow: 0 0 40px -10px var(--c); opacity: 0; transition: opacity .3s, transform .3s; }

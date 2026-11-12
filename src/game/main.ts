@@ -165,6 +165,7 @@ async function boot() {
     if (bench.isOpen) { bench.isOpen = false; $("workbench").hidden = true; }
     if (shop.isOpen) { shop.isOpen = false; $("shop").hidden = true; }
     start.close(); state = "play"; nav.setRoot(null); document.body.classList.remove("nav-keys");
+    input.flush();
     input.lock();
   }
   document.addEventListener("pointerlockchange", () => { if (!input.locked && state === "play") openStart(); });

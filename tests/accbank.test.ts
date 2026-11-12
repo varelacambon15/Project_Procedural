@@ -63,6 +63,19 @@ describe("accesorios desmontables (banco)", () => {
     for (const w of many(150)) for (const [kind, id] of pool) { const f = canMount(gen, w, { kind, id }); if (!f.ok) expect(f.reason).toMatch(/^acc\./); }
   });
 
+  it("todo lo que se desmonta se puede volver a montar en la misma arma (ida y vuelta)", () => {
+    let n = 0;
+    for (const w of many(300)) for (const k of ACC_KINDS) {
+      const c = structuredClone(w); const a = detach(gen, c, k); if (!a) continue;
+      n++;
+      expect(canMount(gen, c, a)).toEqual({ ok: true });
+      attach(gen, c, a);
+      expect(mountedAcc(c, k)).toBe(mountedAcc(w, k));
+      expect(c.stats).toEqual(w.stats);
+    }
+    expect(n).toBeGreaterThan(150);
+  });
+
   it("al desguazar, los accesorios montados pasan al banco con la rareza del arma", () => {
     for (const w of many(100)) {
       const acc = accessoriesOf(w);

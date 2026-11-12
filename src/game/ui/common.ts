@@ -133,6 +133,8 @@ export class ModelView {
   private token = 0; private host: HTMLElement | null = null;
   yaw = -0.5; pitch = 0.18; zoom = 1; private dist = 1; private dragging = false; private last = [0, 0];
   autoSpin = true;
+  /** Volver al encuadre de 3/4 en el próximo modelo (al elegir otra arma). */
+  resetYaw = false;
   constructor(private asm: WeaponAssembler) {}
   private ensure() {
     if (this.renderer) return this.renderer;
@@ -158,7 +160,8 @@ export class ModelView {
     const built = await this.asm.assemble(structuredClone(spec));
     if (my !== this.token) return;
     if (this.model) this.scene.remove(this.model);
-    this.model = built.group; this.scene.add(built.group); this.dist = built.length * 2.2 + 0.1;
+    this.model = built.group; this.scene.add(built.group); this.dist = built.length * 1.7 + 0.08;
+    if (this.resetYaw) { this.yaw = -0.5; this.resetYaw = false; }
   }
   update(dt: number) {
     if (!this.renderer || !this.host || !this.host.offsetParent) return;

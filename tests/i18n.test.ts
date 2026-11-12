@@ -11,6 +11,8 @@ walk(join(ROOT, "src"));
 const html = readFileSync(join(ROOT, "index.html"), "utf8");
 const keys = new Set<string>();
 for (const f of files) for (const m of readFileSync(f, "utf8").matchAll(/\bt\("([a-zA-Z0-9_.\-]+)"/g)) keys.add(m[1]);
+// También claves en literales sueltos (p. ej. dentro de un ternario): "ui.algo", "shop.algo"…
+for (const f of files) for (const m of readFileSync(f, "utf8").matchAll(/"((?:ui|shop|save|set|dlg|zone|socket|sort|hint|c)\.[A-Za-z0-9_.\-]*[A-Za-z0-9])"/g)) keys.add(m[1]);
 for (const m of html.matchAll(/data-i18n(?:-html)?="([^"]+)"/g)) keys.add(m[1]);
 // dinámicas
 const fam: Record<string, string[]> = {

@@ -75,11 +75,12 @@ export function canMount(gen: WeaponGenerator, w: WeaponSpec, a: Pick<AccItem, "
 }
 
 function fitsZone(gen: WeaponGenerator, w: WeaponSpec, a: Pick<AccItem, "kind" | "id">) {
-  if (a.kind === "optic") return fits(gen, w, "scope", { uid: 0, role: "scope", from: a.id });
-  if (a.kind === "muzzle") return fits(gen, w, "muzzle", { uid: 0, role: "muzzle", from: a.id });
+  // Mira y boca: las mismas listas que usa el generador (accesorios propios, del kit y reales del pack de accesorios)
+  if (a.kind === "optic") return gen.opticOptions(w).includes(a.id) || fits(gen, w, "scope", { uid: 0, role: "scope", from: a.id });
+  if (a.kind === "muzzle") return gen.muzzleOptions(w).includes(a.id);
   const part = gen.kit.byId.get(a.id); if (!part || part.slot !== "Device") return false;
   if (w.layout === "kit") return fits(gen, w, "device", { uid: 0, role: "device", from: a.id });
-  const long = !["pistol", "revolver", "smg"].includes(w.type);
+  const long = w.type !== "pistol" && w.type !== "revolver"; // la misma regla que el generador
   return gen.kit.options("Device", "any").some((d) => d.id === a.id) && ((long && w.type !== "shotgun") || !/foregrip/.test(a.id));
 }
 
@@ -89,9 +90,11 @@ function mountRaw(gen: WeaponGenerator, w: WeaponSpec, a: Pick<AccItem, "kind" |
     w.tweaks = { ...w.tweaks, device: a ? { id: a.id, at } : null, deviceZone: at };
     gen.refresh(w); return;
   }
-  const slot = kind === "optic" ? "scope" : kind;
-  const part: PartItem | null = a ? { uid: 0, role: slot, from: a.id } : null;
-  swap(gen, w, slot, part);
+  if (kind === "optic") { w.optic = a?.id ?? null; gen.refresh(w); return; }
+  if (kind === "muzzle") { w.muzzle = a?.id ?? null; gen.refresh(w); return; }
+  // Accesorio bajo el raíl del kit: es una pieza del kit en su socket
+  const part: PartItem | null = a ? { uid: 0, role: "device", from: a.id } : null;
+  swap(gen, w, "device", part);
 }
 
 /** ¿Se puede desmontar? (no si no hay nada o si el arma quedaría por debajo de su banda de poder). */

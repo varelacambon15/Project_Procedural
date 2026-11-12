@@ -47,7 +47,7 @@ export class WorkshopScreen {
     this.isOpen = false; this.el.hidden = true; this.hooks.close();
   }
   /** Ⓑ / Esc: primero cancela la vista previa; si no hay, cierra. */
-  back() { if (this.pending) { this.pending = null; this.render(); return; } this.close(); }
+  back() { if (this.pending) { this.pending = null; this.view.autoSpin = true; this.render(); return; } this.close(); }
 
   private get shown(): WeaponSpec | null { return this.pending && !this.showBefore ? this.pending.spec : this.sel?.spec ?? null; }
 
@@ -123,7 +123,7 @@ export class WorkshopScreen {
     if (!this.sel) return;
     const spec = structuredClone(this.sel.spec), bank = structuredClone(this.inv.bank);
     try { mutate(spec, bank); } catch (e) { this.hooks.toast(t((e as Error).message)); return; }
-    this.pending = { spec, bank, label }; this.showBefore = false; this.render();
+    this.pending = { spec, bank, label }; this.showBefore = false; this.view.autoSpin = false; this.render();
     this.el.querySelector<HTMLElement>('[data-act="confirm"]')?.focus({ preventScroll: true });
   }
   private commit() {
@@ -131,7 +131,7 @@ export class WorkshopScreen {
     this.undo.push({ uid: it.uid, spec: structuredClone(it.spec), bank: structuredClone(this.inv.bank), label: p.label });
     if (this.undo.length > 20) this.undo.shift();
     it.spec = p.spec; this.inv.bank = p.bank; it.ammo = Math.min(it.ammo, it.spec.stats.cargador);
-    this.pending = null; this.thumbs.forget(it.uid); this.hooks.changed(it); this.hooks.toast(t("ui.applied", { n: p.label })); this.render();
+    this.pending = null; this.view.autoSpin = true; this.thumbs.forget(it.uid); this.hooks.changed(it); this.hooks.toast(t("ui.applied", { n: p.label })); this.render();
   }
   private doUndo() {
     const it = this.sel; if (!it) return;
@@ -146,7 +146,7 @@ export class WorkshopScreen {
     const target = e.target as HTMLElement;
     if (target.closest("[data-close]")) return this.back();
     const tile = target.closest<HTMLElement>(".tile[data-uid]");
-    if (tile) { if (this.pending) return; this.sel = this.inv.byUid(Number(tile.dataset.uid)); return this.render(); }
+    if (tile) { if (this.pending) return; this.sel = this.inv.byUid(Number(tile.dataset.uid)); this.view.resetYaw = true; return this.render(); }
     const s = this.sel?.spec; if (!s) return;
     const det = target.closest<HTMLElement>("[data-detach]");
     if (det && !this.pending) { const k = det.dataset.detach as AccKind; return this.stage(t("ui.detachLabel", { a: accName(mountedAcc(s, k)!) }), (spec, bank) => { const a = detach(this.gen, spec, k); if (!a) throw new Error("acc.bandLow"); bank.push(a); }); }
@@ -168,7 +168,7 @@ export class WorkshopScreen {
 
   action(a: string) {
     if (a === "confirm") this.commit();
-    else if (a === "cancel") { this.pending = null; this.render(); }
+    else if (a === "cancel") { this.pending = null; this.view.autoSpin = true; this.render(); }
     else if (a === "undo") this.doUndo();
     else if (a === "ab" && this.pending) { this.showBefore = !this.showBefore; this.render(); }
     else if (a === "bsort") { this.bankSort = this.bankSort === "rarity" ? "kind" : "rarity"; this.render(); }
