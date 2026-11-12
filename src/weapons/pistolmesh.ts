@@ -94,6 +94,8 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
             half: (x) => taper(x) - (grooves.some(([a, b]) => x > a && x < b) ? 0.0009 : 0),
             extraX: grooves.flatMap(([a, b]) => [a - 1e-5, a + 1e-5, b - 1e-5, b + 1e-5]),
             rTop: round ? 0.8 : st === "shroud" ? 0.55 : st === "open" ? 0.45 : 0.38, rBot: 0.1, segs: round ? 3 : st === "slab" ? 1 : 2, n: 30, wear: 1.3,
+            // Ventana de expulsión hueca en el costado derecho
+            notch: d.slide.port && st !== "open" ? { x0: L * 0.33, x1: L * 0.53, y: h * 0.52, depth: hw * 0.75 } : undefined,
           }));
           // Aligeramientos: ventanas oscuras en la mitad delantera
           for (let i = 0; i < d.slide.cuts; i++) for (const z of [-1, 1]) s.add(box(L * 0.09, h * 0.3, 0.001, L * (0.545 + i * 0.14), h * 0.7, z * (hw + 0.0002), "procpad"));
@@ -105,8 +107,12 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         if (d.slide.style === "tube" && d.slide.serr >= 1) serr(0.007, 7); // (en la de tubo, sobre el bloque de recámara)
         // Ventana de expulsión (lado derecho): hueco oscuro con el capuchón del cañón a la vista y extractor detrás
         if (d.slide.port && d.slide.style !== "open") {
-          s.add(box(L * 0.2, h * 0.34, 0.001, L * 0.43, h * 0.7, sw + 0.0001, "procpad"));
-          s.add(box(L * 0.2, h * 0.14, w * 0.5, L * 0.43, h * 0.93, 0, "procmetal"));
+          // Dentro de la ventana: el fondo oscuro y el capuchón del cañón (acero) a la vista; extractor detrás
+          if (d.slide.style === "tube") s.add(box(L * 0.2, h * 0.34, 0.001, L * 0.43, h * 0.7, sw + 0.0001, "procpad"));
+          else {
+            s.add(box(L * 0.19, h * 0.44, 0.001, L * 0.43, h * 0.75, sw * 0.25 + 0.0003, "procpad"));
+            s.add(box(L * 0.17, h * 0.3, sw * 0.6, L * 0.43, h * 0.72, sw * 0.05, "procsteel"));
+          }
           s.add(box(0.012, 0.0025, 0.001, L * 0.3, h * 0.72, sw + 0.0004, "procmetal"));
         }
         // Marcaje grabado (lado izquierdo)

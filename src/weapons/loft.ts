@@ -40,18 +40,22 @@ export interface LoftOpts {
   grow?: number;
   /** Estaciones extra (en x local), p. ej. a ambos lados de cada ranura de unas estrías. */
   extraX?: number[];
+  /** Rebaje en el costado derecho (+z): entre x0 y x1, por encima de y, la pieza se hunde `depth` (ventana de expulsión). */
+  notch?: { x0: number; x1: number; y: number; depth: number };
   /** Ventana pasante (en coordenadas locales): en ese tramo la pieza se parte en una parte de arriba y otra de abajo. */
   hole?: { x0: number; x1: number; y0: number; y1: number };
 }
 
 /** Sección (y, z) de un rectángulo de esquinas redondeadas; siempre el mismo número de puntos. */
-function section(y0: number, y1: number, half: number, rT: number, rB: number, segs: number): P2[] {
+function section(y0: number, y1: number, half: number, rT: number, rB: number, segs: number, ySplit?: number): P2[] {
   const h = Math.max(1e-5, y1 - y0);
   const t = Math.min(rT * half, h * 0.5, half), b = Math.min(rB * half, h * 0.5, half);
   const out: P2[] = [];
   const arc = (cy: number, cz: number, r: number, a0: number, a1: number) => { for (let i = 0; i <= segs; i++) { const a = a0 + ((a1 - a0) * i) / segs; out.push([cy + Math.sin(a) * r, cz + Math.cos(a) * r]); } };
   // Esquinas en orden: abajo-derecha (+z), arriba-derecha, arriba-izquierda, abajo-izquierda
   arc(y0 + b, half - b, b, -Math.PI / 2, 0);
+  // Punto extra en el costado derecho (para rebajes como la ventana de expulsión): mismo número de puntos siempre
+  if (ySplit !== undefined) out.push([Math.min(Math.max(ySplit, y0 + b), y1 - t), half]);
   arc(y1 - t, half - t, t, 0, Math.PI / 2);
   arc(y1 - t, -half + t, t, Math.PI / 2, Math.PI);
   arc(y0 + b, -half + b, b, Math.PI, Math.PI * 1.5);
@@ -121,6 +125,13 @@ export function loftPoly(poly: P2[], o: LoftOpts): THREE.BufferGeometry {
   };
   // Con ventana: tres tiras (fuera de la ventana, por encima y por debajo de ella), cada una con sus tramos
   const H = o.hole;
+  const NT = o.notch;
+  if (NT) for (const x of [NT.x0, NT.x1]) for (const d of [-E, E]) { const u = x + d; if (u > u0 && u < u1) st.push({ u, c: cutPoly(local, u) }); }
+  const sec = (y0: number, y1: number, hw: number, rT: number, rB: number, u: number) => {
+    const s2 = section(y0, y1, hw, rT, rB, segs, NT ? NT.y : undefined);
+    if (NT && u > NT.x0 && u < NT.x1) for (const p of s2) if (p[1] > 0 && p[0] >= NT.y - 1e-6) p[1] = Math.min(p[1], hw - NT.depth);
+    return s2;
+  };
   if (H) for (const x of [H.x0, H.x1]) { st.push({ u: x - E, c: cutPoly(local, x - E) }, { u: x + E, c: cutPoly(local, x + E) }); }
   st.sort((a, b) => a.u - b.u);
   const runs: { main: St[]; up: St[]; lo: St[] } = { main: [], up: [], lo: [] };
@@ -129,10 +140,10 @@ export function loftPoly(poly: P2[], o: LoftOpts): THREE.BufferGeometry {
     const inHole = !!H && u > H.x0 && u < H.x1;
     if (!c) { close("main"); close("up"); close("lo"); continue; }
     const [wx] = W(u, (c[0] + c[1]) / 2, 0), hw = o.half(wx) + gr;
-    if (!inHole) { close("up"); close("lo"); runs.main.push({ u, s: section(c[0], c[1], hw, o.rTop, o.rBot, segs), mid: (c[0] + c[1]) / 2 }); continue; }
+    if (!inHole) { close("up"); close("lo"); runs.main.push({ u, s: sec(c[0], c[1], hw, o.rTop, o.rBot, u), mid: (c[0] + c[1]) / 2 }); continue; }
     close("main");
-    if (c[1] > H!.y1 + 1e-4) runs.up.push({ u, s: section(Math.max(c[0], H!.y1), c[1], hw, o.rTop, 0.15, segs), mid: (Math.max(c[0], H!.y1) + c[1]) / 2 }); else close("up");
-    if (c[0] < H!.y0 - 1e-4) runs.lo.push({ u, s: section(c[0], Math.min(c[1], H!.y0), hw, 0.15, o.rBot, segs), mid: (c[0] + Math.min(c[1], H!.y0)) / 2 }); else close("lo");
+    if (c[1] > H!.y1 + 1e-4) runs.up.push({ u, s: sec(Math.max(c[0], H!.y1), c[1], hw, o.rTop, 0.15, u), mid: (Math.max(c[0], H!.y1) + c[1]) / 2 }); else close("up");
+    if (c[0] < H!.y0 - 1e-4) runs.lo.push({ u, s: sec(c[0], Math.min(c[1], H!.y0), hw, 0.15, o.rBot, u), mid: (c[0] + Math.min(c[1], H!.y0)) / 2 }); else close("lo");
   }
   close("main"); close("up"); close("lo");
   return finish(pos, ctr, o.wear ?? 1.2);
