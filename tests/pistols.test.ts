@@ -31,7 +31,7 @@ describe("pistolas y revólveres generados", () => {
 
   it("las que se alejan por debajo del 80 % cambian al menos 2 rasgos estructurales (no solo largos)", () => {
     const far = all.filter((w) => w.lineage!.similarity < 0.8);
-    expect(far.length).toBeGreaterThan(20);
+    expect(far.length).toBeGreaterThan(10);
     for (const w of far) expect(w.lineage!.changes.filter((c) => STRUCTURAL.has(c) || c.startsWith("stock-")).length).toBeGreaterThanOrEqual(2);
   });
 

@@ -173,7 +173,10 @@ export const boreY = (d: PistolDesign) => (d.cyl ? d.cyl.r + 0.003 : d.slide.h *
 export function gripCorners(d: PistolDesign) {
   const fh = d.frame.h, a = d.grip.angle, L = d.grip.len, dx = -Math.sin(a) * L, dy = -Math.cos(a) * L;
   const x0 = d.family === "revolver" ? -0.004 : 0.008, fl = d.grip.shape === "flared" ? 0.006 : 0;
-  const TB: Pt = [x0, -fh], TF: Pt = [x0 + d.grip.depth, -fh], BF: Pt = [TF[0] + dx + fl, TF[1] + dy], BB: Pt = [TB[0] + dx - fl, TB[1] + dy];
+  // Como en una empuñadura real, el fondo es perpendicular a su eje (no horizontal): el cargador y su base quedan a escuadra
+  const TB: Pt = [x0, -fh], TF: Pt = [x0 + d.grip.depth, -fh];
+  const BB: Pt = [TB[0] + dx - fl * Math.cos(a), TB[1] + dy + fl * Math.sin(a)];
+  const wd = d.grip.depth * Math.cos(a) + fl * 2, BF: Pt = [BB[0] + Math.cos(a) * wd, BB[1] - Math.sin(a) * wd];
   return { TB, TF, BF, BB };
 }
 /** Contorno de la empuñadura según su forma (lomo curvo, pico de pájaro, cola de castor…). */
