@@ -38,7 +38,9 @@ Se desarrolla en dos etapas que comparten el mismo núcleo:
 | Rarezas y efectos | Blanca: base, sin efectos ni accesorios. Verde: +7,5% de poder y 1 accesorio montado. Azul: +14% y 1 efecto A. Morada: +20%, 1 efecto B y 1 A. Legendaria: +32% (tope), B + A + firma L con nombre propio. El presupuesto de poder se reparte entre 1-3 estadísticas y las pruebas comprueban la banda (±5%) |
 | Elementos | Solo fuego (quemadura que se renueva, con tope), eléctrico (salta a 1-2 enemigos y aturde, menos daño directo) y explosivo (área pequeña, menos daño directo). Solo en moradas y legendarias, como efecto B, nunca dos a la vez |
 | Enemigos | De momento solo vida (lista de capas preparada para escudo/armadura más adelante) |
-| Accesorios | Supresores, compensador, freno, apagallamas y miras (punto rojo, holográfica, 4x, 6x) generados por código a medida de cada arma |
+| Accesorios | Supresores, compensador, freno, apagallamas y miras (punto rojo, holográfica, 4x, 6x) generados por código a medida de cada arma. Unos son mejora pura y otros tienen un pequeño compromiso; no todos restan |
+| Variaciones de pieza | Cada pieza varía levemente: largo de culata (±10%) y guardamanos (±13%), tamaño (±6%) y ángulo de la empuñadura, largo de las armas enteras (±3%). Afectan un poco a alcance, precisión y manejo |
+| Desgaste | Descartado: no habrá estado ni desgaste de armas |
 | Animaciones | Procedurales estilo Destiny / MW: inercia, balanceo, sprint táctico, salto, retroceso, recarga con el cargador, corredera/cerrojo, sacar e inspeccionar. Más adelante, brazos animados |
 | Interfaz | Retícula y cursor circular estilo Destiny. Inglés por defecto, español seleccionable |
 | Plataformas | Web y escritorio (.exe vía Electron, publicado en Releases). Android posible más adelante con Capacitor |
@@ -70,8 +72,8 @@ y se convierten con `npm run assets` a `.glb` normalizados:
 ## Coherencia visual (piloto)
 
 - Las armas largas de la familia *modern* se despiezan en cajón, culata, empuñadura y guardamanos (corte por planos).
-- Se montan con piezas de otras armas de la misma familia si la sección de cada junta es parecida y la longitud total
-  queda en el rango del tipo (puerta de calidad). Las uniones llevan remates de acero.
+- Se montan con piezas de otras armas de la misma familia si la sección de cada junta es muy parecida (escala 0,8-1,25)
+  y la longitud total y las proporciones (culata y guardamanos) quedan en el rango del tipo (puerta de calidad). Las uniones llevan remates de acero.
 - Piloto revisado con hojas de contacto de 100 armas en tres vistas: ~92% correctas. Sten, Garand y VSS no trocean
   limpio y quedan como armas enteras. ~7.600 combinaciones de forma (piezas + accesorios) en la familia modern.
 

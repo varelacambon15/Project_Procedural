@@ -2,7 +2,7 @@
 // Lógica pura (sin Three.js): se puede probar sin navegador. Los textos se traducen fuera, a partir de los ids.
 import { hashString, mulberry32, pick, type Rng } from "./rng";
 import { ACCESSORIES, accessory } from "./accessories";
-import type { AssetEntry, Effect, FireMode, Manifest, Paint, PartPick, PartRole, Rarity, Stats, StatKey, WeaponSpec, WeaponType } from "./types";
+import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Rarity, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
 
@@ -242,6 +242,7 @@ export class WeaponGenerator {
 
     // 1. Piezas
     const parts: PartPick[] = [];
+    let tweaks: Tweaks = { ...NO_TWEAKS };
     let layout: WeaponSpec["layout"] = "body";
     const modular = pool.filter((w) => w.parts.some((p) => p.role === "slide"));
     if (type === "pistol" && modular.length >= 2 && r() < 0.35) {
@@ -255,6 +256,7 @@ export class WeaponGenerator {
       if (!bodies.length) throw new Error(`No bodies of type ${type}`);
       const base = weighted(r, bodies, (x) => (PACK_WEIGHT[x.pack] ?? 1) * (x.modular ? 2 : 1));
       if (base.modular) {
+        tweaks = rollTweaks(r);
         // Arma larga despiezada: cajón de una, culata, empuñadura y guardamanos de otras de la misma familia,
         // siempre que pasen la puerta de calidad (proporciones y longitud total).
         layout = "modular-long";
@@ -263,16 +265,16 @@ export class WeaponGenerator {
         const cls = (t: WeaponType) => (t === "smg" ? "compact" : "long");
         // Solo piezas cuya junta encaja con la del cajón (sección parecida); luego se comprueba el conjunto.
         const fit = (joint: "rear" | "front" | "grip", lo: number, hi: number) => (w: AssetEntry) => w.id === base.id || within(jointScale(base, w, joint), lo, hi);
-        const stocks = donors("stock", (w) => cls(w.type) === cls(type)).filter(fit("rear", 0.7, 1.4));
-        const fronts = donors("front", (w) => w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front", 0.65, 1.5));
-        const grips = donors("grip", () => true).filter(fit("grip", 0.7, 1.4));
+        const stocks = donors("stock", (w) => cls(w.type) === cls(type)).filter(fit("rear", 0.8, 1.25));
+        const fronts = donors("front", (w) => w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front", 0.78, 1.3));
+        const grips = donors("grip", () => true).filter(fit("grip", 0.8, 1.25));
         let chosen = { stock: base, front: base, grip: base };
-        for (let tries = 0; tries < 12; tries++) {
+        for (let tries = 0; tries < 16; tries++) {
           const c = { stock: r() < 0.8 ? pick(r, stocks) : base, front: r() < 0.75 ? pick(r, fronts) : base, grip: r() < 0.8 ? pick(r, grips) : base };
-          if (longGunOk(base, c.stock, c.front, c.grip, type)) { chosen = c; break; }
+          if (longGunOk(base, c.stock, c.front, c.grip, type, tweaks)) { chosen = c; break; }
         }
         parts.push({ role: "stock", from: chosen.stock.id }, { role: "grip", from: chosen.grip.id }, { role: "front", from: chosen.front.id });
-      } else parts.push({ role: "body", from: base.id });
+      } else { parts.push({ role: "body", from: base.id }); tweaks = { ...NO_TWEAKS, body: 0.97 + r() * 0.06 }; }
       if (base.sockets.magazine) {
         const mags = pool.filter((w) => w.pack === base.pack && w.parts.some((p) => p.role === "magazine"));
         parts.push({ role: "magazine", from: (r() < 0.6 ? pick(r, mags) : base).id });
@@ -338,7 +340,7 @@ export class WeaponGenerator {
     const sig = EFFECTS_L.find((d) => effects.some((e) => e.id === d.id));
     const name = sig?.name ?? "";
     const statSeed = Math.floor(r() * 2 ** 31);
-    const spec: WeaponSpec = { seed, type, archetype: arch.id, fireMode, modeShift: shift?.mode ?? null, burst, layout, parts, barrelLength, muzzle, optic, rarity, paint, level, stats: { ...info.base }, effects, name, statSeed, bonus };
+    const spec: WeaponSpec = { seed, type, archetype: arch.id, fireMode, modeShift: shift?.mode ?? null, burst, layout, parts, barrelLength, muzzle, optic, rarity, paint, level, stats: { ...info.base }, effects, name, statSeed, bonus, tweaks };
     return this.refresh(spec);
   }
 
@@ -363,14 +365,24 @@ export function jointScale(recv: AssetEntry, donor: AssetEntry, joint: "rear" | 
  * Puerta de calidad de un arma larga montada con piezas de varias: las secciones de cada junta deben ser parecidas
  * (para no deformar las piezas) y la longitud total debe quedar dentro del rango del tipo.
  */
-export function longGunOk(recv: AssetEntry, stock: AssetEntry, front: AssetEntry, grip: AssetEntry, type: WeaponType): boolean {
+export function longGunOk(recv: AssetEntry, stock: AssetEntry, front: AssetEntry, grip: AssetEntry, type: WeaponType, tw: Tweaks = NO_TWEAKS): boolean {
   if (!recv.joints || !stock.joints || !front.joints || !grip.joints) return false;
-  const kS = jointScale(recv, stock, "rear"), kF = jointScale(recv, front, "front"), kG = jointScale(recv, grip, "grip");
-  if (!within(kS, 0.7, 1.4) || !within(kF, 0.65, 1.5) || !within(kG, 0.7, 1.4)) return false;
+  const own = (x: AssetEntry) => x.id === recv.id;
+  const kS = own(stock) ? 1 : jointScale(recv, stock, "rear"), kF = own(front) ? 1 : jointScale(recv, front, "front"), kG = own(grip) ? 1 : jointScale(recv, grip, "grip");
+  // Secciones muy parecidas: así las piezas apenas se reescalan y el conjunto se ve natural
+  if (!within(kS, 0.8, 1.25) || !within(kF, 0.78, 1.3) || !within(kG, 0.8, 1.25)) return false;
   const J = recv.joints;
-  const len = (J.front.pos[0] - J.rear.pos[0]) + (stock.joints.stockFace.pos[0] - stock.bounds.min[0]) * kS + (front.bounds.max[0] - front.joints.frontFace.pos[0]) * kF;
+  const stockLen = (stock.joints.stockFace.pos[0] - stock.bounds.min[0]) * kS * tw.stock;
+  const frontLen = (front.bounds.max[0] - front.joints.frontFace.pos[0]) * kF * tw.front;
+  const len = (J.front.pos[0] - J.rear.pos[0]) + stockLen + frontLen;
   const target = TYPE_LENGTH[type] ?? 0.9;
-  return within(len / target, 0.8, 1.25);
+  // Longitud total del tipo y proporciones: ni culatas enanas ni guardamanos desmesurados
+  return within(len / target, 0.85, 1.18) && within(stockLen / len, 0.14, 0.42) && within(frontLen / len, 0.18, 0.55);
+}
+
+/** Variaciones leves de las piezas (deterministas por semilla). */
+function rollTweaks(r: Rng): Tweaks {
+  return { stock: 0.9 + r() * 0.22, front: 0.88 + r() * 0.26, grip: 0.94 + r() * 0.12, gripAngle: -0.08 + r() * 0.14, body: 1 };
 }
 
 export function computeStats(spec: WeaponSpec): Stats {
@@ -397,6 +409,10 @@ export function computeStats(spec: WeaponSpec): Stats {
   for (const p of spec.parts) apply(partMods(p.from, p.role));
   if (spec.optic) apply(partMods(spec.optic, "scope"));
   if (spec.muzzle) apply(partMods(spec.muzzle, "muzzle"));
+  // Variaciones de pieza: guardamanos más largo = más alcance y precisión, menos manejo; culata más larga = más estable
+  const tw = spec.tweaks ?? NO_TWEAKS;
+  s.alcance *= 1 + (tw.front - 1) * 0.8; s.precision += (tw.front - 1) * 15; s.manejo -= (tw.front - 1) * 15;
+  s.precision += (tw.stock - 1) * 15; s.manejo -= (tw.stock - 1) * 10;
   const L = spec.barrelLength;
   if (spec.layout === "modular-pistol") { s.alcance *= 1 + (L - 1) * 0.9; s.precision += (L - 1) * 14; s.manejo -= (L - 1) * 16; }
   // Habilidades que cambian números (y penalizaciones de los elementos)

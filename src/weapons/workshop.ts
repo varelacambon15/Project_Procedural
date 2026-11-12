@@ -58,7 +58,7 @@ export function fits(gen: WeaponGenerator, w: WeaponSpec, slot: Slot, part: Part
     const next = { stock: cur("stock"), grip: cur("grip"), front: cur("front"), [slot]: src };
     const joint = slot === "stock" ? "rear" : slot;
     const k = jointScale(recv, src, joint);
-    return k > 0.6 && k < 1.6 && longGunOk(recv, next.stock, next.front, next.grip, w.type);
+    return k > 0.75 && k < 1.35 && longGunOk(recv, next.stock, next.front, next.grip, w.type, w.tweaks);
   }
   return w.layout === "modular-pistol" && src.parts.some((p) => p.role === slot);
 }

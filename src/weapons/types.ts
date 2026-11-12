@@ -68,4 +68,9 @@ export interface WeaponSpec {
   statSeed: number;
   /** Reparto del presupuesto de rareza entre estadísticas (fracciones que suman 1). */
   bonus: Partial<Record<StatKey, number>>;
+  /** Variaciones leves de cada pieza: largo de culata y guardamanos, tamaño y ángulo de empuñadura, largo del cuerpo. */
+  tweaks: Tweaks;
 }
+
+export interface Tweaks { stock: number; front: number; grip: number; gripAngle: number; body: number }
+export const NO_TWEAKS: Tweaks = { stock: 1, front: 1, grip: 1, gripAngle: 0, body: 1 };

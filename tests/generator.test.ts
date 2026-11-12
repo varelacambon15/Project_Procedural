@@ -125,9 +125,9 @@ describe("armas largas despiezadas", () => {
       const get = (role: string) => gen.byId.get(w.parts.find((p) => p.role === role)!.from)!;
       const [r, s, g, f] = ["receiver", "stock", "grip", "front"].map(get);
       for (const x of [s, g, f]) expect(x.pack).toBe(r.pack);
-      if (new Set([r, s, g, f]).size > 1) { mixed++; expect(longGunOk(r, s, f, g, w.type)).toBe(true); }
+      if (new Set([r, s, g, f]).size > 1) { mixed++; expect(longGunOk(r, s, f, g, w.type, w.tweaks)).toBe(true); }
     }
     expect(total).toBeGreaterThan(100);
-    expect(mixed / total).toBeGreaterThan(0.6);
+    expect(mixed / total).toBeGreaterThan(0.45);
   });
 });

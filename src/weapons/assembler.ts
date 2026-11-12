@@ -1,7 +1,7 @@
 // Monta en 3D un arma generada: carga los .glb de cada pieza y las coloca en sus puntos de anclaje.
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import type { AssetEntry, PartRole, WeaponSpec } from "./types";
+import { NO_TWEAKS, type AssetEntry, type PartRole, type WeaponSpec } from "./types";
 import { jointScale, type WeaponGenerator } from "./generator";
 import { accessory, buildMuzzle, buildOptic } from "./accessories";
 
@@ -97,14 +97,25 @@ export class WeaponAssembler {
         const recv = await this.nodes(bodyE, "receiver");
         add(recv, "receiver", bodyE, [0, 0, 0]); paint(recv, spec);
         const thick = (bodyE.bounds.max[2] - bodyE.bounds.min[2]);
+        const tw = spec.tweaks ?? NO_TWEAKS;
+        // Cada pieza se escala a la sección de su junta y recibe su variación leve (largo, tamaño, ángulo).
         const attach = async (role: "stock" | "front" | "grip", joint: "rear" | "front" | "grip", face: "stockFace" | "frontFace" | "gripFace", explode: [number, number, number]) => {
           const donor = get(spec.parts.find((p) => p.role === role)!.from);
           const node = await this.nodes(donor, role);
           const k = donor === bodyE ? 1 : THREE.MathUtils.clamp(jointScale(bodyE, donor, joint), 0.6, 1.6);
-          node.scale.setScalar(k);
-          node.position.copy(v3(J[joint].pos).sub(v3(donor.joints![face].pos).multiplyScalar(k)));
+          const sv = role === "stock" ? new THREE.Vector3(k * tw.stock, k, k) : role === "front" ? new THREE.Vector3(k * tw.front, k, k) : new THREE.Vector3(k * tw.grip, k * tw.grip, k);
+          node.scale.copy(sv);
+          const anchor = v3(J[joint].pos);
+          if (role === "grip") {
+            // La empuñadura gira un poco sobre su junta
+            const pivot = new THREE.Group(); pivot.position.copy(anchor); pivot.rotation.z = tw.gripAngle;
+            node.position.copy(v3(donor.joints![face].pos).multiply(sv).negate());
+            pivot.add(node); add(pivot, role, donor, explode); paint(node, spec);
+            return { donor, k, node: pivot, sv };
+          }
+          node.position.copy(anchor.sub(v3(donor.joints![face].pos).multiply(sv)));
           add(node, role, donor, explode); paint(node, spec);
-          return { donor, k, node };
+          return { donor, k, node, sv };
         };
         await attach("stock", "rear", "stockFace", [-1.2, 0, 0]);
         const fr = await attach("front", "front", "frontFace", [1.1, 0.2, 0]);
@@ -118,7 +129,7 @@ export class WeaponAssembler {
         }
         if (fr.donor.sockets.muzzle) {
           const m = fr.donor.sockets.muzzle;
-          muzzle = v3(m.pos).multiplyScalar(fr.k).add(fr.node.position);
+          muzzle = v3(m.pos).multiply(fr.sv).add(fr.node.position);
           muzzleDiameter = (m.diameter ?? 0.02) * fr.k;
         }
       } else {
@@ -194,6 +205,9 @@ export class WeaponAssembler {
       muzzle = new THREE.Vector3(acc.position.x + (accE.bounds.max[0] - accE.bounds.min[0]) * k, muzzle.y, 0);
     }
 
+    // Variación leve del largo de las armas enteras
+    const bodyStretch = spec.layout === "body" ? spec.tweaks?.body ?? 1 : 1;
+    if (bodyStretch !== 1) { group.scale.x = bodyStretch; if (muzzle) muzzle.x *= bodyStretch; }
     // Estilos igualados: los modelos más gruesos que un arma real se estrechan un poco.
     const raw = new THREE.Box3().setFromObject(group);
     const thick = raw.max.z - raw.min.z, long = raw.max.x - raw.min.x;

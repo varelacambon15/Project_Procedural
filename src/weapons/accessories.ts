@@ -5,16 +5,17 @@ import type { Stats } from "./types";
 
 export interface AccessoryDef { id: string; kind: "muzzle" | "optic"; mods: Partial<Stats>; zoom?: number; quiet?: boolean; for?: string[] }
 
+// Unos accesorios son mejora pura; otros tienen un pequeño compromiso (las miras de aumento pesan algo más).
 export const ACCESSORIES: AccessoryDef[] = [
-  { id: "acc:suppressor-s", kind: "muzzle", mods: { precision: 3, dano: -3, alcance: 2 }, quiet: true },
-  { id: "acc:suppressor-l", kind: "muzzle", mods: { precision: 5, dano: -2, alcance: 6, manejo: -4 }, quiet: true },
+  { id: "acc:suppressor-s", kind: "muzzle", mods: { precision: 3, alcance: 3 }, quiet: true },
+  { id: "acc:suppressor-l", kind: "muzzle", mods: { precision: 5, alcance: 8, manejo: -3 }, quiet: true },
   { id: "acc:compensator", kind: "muzzle", mods: { manejo: 6, precision: 2 } },
-  { id: "acc:brake", kind: "muzzle", mods: { manejo: 9, precision: -2 } },
-  { id: "acc:flashhider", kind: "muzzle", mods: { precision: 3 } },
-  { id: "acc:reddot", kind: "optic", mods: { precision: 3 }, zoom: 1.25 },
-  { id: "acc:holo", kind: "optic", mods: { precision: 4, manejo: -1 }, zoom: 1.35, for: ["rifle", "bullpup", "lmg", "smg", "shotgun"] },
-  { id: "acc:acog", kind: "optic", mods: { precision: 8, alcance: 10, manejo: -6 }, zoom: 3, for: ["rifle", "bullpup", "lmg", "smg"] },
-  { id: "acc:scope6", kind: "optic", mods: { precision: 12, alcance: 20, manejo: -10 }, zoom: 5, for: ["rifle", "bullpup", "sniper"] },
+  { id: "acc:brake", kind: "muzzle", mods: { manejo: 8, precision: 1 } },
+  { id: "acc:flashhider", kind: "muzzle", mods: { precision: 3, manejo: 2 } },
+  { id: "acc:reddot", kind: "optic", mods: { precision: 4 }, zoom: 1.25 },
+  { id: "acc:holo", kind: "optic", mods: { precision: 5, alcance: 3 }, zoom: 1.35, for: ["rifle", "bullpup", "lmg", "smg", "shotgun"] },
+  { id: "acc:acog", kind: "optic", mods: { precision: 8, alcance: 12, manejo: -3 }, zoom: 3, for: ["rifle", "bullpup", "lmg", "smg"] },
+  { id: "acc:scope6", kind: "optic", mods: { precision: 12, alcance: 20, manejo: -6 }, zoom: 5, for: ["rifle", "bullpup", "sniper"] },
 ];
 export const accessory = (id: string | null) => (id ? ACCESSORIES.find((a) => a.id === id) ?? null : null);
 export const isAccessory = (id: string | null) => !!id && id.startsWith("acc:");
