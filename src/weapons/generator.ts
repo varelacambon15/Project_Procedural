@@ -3,6 +3,7 @@
 import { hashString, mulberry32, pick, type Rng } from "./rng";
 import { ACCESSORIES, accessory } from "./accessories";
 import { FINISHES, FINISH_WEIGHTS } from "./finish";
+import { EFFECTS_A, EFFECTS_B, EFFECTS_L, legalWith } from "./effects";
 import { eraFinishes, rollEra, rollModernization, type Era } from "./eras";
 import { clipProfile, frontProfile, stockProfile, type FrontKind, type StockKind } from "./procparts";
 import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zoneLen, type Box2, type Placed, type Stretch } from "./variation";
@@ -135,45 +136,10 @@ export const PAINTS: Paint[] = FINISHES;
 const PAINT_WEIGHTS = FINISH_WEIGHTS;
 
 // ---------- Efectos ----------
-// Nivel A: mejora pequeña de un aspecto. Nivel B: se nota en combate (incluye fuego, eléctrico y explosivo).
-// Nivel L: firma única de cada legendaria; da nombre al arma. Un A y un B nunca son de la misma familia.
-interface EffectDef { id: string; tier: Effect["tier"]; family: string; element?: Effect["element"]; icon: string; color: string; range?: [number, number]; name?: string }
-const A_COLOR = "#d8d2c4", B_COLOR = "#e8b25a", L_COLOR = "#f08a24";
-export const EFFECTS_A: EffectDef[] = [
-  { id: "steady", tier: "A", family: "recoil", icon: "≡", color: A_COLOR, range: [15, 25] },
-  { id: "quickdraw", tier: "A", family: "draw", icon: "⇡", color: A_COLOR },
-  { id: "headhunter", tier: "A", family: "crit", icon: "◎", color: A_COLOR, range: [15, 25] },
-  { id: "extmag", tier: "A", family: "mag", icon: "▤", color: A_COLOR, range: [15, 25] },
-  { id: "range", tier: "A", family: "range", icon: "⟷", color: A_COLOR, range: [10, 20] },
-  { id: "opening", tier: "A", family: "dmg", icon: "①", color: A_COLOR, range: [15, 30] },
-  { id: "killreload", tier: "A", family: "reload", icon: "↻", color: A_COLOR, range: [25, 40] },
-  { id: "scavenger", tier: "A", family: "ammo", icon: "✚", color: A_COLOR },
-  { id: "adsfocus", tier: "A", family: "accuracy", icon: "⌖", color: A_COLOR, range: [20, 35] },
-  { id: "pierce", tier: "A", family: "pierce", icon: "➝", color: A_COLOR },
-];
-export const EFFECTS_B: EffectDef[] = [
-  { id: "fuego", tier: "B", family: "element", element: "fuego", icon: "▲", color: "#f07a2a" },
-  { id: "electrico", tier: "B", family: "element", element: "electrico", icon: "ϟ", color: "#5cc8f0" },
-  { id: "explosive", tier: "B", family: "element", element: "explosive", icon: "✸", color: "#ffb060" },
-  { id: "doble", tier: "B", family: "proj", icon: "Ⅱ", color: B_COLOR },
-  { id: "rebote", tier: "B", family: "proj", icon: "↯", color: B_COLOR },
-  { id: "eco", tier: "B", family: "proj", icon: "≋", color: B_COLOR },
-  { id: "piercing", tier: "B", family: "pierce", icon: "➶", color: B_COLOR },
-  { id: "killclip", tier: "B", family: "reload", icon: "⚡", color: B_COLOR },
-  { id: "rampage", tier: "B", family: "dmg", icon: "»", color: B_COLOR },
-  { id: "frenzy", tier: "B", family: "rate", icon: "≫", color: B_COLOR },
-];
-/** Firmas legendarias: cada una tiene nombre propio, comportamiento, color y sonido propios. */
-export const EFFECTS_L: EffectDef[] = [
-  { id: "lastrounds", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Last Will" },
-  { id: "widowmark", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Black Widow" },
-  { id: "olddog", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Old Dog" },
-  { id: "requiem", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Rust Requiem" },
-  { id: "deadhand", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Dead Man's Hand" },
-  { id: "stormcaller", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Storm Caller" },
-  { id: "verdict", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "Final Verdict" },
-  { id: "echochamber", tier: "L", family: "sig", icon: "★", color: L_COLOR, name: "The Echo" },
-];
+// Definidos como módulos de datos en src/data/effects.json (lógica por eventos en effects.ts). Nivel A: mejora pequeña;
+// B: se nota en combate (incluye fuego, eléctrico y explosivo); L: firma única de cada legendaria (le da nombre).
+type EffectDef = import("./effects").EffectDef;
+export { EFFECTS_A, EFFECTS_B, EFFECTS_L };
 export const effectValue = (s: WeaponSpec, id: string) => s.effects.find((e) => e.id === id)?.value ?? 0;
 export const hasEffect = (s: WeaponSpec, id: string) => s.effects.some((e) => e.id === id);
 export const elementOf = (s: WeaponSpec) => s.effects.find((e) => e.element)?.element ?? null;
@@ -354,8 +320,9 @@ export class WeaponGenerator {
     const effects: Effect[] = [];
     const take = (def: EffectDef) => effects.push({ id: def.id, tier: def.tier, family: def.family, element: def.element, icon: def.icon, color: def.color, value: def.range ? def.range[0] + Math.floor(r() * (def.range[1] - def.range[0] + 1)) : undefined });
     for (const tier of rarity.tiers) {
-      const pool = (tier === "A" ? EFFECTS_A : tier === "B" ? EFFECTS_B : EFFECTS_L).filter((d) => !effects.some((e) => e.family === d.family));
-      take(pick(r, pool));
+      // Reglas de combinación: familias distintas, un solo efecto de racha, uno de multiplicar daño y un elemento
+      const pool = (tier === "A" ? EFFECTS_A : tier === "B" ? EFFECTS_B : EFFECTS_L).filter((d) => legalWith(effects, d, type));
+      if (pool.length) take(pick(r, pool));
     }
 
     // 6. Reparto del presupuesto de rareza entre 1-3 estadísticas
@@ -909,8 +876,10 @@ export function computeStats(spec: WeaponSpec): Stats {
   if (ev("range")) s.alcance *= 1 + ev("range") / 100;
   if (spec.effects.some((e) => e.id === "quickdraw")) s.manejo += 10;
   if (spec.effects.some((e) => e.id === "doble")) s.dano *= 0.62;
-  if (spec.effects.some((e) => e.id === "electrico")) s.dano *= 0.9;   // menos daño directo
-  if (spec.effects.some((e) => e.id === "explosive")) s.dano *= 0.85;  // menos daño directo
+  // Penalizaciones de diseño de los elementos (cualquier efecto de ese elemento) y ritmo ágil
+  if (spec.effects.some((e) => e.element === "electrico")) s.dano *= 0.9;   // menos daño directo
+  if (spec.effects.some((e) => e.element === "explosive")) s.dano *= 0.85;  // menos daño directo
+  if (spec.effects.some((e) => e.id === "rapid")) s.cadencia *= 1.08;
   // Pequeña variación estable
   const v = mulberry32(spec.statSeed);
   for (const k of Object.keys(s) as StatKey[]) s[k] *= 0.97 + v() * 0.06;

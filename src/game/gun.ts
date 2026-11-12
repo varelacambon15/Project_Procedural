@@ -3,7 +3,8 @@
 import * as THREE from "three";
 import type { WeaponAssembler, AssembledWeapon, AssembledPart } from "../weapons/assembler";
 import type { WeaponType } from "../weapons/types";
-import { PELLETS, effectValue, hasEffect, elementOf } from "../weapons/generator";
+import { PELLETS } from "../weapons/generator";
+import { EffectRunner, type FxAction } from "../weapons/effects";
 import { accessory } from "../weapons/accessories";
 import type { Item } from "./inventory";
 import type { Dummy, Element, Zone } from "./dummies";
@@ -77,10 +78,11 @@ export class Gun {
   private inspectT = 0;
   private sprintBlend = 0;
   private swayV = new THREE.Vector2(); private landT = 0; private wasGrounded = true; private bobT = 0;
-  private frenzyT = 0;
-  private reloadAfterKill = false;
-  private killT = 0; private killclipT = 0; private rampage = 0; private rampageT = 0; private deadhand = false;
-  private marks = new Map<Dummy, number>();
+  /** Efectos de rareza del arma en mano (módulos de datos por eventos; ver weapons/effects.ts). */
+  private fx: EffectRunner<Dummy, THREE.Vector3> | null = null;
+  /** Último daño hecho por cada arma (para el efecto "relevo") y enemigos inestables (explotan al morir). */
+  private lastDealt = new Map<number, number>();
+  private unstable = new Map<Dummy, number>();
   private sightY = 0.03;
   zoom = 1;
   /** Tipo de mira para apuntar: alzas, punto rojo, holográfica o visor de aumento (vista a pantalla completa). */
@@ -93,7 +95,6 @@ export class Gun {
   private bursts: { mesh: THREE.Mesh; t: number }[] = [];
   private ray = new THREE.Raycaster();
   private audio: AudioContext | null = null;
-  private pendingEcho = -1;
   hitmarker = 0; critmarker = 0; killmarker = 0;
   private arms: Arms;
   private reloadPhase: PhaseState | null = null;
@@ -113,7 +114,7 @@ export class Gun {
   /** Dispersión actual en grados (la usa también la retícula). */
   spread(moving: number) {
     const s = this.spec; if (!s) return 1;
-    const focus = 1 - (effectValue(s, "adsfocus") / 100) * this.aimT;
+    const focus = this.fx?.spreadFocus(this.aimT) ?? 1;
     if (s.type === "shotgun") return 3.4 * (1 - this.aimT * 0.25) * focus;
     return ((100 - s.stats.precision) * 0.055 + 0.08) * (1 - this.aimT * 0.75) * (1 + moving * 0.6) * focus;
   }
@@ -126,7 +127,9 @@ export class Gun {
 
   async equip(item: Item | null, rebuild = false) {
     this.item = item; this.reloadT = 0; this.burstLeft = 0; this.inspectT = 0;
-    this.equipDur = item && hasEffect(item.spec, "quickdraw") ? 0.22 : 0.3 + (1 - (item?.spec.stats.manejo ?? 60) / 100) * 0.35;
+    this.fx = item ? new EffectRunner<Dummy, THREE.Vector3>(item.spec) : null;
+    if (item && this.fx) { const now = performance.now() / 1000; this.fx.equip([...this.lastDealt].some(([uid, t]) => uid !== item.uid && now - t < 4)); }
+    this.equipDur = item && this.fx?.equipFast() ? 0.22 : 0.3 + (1 - (item?.spec.stats.manejo ?? 60) / 100) * 0.35;
     this.equipT = this.equipDur;
     if (this.model) { this.holder.remove(this.model.group); this.model = null; this.mag = null; }
     if (!item) return;
@@ -207,24 +210,22 @@ export class Gun {
   startReload() {
     const s = this.spec; if (!s || !this.item || this.reloadT > 0 || this.item.ammo >= s.stats.cargador || this.equipT > 0) return;
     let time = (RELOAD[s.type] ?? 2) * (1.35 - s.stats.manejo / 200);
-    if (this.killT > 0 && hasEffect(s, "killreload")) time *= 1 - effectValue(s, "killreload") / 100;
-    this.reloadAfterKill = this.killT > 0;
+    time *= this.fx?.reloadMult() ?? 1;
     this.reloadT = this.reloadDur = time; this.burstLeft = 0; this.inspectT = 0;
     this.sfx("reload");
   }
 
   update(dt: number, c: Control) {
     const s = this.spec, it = this.item;
-    this.cooldown -= dt; this.equipT = Math.max(0, this.equipT - dt); this.cycleT = Math.max(0, this.cycleT - dt); this.frenzyT = Math.max(0, this.frenzyT - dt);
+    this.cooldown -= dt; this.equipT = Math.max(0, this.equipT - dt); this.cycleT = Math.max(0, this.cycleT - dt);
+    this.fx?.tick(dt, { aiming: this.aimT > 0.6, firing: c.fire, sprinting: c.sprinting });
     this.hitmarker = Math.max(0, this.hitmarker - dt); this.critmarker = Math.max(0, this.critmarker - dt); this.killmarker = Math.max(0, this.killmarker - dt);
-    if (this.reloadT > 0) { this.reloadT -= dt; if (this.reloadT <= 0 && it && s) { it.ammo = s.stats.cargador; this.sfx("cycle"); if (this.reloadAfterKill && hasEffect(s, "killclip")) this.killclipT = 4; } }
-    this.killT = Math.max(0, this.killT - dt); this.killclipT = Math.max(0, this.killclipT - dt);
-    this.rampageT = Math.max(0, this.rampageT - dt); if (this.rampageT <= 0) this.rampage = 0;
+    if (this.reloadT > 0) { this.reloadT -= dt; if (this.reloadT <= 0 && it && s) { it.ammo = s.stats.cargador; this.sfx("cycle"); this.fx?.reloadEnd(); } }
     if (c.inspect && s && this.reloadT <= 0 && this.aimT < 0.2) this.inspectT = 2.6;
     this.inspectT = Math.max(0, this.inspectT - dt);
     const busy = this.equipT > 0 || this.reloadT > 0 || c.sprinting;
     const canAim = !!s && !c.sprinting && this.reloadT <= 0;
-    const adsSpeed = 6 + (s?.stats.manejo ?? 50) / 9 + (s && hasEffect(s, "quickdraw") ? 6 : 0);
+    const adsSpeed = 6 + (s?.stats.manejo ?? 50) / 9 + (this.fx?.equipFast() ? 6 : 0);
     this.aimT += ((c.aim && canAim ? 1 : 0) - this.aimT) * Math.min(1, dt * adsSpeed);
     if (c.aim || c.fire) this.inspectT = 0;
 
@@ -246,7 +247,6 @@ export class Gun {
     this.triggerHeld = c.fire;
     this.sprayT += dt; if (this.sprayT > 0.35) this.sprayIndex = 0;
     this.updateCasings(dt);
-    if (this.pendingEcho >= 0) { this.pendingEcho -= dt; if (this.pendingEcho < 0) { this.pendingEcho = -1; this.fire(c.moving, true); } }
 
     // Recuperación del retroceso
     const handling = s?.stats.manejo ?? 50;
@@ -398,20 +398,24 @@ export class Gun {
 
   private fire(moving: number, echo = false) {
     const s = this.spec!, it = this.item!;
+    const fx = this.fx!;
     const fullMag = it.ammo === s.stats.cargador;
-    const lowAmmo = it.ammo <= Math.ceil(s.stats.cargador * 0.25);
-    if (!echo) { it.ammo--; this.cooldown = 60 / (s.stats.cadencia * (this.frenzyT > 0 ? 1.5 : 1)); }
+    const ammoFrac = it.ammo / s.stats.cargador;
+    if (!echo) { it.ammo--; this.cooldown = 60 / (s.stats.cadencia * fx.rateMult()); }
     this.shotCount++;
     if (!echo) this.hooks.onShot?.();
     if (s.fireMode === "pump" || s.fireMode === "bolt") { this.cycleT = 0.45; setTimeout(() => { this.sfx("cycle"); if (this.item === it) this.ejectCasing(); }, 220); }
     else if (!echo) this.ejectCasing();
     const quiet = !!accessory(s.muzzle)?.quiet;
-    const sig = s.effects.find((e) => e.tier === "L")?.id ?? null;
+    const sig = fx.sig;
     this.sfx("shot", s.type, quiet);
     if (sig) this.sfx("sig");
     (this.flash.material as THREE.MeshBasicMaterial).opacity = quiet ? 0.2 : 1; this.flashLight.intensity = quiet ? 0.6 : 4;
-    const steady = 1 - effectValue(s, "steady") / 100;
-    const kickPower = (s.type === "sniper" || s.type === "shotgun" ? 2.2 : s.type === "revolver" ? 2 : s.type === "pistol" ? 1.2 : 0.7) * (1.4 - s.stats.manejo / 100) * (1 - this.aimT * 0.35) * steady * (hasEffect(s, "doble") ? 1.4 : 1);
+    // Lo que cambian los efectos en este disparo (multiplicadores, perdigones, perforación, elemento…)
+    const origin0 = this.camera.getWorldPosition(new THREE.Vector3());
+    const nearCount = this.hooks.dummies().filter((d) => d.alive && d.center.distanceTo(origin0) < 8).length;
+    const mods = fx.shot({ fullMag, ammoFrac, aiming: this.aimT > 0.6, nearCount, pellets: PELLETS[s.type] ?? 1 });
+    const kickPower = (s.type === "sniper" || s.type === "shotgun" ? 2.2 : s.type === "revolver" ? 2 : s.type === "pistol" ? 1.2 : 0.7) * (1.4 - s.stats.manejo / 100) * (1 - this.aimT * 0.35) * mods.recoil;
     // Patrón de retroceso propio del arma: subida dominante + deriva lateral determinista (con un poco de ruido)
     const pat = recoilPattern(s.statSeed), i = Math.min(this.sprayIndex++, pat.length - 1);
     const lateral = accessory(s.muzzle)?.id === "acc:compensator" || accessory(s.muzzle)?.id === "acc:brake" ? 0.55 : 1;
@@ -419,25 +423,16 @@ export class Gun {
     this.recoilYaw += 0.006 * kickPower * (pat[i][1] * lateral + (Math.random() - 0.5) * 0.3);
     this.sprayT = 0;
     this.kick = Math.min(1, this.kick + 0.65); this.kickRoll += (Math.random() - 0.5) * 0.08 * kickPower;
-    const element = elementOf(s) as Element;
-    const pellets = (PELLETS[s.type] ?? 1) * (hasEffect(s, "doble") ? 2 : 1);
-    const spreadDeg = this.spread(moving);
+    const element = mods.element as Element;
+    const pellets = mods.pellets;
+    const spreadDeg = this.spread(moving) * mods.spread;
     const origin = this.camera.getWorldPosition(new THREE.Vector3());
     const muzzle = this.flash.getWorldPosition(new THREE.Vector3());
     const q = this.camera.getWorldQuaternion(new THREE.Quaternion());
     const targets = [...this.hooks.dummies().filter((d) => d.alive).flatMap((d) => d.hitboxes), ...this.world];
-    // Multiplicadores de daño de efectos y firmas
-    let dmgMult = 1;
-    if (fullMag && hasEffect(s, "opening")) dmgMult *= 1 + effectValue(s, "opening") / 100;
-    if (this.killclipT > 0) dmgMult *= 1.35;
-    if (this.rampage > 0) dmgMult *= 1 + 0.1 * this.rampage;
-    if (sig === "lastrounds" && lowAmmo) dmgMult *= 2;
-    const forceCrit = sig === "deadhand" && this.deadhand;
-    if (forceCrit) { dmgMult *= 3; this.deadhand = false; }
-    const critMult = 2 * (1 + effectValue(s, "headhunter") / 100);
-    const pierceN = hasEffect(s, "piercing") ? 3 : hasEffect(s, "pierce") ? 2 : 1;
+    const dmgMult = mods.dmg, forceCrit = mods.forceCrit, critMult = mods.critMult, pierceN = mods.pierce;
     const tracerColor = sig ? "#ffb347" : element === "fuego" ? "#ff7a2a" : element === "electrico" ? "#8fd8ff" : s.rarity.id === "comun" ? "#e9dcc0" : s.rarity.color;
-    let firstHit: THREE.Vector3 | null = null;
+    let firstHit: THREE.Vector3 | null = null, hitAny = false;
     for (let p = 0; p < pellets; p++) {
       const dir = new THREE.Vector3(0, 0, -1);
       const a = THREE.MathUtils.degToRad(spreadDeg) * Math.sqrt(Math.random()), th = Math.random() * Math.PI * 2;
@@ -454,54 +449,58 @@ export class Gun {
         const zone = hit.object.userData.zone as Zone;
         const falloff = hit.distance <= s.stats.alcance ? 1 : Math.max(0.45, 1 - (hit.distance - s.stats.alcance) / (s.stats.alcance * 2));
         const crit = forceCrit || zone === "head";
-        const dmg = s.stats.dano * falloff * dmgMult * (crit ? critMult : zone === "limb" ? 0.8 : 1) * (pierced > 0 ? 0.5 : 1);
+        const big = (dummy.kind.scale ?? 1) > 1.2 || !!dummy.kind.boss;
+        const dmg = s.stats.dano * falloff * dmgMult * fx.hitMult({ full: dummy.health >= dummy.layers[0].max, big }) * (crit ? critMult : zone === "limb" ? 0.8 : 1) * (pierced > 0 ? 0.5 : 1);
         this.applyHit(dummy, zone, hit.point, dmg, element, crit, p === 0);
-        if (element === "explosive") this.explode(hit.point, dmg * 0.4, element, dummy);
-        if (element === "electrico") this.chain(dummy, dmg * 0.4, 6);
-        if (hasEffect(s, "rebote")) {
-          const next = this.nearest(dummy, hit.point, 15);
-          if (next) { this.tracer(hit.point, next.center, "#e8e1d3"); this.applyHit(next, "body", next.center, dmg * 0.5, element, false, false); }
-        }
-        if (sig === "widowmark") {
-          const n = (this.marks.get(dummy) ?? 0) + 1;
-          if (n >= 5) { this.marks.delete(dummy); this.explode(dummy.center, s.stats.dano * 1.5, null, undefined, 0xc040ff); } else this.marks.set(dummy, n);
-        }
-        if (sig === "verdict" && crit) this.explode(hit.point, dmg * 0.8, null, dummy, 0xffd060);
+        hitAny = true;
+        this.runFx(fx.afterHit({ target: dummy, point: hit.point.clone(), dmg, crit, baseDmg: s.stats.dano, now: performance.now() / 1000 }), moving);
         if (++pierced >= pierceN) break;
       }
       if (p < 3) this.tracer(muzzle, end, tracerColor);
     }
-    // Firma "requiem": cada 6.º disparo lanza 6 esquirlas a los enemigos cercanos al impacto
-    if (sig === "requiem" && this.shotCount % 6 === 0 && firstHit) {
-      const near = this.hooks.dummies().filter((d) => d.alive && d.center.distanceTo(firstHit!) < 20).slice(0, 6);
-      for (const d of near) { this.tracer(firstHit, d.center, "#ffb347", 0.12); this.applyHit(d, "body", d.center, s.stats.dano * 0.4, null, false, false); }
+    this.runFx(fx.afterShot({ shotCount: this.shotCount, firstHit, echo, baseDmg: s.stats.dano, hitAny }), moving);
+  }
+
+  /** Ejecuta las acciones que piden los efectos (el módulo de efectos no sabe de rayos ni posiciones). */
+  private runFx(actions: FxAction<Dummy, THREE.Vector3>[], moving: number) {
+    const s = this.spec, it = this.item; if (!s || !it) return;
+    for (const a of actions) {
+      switch (a.type) {
+        case "explode": this.explode(a.at, a.dmg, a.element, a.except, a.color); break;
+        case "chain": this.chain(a.from, a.dmg, a.n); break;
+        case "bounce": { const next = this.nearest(a.from, a.at, 15); if (next) { this.tracer(a.at, next.center, "#e8e1d3"); this.applyHit(next, "body", next.center, a.dmg, this.fx?.element() as Element ?? null, false, false); } break; }
+        case "igniteNear": for (const o of this.hooks.dummies()) if (o !== a.except && o.alive && o.center.distanceTo(a.at) < a.radius) { this.tracer(a.at, o.center, "#ff9a4a", 0.15); this.applyHit(o, "body", o.center, a.dmg * 0.3, "fuego", false, false); } break;
+        case "unstableNear": { const until = performance.now() / 1000 + a.seconds; for (const o of this.hooks.dummies()) if (o !== a.except && o.alive && o.center.distanceTo(a.at) < a.radius) this.unstable.set(o, until); break; }
+        case "shards": { const near = this.hooks.dummies().filter((d) => d.alive && d.center.distanceTo(a.at) < 20).slice(0, a.n); for (const d of near) { this.tracer(a.at, d.center, "#ffb347", 0.12); this.applyHit(d, "body", d.center, a.dmg, null, false, false); } break; }
+        case "strike": {
+          const at = a.target.center;
+          this.tracer(at.clone().add(new THREE.Vector3(0, 12, 0)), at, "#bfe8ff", 0.25); this.sfx("boom");
+          for (const o of this.hooks.dummies()) if (o !== a.target && o.alive && o.center.distanceTo(at) < a.radius) { this.tracer(at, o.center, "#bfe8ff", 0.2); this.applyHit(o, "body", o.center, a.dmg, "electrico", false, false); }
+          break;
+        }
+        case "shockwave": this.explode(a.at, a.dmg, null, undefined, 0xd8f4f6); break;
+        case "later": { const item = it; setTimeout(() => { if (this.item === item) this.runFx([a.action], moving); }, a.delay * 1000); break; }
+        case "ammo": it.ammo = Math.min(s.stats.cargador, it.ammo + a.n); break;
+        case "refill": it.ammo = s.stats.cargador; break;
+        case "echo": { const item = it; setTimeout(() => { if (this.item === item) this.fire(moving, true); }, a.delay * 1000); break; }
+      }
     }
-    if (!echo && hasEffect(s, "eco") && this.shotCount % 5 === 0) this.pendingEcho = 0.5;
-    if (!echo && sig === "echochamber" && this.shotCount % 4 === 0) { this.pendingEcho = 0.25; setTimeout(() => { if (this.item === it) this.fire(moving, true); }, 500); }
   }
 
   private applyHit(d: Dummy, zone: Zone, point: THREE.Vector3, dmg: number, element: Element, crit: boolean, sound: boolean) {
     const alive = d.alive;
+    if (this.item) this.lastDealt.set(this.item.uid, performance.now() / 1000);
     this.hooks.onHit(d, zone, point, dmg, element, crit);
     this.spark(point, this.camera.position.clone().sub(point).normalize(), crit ? 6 : 3, element === "fuego" ? 0xffa060 : element === "electrico" ? 0xbfe8ff : crit ? 0xffe08a : 0xcff6f8);
     if (crit) this.critmarker = 0.15; else this.hitmarker = 0.12;
     if (alive && !d.alive) {
       this.killmarker = 0.35; this.sfx("kill");
       this.hooks.onKill?.(d);
-      const s = this.spec!, it = this.item!;
-      const sig = s.effects.find((e) => e.tier === "L")?.id;
-      this.killT = 3;
-      if (hasEffect(s, "scavenger")) it.ammo = Math.min(s.stats.cargador, it.ammo + 1);
-      if (hasEffect(s, "frenzy")) this.frenzyT = 5;
-      if (hasEffect(s, "rampage")) { this.rampage = Math.min(3, this.rampage + 1); this.rampageT = 4; }
-      if (sig === "olddog") it.ammo = s.stats.cargador;
-      if (sig === "deadhand") this.deadhand = true;
-      if (sig === "stormcaller") {
-        const at = d.center;
-        this.tracer(at.clone().add(new THREE.Vector3(0, 12, 0)), at, "#bfe8ff", 0.25);
-        this.sfx("boom");
-        for (const o of this.hooks.dummies()) if (o !== d && o.alive && o.center.distanceTo(at) < 8) { this.tracer(at, o.center, "#bfe8ff", 0.2); this.applyHit(o, "body", o.center, s.stats.dano * 1.2, "electrico", false, false); }
-      }
+      const s = this.spec!;
+      // Enemigo inestable (cadáver inestable): explota al morir
+      const un = this.unstable.get(d); this.unstable.delete(d);
+      if (un != null && performance.now() / 1000 < un) this.explode(d.center, s.stats.dano * 1.2, "explosive", d);
+      if (this.fx) this.runFx(this.fx.kill({ target: d, point: d.center, baseDmg: s.stats.dano, mag: s.stats.cargador }), 0);
     } else if (sound) this.sfx(crit ? "crit" : "hit");
   }
   private nearest(from: Dummy, at: THREE.Vector3, max: number, skip: Dummy[] = []) {
