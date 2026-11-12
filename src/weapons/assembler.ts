@@ -8,7 +8,7 @@ import { KIT_FLIP, isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
 import { accessory, buildFrontSight, buildMuzzle, buildOptic } from "./accessories";
 import { applyFinish } from "./finish";
 import { contactAO } from "./ao";
-import { buildFront, buildStock, clipX } from "./procparts";
+import { buildAdapter, buildCell, buildCover, buildDisplay, buildFront, buildPatch, buildStock, buildTape, clipX } from "./procparts";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
 export interface AssembledWeapon {
@@ -359,6 +359,39 @@ export class WeaponAssembler {
     }
 
     // Acabado único por rol (descarta colores y texturas de origen)
+    // Añadidos de era y de kits de modernización (biblioteca común), con sus adaptadores
+    const ea = spec.tweaks?.eraAdds;
+    const proc = (id: string) => ({ id, label: id, pack: "proc" } as AssetEntry);
+    if (ea) {
+      if (ea.cover) add(buildCover(ea.cover[0], ea.cover[1], ea.cover[2], ea.cover[3], ea.cover[4]), "front", proc("era-cover"), [1, 0.4, 0]);
+      if (ea.cell) {
+        // La celda sustituye al cargador
+        const mi = parts.findIndex((p) => p.role === "magazine");
+        if (mi >= 0) { group.remove(parts[mi].object); parts.splice(mi, 1); }
+        add(buildCell([ea.cell[0], ea.cell[1]], ea.cell[2], ea.cell[3]), "magazine", proc("era-cell"), [0, -1.2, 0]);
+      }
+      if (ea.display) add(buildDisplay([ea.display[0], ea.display[1]], ea.display[2]), "charging", proc("era-display"), [0, 0.6, 1]);
+      for (const a of ea.adapters ?? []) add(buildAdapter(a[0], a[1], a[2]), "charging", proc("era-adapter"), [0, 0.5, 0]);
+      for (const t of ea.tapes ?? []) add(buildTape(t[0], t[1], t[2], t[3], t[4]), "stock", proc("era-tape"), [0, 0.5, 0]);
+      for (const p of ea.patches ?? []) add(buildPatch(p[0], p[1], p[2]), "charging", proc("era-patch"), [0, 0, 1]);
+    }
+    // Marca de la simulación: línea fina grabada en el costado del cajón (en todas las armas; con color, solo legendarias)
+    {
+      const rp = parts.find((p) => p.role === "receiver" || p.role === "body" || p.role === "frame");
+      if (rp) {
+        const b = new THREE.Box3().setFromObject(rp.object), c = b.getCenter(new THREE.Vector3());
+        const L = Math.min(0.05, (b.max.x - b.min.x) * 0.22);
+        const mk = new THREE.Group();
+        for (const z of [b.max.z + 0.0006, b.min.z - 0.0006]) {
+          const line = new THREE.Mesh(new THREE.BoxGeometry(L, 0.0022, 0.001), new THREE.MeshStandardMaterial({ name: "simmark" }));
+          line.position.set(c.x - L * 0.2, c.y + (b.max.y - c.y) * 0.35, z); mk.add(line);
+          const tick = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.0022, 0.001), new THREE.MeshStandardMaterial({ name: "simmark" }));
+          tick.position.set(c.x - L * 0.2 + L * 0.6, c.y + (b.max.y - c.y) * 0.35 - 0.004, z); mk.add(tick);
+        }
+        add(mk, "charging", proc("sim-mark"), [0, 0, 0]);
+      }
+    }
+
     // Oclusión de contacto entre piezas (una vez por arma montada)
     contactAO(group, parts.map((p) => p.object));
     // Las legendarias: un único detalle pequeño en color vivo (boca, palanca, gatillo o accesorio), nunca el cargador

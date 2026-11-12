@@ -142,3 +142,63 @@ export function clipProfile(p: Profile, c: number, keep: "below" | "above"): Pro
   for (let k = 0; k < n; k++) { const x = p.x0 + ((p.x1 - p.x0) * (k + 0.5)) / n; if (keep === "below" ? x > c : x < c) { out.top[k] = null; out.bot[k] = null; } }
   return out;
 }
+
+// ---------- Biblioteca de añadidos por era (realistas o sci-fi), también usada por los kits de modernización ----------
+/** Cubierta angulosa segmentada sobre el guardamanos (sci-fi). `y` centro, `h` alto, `w` ancho. */
+export function buildCover(x0: number, x1: number, y: number, h: number, w: number): THREE.Group {
+  const g = new THREE.Group(); const L = x1 - x0;
+  const sh = new THREE.Shape();
+  // Perfil lateral anguloso: frente en punta inclinada, quilla baja recortada y escalón trasero
+  sh.moveTo(0, -h * 0.42); sh.lineTo(L * 0.3, -h / 2); sh.lineTo(L * 0.92, -h * 0.38); sh.lineTo(L, -h * 0.1); sh.lineTo(L * 0.78, h / 2);
+  sh.lineTo(L * 0.12, h / 2); sh.lineTo(0, h * 0.32); sh.closePath();
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: w, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.003, bevelSegments: 1 });
+  geo.translate(x0, y, -w / 2);
+  g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ name: "proc" })));
+  // Placa lateral rehundida (panel) para que se lea como carcasa segmentada
+  for (const z of [-1, 1]) { const pn = box(L * 0.5, h * 0.42, 0.002, x0 + L * 0.45, y - h * 0.02, "procpad"); pn.position.z = z * (w / 2 + 0.004); g.add(pn); }
+  // Juntas de los segmentos (ranuras oscuras)
+  for (let x = x0 + L * 0.25; x < x1 - L * 0.1; x += L * 0.25) for (const z of [-1, 1]) {
+    const s = box(0.003, h * 0.8, 0.003, x, y, "procpad"); s.position.z = z * (w / 2 + 0.002); g.add(s);
+  }
+  return g;
+}
+/** Celda de energía angulosa en el pozo del cargador (sci-fi), con su adaptador. `at` = parte alta del pozo. */
+export function buildCell(at: [number, number], h: number, w: number): THREE.Group {
+  const g = new THREE.Group(); const [x, y] = at;
+  const sh = new THREE.Shape();
+  sh.moveTo(-0.022, 0); sh.lineTo(0.022, 0); sh.lineTo(0.026, -h * 0.85); sh.lineTo(0.012, -h); sh.lineTo(-0.02, -h); sh.closePath();
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: w, bevelEnabled: true, bevelThickness: 0.0015, bevelSize: 0.0015, bevelSegments: 1 });
+  geo.translate(x, y - 0.006, -w / 2);
+  g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ name: "proc" })));
+  g.add(box(0.05, 0.008, w * 1.15, x, y - 0.004, "procmetal")); // brida de adaptación
+  for (const k of [0.35, 0.6]) { const r = box(0.046, 0.004, w + 0.003, x + 0.002, y - h * k, "procpad"); g.add(r); }
+  return g;
+}
+/** Pantalla pequeña de munición en el costado del cajón (apagada salvo en legendarias, que la tiñen). */
+export function buildDisplay(at: [number, number], side: number): THREE.Group {
+  const g = new THREE.Group();
+  const frame = box(0.03, 0.018, 0.006, at[0], at[1], "procmetal"); frame.position.z = side; g.add(frame);
+  const screen = box(0.024, 0.012, 0.002, at[0], at[1], "procdisplay"); screen.position.z = side + Math.sign(side) * 0.003; g.add(screen);
+  return g;
+}
+/** Adaptador visible (brida con tornillos) donde un kit se une a la base. */
+export function buildAdapter(x: number, y: number, w: number): THREE.Group {
+  const g = new THREE.Group();
+  g.add(box(0.016, 0.01, w * 1.1, x, y, "procmetal"));
+  for (const z of [-1, 1]) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.0025, 0.003, 6), new THREE.MeshStandardMaterial({ name: "procpad" })); b.rotation.x = Math.PI / 2; b.position.set(x, y, z * (w * 0.55 + 0.001)); g.add(b); }
+  return g;
+}
+/** Vendaje de cinta o tela alrededor de una pieza (rústica). */
+export function buildTape(x: number, y: number, len: number, h: number, w: number): THREE.Group {
+  const g = new THREE.Group();
+  const t = box(len, h * 1.08, w * 1.12, x + len / 2, y, "proctape"); g.add(t);
+  for (let k = 1; k < 4; k++) { const ridge = box(0.002, h * 1.12, w * 1.16, x + (len * k) / 4, y, "proctape"); g.add(ridge); }
+  return g;
+}
+/** Parche de chapa remachado (rústica). */
+export function buildPatch(x: number, y: number, side: number, s = 0.035): THREE.Group {
+  const g = new THREE.Group();
+  const p = box(s, s * 0.7, 0.002, x, y, "procmetal"); p.position.z = side; p.rotation.z = 0.08; g.add(p);
+  for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const r = box(0.003, 0.003, 0.002, x + dx * s * 0.4, y + dy * s * 0.25, "procpad"); r.position.z = side + Math.sign(side) * 0.0015; g.add(r); }
+  return g;
+}

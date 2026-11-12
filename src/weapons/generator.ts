@@ -3,6 +3,7 @@
 import { hashString, mulberry32, pick, type Rng } from "./rng";
 import { ACCESSORIES, accessory } from "./accessories";
 import { FINISHES, FINISH_WEIGHTS } from "./finish";
+import { eraFinishes, rollEra, rollModernization, type Era } from "./eras";
 import { clipProfile, frontProfile, stockProfile, type FrontKind, type StockKind } from "./procparts";
 import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zoneLen, type Box2, type Placed, type Stretch } from "./variation";
 import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
@@ -301,9 +302,11 @@ export class WeaponGenerator {
     }
     const body = this.byId.get(parts[0].from) ?? ({ id: parts[0].from, pack: "kit", parts: [], sockets: {} } as unknown as AssetEntry);
     let barrelLength = layout === "kit" ? kitBarrel : 1;
+    // Era (solo aspecto): decide qué cambios encajan (una clásica no lleva raíles ni linternas, etc.)
+    const era = rollEra(r, parts[0].from);
     // 1b. Cambios obligatorios sobre piezas reales (estirados por zonas, detalles añadidos), medidos con la silueta:
     // "reconocible pero nuevo" = parecido con la base dentro de SIMILARITY_RANGE.
-    const varied = this.vary(r, type, layout, parts, tweaks, barrelLength);
+    const varied = this.vary(r, type, layout, parts, tweaks, barrelLength, era);
     tweaks = varied.tweaks; barrelLength = varied.barrelLength;
 
 
@@ -313,6 +316,8 @@ export class WeaponGenerator {
     const arch = hint?.arch && (r() < 0.7 || hint.strict) ? info.archetypes.find((a) => a.id === hint.arch) ?? regular[0] : weighted(r, regular, (a) => a.w);
     // Rareza (antes que el modo: los modos raros son exclusivos de moradas y legendarias)
     const rarity = rollRarity(r);
+    // Kit de modernización (la era ya se decidió antes de las variaciones)
+    const modLevel = rollModernization(r, era, rarity.id);
     // Modo de disparo: el de la variante o, en moradas y legendarias, a veces uno "raro" para su tipo
     const shifts = (MODE_SHIFTS[type] ?? []).filter((x) => x.mode !== arch.mode);
     const exotic = rarity.id === "epica" || rarity.id === "legendaria";
@@ -325,7 +330,9 @@ export class WeaponGenerator {
     let optic: string | null = null, muzzle: string | null = null;
     const ownScope = body.parts.some((p) => p.role === "scope");
     if (ownScope) optic = body.id;
-    const opticOpts = ownScope ? this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id).map((x) => x.id) : this.opticOptions({ type, parts });
+    let opticOpts = ownScope ? this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id).map((x) => x.id) : this.opticOptions({ type, parts });
+    // Una clásica solo lleva visores de época (de aumento sencillos); nada de puntos rojos ni holográficas
+    if (era === "classic") opticOpts = opticOpts.filter((o) => /scope/.test(o));
     const muzzleOpts = this.muzzleOptions({ type, parts });
     const [amin, amax] = rarity.accessories;
     let nAcc = amin + Math.floor(r() * (amax - amin + 1));
@@ -338,7 +345,9 @@ export class WeaponGenerator {
     }
 
     // 4. Acabado y nivel
-    const paint = weighted(r, PAINTS, (p) => PAINT_WEIGHTS[PAINTS.indexOf(p)]);
+    const eraPaints = PAINTS.filter((p) => eraFinishes(era).includes(p.id));
+    // Peso del acabado × veces que aparece en la lista de la era (la rústica repite "rust" para que predomine)
+    const paint = weighted(r, eraPaints.length ? eraPaints : PAINTS, (p) => PAINT_WEIGHTS[PAINTS.indexOf(p)] * Math.max(1, eraFinishes(era).filter((x) => x === p.id).length));
     const level = 8 + Math.floor(r() * 9);
 
     // 5. Efectos por nivel (A, B, L). Un A y un B no comparten familia; fuego, eléctrico y explosivo son B.
@@ -364,8 +373,12 @@ export class WeaponGenerator {
     const sig = EFFECTS_L.find((d) => effects.some((e) => e.id === d.id));
     const name = sig?.name ?? "";
     const statSeed = Math.floor(r() * 2 ** 31);
-    const lineage = { base: parts[0].from, swaps: this.swapsOf(layout, parts), changes: varied.changes, ops: tweaks, similarity: +varied.similarity.toFixed(3) };
-    const spec: WeaponSpec = { seed, type, archetype: arch.id, fireMode, modeShift: shift?.mode ?? null, burst, layout, parts, barrelLength, muzzle, optic, rarity, paint, level, stats: { ...info.base }, effects, name, statSeed, bonus, tweaks, lineage };
+    // Añadidos de era y de modernización (con adaptadores); el parecido se mide de nuevo con ellos
+    tweaks.eraAdds = this.eraAddons(r, era, modLevel, type, layout, parts, tweaks, barrelLength);
+    const changes = [...varied.changes, ...eraChanges(tweaks.eraAdds)];
+    const simNow = tweaks.eraAdds ? similarity(this.baseSilhouette(layout, parts), this.silhouette(layout, parts, tweaks, barrelLength)) : varied.similarity;
+    const lineage = { base: parts[0].from, swaps: this.swapsOf(layout, parts), changes, ops: tweaks, similarity: +simNow.toFixed(3), era, modLevel };
+    const spec: WeaponSpec = { seed, type, archetype: arch.id, fireMode, modeShift: shift?.mode ?? null, burst, layout, parts, barrelLength, muzzle, optic, rarity, paint, level, stats: { ...info.base }, effects, name, statSeed, bonus, tweaks, lineage, era, modLevel };
     return this.refresh(spec);
   }
 
@@ -414,6 +427,7 @@ export class WeaponGenerator {
       if (tw.pfront) put("front", { profile: frontProfile(tw.pfront) });
       const kdev = tw.device ? this.kit.byId.get(tw.device.id) : null;
       if (kdev && tw.device) boxes.push({ x0: tw.device.at[0] + kdev.bounds.min[0], x1: tw.device.at[0] + kdev.bounds.max[0], y0: tw.device.at[1] + kdev.bounds.min[1], y1: tw.device.at[1] + kdev.bounds.max[1] });
+      addEraBoxes(boxes, tw.eraAdds);
       return { placed, boxes, byRole };
     }
     const base = this.byId.get(parts[0].from)!;
@@ -457,6 +471,7 @@ export class WeaponGenerator {
       }
     }
     if (tw.rail) boxes.push({ x0: tw.rail[0], x1: tw.rail[1], y0: tw.rail[2] - 0.004, y1: tw.rail[2] + 0.012 });
+    addEraBoxes(boxes, tw.eraAdds);
     const dev = tw.device ? this.kit.byId.get(tw.device.id) : null;
     if (dev && tw.device) boxes.push({ x0: tw.device.at[0] + dev.bounds.min[0], x1: tw.device.at[0] + dev.bounds.max[0], y0: tw.device.at[1] + dev.bounds.min[1], y1: tw.device.at[1] + dev.bounds.max[1] });
     return { placed, boxes, byRole };
@@ -488,7 +503,7 @@ export class WeaponGenerator {
   likeness(a: WeaponSpec, b: WeaponSpec) { return similarity(this.silhouette(a.layout, a.parts, a.tweaks, a.barrelLength), this.silhouette(b.layout, b.parts, b.tweaks, b.barrelLength)); }
 
   /** Cambios sobre piezas reales: varias tiradas y se queda con la que cae en el rango de parecido (o la más cercana). */
-  private vary(r: Rng, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw0: Tweaks, barrelLength: number): { tweaks: Tweaks; similarity: number; barrelLength: number; changes: string[] } {
+  private vary(r: Rng, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw0: Tweaks, barrelLength: number, era: Era = "modern"): { tweaks: Tweaks; similarity: number; barrelLength: number; changes: string[] } {
     const base = this.byId.get(parts[0].from);
     const swaps = this.swapsOf(layout, parts);
     if (layout !== "kit" && !base?.profiles) return { tweaks: tw0, similarity: 1, barrelLength, changes: swaps.map((p) => `swap:${p.role}`) };
@@ -503,7 +518,7 @@ export class WeaponGenerator {
       // Si la mejor tirada hasta ahora se aleja demasiado de la base, las siguientes cambian con menos amplitud
       if (best && best.sim < lo && i % 6 === 5) amp = Math.max(0.35, amp * 0.7);
       if (best && best.sim > hi && i % 4 === 3) amp = Math.min(1.9, amp * 1.2);
-      const { tw, barrelLength: bl } = this.rollOps(r, type, layout, parts, tw0, barrelLength, swaps.length, amp, rare);
+      const { tw, barrelLength: bl } = this.rollOps(r, type, layout, parts, tw0, barrelLength, swaps.length, amp, rare, era);
       if (layout === "modular-long" && base && !tw.pstock && !tw.pfront) {
         const get = (role: string) => this.byId.get(parts.find((p) => p.role === role)!.from)!;
         if (!longGunOk(base, get("stock"), get("front"), get("grip"), type, tw)) continue;
@@ -535,7 +550,7 @@ export class WeaponGenerator {
     return parts.slice(1).filter((p) => p.from !== baseId && !(layout === "kit" && defaults.some((d) => d.from === p.from)));
   }
 
-  private rollOps(r: Rng, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw0: Tweaks, barrelLength: number, swaps: number, amp = 1, rare: { nostock: boolean; hgStock: boolean } = { nostock: true, hgStock: true }): { tw: Tweaks; barrelLength: number } {
+  private rollOps(r: Rng, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw0: Tweaks, barrelLength: number, swaps: number, amp = 1, rare: { nostock: boolean; hgStock: boolean } = { nostock: true, hgStock: true }, era: Era = "modern"): { tw: Tweaks; barrelLength: number } {
     const long = type !== "pistol" && type !== "revolver";
     const tw: Tweaks = { ...tw0, rail: null, drum: false, device: null, nostock: false, magLen: 1, stockH: 1, fold: false, pstock: null, pfront: null, cutRear: null, cutFront: null };
     let bl = barrelLength;
@@ -607,11 +622,18 @@ export class WeaponGenerator {
     if (magBelow && type !== "shotgun") ops.push({ id: "mag", run: () => { if (["smg", "rifle", "lmg"].includes(type) && r() < 0.35) tw.drum = true; else tw.magLen = 1.22 + r() * 0.28; } });
     if (layout !== "kit") { ops.push({ id: "rail", run: () => (tw.rail = [0, 0, 0]) }); ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) }); }
     const isKitPistol = layout === "kit" && type === "pistol";
+    // Cada era admite sus cambios: la clásica no lleva raíles, accesorios tácticos, culatas de tubo ni guardamanos de raíles
+    if (era === "classic") for (let i = ops.length - 1; i >= 0; i--) if (["rail", "device", "fold"].includes(ops[i].id)) ops.splice(i, 1);
     // Mínimo 3 cambios en total (piezas cambiadas + cambios de forma), y siempre al menos 2 de forma
     for (let i = ops.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [ops[i], ops[j]] = [ops[j], ops[i]]; }
     // Con amplitud alta (el arma se parecía demasiado a su base) se aplican todos los cambios posibles
     const n = amp > 1.2 ? ops.length : Math.min(ops.length, Math.max(2, 3 - swaps) + (r() < 0.5 ? 1 : 0) + (amp > 1 ? 1 : 0));
     for (const op of ops.slice(0, n)) op.run();
+    if (era === "classic") {
+      // Piezas por código de estilo clásico: culata maciza (madera) y camisa ventilada; nunca raíles
+      if (tw.pstock && tw.pstock.kind !== "solid") tw.pstock = { ...tw.pstock, kind: "solid" };
+      if (tw.pfront && tw.pfront.kind === "quad") tw.pfront = { ...tw.pfront, kind: "tube" };
+    }
     // Raíl y accesorio: se colocan sobre la zona delantera ya variada (guardamanos o tramo del cañón)
     if (tw.rail || tw.device) {
       const wantRail = !!tw.rail, wantDev = !!tw.device; tw.rail = null; tw.device = null;
@@ -645,7 +667,54 @@ export class WeaponGenerator {
     return { tw, barrelLength: bl };
   }
 
-  /** Recalcula estadísticas y nombre técnico (tras generar o tras cambiar piezas en el banco). */
+  /**
+   * Añadidos de era: sci-fi (cubierta angulosa, celda de energía, pantalla), rústica (cinta, parche de chapa) y kits de
+   * modernización (1-3 piezas sci-fi sobre una base no sci-fi, siempre con adaptadores visibles).
+   */
+  private eraAddons(r: Rng, era: Era, modLevel: number, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw: Tweaks, bl: number): Tweaks["eraAdds"] {
+    const { byRole } = this.placedParts(layout, parts, tw, bl);
+    const base = this.byId.get(parts[0].from);
+    const kitPlat = this.kit.byId.get(parts[0].from);
+    const thick = base ? Math.min(0.05, (base.bounds.max[2] - base.bounds.min[2]) * 0.75) : 0.03;
+    const spanOf = (role: string) => { const p = byRole.get(role); return p ? spans([p]) : []; };
+    const recv = spanOf(layout === "body" ? "body" : "receiver");
+    const front = layout === "body" ? recv.filter((p) => { const xs = recv.map((q) => q[0]); const a = Math.min(...xs), b = Math.max(...xs); return p[0] > a + (b - a) * 0.58 && p[0] < b - (b - a) * 0.05; }) : spanOf("front");
+    const stock = spanOf("stock");
+    const out: NonNullable<Tweaks["eraAdds"]> = { adapters: [], tapes: [], patches: [] };
+    let any = false;
+    const sect = (sp: [number, number, number][], t0: number, t1: number) => {
+      if (!sp.length) return null;
+      const xs = sp.map((p) => p[0]); const a = Math.min(...xs), b = Math.max(...xs);
+      const x0 = a + (b - a) * t0, x1 = a + (b - a) * t1, sel = sp.filter((p) => p[0] >= x0 && p[0] <= x1);
+      if (!sel.length) return null;
+      const lo = Math.min(...sel.map((p) => p[1])), hi = Math.max(...sel.map((p) => p[2]));
+      return { x0, x1, y: (lo + hi) / 2, h: hi - lo };
+    };
+    const mag = base?.sockets.magazine ? { x: base.sockets.magazine.pos[0], y: base.sockets.magazine.pos[1], h: Math.min(0.12, base.sockets.magazine.size?.[1] ?? 0.1) } : kitPlat?.sockets.Magazine?.[0] ? { x: kitPlat.sockets.Magazine[0][0], y: kitPlat.sockets.Magazine[0][1], h: 0.09 } : null;
+    const magBelow = !!mag && !!base && mag.y < (base.bounds.min[1] + base.bounds.max[1]) / 2 || !!kitPlat;
+    const long = type !== "pistol" && type !== "revolver";
+    const addCover = () => { const s = sect(front, 0.12, 0.7); if (s && s.h < 0.1 && s.x1 - s.x0 > 0.05) { out.cover = [s.x0, s.x1, s.y, s.h * 1.12, thick * 1.2]; out.adapters!.push([s.x0 - 0.008, s.y, thick], [s.x1 + 0.008, s.y, thick]); any = true; } };
+    const addCell = () => { if (mag && magBelow && !tw.drum && long) { out.cell = [mag.x, mag.y, mag.h * 0.85, Math.min(0.04, thick)]; any = true; } };
+    const addDisplay = () => { const s = sect(recv, 0.45, 0.6); if (s) { out.display = [s.x0, s.y + s.h * 0.15, thick * 0.55 + 0.003]; any = true; } };
+    if (era === "scifi") { if (r() < 0.7) addCover(); if (r() < 0.4) addCell(); if (r() < 0.6) addDisplay(); }
+    if (modLevel > 0) {
+      const pool = [addCover, addCell, addDisplay];
+      for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+      for (const f of pool.slice(0, modLevel)) f();
+    }
+    if (era === "rustic") {
+      // Cinta en la culata y/o el guardamanos; parche de chapa en el cajón
+      for (const [sp, p] of [[stock, 0.7], [front, 0.6]] as const) {
+        if (r() > p) continue;
+        if (sp === stock && tw.pstock && tw.pstock.kind !== "solid") continue; // no se venda un tubo fino
+        const s = sect(sp, 0.3, 0.55); if (s && s.h < 0.1) { out.tapes!.push([s.x0, s.y, s.x1 - s.x0, s.h, thick]); any = true; }
+      }
+      if (r() < 0.5) { const s = sect(recv, 0.3, 0.42); if (s) { out.patches!.push([s.x0 + 0.02, s.y, thick * 0.55 + 0.002]); any = true; } }
+    }
+    return any ? out : null;
+  }
+
+  /** Recalcula estadísticas (tras generar o tras cambiar piezas en el banco). */
   refresh(spec: WeaponSpec): WeaponSpec {
     spec.stats = computeStats(spec);
     if (spec.rarity.id !== "legendaria") spec.name = technicalName(spec);
@@ -666,6 +735,21 @@ function procFront(r: Rng, type: BaseType, at: [number, number], h: number, w: n
   const len = ({ smg: [0.09, 0.16], rifle: [0.2, 0.32], shotgun: [0.22, 0.34], lmg: [0.24, 0.34], sniper: [0.26, 0.38], bullpup: [0.12, 0.2] } as Record<string, [number, number]>)[type] ?? [0.2, 0.3];
   const hh = Math.min(0.065, Math.max(0.028, h * 0.95));
   return { kind: kinds[Math.floor(r() * kinds.length)], at, h: hh, w: Math.min(0.05, Math.max(0.024, w)), len: len[0] + r() * (len[1] - len[0]), barrel: (type === "smg" ? 0.03 : 0.05) + r() * 0.1, d: type === "shotgun" ? 0.022 : Math.min(0.02, Math.max(0.012, hh * 0.3)) };
+}
+
+/** Cajas en la silueta de los añadidos de era que cambian el perfil. */
+function addEraBoxes(boxes: Box2[], a: Tweaks["eraAdds"]) {
+  if (!a) return;
+  if (a.cover) boxes.push({ x0: a.cover[0], x1: a.cover[1], y0: a.cover[2] - a.cover[3] / 2, y1: a.cover[2] + a.cover[3] / 2 });
+  if (a.cell) boxes.push({ x0: a.cell[0] - 0.022, x1: a.cell[0] + 0.026, y0: a.cell[1] - a.cell[2], y1: a.cell[1] });
+}
+/** Cambios de era para la etiqueta de depuración. */
+function eraChanges(a: Tweaks["eraAdds"]): string[] {
+  if (!a) return [];
+  const c: string[] = [];
+  if (a.cover) c.push("cover"); if (a.cell) c.push("energy-cell"); if (a.display) c.push("display");
+  if (a.tapes?.length) c.push("tape"); if (a.patches?.length) c.push("patch");
+  return c;
 }
 
 /** Lista legible de los cambios de un arma respecto a su base (piezas cambiadas y cambios de forma). */
@@ -704,8 +788,8 @@ export const bodyZones = (prof: { x0: number; x1: number }, t: Tweaks): Stretch[
 /** Cargador de tambor en el pozo del cargador: centro y radio. */
 export function drumOf(base: AssetEntry) {
   const m = base.sockets.magazine!; const h = m.size?.[1] ?? 0.1;
-  const R = Math.min(0.085, Math.max(0.045, h * 0.42));
-  return { x: m.pos[0], y: m.pos[1] - R - 0.006, R, w: Math.max(0.04, (base.bounds.max[2] - base.bounds.min[2]) * 0.9) };
+  const R = Math.min(0.07, Math.max(0.045, h * 0.42));
+  return { x: m.pos[0], y: m.pos[1] - R - 0.006, R, w: Math.min(0.05, Math.max(0.035, (base.bounds.max[2] - base.bounds.min[2]) * 0.8)) };
 }
 
 /** Longitud de referencia de cada tipo (m), la misma que usa el conversor. */

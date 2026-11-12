@@ -225,7 +225,7 @@ async function boot() {
       g.fillStyle = spec.rarity.color; g.font = "bold 22px sans-serif"; g.fillText(spec.name, x + 14, y + 32);
       g.fillStyle = "#bbb"; g.font = "14px sans-serif"; g.fillText(`${spec.rarity.id} · ${spec.type} · ${spec.fireMode}`, x + 14, y + 54);
       g.fillStyle = "#888"; g.font = "12px monospace";
-      { const txt = `base ${spec.lineage?.base} · parecido ${Math.round((spec.lineage?.similarity ?? 1) * 100)}% · ${spec.paint.id} · cambios: ${spec.lineage?.changes.join(", ") || "—"}`;
+      { const txt = `base ${spec.lineage?.base} · era ${spec.era ?? "?"}${spec.modLevel ? ` · mod ${spec.modLevel}` : ""} · parecido ${Math.round((spec.lineage?.similarity ?? 1) * 100)}% · ${spec.paint.id} · cambios: ${spec.lineage?.changes.join(", ") || "—"}`;
         const lines: string[] = []; let line = "";
         for (const w of txt.split(" ")) { const t = line ? line + " " + w : w; if (g.measureText(t).width > CW - 28 && line) { lines.push(line); line = w; } else line = t; }
         lines.push(line); lines.slice(-3).forEach((l, k, arr) => g.fillText(l, x + 14, y + CH - 10 - (arr.length - 1 - k) * 14)); }

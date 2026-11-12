@@ -85,6 +85,9 @@ export interface WeaponSpec {
   /** Variaciones leves de cada pieza: largo de culata y guardamanos, tamaño y ángulo de empuñadura, largo del cuerpo. */
   tweaks: Tweaks;
   lineage?: Lineage;
+  /** Era (solo aspecto) y nivel de modernización 0-3. */
+  era?: "classic" | "modern" | "rustic" | "scifi";
+  modLevel?: number;
 }
 
 /**
@@ -109,8 +112,18 @@ export interface Tweaks {
   /** Armas enteras: cortes del cuerpo (x local) donde empiezan la culata o el guardamanos por código. */
   cutRear?: number | null;
   cutFront?: number | null;
+  /** Añadidos de era y de kit de modernización (posiciones antes de centrar). */
+  eraAdds?: EraAdds | null;
   device?: { id: string; at: [number, number] } | null;
 }
+export interface EraAdds {
+  cover?: [number, number, number, number, number] | null;    // x0, x1, y, alto, ancho
+  cell?: [number, number, number, number] | null;             // x, y (alto del pozo), alto, ancho
+  display?: [number, number, number] | null;                  // x, y, z (costado)
+  adapters?: [number, number, number][];                      // x, y, ancho
+  tapes?: [number, number, number, number, number][];         // x, y, largo, alto, ancho
+  patches?: [number, number, number][];                       // x, y, z
+}
 /** Linaje: de qué sale el arma y qué se le ha hecho, para poder reproducirla. */
-export interface Lineage { base: string; swaps: PartPick[]; changes: string[]; ops: Tweaks; similarity: number }
+export interface Lineage { base: string; swaps: PartPick[]; changes: string[]; ops: Tweaks; similarity: number; era?: string; modLevel?: number }
 export const NO_TWEAKS: Tweaks = { stock: 1, front: 1, grip: 1, gripAngle: 0, body: 1 };

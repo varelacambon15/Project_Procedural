@@ -1,0 +1,14 @@
+{
+  "_doc": "Eras de las armas (solo aspecto). 'bases': prefijos de id de modelo que pertenecen a la era (el resto es moderna). 'finishes': acabados posibles. 'wear': desgaste de textura. Rústica sale de bases clásicas o modernas. 'modernize': probabilidad de llevar kit de modernización (nivel 1-3) por rareza.",
+  "eras": {
+    "classic": { "finishes": ["woodbrass", "parkerized", "black", "olive"], "wear": 0.3,
+      "bases": ["w-sten", "w-ppsh", "w-luger", "w-garand", "w-m1911", "w-revolver", "w-sawedoff", "q-revolver", "z-revolver", "m-m1911", "v-boltaction", "v-lever", "v-revolver", "v-carabine", "v-hunter", "v-msr", "v-m3gg", "v-ppsh", "v-pump", "v-semiautomati", "p-rifle-1"] },
+    "modern": { "finishes": ["black", "olive", "sand", "gunmetal", "twotone"], "wear": 0.2, "bases": [] },
+    "scifi": { "finishes": ["graphite", "arctic", "black", "gunmetal"], "wear": 0.1,
+      "bases": ["w-xm8", "w-f2000", "w-famas", "w-scarh", "w-p90", "w-vector", "w-barrett", "z-assaultrifle-03", "z-submachinegun-03", "a-"] },
+    "rustic": { "finishes": ["rust", "rust", "rust", "parkerized", "olive"], "wear": 0.85, "bases": [] }
+  },
+  "rusticChance": 0.22,
+  "modernize": { "comun": 0.04, "poco": 0.08, "rara": 0.15, "epica": 0.25, "legendaria": 0.35 },
+  "batchMinEras": 2
+}

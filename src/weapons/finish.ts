@@ -2,6 +2,7 @@
 // realistas y sobrios. Se descartan los colores, texturas y marcas de los modelos de origen (salvo cristales y luces).
 import * as THREE from "three";
 import type { Paint, PartRole } from "./types";
+import { TILE, textureUniform, type TexKind } from "./textures";
 
 type RGB = [number, number, number];
 const hex = (h: number): RGB => [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255];
@@ -16,8 +17,11 @@ export const FINISHES: Paint[] = [
   { id: "gunmetal", color: hex(0x464a50), secondary: hex(0x222325), metal: hex(0x575b61), accent: hex(0x18191a) },
   { id: "twotone", color: hex(0x1e1f21), secondary: hex(0x7e7461), metal: hex(0x2f3134), accent: hex(0x151617) },
   { id: "parkerized", color: hex(0x35372f), secondary: hex(0x4a3a2e), metal: hex(0x3c3e37), accent: hex(0x1b1c19), wood: true },
+  // Sci-fi (sobrios: sin colores vivos salvo el detalle de las legendarias)
+  { id: "graphite", color: hex(0x2c2f33), secondary: hex(0x45494f), metal: hex(0x3a3d42), accent: hex(0x1a1c1f) },
+  { id: "arctic", color: hex(0x8e9296), secondary: hex(0x3a3d41), metal: hex(0x4a4e53), accent: hex(0x24262a) },
 ];
-export const FINISH_WEIGHTS = [3, 1.6, 1.2, 1, 0.8, 1, 1, 0.8];
+export const FINISH_WEIGHTS = [3, 1.6, 1.2, 1, 0.8, 1, 1, 0.8, 1.4, 1];
 
 /** Clase de material según el rol de la pieza. */
 type Slot = "primary" | "secondary" | "metal" | "accent" | "wood" | "highlight";
@@ -33,28 +37,28 @@ const PROPS: Record<Slot, { roughness: number; metalness: number }> = {
   metal: { roughness: 0.3, metalness: 0.85 }, accent: { roughness: 0.62, metalness: 0.25 }, wood: { roughness: 0.62, metalness: 0 },
   highlight: { roughness: 0.4, metalness: 0.6 },
 };
-/** Detalle de superficie según el material (en el espacio del objeto, sin UV): veta, cepillado o graneado. */
-const DETAIL: Record<Slot, number> = { primary: 1, secondary: 2, metal: 3, accent: 2, wood: 4, highlight: 3 };
-function addDetail(m: THREE.MeshStandardMaterial, kind: number) {
+/** Textura por código de cada clase de material (la madera lleva veta; el resto, metal o polímero). */
+const TEX: Record<Slot, TexKind> = { primary: "metal", secondary: "polymer", metal: "metal", accent: "polymer", wood: "wood", highlight: "metal" };
+/**
+ * Textura pequeña pixelada proyectada en caja (sin UV): para cada cara se usa el plano del eje dominante de su normal,
+ * en el espacio del objeto, con el mismo tamaño de píxel (TILE) en todas las piezas.
+ */
+function addTexture(m: THREE.MeshStandardMaterial, kind: TexKind, wear: number) {
+  const u = textureUniform(kind, wear);
   m.onBeforeCompile = (sh) => {
-    sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vObj;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvObj = position;");
-    sh.fragmentShader = sh.fragmentShader.replace("#include <common>", `#include <common>
-varying vec3 vObj;
-float h3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-float vn(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
-             mix(mix(h3(i + vec3(0,0,1)), h3(i + vec3(1,0,1)), f.x), mix(h3(i + vec3(0,1,1)), h3(i + vec3(1,1,1)), f.x), f.y), f.z); }`)
+    sh.uniforms.uDetail = u; sh.uniforms.uTile = { value: TILE };
+    sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vObj;\nvarying vec3 vObjN;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvObj = position; vObjN = normal;");
+    sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vObj;\nvarying vec3 vObjN;\nuniform sampler2D uDetail;\nuniform float uTile;")
       .replace("#include <color_fragment>", `#include <color_fragment>
 {
-  float k = 1.0;
-  ${kind === 4 ? "float g = sin(vObj.y * 420.0 + vObj.z * 300.0 + vn(vObj * vec3(6.0, 90.0, 90.0)) * 5.0); k = 0.9 + 0.1 * g + 0.05 * (vn(vObj * 40.0) - 0.5);" : ""}
-  ${kind === 3 ? "k = 0.94 + 0.08 * vn(vObj * vec3(8.0, 900.0, 900.0));" : ""}
-  ${kind === 2 ? "k = 0.95 + 0.07 * vn(vObj * 700.0);" : ""}
-  ${kind === 1 ? "k = 0.96 + 0.06 * vn(vObj * vec3(60.0, 300.0, 300.0));" : ""}
+  vec3 an = abs(vObjN);
+  vec2 uv = an.x > an.y && an.x > an.z ? vObj.zy : an.y > an.z ? vObj.xz : vObj.xy;
+  float k = texture2D(uDetail, uv / uTile).r * 1.275;
   diffuseColor.rgb *= k;
 }`);
   };
-  m.customProgramCacheKey = () => "detail" + kind;
+  m.customProgramCacheKey = () => "tex";
 }
 const cache = new Map<string, THREE.MeshStandardMaterial>();
 /** Luminancia mínima (sRGB) de cualquier color de acabado [propuesta, ajustable]. */
@@ -69,7 +73,8 @@ function material(f: Paint, slot: Slot): THREE.MeshStandardMaterial {
     const lumS = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
     if (lumS < MIN_LUM) { const k = MIN_LUM / Math.max(0.01, lumS); for (let i = 0; i < 3; i++) rgb[i] = Math.min(1, rgb[i] * k); }
     m = new THREE.MeshStandardMaterial({ name: slot === "wood" ? "Wood" : slot, vertexColors: true, color: new THREE.Color().setRGB(...rgb, THREE.SRGBColorSpace), flatShading: true, ...PROPS[slot] });
-    addDetail(m, DETAIL[slot]);
+    // Desgaste: más en los acabados oxidados (armas rústicas)
+    addTexture(m, f.id === "rust" && slot !== "wood" ? "rust" : TEX[slot], f.id === "rust" ? 0.8 : f.id === "parkerized" ? 0.4 : 0.2);
     cache.set(key, m);
   }
   return m;
@@ -96,6 +101,9 @@ export function applyFinish(obj: THREE.Object3D, role: PartRole | "sight", f: Pa
     // Piezas de metal hechas por código (tubos, esqueletos, abrazaderas) y cantoneras
     if (/procmetal/.test(m.name)) return material(f, "metal");
     if (/procpad/.test(m.name)) return material(f, "accent");
+    if (/proctape/.test(m.name)) return material(f, "secondary");
+    // Pantallas y marca de simulación: apagadas (acento) salvo en legendarias, que llevan el detalle de color
+    if (/procdisplay|simmark/.test(m.name)) return material(f, _legendary ? "highlight" : "accent");
     // Tiras de color de origen (rojo, azul…): en el tono sobrio del arma; solo las legendarias las llevan en color
     if (/Red|Blue|Cerulean|Green|Orange|Emiss/i.test(m.name)) return material(f, _legendary ? "highlight" : "accent");
     if (isWoodSrc(m) && (slot === "primary" || slot === "secondary")) s = f.wood ? "wood" : "secondary";
