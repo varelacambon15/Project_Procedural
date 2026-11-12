@@ -6,7 +6,7 @@
 import * as THREE from "three";
 import { t } from "../i18n";
 
-export interface Interactable { id: "chest" | "workbench"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
+export interface Interactable { id: "chest" | "workbench" | "waves" | "inspect"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
 export interface RangeData { dps: number; ttk: number | null; accuracy: number | null; distance: number | null; message: string }
 export interface World {
   colliders: THREE.Box3[]; interactables: Interactable[]; chestLid: THREE.Object3D; chestGlow: THREE.PointLight; shootables: THREE.Object3D[]; lanes: number[];
@@ -150,6 +150,21 @@ export function buildRange(scene: THREE.Scene): World {
   scene.add(bench);
   colliders.push(new THREE.Box3(new THREE.Vector3(10.6, 0, 12.4), new THREE.Vector3(13.4, 1.0, 13.6)));
 
+  // ---------- Consola de oleadas y pedestal de inspección ----------
+  const consoleAt = (x: number, label: string, color: THREE.Material) => {
+    const g = new THREE.Group(); g.position.set(x, 0, 13.2);
+    const ped = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.05, 0.6), wall); ped.position.y = 0.52; g.add(ped);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.06, 0.7), steel); top.position.y = 1.08; top.rotation.x = -0.25; g.add(top);
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.025, 0.025), color); strip.position.set(0, 1.0, 0.33); g.add(strip);
+    const c = document.createElement("canvas"); c.width = 64; c.height = 16; const gg = c.getContext("2d")!; gg.fillStyle = "#0b0e10"; gg.fillRect(0, 0, 64, 16); gg.fillStyle = "#9fe3e8"; gg.font = "bold 10px monospace"; gg.textAlign = "center"; gg.fillText(label, 32, 12);
+    const tx = new THREE.CanvasTexture(c); tx.magFilter = THREE.NearestFilter; tx.colorSpace = THREE.SRGBColorSpace;
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.2), new THREE.MeshBasicMaterial({ map: tx })); sign.position.set(0, 1.4, 0.0); g.add(sign);
+    scene.add(g); colliders.push(new THREE.Box3(new THREE.Vector3(x - 0.45, 0, 12.85), new THREE.Vector3(x + 0.45, 1.1, 13.55)));
+    return g;
+  };
+  const wavesConsole = consoleAt(-4, "WAVES", neonA);
+  const inspectStand = consoleAt(4, "INSPECT", neonC);
+
   // ---------- Luz: cálida de mantenimiento con parpadeo, ambiente oscuro y niebla ligera ----------
   scene.add(new THREE.HemisphereLight(0x8a9aa8, 0x2a241c, 1.1));
   const key = new THREE.DirectionalLight(0xd8e2ec, 1.5);
@@ -174,6 +189,8 @@ export function buildRange(scene: THREE.Scene): World {
     interactables: [
       { id: "chest", position: new THREE.Vector3(-12, 0, 13), radius: 2.2, label: "Terminal", object: chest },
       { id: "workbench", position: new THREE.Vector3(12, 0, 13), radius: 2.4, label: "Banco", object: bench },
+      { id: "waves", position: new THREE.Vector3(-4, 0, 13.2), radius: 1.8, label: "Oleadas", object: wavesConsole },
+      { id: "inspect", position: new THREE.Vector3(4, 0, 13.2), radius: 1.8, label: "Inspección", object: inspectStand },
     ],
     update(dt: number, data: RangeData) {
       // Parpadeo: la mayoría estables; de vez en cuando una lámpara titila un instante

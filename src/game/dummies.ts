@@ -10,7 +10,9 @@ export type Zone = "head" | "body" | "limb";
 export interface Layer { id: "health"; value: number; max: number }
 interface Kind { key: string; health: number; level: number; scale?: number; boss?: boolean }
 export const KINDS: Record<string, Kind> = {
+  small: { key: "small", health: 150, level: 8, scale: 0.72 },
   basic: { key: "basic", health: 300, level: 10 },
+  large: { key: "large", health: 1600, level: 14, scale: 1.4 },
   sturdy: { key: "sturdy", health: 750, level: 12, scale: 1.04 },
   elite: { key: "elite", health: 1400, level: 15, scale: 1.08 },
   boss: { key: "boss", health: 7000, level: 20, scale: 1.7, boss: true },
@@ -30,6 +32,7 @@ const GRID = gridTexture();
 const mat = (color: number, emissive = 0.55) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.3, emissive: 0xffffff, emissiveMap: GRID, emissiveIntensity: emissive });
 const skin = mat(0x39424b), skinDark = mat(0x2c333a, 0.4), vest = mat(0x4a4436, 0.25);
 const standMat = new THREE.MeshStandardMaterial({ color: 0x23262a, roughness: 0.5, metalness: 0.7 });
+const BIT_GEO = new THREE.BoxGeometry(0.025, 0.025, 0.025);
 
 export class Dummy {
   readonly group = new THREE.Group();
@@ -45,6 +48,11 @@ export class Dummy {
   private stunT = 0;
   readonly bar: HTMLDivElement;
   private clip!: THREE.Plane; private scan!: THREE.Mesh; private top = 2.4;
+  /** Reacciones visibles: brasas (fuego), chispas azules (eléctrico) y empuje (explosivo). */
+  private fxBits: { m: THREE.Mesh; v: THREE.Vector3; t: number }[] = [];
+  private emitT = 0; private pushV = new THREE.Vector3(); private pushOff = new THREE.Vector3();
+  /** Empuje corto (onda de choque). */
+  push(dir: THREE.Vector3, amount: number) { this.pushV.addScaledVector(dir, amount * 6); }
   private path: { a: THREE.Vector3; b: THREE.Vector3; speed: number; t: number } | null = null;
   private onDamage: (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => void;
 
@@ -77,6 +85,11 @@ export class Dummy {
   get health() { return this.layers[this.layers.length - 1].value; }
   relabel() { this.bar.querySelector(".nm")!.textContent = t(`dummy.${this.kind.key}`); }
   setPath(a: THREE.Vector3, b: THREE.Vector3, speed: number) { this.path = { a, b, speed, t: Math.random() }; }
+  /** Enemigo de oleada: no reaparece; avanza hacia el jugador y le golpea al llegar. */
+  respawn = true;
+  /** Ha terminado de desintegrarse (se puede quitar de la escena). */
+  gone = false;
+  chase: { target: () => THREE.Vector3; speed: number; range: number; interval: number; damage: number; onAttack: (dmg: number) => void; cd: number } | null = null;
 
   private part(geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number, zone: Zone | null) {
     const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
@@ -127,6 +140,14 @@ export class Dummy {
 
   update(dt: number, camera: THREE.Camera, viewW: number, viewH: number) {
     this.stunT = Math.max(0, this.stunT - dt);
+    if (this.chase && this.alive && this.stunT <= 0) {
+      // Avanza hacia el jugador por el suelo; al llegar, golpea cada cierto tiempo
+      const c = this.chase, to = c.target().clone().setY(0).sub(this.group.position.clone().setY(0));
+      const d = to.length(); c.cd = Math.max(0, c.cd - dt);
+      if (d > c.range) this.group.position.addScaledVector(to.normalize(), Math.min(d - c.range, c.speed * dt));
+      else if (c.cd <= 0) { c.cd = c.interval; c.onAttack(c.damage); this.flash = 0.1; }
+      this.group.rotation.y = Math.atan2(to.x, to.z);
+    }
     if (this.path && this.alive && this.stunT <= 0) {
       this.path.t += dt * this.path.speed / this.path.a.distanceTo(this.path.b);
       const k = 0.5 - 0.5 * Math.cos(this.path.t * Math.PI);
@@ -137,8 +158,24 @@ export class Dummy {
       if (this.burnTick >= 0.5) { this.burnTick = 0; this.damage(this.burnDps * 0.5, "fuego", false, this.center); }
       if (this.burnT <= 0) this.burnDps = 0;
     }
+    // Brasas (quemado) y chispas (aturdido): partículas pixeladas que suben y se apagan
+    this.emitT -= dt;
+    if (this.alive && (this.burnT > 0 || this.stunT > 0) && this.emitT <= 0) {
+      this.emitT = 0.05;
+      const fire = this.burnT > 0;
+      const m = new THREE.Mesh(BIT_GEO, new THREE.MeshBasicMaterial({ color: fire ? (Math.random() < 0.5 ? 0xff8a2a : 0xffc04a) : 0x9fe0ff, transparent: true }));
+      const sc = this.kind.scale ?? 1;
+      m.position.set((Math.random() - 0.5) * 0.45 * sc, (0.7 + Math.random() * 1.3) * sc, (Math.random() - 0.5) * 0.3 * sc);
+      this.group.add(m); this.fxBits.push({ m, v: new THREE.Vector3((Math.random() - 0.5) * 0.4, fire ? 0.9 + Math.random() * 0.6 : (Math.random() - 0.5) * 1.5, (Math.random() - 0.5) * 0.4), t: fire ? 0.7 : 0.18 });
+    }
+    for (let i = this.fxBits.length - 1; i >= 0; i--) {
+      const b = this.fxBits[i]; b.t -= dt; b.m.position.addScaledVector(b.v, dt); (b.m.material as THREE.MeshBasicMaterial).opacity = Math.min(1, b.t * 3);
+      if (b.t <= 0) { this.group.remove(b.m); this.fxBits.splice(i, 1); }
+    }
+    // Empuje: muelle amortiguado que devuelve el cuerpo a su sitio
+    this.pushOff.addScaledVector(this.pushV, dt); this.pushV.multiplyScalar(Math.max(0, 1 - dt * 6)); this.pushOff.multiplyScalar(Math.max(0, 1 - dt * 3));
     this.flash = Math.max(0, this.flash - dt);
-    this.body.position.x = this.flash > 0 || this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0;
+    this.body.position.set((this.flash > 0 || this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0) + this.pushOff.x, 0, this.pushOff.z);
     // Escaneo: al morir se desintegra de arriba abajo; al reaparecer se compila de abajo arriba
     const wy = this.group.getWorldPosition(new THREE.Vector3()).y;
     const sm = this.scan.material as THREE.MeshBasicMaterial;
@@ -148,6 +185,7 @@ export class Dummy {
       if (this.deadT < 0.7) h = this.top * (1 - this.deadT / 0.7);
       else if (this.deadT < 3.2) h = 0;
       else if (this.deadT < 4) h = this.top * ((this.deadT - 3.2) / 0.8);
+      else if (!this.respawn) { this.gone = true; h = 0; }
       else { this.alive = true; for (const l of this.layers) l.value = l.max; }
       this.clip.constant = wy + h;
       this.scan.position.y = h; sm.opacity = h > 0.02 && h < this.top - 0.02 ? 0.9 : 0;
@@ -197,9 +235,10 @@ export class DamageNumbers {
 export function spawnDummies(scene: THREE.Scene, lanes: number[], overlay: HTMLElement, onDamage: ConstructorParameters<typeof Dummy>[4]): Dummy[] {
   const list: Dummy[] = [];
   const add = (kind: keyof typeof KINDS, x: number, z: number) => { const d = new Dummy(KINDS[kind], `${kind}-${list.length}`, new THREE.Vector3(x, 0, z), overlay, onDamage); scene.add(d.group); list.push(d); return d; };
-  add("basic", lanes[0], -10); add("basic", lanes[1], -15); add("sturdy", lanes[2], -25);
-  add("basic", lanes[3], -25); add("elite", lanes[4], -35); add("basic", lanes[5], -50);
-  add("sturdy", lanes[0], -40); add("basic", lanes[5], -18);
+  // Tamaños distintos (pequeño, normal, grande), todos solo con vida
+  add("small", lanes[0], -10); add("basic", lanes[1], -15); add("sturdy", lanes[2], -25);
+  add("basic", lanes[3], -25); add("large", lanes[4], -35); add("small", lanes[5], -50);
+  add("large", lanes[0], -40); add("basic", lanes[5], -18); add("small", lanes[2], -12);
   add("basic", 0, -20).setPath(new THREE.Vector3(-14, 0, -20), new THREE.Vector3(14, 0, -20), 3);
   add("elite", 0, -42).setPath(new THREE.Vector3(12, 0, -42), new THREE.Vector3(-12, 0, -42), 2.2);
   add("boss", 0, -56);

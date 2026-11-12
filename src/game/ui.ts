@@ -233,6 +233,8 @@ export class WorkbenchScreen {
   private yaw = -0.5; private dragging = false; private lastX = 0; private dist = 1;
   private preview: WeaponSpec | null = null;
   private token = 0;
+  /** Modo banco de inspección: solo ver el arma girando y su ficha comparada con la equipada (sin cambiar piezas). */
+  inspect = false;
 
   constructor(private inv: Inventory, private gen: WeaponGenerator, private asm: WeaponAssembler, private thumbs: Thumbnails, private onClose: () => void, private onChanged: (it: Item) => void, private toast: (m: string) => void) {
     this.el.addEventListener("click", (e) => this.click(e));
@@ -294,6 +296,8 @@ export class WorkbenchScreen {
   private renderCard() {
     const s = this.sel?.spec;
     $("wb-preview").style.setProperty("--c", s?.rarity.color ?? "#888");
+    const eq = this.inv.current;
+    if (this.inspect) { $("wb-card").innerHTML = s ? weaponCard(s, eq && eq !== this.sel ? eq.spec : null, eq && eq !== this.sel ? t("ui.compared") : t("ui.equippedNow")) : ""; return; }
     $("wb-card").innerHTML = s ? weaponCard(this.preview ?? s, this.preview ? s : null, this.preview ? t("ui.preview") : "") : "";
   }
 
@@ -306,6 +310,8 @@ export class WorkbenchScreen {
 
   private renderSlots() {
     const it = this.sel; const box = $("wb-slots");
+    // En el banco de inspección no hay piezas: la columna derecha desaparece
+    box.parentElement!.hidden = this.inspect; this.el.querySelector("h1")!.textContent = t(this.inspect ? "ui.inspect" : "ui.workbench");
     if (!it) { box.innerHTML = ""; return; }
     const s = it.spec;
     box.innerHTML = slotsOf(this.gen, s).map((slot) => {

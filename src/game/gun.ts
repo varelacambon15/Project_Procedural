@@ -15,6 +15,7 @@ const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3
 const DECAL_GEO = new THREE.PlaneGeometry(0.045, 0.045);
 const GLYPH_GEO = (() => { const g = new THREE.PlaneGeometry(0.16, 0.006); const v = new THREE.PlaneGeometry(0.006, 0.16); const p1 = g.attributes.position.array as Float32Array, p2 = v.attributes.position.array as Float32Array; const out = new THREE.BufferGeometry(); const pos = new Float32Array(p1.length + p2.length); pos.set(p1); pos.set(p2, p1.length); out.setAttribute("position", new THREE.BufferAttribute(pos, 3)); const i1 = Array.from(g.index!.array), i2 = Array.from(v.index!.array).map((x) => x + 4); out.setIndex([...i1, ...i2]); return out; })();
 const SPARK_GEO = new THREE.BoxGeometry(0.012, 0.012, 0.012);
+const SCORCH_GEO = new THREE.CircleGeometry(0.12, 7);
 
 export interface ShotHooks {
   onHit(d: Dummy, zone: Zone, point: THREE.Vector3, dmg: number, element: Element, crit: boolean): number;
@@ -444,7 +445,7 @@ export class Gun {
       for (const hit of hits) {
         const dummy = hit.object.userData.dummy as Dummy | undefined;
         end = hit.point; firstHit ??= hit.point.clone();
-        if (!dummy) { this.decal(hit); if (element === "explosive") this.explode(hit.point, s.stats.dano * 0.4 * dmgMult, element); break; }
+        if (!dummy) { this.decal(hit, element === "fuego" || element === "explosive"); if (element === "explosive") this.explode(hit.point, s.stats.dano * 0.4 * dmgMult, element); break; }
         if (seen.has(dummy)) continue; seen.add(dummy);
         const zone = hit.object.userData.zone as Zone;
         const falloff = hit.distance <= s.stats.alcance ? 1 : Math.max(0.45, 1 - (hit.distance - s.stats.alcance) / (s.stats.alcance * 2));
@@ -520,8 +521,14 @@ export class Gun {
   private explode(at: THREE.Vector3, dmg: number, element: Element, except?: Dummy, color = 0xffb060) {
     const m = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 8), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1, depthWrite: false }));
     m.position.copy(at); this.scene.add(m); this.bursts.push({ mesh: m, t: 0.35 });
+    // Onda de choque: anillo que se abre a ras de suelo
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.42, 32), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; ring.position.set(at.x, 0.05, at.z); this.scene.add(ring); this.bursts.push({ mesh: ring, t: 0.35 });
     this.sfx("boom");
-    for (const d of this.hooks.dummies()) if (d !== except && d.alive && d.center.distanceTo(at) < 2.2) this.applyHit(d, "body", d.center, dmg, element === "explosive" ? null : element, false, false);
+    for (const d of this.hooks.dummies()) if (d !== except && d.alive && d.center.distanceTo(at) < 2.2) {
+      this.applyHit(d, "body", d.center, dmg, element === "explosive" ? null : element, false, false);
+      d.push(d.center.clone().sub(at).setY(0).normalize(), 0.35); // empuje corto
+    }
   }
 
   private tracer(a: THREE.Vector3, b: THREE.Vector3, color: string, life = 0.07) {
@@ -530,11 +537,11 @@ export class Gun {
     this.scene.add(line); this.tracers.push({ line, t: life, max: life });
   }
   /** Impacto en la sala: agujero cuadrado oscuro (se desvanece), marca de rejilla que destella y chispas de datos. */
-  private decal(hit: THREE.Intersection) {
+  private decal(hit: THREE.Intersection, scorch = false) {
     if (!hit.face) return;
     const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
     const g = new THREE.Group();
-    const hole = new THREE.Mesh(DECAL_GEO, new THREE.MeshBasicMaterial({ color: 0x0b0c0d, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
+    const hole = new THREE.Mesh(scorch ? SCORCH_GEO : DECAL_GEO, new THREE.MeshBasicMaterial({ color: scorch ? 0x24140b : 0x0b0c0d, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
     const glyph = new THREE.Mesh(GLYPH_GEO, new THREE.MeshBasicMaterial({ color: 0x8fe6ec, transparent: true, opacity: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -5 }));
     g.add(hole, glyph);
     g.position.copy(hit.point).addScaledVector(n, 0.003); g.lookAt(hit.point.clone().add(n)); g.rotateZ(Math.random() * 0.3);

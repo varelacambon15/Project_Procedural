@@ -1,0 +1,18 @@
+{
+  "_doc": "Oleadas cortas de prueba de la sala de simulación. Enemigos de solo vida que avanzan hacia el jugador, atacan con un daño sencillo al llegar y mueren. 'waves': lista de oleadas (tipo y cantidad). Velocidad en m/s, daño por golpe, alcance en m, intervalo entre golpes en s.",
+  "spawnZ": -56,
+  "spawnWidth": 26,
+  "speed": { "small": 3.2, "basic": 2.4, "large": 1.6 },
+  "damage": { "small": 6, "basic": 9, "large": 18 },
+  "healthScale": 1,
+  "attackRange": 1.6,
+  "attackInterval": 1.1,
+  "spawnInterval": 0.45,
+  "pauseBetween": 4,
+  "waves": [
+    { "small": 4, "basic": 2 },
+    { "small": 3, "basic": 4, "large": 1 },
+    { "basic": 5, "large": 2 }
+  ],
+  "player": { "health": 100, "regenDelay": 4, "regenPerSecond": 20 }
+}

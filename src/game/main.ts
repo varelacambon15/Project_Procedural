@@ -10,6 +10,8 @@ import { LANGS, applyStatic, getLang, onLang, setLang, t, type Lang } from "../i
 import { Input } from "./input";
 import { buildRange, type Interactable } from "./world";
 import { PIXEL_LEVELS, pixelLevel, setPixelLevel } from "../weapons/textures";
+import { setSetting, settings } from "./settings";
+import { PlayerHealth, Waves } from "./waves";
 import { spawnDummies, DamageNumbers, type Dummy } from "./dummies";
 import { Player } from "./player";
 import { Gun } from "./gun";
@@ -51,7 +53,8 @@ const input = new Input(renderer.domElement);
 const player = new Player(world.colliders);
 const inv = new Inventory();
 const numbers = new DamageNumbers($("numbers"));
-const dummies: Dummy[] = spawnDummies(scene, world.lanes, $("bars"), (_d, amount, color, crit, at) => numbers.spawn(amount, color, crit, at));
+const onDummyDamage = (_d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => { if (settings.damageNumbers) numbers.spawn(amount, color, crit, at); };
+const dummies: Dummy[] = spawnDummies(scene, world.lanes, $("bars"), onDummyDamage);
 const cursor = new MenuCursor();
 onLang(() => dummies.forEach((d) => d.relabel()));
 
@@ -64,6 +67,8 @@ async function boot() {
   const asm = new WeaponAssembler(gen, ASSETS);
   asm.preloadKit();
 
+  // Números de daño (tecla N; se guarda)
+  addEventListener("keydown", (e) => { if (e.code === "KeyN" && state === "play") { setSetting("damageNumbers", !settings.damageNumbers); toast(t(settings.damageNumbers ? "ui.dmgOn" : "ui.dmgOff")); } });
   // Nivel de pixelado de las texturas (ajuste a ojo en la sala: tecla P; se guarda)
   addEventListener("keydown", (e) => {
     if (e.code !== "KeyP" || state !== "play") return;
@@ -183,6 +188,21 @@ async function boot() {
     ch.classList.toggle("hit", gun.hitmarker > 0); ch.classList.toggle("crit", gun.critmarker > 0); ch.classList.toggle("kill", gun.killmarker > 0);
   }
 
+  // ---------- Oleadas de prueba y vida del jugador ----------
+  const php = new PlayerHealth();
+  const waves = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
+    onWaveEnd: (i, last) => { toast(t("ui.waveDone", { n: i + 1 })); hooksWaveEnd(i, last); },
+    onAllDone: () => toast(t("ui.wavesDone")),
+    onPlayerHit: (dmg) => { if (php.hit(dmg)) { waves.stop(); php.reset(); toast(t("ui.simReset")); } $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on"); },
+  });
+  let hooksWaveEnd: (i: number, last: Dummy | null) => void = () => undefined;
+  function healthHud() {
+    const el = $("phealth"); const show = waves.active || php.value < php.max;
+    el.hidden = !show; if (!show) return;
+    el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
+    el.querySelector<HTMLElement>("span")!.textContent = waves.active ? t("ui.waveN", { n: waves.index + 1, of: waves.total, left: waves.remaining }) : "";
+  }
+
   function nearInteractable(): Interactable | null {
     const fwd = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
     for (const i of world.interactables) {
@@ -215,7 +235,7 @@ async function boot() {
       const near = ground ? null : nearInteractable();
       $("prompt").hidden = !ground && !near;
       if (ground) $("prompt").innerHTML = `${key}${t("ui.pickup")}`;
-      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.openCrate" : "ui.useBench")}`;
+      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.openCrate" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "inspect" ? "ui.inspect" : "ui.useBench")}`;
       // Ficha del arma del suelo comparada con la que llevas
       const card = $("pickcard");
       if (ground !== shownPickup) {
@@ -223,7 +243,15 @@ async function boot() {
         card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : "";
         card.hidden = !ground;
       }
-      if (f.interact) { if (ground) pickUp(ground); else if (near) { if (near.id === "chest") openChest(); else openScreen("workbench"); } }
+      if (f.interact) {
+        if (ground) pickUp(ground);
+        else if (near) {
+          if (near.id === "chest") openChest();
+          else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); waves.start(); toast(t("ui.wavesGo")); } }
+          else if (near.id === "inspect") { bench.inspect = true; openScreen("workbench"); }
+          else { bench.inspect = false; openScreen("workbench"); }
+        }
+      }
       if (f.slot1 && inv.equip[0]) { inv.active = 0; inv.changed(); }
       if (f.slot2 && inv.equip[1]) { inv.active = 1; inv.changed(); }
       if (f.swap && inv.equip[1 - inv.active]) { inv.active = 1 - inv.active; inv.changed(); }
@@ -267,6 +295,8 @@ async function boot() {
     toastTimer -= dt; if (toastTimer <= 0) $("toast").classList.remove("show");
 
     pickups.update(dt);
+    if (state === "play") { waves.update(dt); php.update(dt); }
+    healthHud();
     {
       const now = performance.now() / 1000;
       while (sim.log.length && now - sim.log[0][0] > 3) sim.log.shift();
@@ -288,7 +318,7 @@ async function boot() {
   addEventListener("keydown", (e) => { if (e.code === "KeyX" && state === "inventory") invScreen.scrapHovered(); if (e.code === "KeyG" && state === "inventory") invScreen.dropHovered(); });
   player.applyCamera(camera, 0);
   frame();
-  (window as unknown as Record<string, unknown>).__game = { debug, gen, inv, gun, pickups, pickUp, player, dummies, openChest, openScreen, resume, setLang, get state() { return state; }, set state(v: State) { state = v; } };
+  (window as unknown as Record<string, unknown>).__game = { debug, gen, inv, gun, pickups, pickUp, player, dummies, waves, php, bench, openChest, openScreen, resume, setLang, get state() { return state; }, set state(v: State) { state = v; } };
 }
 
 boot().catch((e) => { $("start-text").textContent = t("ui.loadError", { e: e.message }); console.error(e); });

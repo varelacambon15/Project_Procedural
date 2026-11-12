@@ -220,3 +220,12 @@ body.menu-cursor, body.menu-cursor * { cursor: none !important; }
 #reddot { position: fixed; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: #ff3b2a; box-shadow: 0 0 8px 1px rgba(255, 50, 30, .9); pointer-events: none; opacity: 0; }
 #reddot[data-kind="holo"] { width: 34px; height: 34px; margin: -17px; background: transparent; border: 2px solid rgba(255, 60, 40, .9); box-shadow: 0 0 8px rgba(255, 50, 30, .8), inset 0 0 6px rgba(255, 50, 30, .5); }
 #reddot[data-kind="holo"]::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #ff3b2a; }
+
+/* Vida del jugador (solo en oleadas) y destello de daño */
+#phealth { left: 50%; bottom: 64px; transform: translateX(-50%); width: 280px; text-align: center; }
+#phealth span { display: block; font-size: 11px; letter-spacing: 0.12em; color: #9fe3e8; margin-bottom: 4px; text-transform: uppercase; }
+#phealth .track { height: 6px; background: rgba(255,255,255,0.12); border: 1px solid rgba(159,227,232,0.35); }
+#phealth i { display: block; height: 100%; width: 100%; background: #d8f4f6; transition: width 0.12s linear; }
+#dmgflash { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 120px rgba(200,40,30,0.0); }
+#dmgflash.on { animation: dmgflash 0.4s ease-out; }
+@keyframes dmgflash { from { box-shadow: inset 0 0 140px rgba(200,40,30,0.55); } to { box-shadow: inset 0 0 140px rgba(200,40,30,0); } }
