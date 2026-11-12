@@ -312,7 +312,7 @@ function buildCylinder(g: THREE.Object3D, d: PistolDesign, poly: Pt[]) {
 }
 /** Cargador con su base en relieve (y, en el de tambor, el disco con anillo y llave de carga). */
 function buildMag(g: THREE.Object3D, d: PistolDesign, poly: Pt[], depth: number) {
-  if (poly.length > 10) {
+  if (d.mag.kind === "drum" && poly.length > 10) {
     const cx = poly.reduce((s, q) => s + q[0], 0) / poly.length, cy = poly.reduce((s, q) => s + q[1], 0) / poly.length;
     const R = Math.hypot(poly[0][0] - cx, poly[0][1] - cy);
     g.add(disc(R, depth, cx, cy, 0, "magazine", 18));
