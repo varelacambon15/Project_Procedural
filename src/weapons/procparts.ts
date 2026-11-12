@@ -7,7 +7,7 @@ import type { Profile } from "./variation";
 
 /** Culatas: tubo, esqueleto, maciza; y (prompt 05-A) plegable de alambre, de madera, de polímero tipo brace y de carabina. */
 export type StockKind = "tube" | "skeleton" | "solid" | "folding" | "wood" | "polymer" | "carbine";
-export type FrontKind = "tube" | "quad";
+export type FrontKind = "tube" | "quad" | "slot";
 export interface ProcStock { kind: StockKind; at: [number, number]; h: number; w: number; len: number; drop: number }
 export interface ProcFront { kind: FrontKind; at: [number, number]; h: number; w: number; len: number; barrel: number; d: number }
 
@@ -119,6 +119,15 @@ export function buildFront(f: ProcFront): { group: THREE.Group; barrel: THREE.Gr
       g.add(box(0.005, 0.005, f.w * 0.5, x, ay + f.h * 0.46, "rail"), box(0.005, 0.005, f.w * 0.5, x, ay - f.h * 0.46, "rail"));
     }
     for (const z of [-1, 1]) { const side = box(f.len * 0.9, f.h * 0.3, 0.004, ax + f.len / 2, ay, "rail"); side.position.z = z * f.w * 0.47; g.add(side); }
+  } else if (f.kind === "slot") {
+    // Guardamanos moderno de ranuras (tipo M-LOK): sección octogonal, raíl superior continuo y ranuras alargadas
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(f.h * 0.47, f.h * 0.47, f.len, 8), new THREE.MeshStandardMaterial({ name: "proc" }));
+    body.rotation.set(Math.PI / 8, 0, -Math.PI / 2); body.position.set(ax + f.len / 2, ay, 0); body.scale.set(1, 1, Math.min(1, f.w / f.h)); g.add(body);
+    for (let x = ax + 0.005; x < ax + f.len - 0.004; x += 0.01) g.add(box(0.005, 0.005, f.w * 0.45, x, ay + f.h * 0.47, "rail"));
+    for (let x = ax + f.len * 0.1; x < ax + f.len * 0.88; x += Math.max(0.026, f.len * 0.2)) for (const z of [-1, 1]) {
+      const v = box(Math.min(0.02, f.len * 0.13), f.h * 0.12, 0.003, x + 0.01, ay - f.h * 0.05, "vent"); v.position.z = z * f.w * 0.45; g.add(v);
+    }
+    g.add(box(0.008, f.h * 0.7, f.w * 0.7, ax + f.len - 0.004, ay, "cap"));
   } else {
     const tube = new THREE.Mesh(new THREE.CylinderGeometry(f.h * 0.44, f.h * 0.46, f.len, 12), new THREE.MeshStandardMaterial({ name: "proc" }));
     tube.rotation.z = -Math.PI / 2; tube.position.set(ax + f.len / 2, ay, 0); g.add(tube);

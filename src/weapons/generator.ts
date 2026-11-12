@@ -718,7 +718,7 @@ export class WeaponGenerator {
           const xEnd = Math.min(mz.pos[0], prof.x0 + ((prof.x1 - prof.x0) * (kEnd + 1)) / prof.top.length);
           const len = (long ? 0.12 : 0.07) + r() * (long ? 0.12 : 0.07);
           tw.body = 1; tw.cutFront = null; // sin estirar ni cortar el cuerpo: el conjunto va en la boca de serie
-          tw.pfront = { kind: era === "classic" || r() < 0.5 ? "tube" : "quad", at: [xEnd - 0.012, mz.pos[1]], h, w: Math.min(0.04, h * 0.9), len, barrel: 0.02 + r() * 0.05, d: Math.min(0.02, Math.max(0.011, mz.diameter ?? 0.013)) };
+          tw.pfront = { kind: era === "classic" ? (r(), "tube") : (["tube", "quad", "slot"] as const)[Math.floor(r() * 3)], at: [xEnd - 0.012, mz.pos[1]], h, w: Math.min(0.04, h * 0.9), len, barrel: 0.02 + r() * 0.05, d: Math.min(0.02, Math.max(0.011, mz.diameter ?? 0.013)) };
         } });
       }
       if (long && prof && !sawed) {
@@ -775,12 +775,13 @@ export class WeaponGenerator {
     // Mínimo 3 cambios en total (piezas cambiadas + cambios de forma), y siempre al menos 2 de forma
     for (let i = ops.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [ops[i], ops[j]] = [ops[j], ops[i]]; }
     // Con amplitud alta (el arma se parecía demasiado a su base) se aplican todos los cambios posibles
-    const n = amp > 1.2 ? ops.length : Math.min(ops.length, Math.max(2, 3 - swaps) + (r() < 0.5 ? 1 : 0) + (amp > 1 ? 1 : 0));
+    // (pero se omiten 0-2 al azar: si no, todas las de una base muy reconocible salían con el mismo conjunto)
+    const n = amp > 1.2 ? Math.max(3, ops.length - Math.floor(r() * 3)) : Math.min(ops.length, Math.max(2, 3 - swaps) + (r() < 0.5 ? 1 : 0) + (amp > 1 ? 1 : 0));
     for (const op of ops.slice(0, n)) op.run();
     if (era === "classic") {
       // Piezas por código de estilo clásico: culata maciza (madera) y camisa ventilada; nunca raíles
       if (tw.pstock && !["solid", "wood", "folding"].includes(tw.pstock.kind)) tw.pstock = { ...tw.pstock, kind: "wood" };
-      if (tw.pfront && tw.pfront.kind === "quad") tw.pfront = { ...tw.pfront, kind: "tube" };
+      if (tw.pfront && tw.pfront.kind !== "tube") tw.pfront = { ...tw.pfront, kind: "tube" };
     }
     // Raíl y accesorio: se colocan sobre la zona delantera ya variada (guardamanos o tramo del cañón)
     if (tw.rail || tw.device) {
@@ -952,7 +953,7 @@ function procStock(r: Rng, type: BaseType, at: [number, number], h: number, w: n
 }
 /** Guardamanos por código con cañón que sobresale. */
 function procFront(r: Rng, type: BaseType, at: [number, number], h: number, w: number) {
-  const kinds: FrontKind[] = ["quad", "tube"];
+  const kinds: FrontKind[] = ["quad", "tube", "slot"];
   const len = ({ smg: [0.09, 0.16], rifle: [0.2, 0.32], shotgun: [0.22, 0.34], lmg: [0.24, 0.34], sniper: [0.26, 0.38], bullpup: [0.12, 0.2] } as Record<string, [number, number]>)[type] ?? [0.2, 0.3];
   const hh = Math.min(0.065, Math.max(0.028, h * 0.95));
   return { kind: kinds[Math.floor(r() * kinds.length)], at, h: hh, w: Math.min(0.05, Math.max(0.024, w)), len: len[0] + r() * (len[1] - len[0]), barrel: (type === "smg" ? 0.03 : 0.05) + r() * 0.1, d: type === "shotgun" ? 0.022 : Math.min(0.02, Math.max(0.012, hh * 0.3)) };
@@ -968,7 +969,7 @@ function addEraBoxes(boxes: Box2[], a: Tweaks["eraAdds"]) {
 function eraChanges(a: Tweaks["eraAdds"]): string[] {
   if (!a) return [];
   const c: string[] = [];
-  if (a.cover) c.push("cover"); if (a.cell) c.push("energy-cell"); if (a.display) c.push("display");
+  if (a.cover) c.push("cover"); if (a.cell) c.push("poly-mag"); if (a.display) c.push("side-rail");
   if (a.tapes?.length) c.push("tape"); if (a.patches?.length) c.push("patch");
   return c;
 }
