@@ -42,10 +42,10 @@ export const CAL_EFFECT: Record<RevolverCal, { arch: string; mods: { dano?: numb
 };
 /** Medidas por calibre de revólver (radio y largo del tambor, diámetro del cañón, alto del armazón). */
 export const REVOLVER_CAL: Record<RevolverCal, { r: number; len: number; d: number; h: number }> = {
-  light: { r: 0.0155, len: 0.034, d: 0.012, h: 0.017 },
-  medium: { r: 0.0185, len: 0.04, d: 0.014, h: 0.019 },
-  heavy: { r: 0.021, len: 0.045, d: 0.017, h: 0.021 },
-  magnum: { r: 0.0245, len: 0.052, d: 0.02, h: 0.023 },
+  light: { r: 0.0155, len: 0.034, d: 0.012, h: 0.014 },
+  medium: { r: 0.0185, len: 0.04, d: 0.014, h: 0.015 },
+  heavy: { r: 0.021, len: 0.045, d: 0.017, h: 0.016 },
+  magnum: { r: 0.0245, len: 0.052, d: 0.02, h: 0.017 },
 };
 
 // ---------- Arquetipos (bases) ----------
@@ -65,7 +65,7 @@ const rev = (cal: RevolverCal, len: number, o: Over = {}): Arch["d"] => {
   const c = REVOLVER_CAL[cal];
   const d = base({ ...o, slide: { len: c.len + 0.045, h: c.r * 2 + 0.008, w: 0.02, style: "round", nose: "flat", rear: "round", serr: 0, port: false, top: "iron", ...o.slide },
     barrel: { ext: len, d: c.d, profile: "round", ...o.barrel }, frame: { dust: 1, h: c.h, guard: "round", ...o.frame },
-    grip: { angle: 0.45, len: 0.08, depth: 0.036, shape: "bird", panels: "wood", ...o.grip }, mag: { kind: "none", len: 0 }, hammer: o.hammer ?? "spur" });
+    grip: { angle: 0.52, len: 0.074, depth: 0.033, shape: "bird", panels: "wood", ...o.grip }, mag: { kind: "none", len: 0 }, hammer: o.hammer ?? "spur" });
   d.cyl = { r: c.r, len: c.len, lug: "none", rib: "none", ...o.cyl, cal };
   return d;
 };
@@ -89,8 +89,8 @@ export const PISTOL_ARCHES: Arch[] = [
   // Revólveres por calibre (ligero, medio, pesado y mágnum)
   { id: "rlight", label: "Snub", family: "revolver", eras: ["classic", "modern", "rustic"], d: rev("light", 0.05, { hammer: "bobbed" }) },
   { id: "rmedium", label: "Revolver", family: "revolver", eras: ["classic", "modern", "rustic"], d: rev("medium", 0.1, { cyl: { lug: "half", rib: "solid" } }) },
-  { id: "rheavy", label: "Heavy Revolver", family: "revolver", eras: ["modern", "rustic", "scifi"], d: rev("heavy", 0.13, { cyl: { lug: "full", rib: "solid" }, grip: { shape: "flared", panels: "polymer", angle: 0.4, len: 0.086 } }) },
-  { id: "rmagnum", label: "Magnum", family: "revolver", eras: ["modern", "classic", "scifi"], d: rev("magnum", 0.165, { cyl: { lug: "full", rib: "vent" }, grip: { shape: "flared", panels: "polymer", angle: 0.4, len: 0.09 } }) },
+  { id: "rheavy", label: "Heavy Revolver", family: "revolver", eras: ["modern", "rustic", "scifi"], d: rev("heavy", 0.13, { cyl: { lug: "full", rib: "solid" }, grip: { shape: "flared", panels: "polymer", angle: 0.48, len: 0.078 } }) },
+  { id: "rmagnum", label: "Magnum", family: "revolver", eras: ["modern", "classic", "scifi"], d: rev("magnum", 0.165, { cyl: { lug: "full", rib: "vent" }, grip: { shape: "flared", panels: "polymer", angle: 0.48, len: 0.082 } }) },
 ];
 export const archOf = (id: string) => PISTOL_ARCHES.find((a) => a.id === id) ?? PISTOL_ARCHES[0];
 export const archIdOf = (assetId: string) => assetId.replace(/^pp-/, "").split("-")[0];
@@ -179,13 +179,21 @@ export function mutationAllowed(id: string, era: PEra, d: PistolDesign) {
 export type Pt = [number, number];
 export type PolyRole = "slide" | "frame" | "grip" | "guard" | "barrel" | "comp" | "mag" | "hammer" | "top" | "rail" | "cell" | "vgrip" | "cyl" | "lug" | "handguard" | "fairing";
 export interface PartPoly { role: PolyRole; poly: Pt[]; depth: number }
-export const boreY = (d: PistolDesign) => (d.cyl ? d.cyl.r + 0.003 : d.slide.h * 0.42);
+/**
+ * Línea del cañón. En el revólver, como en uno real, el cañón se alinea con la recámara DE ARRIBA del tambor (no con
+ * su centro): el tambor cuelga por debajo de la línea del cañón (~0,58 del radio).
+ */
+export const boreY = (d: PistolDesign) => (d.cyl ? cylY(d) + d.cyl.r * 0.58 : d.slide.h * 0.42);
+/** Centro del tambor del revólver (su parte de abajo, justo sobre la caja del gatillo). */
+export const cylY = (d: PistolDesign) => (d.cyl ? d.cyl.r + 0.002 : 0);
 /** Esquinas de la empuñadura (arriba atrás, arriba delante, abajo delante, abajo atrás). */
 export function gripCorners(d: PistolDesign) {
   const fh = d.frame.h, a = d.grip.angle, L = d.grip.len, dx = -Math.sin(a) * L, dy = -Math.cos(a) * L;
   const x0 = d.family === "revolver" ? -0.004 : 0.008, fl = d.grip.shape === "flared" ? 0.006 : 0;
   // Como en una empuñadura real, el fondo es perpendicular a su eje (no horizontal): el cargador y su base quedan a escuadra
-  const TB: Pt = [x0, -fh], TF: Pt = [x0 + d.grip.depth, -fh];
+  // (en el revólver la empuñadura nace más arriba, a la altura del fondo del tambor, y sigue al armazón)
+  const gy = d.family === "revolver" ? -fh * 0.15 : -fh;
+  const TB: Pt = [x0, gy], TF: Pt = [x0 + d.grip.depth, gy];
   const BB: Pt = [TB[0] + dx - fl * Math.cos(a), TB[1] + dy + fl * Math.sin(a)];
   const wd = d.grip.depth * Math.cos(a) + fl * 2, BF: Pt = [BB[0] + Math.cos(a) * wd, BB[1] - Math.sin(a) * wd];
   return { TB, TF, BF, BB };
@@ -220,6 +228,8 @@ export function gripPoly(d: PistolDesign): Pt[] {
   }
 }
 const guardX = (d: PistolDesign) => gripCorners(d).TF[0];
+/** Medidas del guardamonte (más pequeño en los revólveres). */
+export const guardDims = (d: PistolDesign) => (d.family === "revolver" ? { gl: 0.042, gd: 0.019 } : { gl: 0.05, gd: 0.023 });
 /** Lugar del cargador: base de la empuñadura (o delante del guardamonte), ángulo y ancho. */
 export function magFrame(d: PistolDesign) {
   const g = gripCorners(d), fh = d.frame.h, a = d.grip.angle;
@@ -233,8 +243,8 @@ function quadAlong(p0: Pt, p1: Pt, w: number, a: number): Pt[] {
 }
 /** Revólver: medidas del armazón (inicio y fin del tambor, frente del armazón, alto del puente). */
 export function revFrame(d: PistolDesign) {
-  const c = d.cyl!, by = boreY(d), xc0 = 0.014, xc1 = xc0 + c.len;
-  return { xc0, xc1, xf: xc1 + 0.012, top: by + c.r + 0.005, by };
+  const c = d.cyl!, by = boreY(d), cy = cylY(d), xc0 = 0.014, xc1 = xc0 + c.len;
+  return { xc0, xc1, xf: xc1 + 0.012, top: cy + c.r + 0.005, by, cy };
 }
 export function designPolys(d: PistolDesign): PartPoly[] {
   const L = d.slide.len, h = d.slide.h, w = d.slide.w, fh = d.frame.h, by = boreY(d);
@@ -248,11 +258,14 @@ export function designPolys(d: PistolDesign): PartPoly[] {
     // Armazón en una pieza: caja del gatillo, subida bajo el tambor, frente estrecho bajo el cañón, puente fino arriba
     // y escudo trasero redondeado detrás del martillo (la ventana del tambor la abre la malla)
     const gfront = gripCorners(d).TF[0] + 0.05;
-    out.push({ role: "frame", depth: w, poly: [[-0.004, -fh], [Math.min(gfront, f.xc1 - 0.006), -fh], [f.xc1 - 0.002, by - c.r - 0.003], [f.xf, by - r * 1.9], [f.xf, f.top - 0.002], [f.xf - 0.004, f.top], [0.012, f.top], [0.003, f.top - 0.006], [-0.005, by + c.r * 0.2], [-0.007, by - c.r * 0.6], [-0.006, 0]] });
-    out.push({ role: "cyl", depth: c.r * 2, poly: [[f.xc0, by - c.r], [f.xc1, by - c.r], [f.xc1, by + c.r], [f.xc0, by + c.r]] });
+    // (frente del armazón: baja hasta el eje del tambor, donde va la varilla expulsora y la grúa)
+    out.push({ role: "frame", depth: w, poly: [[-0.004, -fh], [Math.min(gfront, f.xc1 - 0.006), -fh], [f.xc1 - 0.002, 0], [f.xf, f.cy - c.r * 0.45], [f.xf, f.top - 0.002], [f.xf - 0.004, f.top], [0.012, f.top], [0.003, f.top - 0.006], [-0.005, f.cy + c.r * 0.25], [-0.007, f.cy - c.r * 0.5], [-0.006, 0]] });
+    out.push({ role: "cyl", depth: c.r * 2, poly: [[f.xc0, f.cy - c.r], [f.xc1, f.cy - c.r], [f.xc1, f.cy + c.r], [f.xc0, f.cy + c.r]] });
     out.push({ role: "barrel", depth: r * 2, poly: [[f.xf - 0.002, by - r], [f.xf + bl, by - r], [f.xf + bl, by + r], [f.xf - 0.002, by + r]] });
-    if (c.lug !== "none") { const lx1 = c.lug === "full" ? f.xf + bl : f.xf + bl * 0.55; out.push({ role: "lug", depth: r * 1.7, poly: [[f.xf - 0.002, by - r * 2.3], [lx1 - 0.004, by - r * 2.3], [lx1, by - r * 1.6], [lx1, by], [f.xf - 0.002, by]] }); }
-    if (c.rib !== "none") { const t = c.rib === "vent" ? 0.006 : 0.004; out.push({ role: "top", depth: w * 0.35, poly: [[f.xf - 0.004, by + r - 0.001], [f.xf + bl, by + r - 0.001], [f.xf + bl, by + r + t], [f.xf - 0.004, by + r + t]] }); }
+    // Tetón bajo el cañón: envuelve la varilla expulsora (que va a la altura del eje del tambor)
+    if (c.lug !== "none") { const lx1 = c.lug === "full" ? f.xf + bl : f.xf + bl * 0.55, yb = f.cy - 0.0045; out.push({ role: "lug", depth: r * 1.7, poly: [[f.xf - 0.002, yb], [lx1 - 0.004, yb], [lx1, yb + 0.004], [lx1, by], [f.xf - 0.002, by]] }); }
+    // Banda superior enrasada con el puente del armazón (maciza o ventilada)
+    if (c.rib !== "none") { const yt = Math.max(f.top, by + r + 0.003); out.push({ role: "top", depth: w * 0.35, poly: [[f.xf - 0.004, by + r - 0.001], [f.xf + bl, by + r - 0.001], [f.xf + bl, yt], [f.xf - 0.004, yt]] }); }
     if (d.barrel.comp !== "none") { const mz = f.xf + bl, cl = d.barrel.comp === "ported" ? 0.032 : 0.024; out.push({ role: "comp", depth: r * 2.4, poly: [[mz - 0.002, by - r * 1.3], [mz + cl, by - r * 1.3], [mz + cl, by + r * 1.4], [mz - 0.002, by + r * 1.5]] }); }
     out.push({ role: "grip", depth: w * 1.15, poly: gripPoly(d) });
   } else {
@@ -297,7 +310,7 @@ export function designPolys(d: PistolDesign): PartPoly[] {
     if (d.extra.fairing) out.push({ role: "fairing", depth: w * 1.12, poly: [[L * 0.12, h * 0.15], [L * 0.45, h * 0.15], [L * 0.5, h * 0.75], [L * 0.16, h * 0.75]] });
   }
   // Guardamonte
-  const gx = guardX(d), gl = 0.05, gd = 0.023;
+  const gx = guardX(d), { gl, gd } = guardDims(d);
   out.push({ role: "guard", depth: w * 0.45, poly: d.frame.guard === "round" ? [[gx, -fh], [gx + gl, -fh], [gx + gl, -fh - gd * 0.5], [gx + gl * 0.8, -fh - gd], [gx + 0.006, -fh - gd]]
     : d.frame.guard === "hook" ? [[gx, -fh], [gx + gl, -fh], [gx + gl + 0.006, -fh - gd * 0.75], [gx + gl - 0.004, -fh - gd], [gx + 0.006, -fh - gd]]
     : [[gx, -fh], [gx + gl, -fh], [gx + gl, -fh - gd], [gx + 0.006, -fh - gd]] });

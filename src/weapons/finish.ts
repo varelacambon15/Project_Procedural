@@ -35,7 +35,7 @@ const ROLE_SLOT: Partial<Record<PartRole | "sight", Slot>> = {
 const PROPS: Record<Slot, { roughness: number; metalness: number }> = {
   primary: { roughness: 0.46, metalness: 0.55 }, secondary: { roughness: 0.82, metalness: 0.03 },
   metal: { roughness: 0.3, metalness: 0.85 }, accent: { roughness: 0.62, metalness: 0.25 }, wood: { roughness: 0.62, metalness: 0 },
-  highlight: { roughness: 0.4, metalness: 0.6 },
+  highlight: { roughness: 0.38, metalness: 0.85 },
 };
 /** Textura por código de cada clase de material (la madera lleva veta; el resto, metal o polímero). */
 const TEX: Record<Slot, TexKind> = { primary: "metal", secondary: "polymer", metal: "metal", accent: "polymer", wood: "wood", highlight: "metal" };
@@ -67,7 +67,7 @@ function material(f: Paint, slot: Slot, tex?: TexKind, bright = 1): THREE.MeshSt
   const key = `${f.id}|${slot}${tex ? "|" + tex : ""}${bright !== 1 ? "|b" + bright : ""}`;
   let m = cache.get(key);
   if (!m) {
-    const c = slot === "primary" ? f.color : slot === "secondary" ? f.secondary : slot === "metal" ? f.metal : slot === "accent" ? f.accent : slot === "highlight" ? hex(0xb8692a) : f.secondary;
+    const c = slot === "primary" ? f.color : slot === "secondary" ? f.secondary : slot === "metal" ? f.metal : slot === "accent" ? f.accent : slot === "highlight" ? hex(0x8a6c3e) : f.secondary;
     // Brillo mínimo: ninguna superficie baja de ~0,16 de luminancia (en sRGB), para que las armas oscuras no se pierdan
     const rgb = (c ?? [0.15, 0.15, 0.15]).slice() as RGB;
     const lumS = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];

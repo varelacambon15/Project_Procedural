@@ -436,9 +436,10 @@ export class WeaponAssembler {
 
     // Oclusión de contacto entre piezas (una vez por arma montada)
     contactAO(group, parts.map((p) => p.object));
-    // Las legendarias: un único detalle pequeño en color vivo (boca, palanca, gatillo o accesorio), nunca el cargador
+    // Las legendarias: un único detalle pequeño en latón (gatillo o palanca), nunca el cargador ni la boca
     const legendary = spec.rarity.id === "legendaria";
-    const hl = legendary ? parts.find((p) => p.role === "muzzle") ?? parts.find((p) => p.role === "charging") ?? parts.find((p) => p.role === "trigger") ?? parts.find((p) => p.role === "device") : undefined;
+    // (nunca una pieza grande como el accesorio de boca: parecería un juguete; solo gatillo o palanca)
+    const hl = legendary ? parts.find((p) => p.role === "trigger") ?? parts.find((p) => p.role === "charging") : undefined;
     for (const p of parts) applyFinish(p.object, p.role, spec.paint, legendary, p === hl);
 
     // Variación leve del largo de las armas enteras

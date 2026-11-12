@@ -9,7 +9,7 @@
 // "proctape" polímero/secundario, "procgrip" polímero con punteado de agarre, "proccheck" madera con rejilla,
 // "procengrave" marcaje grabado, "procrust" óxido, "procdisplay" detalle (solo con color en legendarias).
 import * as THREE from "three";
-import { boreY, designPolys, gripCorners, magFrame, muzzleOf, revFrame, type PistolDesign, type Pt } from "./pistolgen";
+import { boreY, designPolys, guardDims, gripCorners, magFrame, muzzleOf, revFrame, type PistolDesign, type Pt } from "./pistolgen";
 import type { PartRole } from "./types";
 import { cutPoly, guardPath, loftPoly, sweep, type LoftOpts } from "./loft";
 
@@ -173,7 +173,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
       }
       case "guard": {
         // Guardamonte con su hueco (el gatillo queda dentro)
-        const gx = p.poly[0][0], gl = 0.05, gd = 0.023;
+        const gx = p.poly[0][0], { gl, gd } = guardDims(d);
         // Guardamonte de varilla barrida con su hueco real; redondo (clásico), de esquinas vivas o con gancho delantero
         const gt = 0.0045, rb = d.frame.guard === "round" ? 0.01 : 0.004, rf = d.frame.guard === "round" ? 0.013 : 0.005;
         const gm = rev ? "frame" : fm;
@@ -222,7 +222,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
           b.add(tube(r, len, x0, y, "procsteel", 14));
           b.add(tube(r * 1.08, 0.003, x0 + len - 0.003, y, "procmetal", 14)); // corona de la boca
           if (d.barrel.profile === "fluted") for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2 + 0.4; b.add(box(len * 0.7, 0.0012, 0.0012, x0 + len * 0.5, y + Math.cos(a) * r * 0.98, Math.sin(a) * r * 0.98, "procpad")); }
-          if (rev) b.add(box(0.003, 0.006, 0.002, x0 + len - 0.008, y + r + 0.003, 0, "procmetal")); // punto de mira
+          if (rev) { const yt = d.cyl!.rib !== "none" ? Math.max(revFrame(d).top, y + r + 0.003) : y + r; b.add(box(0.003, 0.006, 0.002, x0 + len - 0.008, yt + 0.003, 0, "procmetal")); } // punto de mira
         }
         if (d.extra.wrap && !rev) b.add(tube(r * 1.25, Math.min(0.02, len * 0.6), x0 + len * 0.25, y, "proctape"));
         break;
@@ -236,7 +236,15 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         break;
       }
       case "comp": {
-        const c = G("barrel"); c.add(lofted(p.poly, "procsteel", { half: () => p.depth / 2, rTop: 0.45, rBot: 0.35, segs: 2, n: 8 }));
+        const c = G("barrel");
+        if (rev) {
+          // Revólver: compensador cilíndrico (como un cañón más grueso) con puertos arriba
+          const x0 = p.poly[0][0], x1 = p.poly[1][0], yc = (p.poly[0][1] + p.poly[2][1]) / 2, rr = (p.poly[2][1] - p.poly[0][1]) / 2;
+          c.add(tube(rr, x1 - x0, x0, yc, "procsteel", 12));
+          for (let k = 0; k < 3; k++) c.add(box(0.004, 0.0025, rr * 1.2, x0 + 0.007 + k * 0.007, yc + rr - 0.0004, 0, "procpad"));
+          break;
+        }
+        c.add(lofted(p.poly, "procsteel", { half: () => p.depth / 2, rTop: 0.45, rBot: 0.35, segs: 2, n: 8 }));
         const x0 = p.poly[0][0], top = Math.max(...p.poly.map((q) => q[1]));
         if (d.barrel.comp === "ported") for (let k = 0; k < 3; k++) c.add(box(0.004, 0.003, p.depth * 0.6, x0 + 0.008 + k * 0.008, top - 0.0005, 0, "procpad"));
         else for (const z of [-1, 1]) c.add(box(0.01, (top - p.poly[0][1]) * 0.5, 0.001, x0 + 0.014, (top + p.poly[0][1]) / 2, z * (p.depth / 2 + 0.0002), "procpad"));
@@ -299,7 +307,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
     }
   }
   // Revólver sin tetón completo: varilla expulsora bajo el cañón
-  if (rev && d.cyl!.lug !== "full") { const rf = revFrame(d); G("barrel").add(tube(0.0028, Math.min(d.barrel.ext * 0.8, d.cyl!.len + 0.03), rf.xc1, by - d.barrel.d / 2 - 0.004, "procmetal", 8)); }
+  if (rev && d.cyl!.lug !== "full") { const rf = revFrame(d); G("barrel").add(tube(0.0028, Math.min(d.barrel.ext * 0.8, 0.012 + d.barrel.ext * 0.7), rf.xc1, rf.cy, "procsteel", 8)); }
   for (const o of group.children) o.traverse((m) => { if ((m as THREE.Mesh).isMesh) (m as THREE.Mesh).castShadow = true; });
   const [mx, my] = muzzleOf(d);
   return { group, parts: Object.entries(roles).map(([role, object]) => ({ object, role: role as PartRole })), muzzle: new THREE.Vector3(mx, my, 0), sightY, railAt, railLength };
@@ -309,7 +317,7 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
 function buildRevolverFrame(g: THREE.Object3D, d: PistolDesign, poly: Pt[], depth: number) {
   const rf = revFrame(d), c = d.cyl!;
   // Por secciones, redondeado arriba (puente) y abajo, con la ventana del tambor abierta
-  g.add(lofted(poly, "frame", { half: () => depth / 2, rTop: 0.65, rBot: 0.45, segs: 2, n: 24, wear: 1.22, hole: { x0: rf.xc0 - 0.0005, x1: rf.xc1 + 0.0005, y0: rf.by - c.r - 0.0008, y1: rf.by + c.r + 0.0008 } }));
+  g.add(lofted(poly, "frame", { half: () => depth / 2, rTop: 0.65, rBot: 0.45, segs: 2, n: 24, wear: 1.22, hole: { x0: rf.xc0 - 0.0005, x1: rf.xc1 + 0.0005, y0: rf.cy - c.r - 0.0008, y1: rf.cy + c.r + 0.0008 } }));
   g.add(box(0.008, 0.0016, 0.004, 0.012, rf.top + 0.0004, 0, "procpad")); // muesca de mira en el puente
   g.add(box(rf.xf - 0.01, 0.0008, 0.0006, rf.xf / 2, rf.top - 0.003, -(depth / 2 + 0.0002), "procengrave"));
 }
