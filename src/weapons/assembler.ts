@@ -8,6 +8,7 @@ import { KIT_FLIP, isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
 import { accessory, buildFrontSight, buildMuzzle, buildOptic } from "./accessories";
 import { applyFinish } from "./finish";
 import { contactAO } from "./ao";
+import { buildFront, buildStock, clipX } from "./procparts";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
 export interface AssembledWeapon {
@@ -179,17 +180,32 @@ export class WeaponAssembler {
           add(node, role, donor, explode);
           return { donor, k, node, sv, zone };
         };
-        if (!tw.nostock) await attach("stock", "rear", "stockFace", [-1.2, 0, 0]);
-        else {
+        if (tw.pstock && !tw.nostock) add(buildStock(tw.pstock), "stock", { id: `proc-stock-${tw.pstock.kind}`, label: "Stock", pack: "proc" } as AssetEntry, [-1.2, 0, 0]);
+        else if (!tw.nostock) {
+          const st = await attach("stock", "rear", "stockFace", [-1.2, 0, 0]);
+          if (tw.fold) {
+            // Culata plegada: media vuelta sobre la junta, al costado del cajón
+            const ax = J.rear.pos[0];
+            st.node.rotation.y = Math.PI;
+            st.node.position.x = 2 * ax - st.node.position.x;
+            st.node.position.z = (bodyE.bounds.max[2] - bodyE.bounds.min[2]) * 0.5 + 0.012;
+          }
+        } else {
           // Sin culata: una placa trasera cierra el cajón
           const h = J.rear.size?.[0] ?? 0.04, w = (bodyE.bounds.max[2] - bodyE.bounds.min[2]) * 0.8;
           const cap = new THREE.Mesh(new THREE.BoxGeometry(0.012, h * 0.9, w), new THREE.MeshStandardMaterial({ name: "endplate" }));
           cap.position.set(J.rear.pos[0] - 0.005, J.rear.pos[1], 0);
           add(cap, "receiver", bodyE, [-0.5, 0, 0]);
         }
-        const fr = await attach("front", "front", "frontFace", [1.1, 0.2, 0]);
+        let fr: Awaited<ReturnType<typeof attach>> | null = null;
+        if (tw.pfront) {
+          const pf = buildFront(tw.pfront);
+          add(pf.group, "front", { id: `proc-front-${tw.pfront.kind}`, label: "Handguard", pack: "proc" } as AssetEntry, [1.1, 0.2, 0]);
+          add(pf.barrel, "barrel", { id: "proc-barrel", label: "Barrel", pack: "proc" } as AssetEntry, [1.6, 0, 0]);
+          muzzle = pf.muzzle; muzzleDiameter = tw.pfront.d;
+        } else fr = await attach("front", "front", "frontFace", [1.1, 0.2, 0]);
         await attach("grip", "grip", "gripFace", [0, -1, 0]);
-        if (fr.donor.sockets.muzzle) {
+        if (fr && fr.donor.sockets.muzzle) {
           const m = fr.donor.sockets.muzzle;
           muzzle = new THREE.Vector3(stretchX(m.pos[0], fr.zone), m.pos[1], m.pos[2]).multiply(fr.sv).add(fr.node.position);
           muzzleDiameter = (m.diameter ?? 0.02) * fr.k;
@@ -200,8 +216,22 @@ export class WeaponAssembler {
         const prof = bodyE.profiles?.body;
         bodyZoneUsed = prof && spec.layout === "body" ? bodyZones(prof, spec.tweaks ?? NO_TWEAKS) : null;
         if (bodyZoneUsed) stretchNode(body, bodyZoneUsed);
+        // Cortes del cuerpo para poner culata o guardamanos por código
+        const twb = spec.tweaks ?? NO_TWEAKS;
+        if (twb.cutFront != null || twb.cutRear != null) body.traverse((o) => {
+          const m = o as THREE.Mesh; if (!m.isMesh) return;
+          if (twb.cutFront != null) m.geometry = clipX(m.geometry, twb.cutFront, "below");
+          if (twb.cutRear != null) m.geometry = clipX(m.geometry, twb.cutRear, "above");
+        });
         add(body, "body", bodyE, [0, 0, 0]);
+        if (twb.pstock) add(buildStock(twb.pstock), "stock", { id: `proc-stock-${twb.pstock.kind}`, label: "Stock", pack: "proc" } as AssetEntry, [-1.2, 0, 0]);
         if (bodyE.sockets.muzzle) { const m = bodyE.sockets.muzzle; muzzle = new THREE.Vector3(stretchAll(m.pos[0], bodyZoneUsed), m.pos[1], m.pos[2]); muzzleDiameter = m.diameter ?? 0.03; }
+        if (twb.pfront) {
+          const pf = buildFront(twb.pfront);
+          add(pf.group, "front", { id: `proc-front-${twb.pfront.kind}`, label: "Handguard", pack: "proc" } as AssetEntry, [1.1, 0.2, 0]);
+          add(pf.barrel, "barrel", { id: "proc-barrel", label: "Barrel", pack: "proc" } as AssetEntry, [1.6, 0, 0]);
+          muzzle = pf.muzzle; muzzleDiameter = twb.pfront.d;
+        }
       }
       // Cargador: su parte superior encaja en el pozo del cuerpo; se escala al ancho del pozo original.
       const magPick = spec.parts.find((p) => p.role === "magazine");

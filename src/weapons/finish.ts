@@ -93,6 +93,9 @@ export function applyFinish(obj: THREE.Object3D, role: PartRole | "sight", f: Pa
   const pick = (m: THREE.Material): THREE.Material => {
     if (keep(m)) return m;
     let s: Slot = slot;
+    // Piezas de metal hechas por código (tubos, esqueletos, abrazaderas) y cantoneras
+    if (/procmetal/.test(m.name)) return material(f, "metal");
+    if (/procpad/.test(m.name)) return material(f, "accent");
     // Tiras de color de origen (rojo, azul…): en el tono sobrio del arma; solo las legendarias las llevan en color
     if (/Red|Blue|Cerulean|Green|Orange|Emiss/i.test(m.name)) return material(f, _legendary ? "highlight" : "accent");
     if (isWoodSrc(m) && (slot === "primary" || slot === "secondary")) s = f.wood ? "wood" : "secondary";

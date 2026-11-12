@@ -101,6 +101,14 @@ export interface Tweaks {
   nostock?: boolean;
   /** Cargador alargado (factor de largo; 1 = de serie). */
   magLen?: number;
+  /** Culata plegada hacia delante, al costado del cajón (la propia o la cambiada). */
+  fold?: boolean;
+  /** Culata y guardamanos hechos por código (sustituyen a los del modelo). */
+  pstock?: import("./procparts").ProcStock | null;
+  pfront?: import("./procparts").ProcFront | null;
+  /** Armas enteras: cortes del cuerpo (x local) donde empiezan la culata o el guardamanos por código. */
+  cutRear?: number | null;
+  cutFront?: number | null;
   device?: { id: string; at: [number, number] } | null;
 }
 /** Linaje: de qué sale el arma y qué se le ha hecho, para poder reproducirla. */
