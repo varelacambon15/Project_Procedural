@@ -79,6 +79,8 @@ function orientationFor(meshes, hint = {}) {
 function normalize(parts, type, hint) {
   const all = parts.map((p) => p.mesh);
   const rot = orientationFor(all, hint);
+  // Modelos cuyo sentido se detecta al revés (culata delante): se giran media vuelta
+  if (hint?.flipX) rot.premultiply(new THREE.Matrix4().makeRotationY(Math.PI));
   for (const m of all) m.geometry.applyMatrix4(rot);
   let box = boxOf(all);
   const len = box.max.x - box.min.x;

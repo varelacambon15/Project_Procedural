@@ -13,6 +13,7 @@ export interface KitPart {
   sockets: Record<string, V3[]>;
   bounds: { min: V3; max: V3 };
   triangles: number;
+  profile?: import("./variation").Profile;
 }
 
 /** Rol (ranura del banco) de cada socket. Las alzas no son ranuras: se montan solas si no hay mira. */
@@ -110,7 +111,7 @@ export function kitPlacements(kit: KitIndex, spec: Pick<WeaponSpec, "parts" | "o
           child = role ? byRole.get(role) ?? null : null; childRole = role ?? "sight";
           if (key === "Barrel") k = spec.barrelLength || 1;
           if (key === "Handguard") k = spec.tweaks?.front ?? 1;
-          if (key === "Stock") k = spec.tweaks?.stock ?? 1;
+          if (key === "Stock") { if (spec.tweaks?.nostock) continue; k = spec.tweaks?.stock ?? 1; }
         }
         if (child) place(child, childRole, p, k);
       }
@@ -152,23 +153,39 @@ export function rollKit(kit: KitIndex, r: Rng, type: WeaponType): { parts: PartP
   const platform = pick(platforms);
   const parts: PartPick[] = [{ role: "receiver", from: platform.id }];
   const cal = platform.caliber;
-  const want = (slot: string) => { const o = kit.options(slot, cal, type); if (o.length) parts.push({ role: KIT_ROLE[slot], from: pick(o).id }); };
-  for (const slot of Object.keys(platform.sockets)) if (KIT_ROLE[slot] && slot !== "Sights_Rear" && slot !== "Device") want(slot);
+  const want = (slot: string, first = false) => { const o = kit.options(slot, cal, type); if (o.length) parts.push({ role: KIT_ROLE[slot], from: (first ? o[0] : pick(o)).id }); };
+  // Una base y poco más: la configuración de serie (primera variante de cada pieza) y 1-2 piezas cambiadas
+  const slots = Object.keys(platform.sockets).filter((slot) => KIT_ROLE[slot] && slot !== "Sights_Rear" && slot !== "Device");
+  for (const slot of slots) want(slot, true);
+  const changeable = slots.filter((slot) => kit.options(slot, cal, type).length > 1);
+  const n = Math.min(changeable.length, 1 + (r() < 0.5 ? 1 : 0));
+  for (let i = 0; i < n; i++) {
+    const slot = changeable.splice(Math.floor(r() * changeable.length), 1)[0];
+    const o = kit.options(slot, cal, type).slice(1);
+    const idx = parts.findIndex((p) => p.role === KIT_ROLE[slot]);
+    parts[idx] = { role: KIT_ROLE[slot], from: pick(o).id };
+  }
   // Accesorio bajo el raíl: a veces (en el guardamanos, el guardamanos del corredero o la plataforma)
   const hosts = parts.map((p) => kit.byId.get(p.from)!).filter((p) => p.sockets.Device);
   if (hosts.length && r() < 0.45) want("Device");
-  let barrelLength = 1, front = 1, stock = 1;
+  const { barrelLength, front } = kitLengths(r, type, parts);
+  const stock = type !== "pistol" ? 0.92 + r() * 0.16 : 1;
+  return { parts, barrelLength, front, stock };
+}
+
+/** Largo de cañón y guardamanos del kit (cañón corto o largo; el alza delantera siempre por delante del guardamanos). */
+export function kitLengths(r: Rng, type: WeaponType, parts: PartPick[]): { barrelLength: number; front: number } {
+  let barrelLength = 1, front = 1;
   if (type === "rifle") {
-    barrelLength = 0.9 + r() * 0.22;
+    barrelLength = r() < 0.5 ? 0.78 + r() * 0.14 : 1.08 + r() * 0.2;
     // El alza delantera (en el cañón, a 35,8 cm) debe quedar por delante del guardamanos
-    const maxFront = Math.min(1.02, (0.0426 + 0.3577 * barrelLength - 0.0668) / 0.318);
-    front = 0.8 + r() * Math.max(0, maxFront - 0.8);
+    const maxFront = Math.min(1.05, (0.0426 + 0.3577 * barrelLength - 0.0668) / 0.318);
+    front = Math.min(maxFront, 0.62 + r() * 0.45);
   } else if (type === "shotgun") {
     const long = parts.some((p) => p.from === "k-magazine-12ga-8shell");
-    barrelLength = long ? 1.05 + r() * 0.06 : 0.82 + r() * 0.2;
+    barrelLength = long ? 1.05 + r() * 0.08 : r() < 0.5 ? 0.72 + r() * 0.12 : 0.92 + r() * 0.08;
   }
-  if (type !== "pistol") stock = 0.92 + r() * 0.16;
-  return { parts, barrelLength, front, stock };
+  return { barrelLength, front };
 }
 
 /** Cargador real del arma del kit (si lo tiene). */

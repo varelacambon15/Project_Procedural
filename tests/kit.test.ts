@@ -15,7 +15,7 @@ describe("kit modular por sockets", () => {
       expect(guns.length).toBeGreaterThan(40);
       for (const w of guns) {
         const { placements, muzzle } = kitPlacements(gen.kit, w);
-        for (const p of w.parts) expect(placements.some((pl) => pl.part.id === p.from)).toBe(true);
+        for (const p of w.parts) if (!(p.role === "stock" && w.tweaks.nostock)) expect(placements.some((pl) => pl.part.id === p.from)).toBe(true);
         // Mismo calibre o universal
         const cal = gen.kit.caliberOf(w);
         for (const pl of placements) expect([cal, "any"]).toContain(pl.part.caliber);
@@ -27,8 +27,10 @@ describe("kit modular por sockets", () => {
   });
 
   it("muchas combinaciones distintas", () => {
-    const keys = new Set(kitGuns("rifle", 600).map((w) => w.parts.map((p) => p.from).join("|")));
-    expect(keys.size).toBeGreaterThan(100);
+    const guns = kitGuns("rifle", 600);
+    const keys = new Set(guns.map((w) => w.parts.map((p) => p.from).join("|") + w.barrelLength.toFixed(2)));
+    expect(keys.size).toBeGreaterThan(guns.length * 0.8);
+    for (const w of guns) expect(w.lineage!.swaps.filter((p) => !gen.kit.byId.get(p.from)?.id.includes("device")).length).toBeLessThanOrEqual(2);
   });
 
   it("el alza delantera queda por delante del guardamanos", () => {

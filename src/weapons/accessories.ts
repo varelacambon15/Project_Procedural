@@ -81,6 +81,16 @@ export function buildMuzzle(id: string, d: number, L: number): { group: THREE.Gr
   return { group: g, length: len };
 }
 
+/** Punto de mira delantero de fusil (abrazadera al cañón, poste y orejas de protección). Origen en el eje del cañón. */
+export function buildFrontSight(): THREE.Group {
+  const g = new THREE.Group(); const steel = black();
+  const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.02, 0.02), steel); clamp.position.y = 0.002; g.add(clamp);
+  const tower = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.022, 0.012), steel); tower.position.y = 0.023; g.add(tower);
+  for (const z of [-1, 1]) { const ear = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.016, 0.003), steel); ear.position.set(0, 0.041, z * 0.006); g.add(ear); }
+  const post = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.012, 0.003), steel); post.position.y = 0.039; g.add(post);
+  return g;
+}
+
 /** Mira. Origen en la base (centro inferior), eje +X hacia delante. `rail` = largo disponible del raíl. */
 export function buildOptic(id: string, rail: number, L: number): { group: THREE.Group; sightHeight: number } {
   const g = new THREE.Group();
@@ -98,13 +108,16 @@ export function buildOptic(id: string, rail: number, L: number): { group: THREE.
     const dot = new THREE.Mesh(new THREE.SphereGeometry(0.0012, 6, 4), redDot()); dot.position.set(0.01, 0.04, 0); g.add(dot);
     h = 0.04;
   } else if (id === "acc:holo") {
-    base(0.07);
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.018, 0.034), poly); body.position.set(0, 0.017, 0); g.add(body);
-    for (const x of [-0.032, 0.032]) { const post = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.04, 0.036), steel); post.position.set(x, 0.045, 0); g.add(post); }
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.006, 0.036), steel); roof.position.set(0, 0.066, 0); g.add(roof);
-    const win = new THREE.Mesh(new THREE.PlaneGeometry(0.028, 0.034), glass()); win.rotation.y = Math.PI / 2; win.position.set(0.03, 0.045, 0); g.add(win);
-    const dot = new THREE.Mesh(new THREE.RingGeometry(0.0025, 0.0035, 16), redDot()); dot.rotation.y = Math.PI / 2; dot.position.set(0.0, 0.045, 0); g.add(dot);
-    h = 0.045;
+    // Holográfica tipo caja: cuerpo macizo delante (batería), capucha con paredes gruesas detrás y cristal tintado
+    base(0.08);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.026, 0.032), poly); body.position.set(0.016, 0.021, 0); g.add(body);
+    const btn = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.004, 0.012), steel); btn.position.set(0.02, 0.036, 0); g.add(btn);
+    for (const z of [-1, 1]) { const wall = new THREE.Mesh(new THREE.BoxGeometry(0.034, 0.03, 0.006), poly); wall.position.set(-0.018, 0.047, z * 0.016); g.add(wall); }
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.007, 0.038), poly); roof.position.set(-0.018, 0.064, 0); g.add(roof);
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(0.034, 0.006, 0.032), poly); floor.position.set(-0.018, 0.031, 0); g.add(floor);
+    for (const x of [-0.034, -0.002]) { const win = new THREE.Mesh(new THREE.PlaneGeometry(0.026, 0.026), glass()); win.rotation.y = Math.PI / 2; win.position.set(x, 0.047, 0); g.add(win); }
+    const dot = new THREE.Mesh(new THREE.RingGeometry(0.0025, 0.0035, 16), redDot()); dot.rotation.y = Math.PI / 2; dot.position.set(-0.003, 0.047, 0); g.add(dot);
+    h = 0.047;
   } else {
     const long = id === "acc:scope6";
     const len = Math.min(Math.max(0.14, L * (long ? 0.36 : 0.18)), rail * 1.6 + 0.08);

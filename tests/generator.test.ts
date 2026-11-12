@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { WeaponGenerator, RARITIES, TYPE_INFO, EFFECTS_L, powerScore, computeStats } from "../src/weapons/generator";
-import type { Manifest, WeaponSpec } from "../src/weapons/types";
+import { NO_TWEAKS, type Manifest, type WeaponSpec } from "../src/weapons/types";
+import { similarity } from "../src/weapons/variation";
 
 const manifest: Manifest = JSON.parse(readFileSync(new URL("../assets/weapons/manifest.json", import.meta.url), "utf8"));
 const gen = new WeaponGenerator(manifest);
@@ -121,22 +122,62 @@ describe("WeaponGenerator", () => {
 });
 
 describe("armas largas despiezadas", () => {
-  it("mezclan piezas de otras armas (también de otras familias), nunca son genéricas y pasan la puerta de calidad", async () => {
+  it("una base y poco más: 1-2 piezas de su misma familia, y pasan la puerta de calidad", async () => {
     const { longGunOk } = await import("../src/weapons/generator");
-    let mixed = 0, total = 0, cross = 0;
+    let total = 0;
     for (const t of ["rifle", "smg", "shotgun", "sniper", "lmg"] as const) for (const w of many(300, t)) {
       if (w.layout !== "modular-long") continue;
       total++;
       const get = (role: string) => gen.byId.get(w.parts.find((p) => p.role === role)!.from)!;
       const [r, s, g, f] = ["receiver", "stock", "grip", "front"].map(get);
-      const foreign = [s, g, f].filter((x) => x !== r).length;
-      expect(foreign).toBeGreaterThanOrEqual(1);
-      if (foreign >= 2) mixed++;
-      if ([s, g, f].some((x) => x.pack !== r.pack)) cross++;
+      for (const x of [s, g, f]) expect(x.pack).toBe(r.pack);
+      expect(w.lineage!.swaps.length).toBeGreaterThanOrEqual(1);
+      expect(w.lineage!.swaps.length).toBeLessThanOrEqual(2);
       expect(longGunOk(r, s, f, g, w.type, w.tweaks)).toBe(true);
     }
     expect(total).toBeGreaterThan(100);
-    expect(mixed / total).toBeGreaterThan(0.5);
-    expect(cross / total).toBeGreaterThan(0.2);
+  });
+
+  it("reconocible pero nuevo: casi todas parecen su base entre un 60 y un 85 %", () => {
+    const ws = many(800).filter((w) => !(w.layout === "kit" && w.type === "pistol"));
+    const inRange = ws.filter((w) => w.lineage!.similarity >= 0.6 && w.lineage!.similarity <= 0.85).length;
+    expect(inRange / ws.length).toBeGreaterThan(0.9);
+  });
+
+  it("la métrica es coherente: un arma sin cambios se parece ~100 % a su base", () => {
+    for (const w of many(200)) {
+      if (w.layout === "kit") continue;
+      const plain = gen.silhouette(w.layout, w.parts.map((p) => ({ ...p, from: w.parts[0].from })), { ...NO_TWEAKS }, 1);
+      expect(similarity(gen.baseSilhouette(w.layout, w.parts), plain)).toBeGreaterThan(0.97);
+    }
+  });
+
+  it("toda arma tiene al menos 3 cambios respecto a su base", () => {
+    const ws = many(600);
+    const ok = ws.filter((w) => w.lineage!.changes.length >= 3).length;
+    expect(ok / ws.length).toBeGreaterThan(0.97);
+  });
+
+  it("un lote no repite base", () => {
+    const recent: WeaponSpec[] = [];
+    for (let i = 0; i < 6; i++) { const w = gen.generateDistinct(1000 + i * 31, "rifle", recent); expect(recent.some((x) => x.parts[0].from === w.parts[0].from)).toBe(false); recent.push(w); }
+  });
+
+  it("el linaje permite reproducir el arma", () => {
+    for (const s of [3, 77, 901]) expect(gen.generate(s)).toEqual(gen.generate(s));
+    const w = gen.generate(42);
+    expect(w.lineage!.base).toBe(w.parts[0].from);
+    expect(w.lineage!.ops).toEqual(w.tweaks);
+  });
+
+  it("en un lote, armas de la misma base no son casi iguales", () => {
+    const ws = many(300, "rifle");
+    let pairs = 0, near = 0;
+    for (let i = 0; i < ws.length; i++) for (let j = i + 1; j < ws.length; j++) {
+      if (ws[i].parts[0].from !== ws[j].parts[0].from) continue;
+      pairs++; if (gen.likeness(ws[i], ws[j]) > 0.97) near++;
+    }
+    expect(pairs).toBeGreaterThan(50);
+    expect(near / pairs).toBeLessThan(0.15);
   });
 });

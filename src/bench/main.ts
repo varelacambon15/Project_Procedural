@@ -223,7 +223,7 @@ async function boot() {
       sc.remove(built.group);
       g.fillStyle = spec.rarity.color; g.font = "bold 22px sans-serif"; g.fillText(spec.name, x + 14, y + 32);
       g.fillStyle = "#bbb"; g.font = "14px sans-serif"; g.fillText(`${spec.rarity.id} · ${spec.type} · ${spec.fireMode}`, x + 14, y + 54);
-      g.fillStyle = "#777"; g.font = "12px monospace"; g.fillText(spec.parts.map((p) => p.from.replace(/^[a-z]-/, "")).slice(0, 4).join(" + ").slice(0, 86), x + 14, y + CH - 12);
+      g.fillStyle = "#777"; g.font = "12px monospace"; g.fillText(`base ${spec.lineage?.base.replace(/^[a-z]-/, "")} · cambios ${spec.lineage?.changes.join(", ") || "—"} · parecido ${Math.round((spec.lineage?.similarity ?? 1) * 100)}% · ${spec.paint.id}`, x + 14, y + CH - 12);
     }
     return out.toDataURL("image/png");
   };

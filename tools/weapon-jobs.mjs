@@ -120,7 +120,7 @@ ALL.push(
   ...["Carabine-Shotgun-Long", "Carabine-Shotgun-Short", "Hunter-Shotgun-Complete", "Hunter-Shotgun-Mini", "Lever-Shotgun", "Pump-Shotgun-Long", "Pump-Shotgun-Short", "SemiAutomati-Schotgun"].map((f) => W2("Shotgun", f, "shotgun", { modular: true })),
   W2("Shotgun", "Hunter-Shotgun-SawOff", "shotgun"),
   // Subfusiles enteros: empuñaduras verticales y culatas de alambre no se cortan limpio
-  ...["M3GG", "M3GG-Drum", "PPSH", "PPSH-Drum"].map((f) => W2("SMG", f, "smg")),
+  ...["M3GG", "M3GG-Drum", "PPSH", "PPSH-Drum"].map((f) => W2("SMG", f, "smg", { hint: { flipX: true } })),
   ...["Long", "Medium", "Short"].map((l) => W2("Pistols", `MSR-C96-${l}`, "pistol")),
   ...["A-Long", "A-Medium", "A-Short", "B-Long", "B-Medium", "B-Short"].map((v) => W2("Pistols", `Revolver-${v}`, "revolver")),
 );

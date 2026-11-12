@@ -5,7 +5,7 @@ import { WeaponGenerator, type BaseType } from "../weapons/generator";
 import { WeaponAssembler } from "../weapons/assembler";
 import { scrap } from "../weapons/workshop";
 import { archName, rarityName, typeName } from "../weapons/labels";
-import type { Manifest } from "../weapons/types";
+import type { Manifest, WeaponSpec } from "../weapons/types";
 import { LANGS, applyStatic, getLang, onLang, setLang, t, type Lang } from "../i18n";
 import { Input } from "./input";
 import { buildRange, type Interactable } from "./world";
@@ -112,10 +112,13 @@ async function boot() {
 
   // ---------- Cofre ----------
   let chestT = -1;
+  const recentDrops: WeaponSpec[] = [];
   function openChest() {
     if (chestT >= 0) return;
     const types = gen.types;
-    const spec = gen.generate(Math.floor(Math.random() * 1e9), types[Math.floor(Math.random() * types.length)]);
+    // Lote: no repite la base de las últimas armas ni saca una casi igual a otra reciente
+    const spec = gen.generateDistinct(Math.floor(Math.random() * 1e9), types[Math.floor(Math.random() * types.length)], recentDrops);
+    recentDrops.push(spec); if (recentDrops.length > 6) recentDrops.shift();
     chestT = 0;
     world.chestGlow.color.set(spec.rarity.color);
     // El arma sale despedida del cofre hacia el jugador y cae al suelo, lista para recoger

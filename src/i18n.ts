@@ -47,7 +47,7 @@ const en: Dict = {
   "unit.rpm": "/min", "unit.m": "m", "label.damage": "damage", "label.level": "Lv",
   // Habilidades
   // Acabados y piezas
-  "paint.original": "Factory", "paint.fdeblack": "Black / FDE furniture", "paint.olivefde": "Olive / FDE furniture", "paint.grayblack": "Gray / black furniture", "paint.black": "Matte black", "paint.fde": "Flat dark earth", "paint.olive": "Olive drab", "paint.gray": "Storm gray", "paint.rust": "Worn rust",
+  "paint.original": "Factory", "paint.fdeblack": "Black / FDE furniture", "paint.olivefde": "Olive / FDE furniture", "paint.grayblack": "Gray / black furniture", "paint.black": "Matte black", "paint.sand": "Desert sand", "paint.woodbrass": "Wood & brass", "paint.gunmetal": "Gunmetal", "paint.twotone": "Black with sand furniture", "paint.parkerized": "Parkerized & walnut", "paint.fde": "Flat dark earth", "paint.olive": "Olive drab", "paint.gray": "Storm gray", "paint.rust": "Rusted",
   "slot.stock": "Stock", "slot.grip": "Grip", "slot.front": "Handguard", "slot.trigger": "Trigger", "slot.charging": "Charging handle", "slot.pump": "Pump", "slot.device": "Under-rail", "role.receiver": "Receiver", "role.stock": "Stock", "role.grip": "Grip", "role.front": "Handguard",
   "slot.magazine": "Magazine", "slot.scope": "Optic", "slot.muzzle": "Muzzle", "slot.slide": "Slide", "slot.frame": "Frame", "slot.barrel": "Barrel",
   "role.body": "Body", "role.frame": "Frame", "role.slide": "Slide", "role.barrel": "Barrel", "role.magazine": "Magazine", "role.scope": "Optic", "role.muzzle": "Muzzle",
@@ -117,7 +117,7 @@ const es: Dict = {
   "shift.auto": "Conversión automática", "shift.burst": "Conversión a ráfagas", "shift.semi": "Conversión semiautomática",
   "stat.dano": "Daño", "stat.cadencia": "Cadencia", "stat.precision": "Precisión", "stat.alcance": "Alcance", "stat.manejo": "Manejo", "stat.cargador": "Cargador",
   "unit.rpm": "/min", "unit.m": "m", "label.damage": "daño", "label.level": "Nv",
-  "paint.original": "De fábrica", "paint.fdeblack": "Negro con muebles FDE", "paint.olivefde": "Oliva con muebles FDE", "paint.grayblack": "Gris con muebles negros", "paint.black": "Negro mate", "paint.fde": "Tierra oscura (FDE)", "paint.olive": "Verde oliva", "paint.gray": "Gris tormenta", "paint.rust": "Óxido gastado",
+  "paint.original": "De fábrica", "paint.fdeblack": "Negro con muebles FDE", "paint.olivefde": "Oliva con muebles FDE", "paint.grayblack": "Gris con muebles negros", "paint.black": "Negro mate", "paint.sand": "Arena", "paint.woodbrass": "Madera y latón", "paint.gunmetal": "Gris metal", "paint.twotone": "Negro con muebles arena", "paint.parkerized": "Fosfatado y nogal", "paint.fde": "Tierra oscura (FDE)", "paint.olive": "Verde oliva", "paint.gray": "Gris tormenta", "paint.rust": "Oxidado",
   "slot.stock": "Culata", "slot.grip": "Empuñadura", "slot.front": "Guardamanos", "slot.trigger": "Gatillo", "slot.charging": "Palanca de carga", "slot.pump": "Corredera de bombeo", "slot.device": "Bajo el raíl", "role.receiver": "Cajón", "role.stock": "Culata", "role.grip": "Empuñadura", "role.front": "Guardamanos",
   "slot.magazine": "Cargador", "slot.scope": "Mira", "slot.muzzle": "Boca", "slot.slide": "Corredera", "slot.frame": "Armazón", "slot.barrel": "Cañón",
   "role.body": "Cuerpo", "role.frame": "Armazón", "role.slide": "Corredera", "role.barrel": "Cañón", "role.magazine": "Cargador", "role.scope": "Mira", "role.muzzle": "Boca",

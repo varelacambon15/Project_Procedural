@@ -2,9 +2,11 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { NO_TWEAKS, type AssetEntry, type PartRole, type WeaponSpec } from "./types";
-import { TYPE_LENGTH, pieceScale, type WeaponGenerator } from "./generator";
+import { TYPE_LENGTH, bodyZones, drumOf, pieceScale, type WeaponGenerator } from "./generator";
+import { midZone, stretchAll, stretchX, type Stretches } from "./variation";
 import { KIT_FLIP, isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
-import { accessory, buildMuzzle, buildOptic } from "./accessories";
+import { accessory, buildFrontSight, buildMuzzle, buildOptic } from "./accessories";
+import { applyFinish } from "./finish";
 
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
 export interface AssembledWeapon {
@@ -91,20 +93,21 @@ export class WeaponAssembler {
     let opticLength = 0;
 
     let sightKit: number | null = null;
+    let bodyZoneUsed: Stretches = null;
     if (spec.layout === "kit") {
       // Kit modular: cada pieza en su socket, recorriendo el árbol desde la plataforma
       const { placements, muzzle: mz, opticAt } = kitPlacements(this.gen.kit, spec);
       let frontSightTop: number | null = null;
       // Todas las piezas se cargan a la vez (en paralelo), y luego se colocan en orden
-      const nodes = await Promise.all(placements.map((pl) => this.kitNode(pl.part)));
+      // El punto de mira del pack se lee como un "4" de perfil: se usa uno limpio hecho a medida
+      const nodes = await Promise.all(placements.map((pl) => (pl.part.id === "k-ironsight-front-556barrel-01" ? Promise.resolve(buildFrontSight()) : this.kitNode(pl.part))));
       for (const [i, pl] of placements.entries()) {
         const node = nodes[i];
         node.position.set(...pl.pos); node.scale.x = pl.stretch;
         if (KIT_FLIP.has(pl.part.id)) node.rotation.y = Math.PI;
+        if (pl.role === "magazine" && (spec.tweaks?.magLen ?? 1) !== 1) node.scale.y = spec.tweaks!.magLen!;
         const role: PartRole = pl.role === "sight" ? "scope" : pl.role;
         add(node, role, { id: pl.part.id, label: kitLabel(pl.part.id), pack: "kit" } as AssetEntry, KIT_EXPLODE[pl.role] ?? [0, 0.6, 0]);
-        if (KIT_PRIMARY.has(pl.role)) paint(node, spec);
-        else if (KIT_SECONDARY.has(pl.role)) paint(node, spec, "secondary");
         if (pl.role === "scope") {
           // Mira del kit: la línea de mira pasa por el centro del cristal
           node.updateMatrixWorld(true);
@@ -118,6 +121,8 @@ export class WeaponAssembler {
         const slide = parts.find((p) => p.role === "slide");
         sightKit = frontSightTop !== null ? frontSightTop - 0.002 : slide ? new THREE.Box3().setFromObject(slide.object).max.y + 0.002 : null;
       }
+      const kd = spec.tweaks?.device ? this.gen.kit.byId.get(spec.tweaks.device.id) : null;
+      if (kd && spec.tweaks?.device) { const dev = await this.kitNode(kd); dev.position.set(spec.tweaks.device.at[0], spec.tweaks.device.at[1] + 0.002, 0); add(dev, "device", { id: kd.id, label: kitLabel(kd.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
       if (mz) { muzzle = v3(mz); muzzleDiameter = spec.type === "shotgun" ? 0.026 : spec.type === "pistol" ? 0.014 : 0.018; }
       if (opticAt && spec.optic && !isKit(spec.optic)) { opticTarget = v3(opticAt); opticLength = spec.type === "pistol" ? 0.05 : 0.1; }
     } else if (spec.layout === "modular-pistol") {
@@ -140,14 +145,13 @@ export class WeaponAssembler {
       add(barrel, "barrel", barrelE, [0.8, 1.6, 0]);
       muzzle = new THREE.Vector3(dst.pos[0] + (src.length ?? 0.04) * L, dst.pos[1], 0).add(slideOff);
       muzzleDiameter = (frameE.sockets.muzzle?.diameter ?? 0.03) * 0.6;
-      paint(slide, spec);
     } else {
       const bodyE = get(spec.parts[0].from);
       if (spec.layout === "modular-long") {
         // Cajón en el origen; culata, guardamanos y empuñadura (de otras armas de la familia) en sus juntas.
         const J = bodyE.joints!;
         const recv = await this.nodes(bodyE, "receiver");
-        add(recv, "receiver", bodyE, [0, 0, 0]); paint(recv, spec);
+        add(recv, "receiver", bodyE, [0, 0, 0]);
         const tw = spec.tweaks ?? NO_TWEAKS;
         // Cada pieza se escala a la sección de su junta y recibe su variación leve (largo, tamaño, ángulo).
         const attach = async (role: "stock" | "front" | "grip", joint: "rear" | "front" | "grip", face: "stockFace" | "frontFace" | "gripFace", explode: [number, number, number]) => {
@@ -155,46 +159,85 @@ export class WeaponAssembler {
           const node = await this.nodes(donor, role);
           const sv = new THREE.Vector3(...pieceScale(bodyE, donor, role, tw));
           const k = sv.y;
+          // Largo por zonas: solo se estira el tramo central; los extremos con detalle quedan intactos
+          const prof = donor.profiles?.[role], fx = donor.joints![face].pos[0];
+          const zone = !prof ? null : role === "stock" ? midZone(prof.x0, fx, tw.stock, 0.25, 0.2, true) : role === "front" ? midZone(fx, prof.x1, tw.front, 0.15, 0.25) : null;
+          if (zone) stretchNode(node, zone);
           node.scale.copy(sv);
           const anchor = v3(J[joint].pos);
+          const own = donor === bodyE;
           if (role === "grip") {
-            // La empuñadura gira un poco sobre su junta
+            // La empuñadura gira un poco sobre su junta (la propia no se desplaza; la ajena se alinea por su cara)
             const pivot = new THREE.Group(); pivot.position.copy(anchor); pivot.rotation.z = tw.gripAngle;
-            node.position.copy(v3(donor.joints![face].pos).multiply(sv).negate());
-            pivot.add(node); add(pivot, role, donor, explode); paint(node, spec, "secondary");
-            return { donor, k, node: pivot, sv };
+            node.position.copy(own ? anchor.clone().multiply(new THREE.Vector3(sv.x, sv.y, 1)).negate() : v3(donor.joints![face].pos).multiply(sv).negate());
+            pivot.add(node); add(pivot, role, donor, explode);
+            return { donor, k, node: pivot, sv, zone };
           }
-          node.position.copy(anchor.sub(v3(donor.joints![face].pos).multiply(sv)));
-          add(node, role, donor, explode); paint(node, spec, role === "stock" ? "secondary" : "primary");
-          return { donor, k, node, sv };
+          const fp = v3(donor.joints![face].pos);
+          node.position.copy(own ? new THREE.Vector3(fp.x * (1 - sv.x), anchor.y * (1 - sv.y), 0) : anchor.sub(fp.multiply(sv)));
+          add(node, role, donor, explode);
+          return { donor, k, node, sv, zone };
         };
-        await attach("stock", "rear", "stockFace", [-1.2, 0, 0]);
+        if (!tw.nostock) await attach("stock", "rear", "stockFace", [-1.2, 0, 0]);
+        else {
+          // Sin culata: una placa trasera cierra el cajón
+          const h = J.rear.size?.[0] ?? 0.04, w = (bodyE.bounds.max[2] - bodyE.bounds.min[2]) * 0.8;
+          const cap = new THREE.Mesh(new THREE.BoxGeometry(0.012, h * 0.9, w), new THREE.MeshStandardMaterial({ name: "endplate" }));
+          cap.position.set(J.rear.pos[0] - 0.005, J.rear.pos[1], 0);
+          add(cap, "receiver", bodyE, [-0.5, 0, 0]);
+        }
         const fr = await attach("front", "front", "frontFace", [1.1, 0.2, 0]);
         await attach("grip", "grip", "gripFace", [0, -1, 0]);
-        // Acabado único: las piezas ajenas toman el color del metal/polímero del cajón (la madera conserva el suyo),
-        // así el arma se lee como una sola pieza y no como un parche de colores.
-        unifyFinish(recv, parts.filter((p) => p.from !== bodyE && ["stock", "front", "grip"].includes(p.role)).map((p) => p.object));
         if (fr.donor.sockets.muzzle) {
           const m = fr.donor.sockets.muzzle;
-          muzzle = v3(m.pos).multiply(fr.sv).add(fr.node.position);
+          muzzle = new THREE.Vector3(stretchX(m.pos[0], fr.zone), m.pos[1], m.pos[2]).multiply(fr.sv).add(fr.node.position);
           muzzleDiameter = (m.diameter ?? 0.02) * fr.k;
         }
       } else {
         const body = await this.nodes(bodyE, "body");
+        // Tramo delantero (cañón) estirado por zonas; la boca y el cajón quedan intactos
+        const prof = bodyE.profiles?.body;
+        bodyZoneUsed = prof && spec.layout === "body" ? bodyZones(prof, spec.tweaks ?? NO_TWEAKS) : null;
+        if (bodyZoneUsed) stretchNode(body, bodyZoneUsed);
         add(body, "body", bodyE, [0, 0, 0]);
-        paint(body, spec);
-        if (bodyE.sockets.muzzle) { muzzle = v3(bodyE.sockets.muzzle.pos); muzzleDiameter = bodyE.sockets.muzzle.diameter ?? 0.03; }
+        if (bodyE.sockets.muzzle) { const m = bodyE.sockets.muzzle; muzzle = new THREE.Vector3(stretchAll(m.pos[0], bodyZoneUsed), m.pos[1], m.pos[2]); muzzleDiameter = m.diameter ?? 0.03; }
       }
       // Cargador: su parte superior encaja en el pozo del cuerpo; se escala al ancho del pozo original.
       const magPick = spec.parts.find((p) => p.role === "magazine");
-      if (magPick && bodyE.sockets.magazine) {
+      const tw2 = spec.tweaks ?? NO_TWEAKS;
+      if (magPick && bodyE.sockets.magazine && tw2.drum) {
+        // Cargador de tambor (pieza cilíndrica, como los reales) en el pozo
+        const d = drumOf(bodyE);
+        const drum = new THREE.Group();
+        const can = new THREE.Mesh(new THREE.CylinderGeometry(d.R, d.R, d.w, 24), new THREE.MeshStandardMaterial({ name: "drum" }));
+        can.rotation.x = Math.PI / 2; drum.add(can);
+        const neck = new THREE.Mesh(new THREE.BoxGeometry(Math.min(0.05, d.R), 0.03, d.w * 0.55), new THREE.MeshStandardMaterial({ name: "drum" }));
+        neck.position.set(0, d.R, 0); drum.add(neck);
+        for (const z of [-1, 1]) { const cap = new THREE.Mesh(new THREE.CylinderGeometry(d.R * 0.45, d.R * 0.45, 0.004, 16), new THREE.MeshStandardMaterial({ name: "drum" })); cap.rotation.x = Math.PI / 2; cap.position.z = z * (d.w / 2 + 0.002); drum.add(cap); }
+        drum.position.set(d.x, d.y, 0);
+        add(drum, "magazine", { id: "drum", label: "Drum", pack: "proc" } as AssetEntry, [0, -1.2, 0]);
+      } else if (magPick && bodyE.sockets.magazine) {
         const magE = get(magPick.from);
         const mag = await this.nodes(magE, "magazine");
         const want = bodyE.sockets.magazine, have = magE.sockets.magazine!;
         const k = THREE.MathUtils.clamp((want.size?.[0] ?? 1) / (have.size?.[0] ?? 1), 0.6, 1.6);
-        mag.scale.setScalar(k);
-        mag.position.copy(v3(want.pos).sub(v3(have.pos).multiplyScalar(k)));
+        const ky = k * (tw2.magLen ?? 1); // cargador alargado: crece hacia abajo desde el pozo
+        mag.scale.set(k, ky, k);
+        mag.position.copy(v3(want.pos).sub(v3(have.pos).multiply(new THREE.Vector3(k, ky, k))));
         add(mag, "magazine", magE, [0, -1.2, 0]);
+      }
+      // Detalles añadidos: raíl superior y accesorio real del pack modular bajo el guardamanos
+      if (tw2.rail) {
+        const [x0, x1, y] = tw2.rail; const L = x1 - x0;
+        const rail = new THREE.Group();
+        const baseM = new THREE.Mesh(new THREE.BoxGeometry(L, 0.007, 0.021), new THREE.MeshStandardMaterial({ name: "rail" })); baseM.position.set(L / 2, 0.0035, 0); rail.add(baseM);
+        for (let x = 0.004; x < L - 0.003; x += 0.01) { const t = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.004, 0.021), new THREE.MeshStandardMaterial({ name: "rail" })); t.position.set(x + 0.0025, 0.009, 0); rail.add(t); }
+        rail.position.set(x0, y - 0.001, 0);
+        add(rail, "scope", { id: "rail", label: "Rail", pack: "proc" } as AssetEntry, [0, 0.8, 0]);
+      }
+      if (tw2.device) {
+        const kp = this.gen.kit.byId.get(tw2.device.id);
+        if (kp) { const dev = await this.kitNode(kp); dev.position.set(tw2.device.at[0], tw2.device.at[1] + 0.002, 0); add(dev, "device", { id: kp.id, label: kitLabel(kp.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
       }
       if (bodyE.sockets.optic) { opticTarget = v3(bodyE.sockets.optic.pos); opticLength = bodyE.sockets.optic.size?.[0] ?? 0; }
       else if (bodyE.sockets.rail) { opticTarget = v3(bodyE.sockets.rail.pos); opticLength = bodyE.sockets.rail.length ?? 0.1; }
@@ -252,9 +295,14 @@ export class WeaponAssembler {
       muzzle = new THREE.Vector3(acc.position.x + (accE.bounds.max[0] - accE.bounds.min[0]) * k, muzzle.y, 0);
     }
 
+    // Acabado único por rol (descarta colores y texturas de origen)
+    // Las legendarias: un único detalle pequeño en color vivo (boca, palanca, gatillo o accesorio), nunca el cargador
+    const legendary = spec.rarity.id === "legendaria";
+    const hl = legendary ? parts.find((p) => p.role === "muzzle") ?? parts.find((p) => p.role === "charging") ?? parts.find((p) => p.role === "trigger") ?? parts.find((p) => p.role === "device") : undefined;
+    for (const p of parts) applyFinish(p.object, p.role, spec.paint, legendary, p === hl);
+
     // Variación leve del largo de las armas enteras
-    const bodyStretch = spec.layout === "body" ? spec.tweaks?.body ?? 1 : 1;
-    if (bodyStretch !== 1) { group.scale.x = bodyStretch; if (muzzle) muzzle.x *= bodyStretch; }
+    // (el largo de las armas enteras ya se varió por zonas)
     // Estilos igualados: los modelos más gruesos que un arma real se estrechan un poco.
     const raw = new THREE.Box3().setFromObject(group);
     const thick = raw.max.z - raw.min.z, long = raw.max.x - raw.min.x;
@@ -303,8 +351,6 @@ const KIT_EXPLODE: Partial<Record<string, [number, number, number]>> = {
   receiver: [0, 0, 0], barrel: [1.5, 0, 0], front: [1, 0.25, 0], stock: [-1.2, 0, 0], grip: [-0.2, -1, 0], magazine: [0, -1.2, 0], muzzle: [2, 0.3, 0],
   scope: [0, 1.4, 0], sight: [0, 1, 0], trigger: [0, -0.7, 0], charging: [-0.5, 0.8, 0], slide: [0, 1, 0], pump: [0.8, -0.7, 0], device: [0.6, -1.1, 0],
 };
-const KIT_PRIMARY = new Set(["receiver", "front", "slide", "pump"]);
-const KIT_SECONDARY = new Set(["stock", "grip", "device"]);
 
 /** Grosor máximo (ancho / largo) según el tipo, como en armas reales. */
 const MAX_THICKNESS: Partial<Record<string, number>> = { pistol: 0.17, revolver: 0.2, smg: 0.12, rifle: 0.08, bullpup: 0.1, shotgun: 0.075, sniper: 0.075, lmg: 0.11, launcher: 0.16, flamethrower: 0.16 };
@@ -338,33 +384,15 @@ function roleOf(o: THREE.Object3D): string | null {
   return null;
 }
 
-const isWood = (m: THREE.Material) => /Wood|Handle|Brown/i.test(m.name);
-/** Iguala el color de los materiales no de madera de `objs` al color medio de los de `ref`. */
-function unifyFinish(ref: THREE.Object3D, objs: THREE.Object3D[]) {
-  const mats = (o: THREE.Object3D) => { const out: THREE.MeshStandardMaterial[] = []; o.traverse((n) => { const m = n as THREE.Mesh; if (m.isMesh) out.push(...([] as THREE.Material[]).concat(m.material) as THREE.MeshStandardMaterial[]); }); return out; };
-  const base = mats(ref).filter((m) => !isWood(m) && m.color);
-  if (!base.length) return;
-  const avg = new THREE.Color(0, 0, 0); for (const m of base) avg.add(m.color); avg.multiplyScalar(1 / base.length);
-  for (const o of objs) for (const m of mats(o)) if (!isWood(m) && m.color && !m.map) {
-    // Conserva un poco el contraste propio (metal más claro o más oscuro) pero en el tono del cajón
-    const l = m.color.getHSL({ h: 0, s: 0, l: 0 }).l, la = avg.getHSL({ h: 0, s: 0, l: 0 }).l;
-    m.color.copy(avg).multiplyScalar(THREE.MathUtils.clamp(0.75 + (l - la) * 1.5, 0.6, 1.4));
-  }
-}
-
-/** Pinta una pieza con el color principal o el secundario del acabado (las texturas de paleta se tiñen). */
-function paint(obj: THREE.Object3D, spec: WeaponSpec, which: "primary" | "secondary" = "primary") {
-  const c = which === "secondary" ? spec.paint.secondary ?? spec.paint.color : spec.paint.color;
-  if (!c) return;
-  const tint = new THREE.Color().setRGB(...c, THREE.SRGBColorSpace);
-  obj.traverse((o) => {
-    const m = o as THREE.Mesh;
-    if (!m.isMesh) return;
-    for (const mat of (Array.isArray(m.material) ? m.material : [m.material]) as THREE.MeshStandardMaterial[]) {
-      if (mat.map) mat.color.copy(new THREE.Color(1, 1, 1).lerp(tint, 0.3));
-      else if (/Wood|Handle/i.test(mat.name)) continue;
-      else mat.color.lerp(tint, 0.7);
-    }
+/** Estira por zonas la geometría de un nodo (en su propio marco). La geometría se copia: la caché no se toca. */
+function stretchNode(node: THREE.Object3D, z: Stretches) {
+  if (!z) return;
+  node.traverse((o) => {
+    const m = o as THREE.Mesh; if (!m.isMesh) return;
+    m.geometry = m.geometry.clone();
+    const p = m.geometry.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < p.count; i++) p.setX(i, stretchAll(p.getX(i), z));
+    p.needsUpdate = true; m.geometry.computeBoundingBox(); m.geometry.computeBoundingSphere();
   });
 }
 

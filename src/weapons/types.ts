@@ -29,6 +29,8 @@ export interface AssetEntry {
   /** Caja de cada pieza por rol, y roles que son de madera. */
   partBounds?: Partial<Record<PartRole, { min: [number, number, number]; max: [number, number, number] }>>;
   wood?: PartRole[];
+  /** Perfil lateral (silueta) de cada pieza por rol. */
+  profiles?: Partial<Record<PartRole, import("./variation").Profile>>;
   /** Fuera del botín (revisión visual), con el motivo. */
   excluded?: string;
 }
@@ -48,7 +50,7 @@ export interface Rarity { id: RarityId; weight: number; budget: number; tiers: (
 export interface Effect { id: string; tier: "A" | "B" | "L"; family: string; element?: "fuego" | "electrico" | "explosive"; icon: string; color: string; value?: number }
 
 /** Acabado: color principal (cajón, guardamanos), secundario (culata, empuñadura) y el resto en acero. */
-export interface Paint { id: string; color: [number, number, number] | null; secondary?: [number, number, number] | null }
+export interface Paint { id: string; color: [number, number, number] | null; secondary?: [number, number, number] | null; metal?: [number, number, number]; accent?: [number, number, number]; wood?: boolean }
 
 /** Pieza elegida: rol y arma (o accesorio) de la que sale. */
 export interface PartPick { role: PartRole; from: string }
@@ -82,7 +84,25 @@ export interface WeaponSpec {
   bonus: Partial<Record<StatKey, number>>;
   /** Variaciones leves de cada pieza: largo de culata y guardamanos, tamaño y ángulo de empuñadura, largo del cuerpo. */
   tweaks: Tweaks;
+  lineage?: Lineage;
 }
 
-export interface Tweaks { stock: number; front: number; grip: number; gripAngle: number; body: number }
+/**
+ * Variaciones sobre las piezas reales. `stock`, `front` y `body` estiran por zonas (solo el tramo central; los extremos
+ * con detalle quedan intactos); `stockH` cambia el alto de la culata; `rail`, `drum` y `device` añaden detalles
+ * (raíl superior, cargador de tambor, accesorio real del pack modular bajo el guardamanos) en la posición indicada.
+ */
+export interface Tweaks {
+  stock: number; front: number; grip: number; gripAngle: number; body: number;
+  stockH?: number;
+  rail?: [number, number, number] | null;   // x0, x1, y (antes de centrar)
+  drum?: boolean;
+  /** Sin culata (subfusiles y escopetas "de empuñadura", como en el armero de MW2019). */
+  nostock?: boolean;
+  /** Cargador alargado (factor de largo; 1 = de serie). */
+  magLen?: number;
+  device?: { id: string; at: [number, number] } | null;
+}
+/** Linaje: de qué sale el arma y qué se le ha hecho, para poder reproducirla. */
+export interface Lineage { base: string; swaps: PartPick[]; changes: string[]; ops: Tweaks; similarity: number }
 export const NO_TWEAKS: Tweaks = { stock: 1, front: 1, grip: 1, gripAngle: 0, body: 1 };
