@@ -70,6 +70,23 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
   pulso, Si menor, oscura, muy ancha. No copiar notas ni melodías de la referencia.
 - Referencias de jugabilidad del usuario: Apex y Titanfall 2 (movimiento y gunplay).
 
+## Ronda 11 (prompt 06, versión 0.6.0)
+
+- Armas largas por código (`src/weapons/longgen.ts` + `longmesh.ts`): 18 arquetipos (6 bullpup, 6 ametralladora,
+  6 escopeta) en 4 eras; layout "proc-long". Base más repetida por tipo en 300 armas: ≤25 % (antes LMG 92 %).
+- Armas del usuario: `raw/armas-pulidas` → `u-fusil-a` (modular, pack modern) y `u-bullpup-b` (entera). Conversor
+  "glbparts" en tools/convert/convert.js (`npm run assets -- u-`).
+- Menú: fuente proporcional, cursor oculto en reposo, Storm Caller fijo (`src/data/showcase-weapon.json`) con brillo
+  y chispas. Nombres por tipo sin repetir. Hojas con luz de contorno.
+- Cargadores: solo se cambian por otros de forma parecida y solo se alargan los rectos. Tope de 6 cambios.
+
+## Pendiente (prompt 06)
+
+- Miras que no funcionan: falta auditarlas (comparar sightY con el centro de la óptica en muchas armas).
+- C/D/E/F: culatas de pistola visibles en lote, guardamonte por spline, añadidos más pequeños, cachas.
+- H: legendarias más distintivas. A/B/L: hoja de decisión, matriz y rehacer casos (Harrier 9, Bulldog…).
+- Legendarias: el nombre es el del efecto de firma (16), por eso se repite entre tipos; decidir si cambiarlo.
+
 ## Pendiente
 
 - Integrar packs nuevos (revólveres PSX, Semi Realistic convertidos a glb; aún no integrados).
