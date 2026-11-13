@@ -43,6 +43,10 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
   `GRIPS` al final de `src/game/gun.ts` (empuñadura, bajo el guardamanos, envolviendo, vertical, coger).
 - Culata esqueleto de pletina; varillas de la plegable más gruesas; brace de polímero sobre tubo; apagallamas de jaula;
   guardamanos de madera en pistolas-carabina clásicas; revólver clásico con contrapeso en vez de compensador.
+- Recarga: el cargador vacío cae al suelo; la mano vuelve de la cartuchera (abajo a la izquierda de la vista) con
+  el nuevo; cargador rápido en revólveres y cartucho en escopetas; el arma se inclina hacia la mano izquierda.
+- Manos: disciplina de gatillo, cerrojo con la mano derecha, hombros que acompañan el retroceso.
+- Noche: aristas de neón en volúmenes, números de calle, pared de la zona de equipo; tecla L alterna noche/día.
 - Tests: si el contenedor va justo de memoria, `npx vitest run --minWorkers=1 --maxWorkers=2`.
 
 ## Pendiente
