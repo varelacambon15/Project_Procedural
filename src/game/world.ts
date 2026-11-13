@@ -43,7 +43,7 @@ export function buildRange(scene: THREE.Scene): World {
   const floor = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.8, metalness: 0.35 });
   const wallTex = pixelTexture(64, 64, (g) => { speckle(g, 64, 64, "#3d4249", 400, 0.1); g.fillStyle = "#1a1c1f"; g.fillRect(0, 0, 64, 2); g.fillRect(0, 0, 2, 64); g.fillStyle = "#3a3e44"; g.fillRect(6, 6, 52, 1); g.fillRect(6, 57, 52, 1); g.fillStyle = "#30343a"; g.fillRect(10, 24, 44, 16); }, [24, 2]);
   const wall = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.85, metalness: 0.25 });
-  const steel = new THREE.MeshStandardMaterial({ color: 0x2c2f34, metalness: 0.7, roughness: 0.45 });
+  const steel = new THREE.MeshStandardMaterial({ color: 0x2c2f34, metalness: 0.6, roughness: 0.62 }); // (más mate: el brillo de las lámparas en los mostradores deslumbraba con el resplandor)
   const dark = new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.9 });
   const neonC = new THREE.MeshStandardMaterial({ color: NEON_CYAN, emissive: NEON_CYAN, emissiveIntensity: 1.6 });
   const neonA = new THREE.MeshStandardMaterial({ color: NEON_AMBER, emissive: NEON_AMBER, emissiveIntensity: 1.4 });
@@ -81,13 +81,14 @@ export function buildRange(scene: THREE.Scene): World {
     }
   }
 
+  const pilot = new THREE.MeshStandardMaterial({ color: NEON_CYAN, emissive: NEON_CYAN, emissiveIntensity: 0.7 });
   // Línea de tiro: consolas por calle, separadores y franja de seguridad
   for (const x of lanes) {
     box(4.2, 0.08, 0.9, x, 1.0, 0.2, steel);
     box(4.2, 0.95, 0.12, x, 0.48, -0.2, wall);
     box(0.08, 0.9, 0.7, x - 1.7, 0.48, 0.25, steel, false);
     box(0.08, 0.9, 0.7, x + 1.7, 0.48, 0.25, steel, false);
-    box(0.36, 0.015, 0.04, x + 1.2, 1.05, 0.55, neonC, false, false); // piloto de la calle
+    box(0.36, 0.015, 0.04, x + 1.2, 1.05, 0.55, pilot, false, false); // piloto de la calle
   }
   colliders.push(new THREE.Box3(new THREE.Vector3(-15.2, 0, -0.3), new THREE.Vector3(15.2, 1.05, 0.7)));
   for (const x of [-15, -10, -5, 0, 5, 10, 15]) box(0.1, 2.4, 1.6, x, 1.2, 0.6, new THREE.MeshStandardMaterial({ color: 0x3a4248, transparent: true, opacity: 0.7, roughness: 0.3, metalness: 0.3 }));
@@ -221,6 +222,13 @@ export function buildRange(scene: THREE.Scene): World {
   const signMat = new THREE.MeshBasicMaterial({ map: signTex, color: NEON_MAG, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5), signMat); sign.position.set(0, 3.3, FRONT + 0.06); scene.add(sign);
   tube(W - 1, 0.05, 0.05, 0, 0.3, FRONT + 0.08, nC); tube(W - 1, 0.05, 0.05, 0, H - 0.3, FRONT + 0.08, nC);
+  // Número de calle en el suelo, delante de cada puesto (holograma aditivo)
+  const laneMats: THREE.MeshBasicMaterial[] = [];
+  lanes.forEach((x, i) => {
+    const tx = pixelTexture(32, 16, (g) => { g.clearRect(0, 0, 32, 16); g.fillStyle = "#fff"; g.font = "bold 12px monospace"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(i + 1).padStart(2, "0"), 16, 9); g.fillRect(2, 15, 28, 1); });
+    const lm = new THREE.MeshBasicMaterial({ map: tx, color: i % 2 ? NEON_MAG : NEON_CYAN, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }); laneMats.push(lm);
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.7), lm); pl.rotation.x = -Math.PI / 2; pl.position.set(x, 0.015, -5.5); pl.scale.setScalar(1.6); scene.add(pl);
+  });
   // Pared de la zona de equipo (detrás del jugador): bandas, marcos de panel y rótulo
   tube(W - 1, 0.05, 0.05, 0, 0.3, BACK - 0.06, nM); tube(W - 1, 0.05, 0.05, 0, H - 0.4, BACK - 0.06, nC);
   for (let x = -W / 2 + 4; x < W / 2 - 2; x += 6) { tube(0.05, H - 1.2, 0.05, x, H / 2 - 0.05, BACK - 0.06, x % 12 === 0 ? nM : nCdim); }
@@ -258,7 +266,7 @@ export function buildRange(scene: THREE.Scene): World {
       const mm = l.mesh.material as THREE.MeshStandardMaterial; mm.color.set(on ? 0x050505 : WARM); mm.emissive.set(c);
     });
     for (const n of neonMats) n.m.emissiveIntensity = n.base * (on ? 1 : 0.35);
-    gridMat.opacity = on ? 0.32 : 0.06; signMat.opacity = on ? 1 : 0.35; zoneMat.opacity = on ? 1 : 0.35;
+    gridMat.opacity = on ? 0.32 : 0.06; signMat.opacity = on ? 1 : 0.35; zoneMat.opacity = on ? 1 : 0.35; for (const lm of laneMats) lm.opacity = on ? 0.9 : 0.25;
     edgeMat.opacity = edgeMatA.opacity = on ? 0.85 : 0; edgeMat.visible = edgeMatA.visible = on;
     const bg = on ? 0x05070c : 0x2c333b; (scene.background as THREE.Color).set(bg);
     scene.fog = new THREE.Fog(bg, on ? 30 : 45, on ? 95 : 120);
