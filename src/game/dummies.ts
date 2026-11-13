@@ -19,7 +19,9 @@ export const KINDS: Record<string, Kind> = {
 };
 
 const ELEMENT_COLOR: Record<string, string> = { fuego: "#f07a2a", electrico: "#5cc8f0", explosive: "#ffb060" };
-const BURN_DPS_CAP = 60; // tope de daño por segundo de la quemadura
+const BURN_DPS_CAP = 60;
+/** Frontera entre el campo de tiro y la sala de oleadas (pared del fondo, ver world.ts). */
+export const WAVES_ROOM_Z = 22.5; // tope de daño por segundo de la quemadura
 
 // Maniquí de simulación: cuerpo oscuro con una rejilla de luz tenue (textura pixelada) y peana metálica
 function gridTexture() {
@@ -30,7 +32,8 @@ function gridTexture() {
 }
 const GRID = gridTexture();
 const mat = (color: number, emissive = 0.55) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.3, emissive: 0xffffff, emissiveMap: GRID, emissiveIntensity: emissive });
-const skin = mat(0x39424b), skinDark = mat(0x2c333a, 0.4), vest = mat(0x4a4436, 0.25);
+// Naranja de muñeco de pruebas: se distingue bien sobre el gris claro de la sala (y de noche, con su rejilla)
+const skin = mat(0xd2702e, 0.18), skinDark = mat(0x3a3f45, 0.25), vest = mat(0x5c5e4a, 0.15);
 const standMat = new THREE.MeshStandardMaterial({ color: 0x23262a, roughness: 0.5, metalness: 0.7 });
 const BIT_GEO = new THREE.BoxGeometry(0.025, 0.025, 0.025);
 
@@ -204,7 +207,9 @@ export class Dummy {
     const top = this.group.localToWorld(new THREE.Vector3(0, 2.45 * (this.kind.scale ?? 1), 0));
     const dist = top.distanceTo(camera.position);
     top.project(camera);
-    const visible = top.z < 1 && dist < 70 && this.alive;
+    // La sala de oleadas está detrás de la pared del fondo: solo se ven las barras de la sala en la que está el jugador
+    const sameRoom = (camera.position.z > WAVES_ROOM_Z) === (this.group.position.z > WAVES_ROOM_Z);
+    const visible = top.z < 1 && dist < 70 && this.alive && sameRoom;
     b.style.display = visible ? "" : "none";
     if (visible) b.style.transform = `translate(${(top.x * 0.5 + 0.5) * viewW}px, ${(-top.y * 0.5 + 0.5) * viewH}px) translate(-50%, -100%) scale(${THREE.MathUtils.clamp(14 / dist, 0.55, 1)})`;
   }
@@ -248,5 +253,7 @@ export function spawnDummies(scene: THREE.Scene, lanes: number[], overlay: HTMLE
   add("basic", 0, -20).setPath(new THREE.Vector3(-14, 0, -20), new THREE.Vector3(14, 0, -20), 3);
   add("elite", 0, -42).setPath(new THREE.Vector3(12, 0, -42), new THREE.Vector3(-12, 0, -42), 2.2);
   add("boss", 0, -56);
+  // Zona de entrenamiento (puños): tres muñecos junto a la pared izquierda del vestíbulo, mirando hacia el centro
+  for (const z of [4.5, 7.5, 10.5]) add(z === 7.5 ? "basic" : "small", -18, z).group.rotation.y = Math.PI / 2;
   return list;
 }

@@ -30,6 +30,41 @@ export class InventoryScreen {
     this.el.addEventListener("focusin", (e) => { const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile"); if (tile) this.select(Number(tile.dataset.uid), false); });
     this.el.addEventListener("contextmenu", (e) => { e.preventDefault(); const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile"); if (tile) { this.select(Number(tile.dataset.uid)); this.quickEquip(); } });
     inv.onChange(() => { if (this.isOpen) this.render(); });
+    this.dragAndDrop();
+  }
+
+  /** Arrastrar armas: entre las dos ranuras equipadas, a la mochila o a la zona de soltar (cae al suelo). */
+  private dragAndDrop() {
+    let dragged: number | null = null;
+    const target = (e: DragEvent) => (e.target as HTMLElement).closest<HTMLElement>("[data-eqslot], [data-packzone], [data-dropzone]");
+    this.el.addEventListener("dragstart", (e) => {
+      const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile[data-uid]"); if (!tile) return;
+      dragged = Number(tile.dataset.uid); this.select(dragged, false);
+      e.dataTransfer?.setData("text/plain", String(dragged)); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+      this.el.classList.add("dragging");
+    });
+    this.el.addEventListener("dragend", () => { dragged = null; this.el.classList.remove("dragging"); this.el.querySelectorAll(".over").forEach((x) => x.classList.remove("over")); });
+    this.el.addEventListener("dragover", (e) => {
+      const t = target(e); if (dragged == null || !t) return;
+      e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+      this.el.querySelectorAll(".over").forEach((x) => x !== t && x.classList.remove("over")); t.classList.add("over");
+    });
+    this.el.addEventListener("dragleave", (e) => { const t = target(e); if (t && !t.contains(e.relatedTarget as Node)) t.classList.remove("over"); });
+    this.el.addEventListener("drop", (e) => {
+      const t = target(e); if (dragged == null || !t) return;
+      e.preventDefault();
+      const it = this.inv.byUid(dragged), from = it && this.inv.find(it.uid); dragged = null;
+      this.el.classList.remove("dragging");
+      if (!it || !from) return;
+      if (t.dataset.dropzone != null) return this.action("drop");
+      if (t.dataset.eqslot != null) {
+        const slot = Number(t.dataset.eqslot);
+        if (from.area === "equip" && from.index === slot) return this.render();
+        this.inv.move(from, { area: "equip", index: slot }); this.hooks.changed(it); return;
+      }
+      if (t.dataset.packzone != null && from.area === "equip") this.action("store");
+      else this.render();
+    });
   }
 
   open() { this.isOpen = true; this.el.hidden = false; if (!this.selected) this.sel = this.inv.current?.uid ?? this.inv.all[0]?.uid ?? null; this.render(); }
@@ -68,9 +103,10 @@ export class InventoryScreen {
           </div>
         </div>
         <h2>${t("ui.equipped")}</h2>
-        <div class="tiles eq">${i.equip.map((x, k) => x ? tileHTML(x, { sel: x.uid === this.sel, slot: k, inHand: k === i.active, dim: !this.visible([x]).length }) : `<div class="tile empty"><span class="slotno">${k + 1}</span>${t("ui.empty")}</div>`).join("")}</div>
+        <div class="tiles eq">${i.equip.map((x, k) => `<div class="slotwrap" data-eqslot="${k}">${x ? tileHTML(x, { sel: x.uid === this.sel, slot: k, inHand: k === i.active, dim: !this.visible([x]).length }) : `<div class="tile empty"><span class="slotno">${k + 1}</span>${t("ui.empty")}</div>`}</div>`).join("")}</div>
         <h2>${t("ui.backpack")} <small>${18 - free}/18</small></h2>
-        <div class="tiles">${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${packItems.length ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
+        <div class="tiles" data-packzone>${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${packItems.length ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
+        <div class="dropzone" data-dropzone>${t("ui.dropZone")}</div>
       </section>
       <section class="panel detail">
         ${it ? weaponCard(it.spec, cur && cur !== it ? cur.spec : null, cur && cur !== it ? t("ui.vsEquipped") : t("ui.equippedNow"), { wide: true }) : `<div class="card empty">${t("ui.noWeapons")}</div>`}
@@ -79,6 +115,7 @@ export class InventoryScreen {
     $("inv-credits").textContent = `${i.credits} ${t("unit.cr")}`;
     $("inv-foot").innerHTML = `<span>${t("ui.bankCount", { n: i.bank.length })}</span>` +
       keyHint("Enter", "Ⓐ", t("ui.select")) + keyHint("1 / 2", "LB / RB", t("ui.equipSlot")) + keyHint("R", "Ⓨ", t("ui.rename")) + keyHint("G", "RS", t("ui.drop")) + keyHint("X", "Ⓧ", t("ui.scrapAction")) + keyHint("Esc", "Ⓑ", t("ui.back"));
+    this.el.querySelectorAll<HTMLElement>(".tile[data-uid]").forEach((x) => { x.draggable = true; });
     this.thumbs.fill(this.el, i.all);
   }
 

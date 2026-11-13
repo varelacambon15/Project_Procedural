@@ -82,6 +82,20 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
   y chispas. Nombres por tipo sin repetir. Hojas con luz de contorno.
 - Cargadores: solo se cambian por otros de forma parecida y solo se alargan los rectos. Tope de 6 cambios.
 
+## Ronda 12 (jugabilidad, versión 0.6.6)
+
+- Rendimiento: `mergeStatic` (src/game/merge.ts) funde mallas por material; las armas del suelo ya no traen luz
+  (cambiar el número de luces recompila todos los shaders: congelones). El número de luces es fijo (8 lámparas).
+  Oclusión de contacto (`src/weapons/ao.ts`) 2,5x más rápida y memorizada por especificación de arma.
+- Manos: los brazos van fijos al arma; la mano izquierda se suaviza en el espacio del arma (gun.ts, `leftLocal`).
+- Partida nueva sin nada: 0 CR (`newGameCredits`) y solo puños. Los muñecos de práctica pagan por daño
+  (`practice` en shop.json: 1 CR / 100 de daño, tope 20 CR/min). `startCredits` queda para la simulación.
+- Mapa 2: instalación clara (hormigón, paneles gris claro, franja naranja, paneles de luz, carteles legibles),
+  muñecos naranjas, zona de entrenamiento con 3 muñecos para los puños (pared izquierda del vestíbulo) y sala de
+  oleadas aparte detrás de la puerta del fondo (`wavesRoom` en world.ts; salir de la sala detiene las oleadas).
+  El día es lo predeterminado; la noche sigue como opción (al usuario le gusta la idea: seguir trabajándola).
+- Inventario: arrastrar armas entre las ranuras, la mochila y la zona de soltar (cae al suelo).
+
 ## Pendiente (prompt 06)
 
 - Miras que no funcionan: falta auditarlas (comparar sightY con el centro de la óptica en muchas armas).

@@ -78,6 +78,14 @@ button { font: inherit; color: inherit; }
 /* Losetas de arma (rejilla por rareza: color y marco) */
 .tiles { grid-auto-rows: max-content; display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(120px, 9vw, 168px), 1fr)); gap: 8px; align-content: start; }
 .tiles.eq { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.slotwrap { display: grid; }
+/* Arrastrar armas: destinos resaltados mientras se arrastra; la zona de soltar solo aparece entonces */
+.tile[draggable="true"] { cursor: grab; }
+.dragging .slotwrap .tile, .dragging [data-packzone] { transition: outline-color .1s; outline: 1px dashed color-mix(in srgb, var(--sim) 45%, transparent); outline-offset: 2px; }
+.dragging .over .tile, .dragging [data-packzone].over { outline: 2px solid var(--sim); }
+.dropzone { display: block; margin-top: 10px; padding: 14px; text-align: center; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--t-dim); border: 1px dashed var(--t-line); }
+.dragging .dropzone { color: var(--t-text, #ddd); border-color: var(--amber); }
+.dropzone.over { color: var(--amber); border-color: var(--amber); background: color-mix(in srgb, var(--amber) 10%, transparent); }
 .tile { position: relative; display: grid; grid-template-rows: auto auto auto auto; gap: 2px; text-align: left; padding: 8px; min-height: 108px; background: var(--t-panel2); border: 1px solid color-mix(in srgb, var(--c, #888) 30%, var(--t-line)); border-left: 3px solid var(--c, var(--t-line)); cursor: pointer; overflow: hidden; transition: border-color .1s, background-color .1s; }
 .tile::after { content: ""; position: absolute; inset: auto 0 0 0; height: 45%; background: linear-gradient(to top, color-mix(in srgb, var(--c, transparent) 16%, transparent), transparent); pointer-events: none; }
 .tile.r-legendaria { box-shadow: inset 0 0 18px -6px var(--c); }

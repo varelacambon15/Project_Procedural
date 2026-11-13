@@ -10,13 +10,22 @@ export interface Settings {
   arms: boolean;         // brazos low-poly en primera persona
   night: boolean;        // campo de tiro de noche con neón (si no, de día)
   bloom: boolean;        // resplandor del neón y de los fogonazos (postproceso)
+  mapV: number;          // versión del mapa (migración de ajustes)
 }
 const KEY = "pp.settings";
-const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: true, bloom: true };
+const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: false, bloom: true, mapV: 2 };
 const listeners = new Set<(s: Settings) => void>();
 
 function load(): Settings {
-  try { const raw = localStorage.getItem(KEY); if (raw) return { ...DEFAULTS, ...JSON.parse(raw) }; } catch { /* sin almacenamiento */ }
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      // Mapa 2 (claro): la noche deja de ser lo predeterminado; quien la tenía guardada pasa una vez al día
+      if (s.mapV !== 2) { s.night = false; s.mapV = 2; try { localStorage.setItem(KEY, JSON.stringify({ ...DEFAULTS, ...s })); } catch { /* */ } }
+      return { ...DEFAULTS, ...s };
+    }
+  } catch { /* sin almacenamiento */ }
   return { ...DEFAULTS };
 }
 export const settings: Settings = load();

@@ -27,7 +27,6 @@ import { Pickups, type Pickup } from "./pickups";
 import { LOOT, LootDirector, type LootSource } from "../weapons/loot";
 import { lootChime } from "./audio";
 import { installPixelFont } from "./pixelfont";
-import { starterWeapons } from "./loadout";
 import { $, MenuCursor, MenuNav, ModelView, Thumbnails, esc, weaponCard, type Dir } from "./ui/common";
 import { InventoryScreen } from "./ui/inventory";
 import { WorkshopScreen } from "./ui/workshop";
@@ -70,7 +69,7 @@ const weaponDarkness = (spec: WeaponSpec | null | undefined) => {
   const lum = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   return Math.max(0, Math.min(1, (0.35 - lum) / 0.3));
 };
-const applyLook = () => { world.setNight(settings.night); rim.intensity = (settings.night ? 0.8 : 0.4) + darkBoost * 1.1; rim.color.set(settings.night ? 0xc8b0ff : 0xbfd8ff); fill.intensity = settings.night ? 0.5 : 0; bloom.enabled = settings.bloom; bloom.strength = settings.night ? 0.85 : 0.3; renderer.toneMappingExposure = settings.night ? 1.1 : 1.0; };
+const applyLook = () => { world.setNight(settings.night); rim.intensity = (settings.night ? 0.8 : 0.4) + darkBoost * 1.1; rim.color.set(settings.night ? 0xc8b0ff : 0xbfd8ff); fill.intensity = settings.night ? 0.5 : 0; bloom.enabled = settings.bloom; bloom.strength = settings.night ? 0.55 : 0.3; renderer.toneMappingExposure = settings.night ? 1.25 : 1.0; };
 applyLook(); onSettings(applyLook);
 startMusic("./music/ambient-02.ogg");
 const draw = () => (settings.bloom ? composer.render() : renderer.render(scene, camera));
@@ -125,6 +124,7 @@ async function boot() {
       if (!sim.firstHit.has(d)) sim.firstHit.set(d, now);
       if (element === "fuego" || element === "electrico") d.applyStatus(element, dmg);
       if (!d.respawn) loot.combat(gameTime);
+      else practiceEarn(dealt);
       return dealt;
     },
     onKill(d) {
@@ -204,10 +204,10 @@ async function boot() {
   // ---------- Partida: nueva, guardar, cargar ----------
   function newGame() {
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
-    // Armas iniciales: pistola y fusil equipados; escopeta y subfusil en la mochila. Sin accesorios sueltos.
-    for (const spec of starterWeapons(gen)) inv.add(makeItem(spec));
-    inv.credits = SHOP.startCredits; shopState = newShopState(); playSeconds = 0; inGame = true;
+    // Se empieza sin nada: puños y 0 créditos. El primer dinero sale de golpear o disparar a los muñecos de práctica.
+    inv.credits = SHOP.newGameCredits; practice.acc = 0; practice.window = []; shopState = newShopState(); playSeconds = 0; inGame = true;
     inv.changed(); php.reset();
+    toast(t("ui.practiceTip"));
   }
   function collect(name = ""): SaveData {
     const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i }))]
@@ -292,6 +292,17 @@ async function boot() {
   }
 
   // ---------- Créditos y máquina expendedora ----------
+  // Muñecos de práctica: créditos por daño, con tope por minuto de juego (ventana deslizante)
+  const practice = { acc: 0, window: [] as [number, number][] };
+  function practiceEarn(dealt: number) {
+    const P = SHOP.practice; practice.acc += dealt * P.perDamage;
+    const whole = Math.floor(practice.acc); if (whole < 1) return;
+    practice.acc -= whole;
+    practice.window = practice.window.filter(([t]) => playSeconds - t < 60);
+    const room = P.capPerMinute - practice.window.reduce((a, [, n]) => a + n, 0);
+    const n = Math.min(whole, Math.max(0, room)); if (!n) return;
+    practice.window.push([playSeconds, n]); earn(n);
+  }
   function earn(n: number) { if (!n) return; inv.credits += n; creditsHud(); }
   function creditsHud() { $("crhud").textContent = `${inv.credits} ${t("unit.cr")}`; }
   let machineT = -1;
@@ -518,7 +529,11 @@ async function boot() {
     saveDotT -= dt; $("savedot").hidden = saveDotT <= 0; if (saveDotT > 0) $("savedot").textContent = t("save.autoDot");
 
     pickups.update(dt);
-    if (state === "play") { waves.update(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime); }
+    if (state === "play") {
+      // Las oleadas viven en su sala: salir por la puerta las detiene
+      if (waves.active && (player.pos.z < world.wavesRoom.z0 || player.pos.z > world.wavesRoom.z1)) { waves.stop(); toast(t("ui.wavesLeft")); }
+      waves.update(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
+    }
     healthHud();
     {
       const now = performance.now() / 1000;
