@@ -78,7 +78,10 @@ export function buildMuzzle(id: string, d: number, L: number): { group: THREE.Gr
     default: { // flash hider
       len = Math.max(0.035, L * 0.055);
       g.add(tube(r * 1.25, len * 0.35, steel, 0));
-      for (let i = 0; i < 4; i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(len * 0.65, r * 0.45, r * 0.45), steel); const a = (i / 4) * Math.PI * 2 + Math.PI / 4; p.position.set(len * 0.67, Math.sin(a) * r * 1.05, Math.cos(a) * r * 1.05); g.add(p); }
+      // Jaula (tipo "birdcage"): cuerpo cerrado con ranuras largas y aro en la boca (las púas sueltas se leían como un tenedor)
+      g.add(tube(r * 1.15, len * 0.62, steel, len * 0.35));
+      g.add(tube(r * 1.22, len * 0.06, steel, len * 0.94));
+      for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2 + Math.PI / 2; const sl = new THREE.Mesh(new THREE.BoxGeometry(len * 0.4, r * 0.32, r * 0.32), polymer()); sl.position.set(len * 0.64, Math.sin(a) * r * 1.1, Math.cos(a) * r * 1.1); g.add(sl); }
     }
   }
   return { group: g, length: len };
