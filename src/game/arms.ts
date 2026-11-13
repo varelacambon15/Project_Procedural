@@ -128,6 +128,8 @@ class Hand {
       const ph = new THREE.Mesh(new RoundedBoxGeometry(0.021 - k * 0.002, 0.019, len + 0.004, 1, 0.006), glove); ph.position.z = -len / 2; piv.add(ph);
       par.add(piv); this.thumb.push(piv); par = piv;
     }
+    // Mano algo más pequeña y fina que el primer modelo (se veía enorme en primera persona)
+    this.g.scale.set(0.8, 0.82, 0.86);
     for (const o of this.g.children) o.traverse((m) => { (m as THREE.Mesh).renderOrder = 9; });
     parent.add(this.g);
   }
@@ -147,14 +149,14 @@ class Arm {
   readonly upper: Segment; readonly fore: Segment; readonly hand: Hand; private elbowM: THREE.Mesh;
   private first = true;
   constructor(parent: THREE.Object3D, readonly side: 1 | -1) {
-    this.upper = new Segment(parent, 0.056, 0.047, sleeve);
-    this.fore = new Segment(parent, 0.046, 0.04, sleeve);
-    this.elbowM = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 8), sleeve); parent.add(this.elbowM);
+    this.upper = new Segment(parent, 0.043, 0.036, sleeve);
+    this.fore = new Segment(parent, 0.035, 0.029, sleeve);
+    this.elbowM = new THREE.Mesh(new THREE.SphereGeometry(0.037, 10, 8), sleeve); parent.add(this.elbowM);
     // Parche en el hombro, pliegues en el antebrazo y puño de la chaqueta (más oscuro) que tapa el guante
-    const patch = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.006), patchMat); patch.position.set(0.054 * side, 0, 0); patch.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2; this.upper.deco(patch, 0.09);
-    for (const at of [0.08, 0.15]) { const fold = new THREE.Mesh(new THREE.TorusGeometry(0.044, 0.006, 5, 12), sleeve); fold.rotation.x = Math.PI / 2; fold.scale.set(1, 1.1, 1); this.fore.deco(fold, at); }
-    const cuffM = cyl(0.045, 0.047, sleeveDark, 12); cuffM.scale.y = 0.04; this.fore.deco(cuffM, -0.02);
-    const hem = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.004, 4, 12), sleeveDark); hem.rotation.x = Math.PI / 2; this.fore.deco(hem, -0.002);
+    const patch = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.006), patchMat); patch.position.set(0.042 * side, 0, 0); patch.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2; this.upper.deco(patch, 0.09);
+    for (const at of [0.08, 0.15]) { const fold = new THREE.Mesh(new THREE.TorusGeometry(0.033, 0.004, 5, 12), sleeve); fold.rotation.x = Math.PI / 2; fold.scale.set(1, 1.1, 1); this.fore.deco(fold, at); }
+    const cuffM = cyl(0.034, 0.036, sleeveDark, 12); cuffM.scale.y = 0.04; this.fore.deco(cuffM, -0.02);
+    const hem = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.003, 4, 12), sleeveDark); hem.rotation.x = Math.PI / 2; this.fore.deco(hem, -0.002);
     this.hand = new Hand(parent, side, side < 0);
     for (const g of [this.upper.g, this.fore.g, this.elbowM]) g.traverse((m) => { (m as THREE.Mesh).renderOrder = 9; (m as THREE.Mesh).castShadow = false; });
   }
@@ -169,7 +171,7 @@ class Arm {
     this.hand.set({ ...p, pos: this.cur.clone() }, k);
     p = { ...p, pos: this.cur.clone() };
     // La muñeca está detrás de la palma (en +Z de la mano); el IK llega a la muñeca
-    const wrist = p.pos.clone().add(new THREE.Vector3(0, 0.004, 0.072).applyQuaternion(this.hand.g.quaternion));
+    const wrist = p.pos.clone().add(new THREE.Vector3(0, 0.003, 0.062).applyQuaternion(this.hand.g.quaternion));
     const elbow = solveTwoBone(shoulder, wrist, ARM_DATA.upper, ARM_DATA.fore, pole);
     this.upper.set(shoulder, elbow); this.elbowM.position.copy(elbow);
     this.fore.set(elbow, wrist);

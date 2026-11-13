@@ -114,11 +114,11 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   // Texto propio (palabras genéricas de una galería de tiro y de la calle), dibujado con halo; detrás, una chapa oscura
   const neonSign = (lines: string[], color: number, at: THREE.Vector3, facing: number, vertical: boolean, size = 1) => {
     const hex = "#" + color.toString(16).padStart(6, "0");
-    const cw = vertical ? 32 : 32 + 16 * Math.max(...lines.map((l) => l.length)), ch = vertical ? 32 * lines[0].length + 8 : 26 * lines.length + 8;
+    const cw = vertical ? 32 : 32 + 24 * Math.max(...lines.map((l) => l.length)), ch = vertical ? 32 * lines[0].length + 8 : 26 * lines.length + 8;
     const tex = canvasTex(cw, ch, (c) => {
       c.clearRect(0, 0, cw, ch); c.strokeStyle = hex; c.fillStyle = hex; c.shadowColor = hex; c.shadowBlur = 6;
       c.lineWidth = 2; c.strokeRect(3, 3, cw - 6, ch - 6);
-      c.font = "bold 22px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+      c.font = 'bold 22px "Yu Gothic", "Hiragino Sans", "Noto Sans JP", "Noto Sans CJK JP", "MS Gothic", sans-serif'; c.textAlign = "center"; c.textBaseline = "middle";
       if (vertical) [...lines[0]].forEach((chr, i) => c.fillText(chr, cw / 2, 20 + i * 32));
       else lines.forEach((l, i) => c.fillText(l, cw / 2, 17 + i * 26));
     }, undefined, true);
@@ -139,18 +139,18 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   };
   const L = -W / 2 + 0.12, R = W / 2 - 0.12;
   neonSign(["射撃場"], NEON.red, new THREE.Vector3(L, 4.6, -9), Math.PI / 2, true, 1.3);
-  neonSign(["AMMO", "24H"], NEON.pink, new THREE.Vector3(R, 3.6, -14), -Math.PI / 2, false);
-  neonSign(["BAR"], NEON.pink, new THREE.Vector3(L, 3.2, -24), Math.PI / 2, false, 1.2);
+  neonSign(["弾薬"], NEON.pink, new THREE.Vector3(R, 3.6, -14), -Math.PI / 2, false);
+  neonSign(["酒場"], NEON.pink, new THREE.Vector3(L, 3.2, -24), Math.PI / 2, false, 1.2);
   neonSign(["弾"], NEON.red, new THREE.Vector3(R, 5.2, -30), -Math.PI / 2, true, 1.6);
-  neonSign(["HOTEL"], NEON.violet, new THREE.Vector3(L, 5.4, -40), Math.PI / 2, false);
+  neonSign(["旅館"], NEON.violet, new THREE.Vector3(L, 5.4, -40), Math.PI / 2, true);
   neonSign(["夜"], NEON.green, new THREE.Vector3(R, 4.4, -46), -Math.PI / 2, true, 1.4);
-  neonSign(["OPEN"], NEON.red, new THREE.Vector3(-6, 4.8, FRONT + 0.12), 0, false, 1.4);
-  neonSign(["RANGE"], NEON.amber, new THREE.Vector3(7, 3.6, FRONT + 0.12), 0, false, 1.2);
-  neonSign(["KEEP OUT"], NEON.amber, new THREE.Vector3(L, 3.4, 9), Math.PI / 2, false, 0.9);
+  neonSign(["営業中"], NEON.red, new THREE.Vector3(-6, 4.8, FRONT + 0.12), 0, false, 1.4);
+  neonSign(["射撃"], NEON.amber, new THREE.Vector3(7, 3.6, FRONT + 0.12), 0, false, 1.2);
+  neonSign(["立入禁止"], NEON.amber, new THREE.Vector3(L, 3.4, 9), Math.PI / 2, false, 0.9);
   // Pared de la zona de equipo (detrás del jugador al empezar)
-  neonSign(["ARMORY"], NEON.pink, new THREE.Vector3(-9, 4.6, BACK - 0.12), Math.PI, false, 1.3);
+  neonSign(["武器庫"], NEON.pink, new THREE.Vector3(-9, 4.6, BACK - 0.12), Math.PI, false, 1.3);
   neonSign(["修理"], NEON.amber, new THREE.Vector3(9, 4.2, BACK - 0.12), Math.PI, true, 1.2);
-  neonSign(["NO", "REFUNDS"], NEON.violet, new THREE.Vector3(0, 5.2, BACK - 0.12), Math.PI, false, 0.9);
+  neonSign(["返品不可"], NEON.violet, new THREE.Vector3(0, 5.2, BACK - 0.12), Math.PI, false, 0.9);
   neonSign(["工房"], NEON.pink, new THREE.Vector3(R, 4.4, 10), -Math.PI / 2, true, 1.1);
 
   // ---------- Detalles del callejón ----------
