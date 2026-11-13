@@ -355,10 +355,11 @@ async function boot() {
   });
   const hooksWaveEnd = (_i: number, last: Dummy | null) => dropLoot("waveEnd", last?.group.position ?? new THREE.Vector3(0, 0, 8));
   function healthHud() {
-    const el = $("phealth"); const show = state === "play" && (waves.active || php.value < php.max);
+    // Vida del jugador: siempre visible abajo a la izquierda, con cifras (y la oleada en curso encima)
+    const el = $("phealth"); const show = state === "play";
     el.hidden = !show; if (!show) return;
     el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
-    el.querySelector<HTMLElement>("span")!.textContent = waves.active ? t("ui.waveN", { n: waves.index + 1, of: waves.total, left: waves.remaining }) : "";
+    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: waves.total, left: waves.remaining })}` : "");
   }
 
   // ---------- Botín de enemigos ----------

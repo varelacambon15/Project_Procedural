@@ -59,10 +59,10 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
     gr.addColorStop(0, "#07061a"); gr.addColorStop(0.45, "#151338"); gr.addColorStop(0.62, "#2a2150"); gr.addColorStop(1, "#3a2a58");
     c.fillStyle = gr; c.fillRect(0, 0, 4, 128);
   }, undefined, true);
-  const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 24, 16), new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false }));
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(240, 24, 16), new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false }));
   sky.renderOrder = -10; g.add(sky);
   const starPos: number[] = [];
-  for (let i = 0; i < 500; i++) { const th = r() * Math.PI * 2, ph = 0.15 + r() * 1.2; starPos.push(Math.cos(th) * Math.cos(ph) * 380, Math.sin(ph) * 380, Math.sin(th) * Math.cos(ph) * 380); }
+  for (let i = 0; i < 500; i++) { const th = r() * Math.PI * 2, ph = 0.15 + r() * 1.2; starPos.push(Math.cos(th) * Math.cos(ph) * 225, Math.sin(ph) * 225, Math.sin(th) * Math.cos(ph) * 225); }
   const stars = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(starPos, 3)), new THREE.PointsMaterial({ color: 0xd8d0ff, size: 1.6, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.8 }));
   g.add(stars);
   const moonTex = canvasTex(64, 64, (c) => {
@@ -71,8 +71,8 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
     c.fillStyle = "#8aa3bb"; for (const [x, y, rr] of [[26, 27, 4], [37, 35, 5], [30, 40, 3], [39, 25, 2.5], [24, 36, 2]]) { c.beginPath(); c.arc(x, y, rr, 0, Math.PI * 2); c.fill(); }
     c.fillStyle = "rgba(10,20,40,0.35)"; c.beginPath(); c.arc(38, 30, 17, 0, Math.PI * 2); c.fill();
   });
-  const moon = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshBasicMaterial({ map: moonTex, transparent: true, fog: false, depthWrite: false }));
-  moon.position.set(40, 170, -300); moon.lookAt(0, 0, 0); moon.renderOrder = -9; g.add(moon);
+  const moon = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshBasicMaterial({ map: moonTex, transparent: true, fog: false, depthWrite: false, blending: THREE.AdditiveBlending }));
+  moon.position.set(25, 70, -200); moon.scale.setScalar(0.6); moon.lookAt(0, 0, 0); moon.renderOrder = -9; g.add(moon);
 
   // ---------- Edificios del fondo (ventanas encendidas) ----------
   const windowsTex = () => canvasTex(16, 32, (c) => {
@@ -99,11 +99,8 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
       s.position.set(x + (x > 0 ? -w / 2 - 0.3 : w / 2 + 0.3), h * (0.4 + r() * 0.3), z + (r() - 0.5) * dpt * 0.5); g.add(s);
     }
   };
-  for (const side of [-1, 1]) for (let z = BACK + 6; z > FRONT - 20; z -= 9 + r() * 6) {
-    building(side * (W / 2 + 12 + r() * 12), z, 8 + r() * 6, 8 + r() * 4, 16 + r() * 30);
-  }
-  for (let x = -60; x < 60; x += 10 + r() * 8) building(x, FRONT - 18 - r() * 40, 8 + r() * 8, 10, 18 + r() * 45);
-  for (let x = -50; x < 50; x += 12 + r() * 8) building(x, BACK + 18 + r() * 20, 8 + r() * 8, 10, 14 + r() * 30);
+  // (sin edificios alrededor: lo que cuenta es el tono y la luz del callejón; queda la función por si se quieren a lo lejos)
+  void building;
 
   // ---------- Rótulos de neón en los muros del callejón ----------
   // Texto propio (palabras genéricas de una galería de tiro y de la calle), dibujado con halo; detrás, una chapa oscura
