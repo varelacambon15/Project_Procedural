@@ -262,6 +262,11 @@ export function buildRange(scene: THREE.Scene): World {
         const flick = Math.sin(l.phase * 0.7) > 0.985 ? (Math.random() < 0.5 ? 0.25 : 1) : 1;
         l.light.intensity = l.base * flick; (l.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = (night ? 2.4 : 1.6) * flick;
       }
+      // Neón vivo: la rejilla del suelo respira despacio y el rótulo del fondo titila de vez en cuando
+      if (night) {
+        gridMat.opacity = 0.28 + 0.06 * Math.sin(blink * 0.9);
+        signMat.opacity = Math.sin(blink * 0.37) > 0.992 ? 0.35 + Math.random() * 0.4 : 1;
+      }
       dataT -= dt; blink += dt;
       if (dataT <= 0) { dataT = 0.25; drawData(data); }
       const on = Math.floor(blink * 2) % 2 === 0;

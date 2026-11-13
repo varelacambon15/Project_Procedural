@@ -41,13 +41,13 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
   Ajustes → "Campo de tiro de noche" y "Resplandor del neón". Código en `src/game/world.ts` (`setNight`) y `main.ts`.
 - Brazos V1 (`src/game/arms.ts`): guantes con dedos articulados, manga con puño, reloj. Agarres de cada mano en
   `GRIPS` al final de `src/game/gun.ts` (empuñadura, bajo el guardamanos, envolviendo, vertical, coger).
-- Culata esqueleto de pletina; varillas de la plegable más gruesas.
+- Culata esqueleto de pletina; varillas de la plegable más gruesas; brace de polímero sobre tubo; apagallamas de jaula;
+  guardamanos de madera en pistolas-carabina clásicas; revólver clásico con contrapeso en vez de compensador.
 - Tests: si el contenedor va justo de memoria, `npx vitest run --minWorkers=1 --maxWorkers=2`.
 
 ## Pendiente
 
 - Integrar packs nuevos (revólveres PSX, Semi Realistic convertidos a glb; aún no integrados).
 - Seguir puliendo el realismo de las pistolas (detalle, biseles, texturas).
-- Revólveres clásicos: el compensador de accesorio sigue pudiendo salir (quitarlo cambia los tests de accesorios).
 - Probar en juego las poses de mano en todas las armas (las capturas por software no permiten ver la recarga fluida).
 - Probar en juego la economía nueva y ajustar `shop.json`.
