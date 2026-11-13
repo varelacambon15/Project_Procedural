@@ -450,7 +450,7 @@ export class WeaponAssembler {
     }
 
     // Oclusión de contacto entre piezas (una vez por arma montada)
-    contactAO(group, parts.map((p) => p.object));
+    contactAO(group, parts.map((p) => p.object), undefined, undefined, undefined, JSON.stringify(spec));
     // Las legendarias: un único detalle pequeño en latón (gatillo o palanca), nunca el cargador ni la boca
     const legendary = spec.rarity.id === "legendaria";
     // (nunca una pieza grande como el accesorio de boca: parecería un juguete; solo gatillo o palanca)

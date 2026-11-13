@@ -7,7 +7,22 @@ import * as THREE from "three";
  * `parts`: objetos ya colocados dentro de `root` (sin centrar). Oscurece los vértices de cada pieza según cuántos
  * rayos cortos (hasta `maxDist`) chocan con OTRAS piezas. Solo se copian las geometrías que cambian.
  */
-export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist = 0.022, rays = 10, strength = 0.6) {
+// Resultados por arma (misma especificación = mismas piezas en el mismo orden): el arma del suelo, la equipada, el
+// inventario y la tienda montan la misma arma varias veces; el cálculo solo se hace la primera.
+const memoAO = new Map<string, (Float32Array | null)[]>();
+const MEMO_MAX = 32;
+
+export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist = 0.022, rays = 10, strength = 0.6, cacheKey?: string) {
+  const meshList = () => { const out: THREE.Mesh[] = []; for (const p of parts) p.traverse((n) => { const m = n as THREE.Mesh; if (m.isMesh && m.geometry.attributes.position) out.push(m); }); return out; };
+  const cached = cacheKey !== undefined ? memoAO.get(cacheKey) : undefined;
+  if (cached) {
+    const ms = meshList();
+    if (ms.length === cached.length && ms.every((m, i) => !cached[i] || cached[i]!.length === m.geometry.attributes.position.count * 3)) {
+      ms.forEach((m, i) => { const c = cached[i]; if (c) { m.geometry = m.geometry.clone(); m.geometry.setAttribute("color", new THREE.BufferAttribute(c.slice(), 3)); } });
+      memoAO.delete(cacheKey!); memoAO.set(cacheKey!, cached);
+      return;
+    }
+  }
   root.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
   const toRoot = (o: THREE.Object3D) => new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
@@ -25,15 +40,19 @@ export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist
       }
     }
   });
-  const C = maxDist, cells = new Map<string, number[]>();
-  const key = (x: number, y: number, z: number) => `${x},${y},${z}`;
-  const T = owner.length;
+  const C = maxDist, T = owner.length;
+  // Rejilla con clave numérica (antes texto: era la mayor parte del coste) y caja de cada triángulo para descartar
+  // los que quedan más lejos que el alcance del rayo (no pueden contar: el resultado es el mismo)
+  const cells = new Map<number, number[]>();
+  const key = (x: number, y: number, z: number) => ((x + 512) * 1024 + (y + 512)) * 1024 + (z + 512);
+  const box = new Float32Array(T * 6);
   for (let t = 0; t < T; t++) {
     const o = t * 9;
-    const lo = [0, 1, 2].map((a) => Math.floor(Math.min(tri[o + a], tri[o + 3 + a], tri[o + 6 + a]) / C));
-    const hi = [0, 1, 2].map((a) => Math.floor(Math.max(tri[o + a], tri[o + 3 + a], tri[o + 6 + a]) / C));
-    if ((hi[0] - lo[0] + 1) * (hi[1] - lo[1] + 1) * (hi[2] - lo[2] + 1) > 4000) continue; // triángulos enormes: se ignoran
-    for (let x = lo[0]; x <= hi[0]; x++) for (let y = lo[1]; y <= hi[1]; y++) for (let z = lo[2]; z <= hi[2]; z++) { const k = key(x, y, z); let c = cells.get(k); if (!c) cells.set(k, (c = [])); c.push(t); }
+    for (let a = 0; a < 3; a++) { box[t * 6 + a] = Math.min(tri[o + a], tri[o + 3 + a], tri[o + 6 + a]); box[t * 6 + 3 + a] = Math.max(tri[o + a], tri[o + 3 + a], tri[o + 6 + a]); }
+    const lx = Math.floor(box[t * 6] / C), ly = Math.floor(box[t * 6 + 1] / C), lz = Math.floor(box[t * 6 + 2] / C);
+    const hx = Math.floor(box[t * 6 + 3] / C), hy = Math.floor(box[t * 6 + 4] / C), hz = Math.floor(box[t * 6 + 5] / C);
+    if ((hx - lx + 1) * (hy - ly + 1) * (hz - lz + 1) > 4000) continue; // triángulos enormes: se ignoran
+    for (let x = lx; x <= hx; x++) for (let y = ly; y <= hy; y++) for (let z = lz; z <= hz; z++) { const k = key(x, y, z); let c = cells.get(k); if (!c) cells.set(k, (c = [])); c.push(t); }
   }
   const hitTri = (ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, o: number) => {
     const e1x = tri[o + 3] - tri[o], e1y = tri[o + 4] - tri[o + 1], e1z = tri[o + 5] - tri[o + 2];
@@ -48,7 +67,11 @@ export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist
   };
   const dirs = Array.from({ length: rays }, (_, i) => { const z = 1 - (i + 0.5) / rays, r = Math.sqrt(1 - z * z), a = i * 2.39996; return new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r, z); });
   const q = new THREE.Quaternion(), Z = new THREE.Vector3(0, 0, 1), p = new THREE.Vector3(), nn = new THREE.Vector3(), d = new THREE.Vector3();
+  const seen = new Int32Array(T).fill(-1), cand: number[] = [];
+  let stamp = 0;
   parts.forEach((part, pi) => {
+    // Vértices repetidos (misma posición y normal en la pieza, típico de mallas sin índice): se calculan una vez
+    const memo = new Map<number, number[]>(); // hash → [x, y, z, nx, ny, nz, resultado, ...] (comparación exacta)
     for (const m of meshesOf(part)) {
       const M = toRoot(m), N = new THREE.Matrix3().getNormalMatrix(M);
       const g = m.geometry, pos = g.attributes.position, nor = g.attributes.normal;
@@ -56,18 +79,35 @@ export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist
       let col: Float32Array | null = null;
       for (let i = 0; i < pos.count; i++) {
         p.fromBufferAttribute(pos, i).applyMatrix4(M); nn.fromBufferAttribute(nor, i).applyMatrix3(N).normalize();
-        const ox = p.x + nn.x * 0.0005, oy = p.y + nn.y * 0.0005, oz = p.z + nn.z * 0.0005;
-        const cx = Math.floor(ox / C), cy = Math.floor(oy / C), cz = Math.floor(oz / C);
-        const cand = new Set<number>();
-        for (let x = cx - 1; x <= cx + 1; x++) for (let y = cy - 1; y <= cy + 1; y++) for (let z = cz - 1; z <= cz + 1; z++) { const c = cells.get(key(x, y, z)); if (c) for (const t of c) if (owner[t] !== pi) cand.add(t); }
-        if (!cand.size) continue;
-        q.setFromUnitVectors(Z, nn);
-        let hit = 0;
-        for (const dir of dirs) {
-          d.copy(dir).applyQuaternion(q);
-          let best = Infinity;
-          for (const t of cand) { const h = hitTri(ox, oy, oz, d.x, d.y, d.z, t * 9); if (h > 0 && h < best) best = h; }
-          if (best <= maxDist) hit += 1 - (best / maxDist) * 0.5;
+        const mk = Math.round(p.x * 1e5) * 73856093 ^ Math.round(p.y * 1e5) * 19349663 ^ Math.round(p.z * 1e5) * 83492791 ^ Math.round(nn.x * 100 + nn.y * 1e4 + nn.z * 1e6);
+        let bucket = memo.get(mk), hit: number | undefined;
+        if (bucket) for (let k = 0; k < bucket.length; k += 7) if (bucket[k] === p.x && bucket[k + 1] === p.y && bucket[k + 2] === p.z && bucket[k + 3] === nn.x && bucket[k + 4] === nn.y && bucket[k + 5] === nn.z) { hit = bucket[k + 6]; break; }
+        if (hit === undefined) {
+          hit = 0;
+          const ox = p.x + nn.x * 0.0005, oy = p.y + nn.y * 0.0005, oz = p.z + nn.z * 0.0005;
+          const cx = Math.floor(ox / C), cy = Math.floor(oy / C), cz = Math.floor(oz / C);
+          stamp++; cand.length = 0;
+          for (let x = cx - 1; x <= cx + 1; x++) for (let y = cy - 1; y <= cy + 1; y++) for (let z = cz - 1; z <= cz + 1; z++) {
+            const c = cells.get(key(x, y, z)); if (!c) continue;
+            for (const t of c) {
+              if (seen[t] === stamp || owner[t] === pi) continue;
+              seen[t] = stamp;
+              const b = t * 6;
+              const ex = Math.max(box[b] - ox, 0, ox - box[b + 3]), ey = Math.max(box[b + 1] - oy, 0, oy - box[b + 4]), ez = Math.max(box[b + 2] - oz, 0, oz - box[b + 5]);
+              if (ex * ex + ey * ey + ez * ez <= C * C) cand.push(t);
+            }
+          }
+          if (cand.length) {
+            q.setFromUnitVectors(Z, nn);
+            for (const dir of dirs) {
+              d.copy(dir).applyQuaternion(q);
+              let best = Infinity;
+              for (const t of cand) { const h = hitTri(ox, oy, oz, d.x, d.y, d.z, t * 9); if (h > 0 && h < best) best = h; }
+              if (best <= maxDist) hit += 1 - (best / maxDist) * 0.5;
+            }
+          }
+          if (!bucket) memo.set(mk, (bucket = []));
+          bucket.push(p.x, p.y, p.z, nn.x, nn.y, nn.z, hit);
         }
         if (!hit) continue;
         if (!col) {
@@ -77,10 +117,15 @@ export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist
           col = base ? (base.array as Float32Array).slice(0, pos.count * base.itemSize) : new Float32Array(pos.count * 3).fill(1);
           if (!base || base.itemSize !== 3) { const c3 = new Float32Array(pos.count * 3); for (let k = 0; k < pos.count; k++) for (let a = 0; a < 3; a++) c3[k * 3 + a] = base ? base.getX(k) : 1; col = c3; }
           m.geometry.setAttribute("color", new THREE.BufferAttribute(col, 3));
+          m.geometry.userData.aoOwn = true;
         }
         const f = 1 - strength * Math.min(1, (hit / rays) * 1.6);
         col[i * 3] *= f; col[i * 3 + 1] *= f; col[i * 3 + 2] *= f;
       }
     }
   });
+  if (cacheKey !== undefined) {
+    memoAO.set(cacheKey, meshList().map((m) => (m.geometry.attributes.color && m.geometry.userData.aoOwn ? (m.geometry.attributes.color.array as Float32Array).slice() : null)));
+    while (memoAO.size > MEMO_MAX) memoAO.delete(memoAO.keys().next().value!);
+  }
 }

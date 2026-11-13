@@ -30,10 +30,11 @@ export class Pickups {
     beam.position.y = 1.3; beam.name = "beam";
     const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide }));
     ring.rotation.x = -Math.PI / 2; ring.name = "ring";
-    const light = new THREE.PointLight(color, 2.5, 3.5, 2); light.position.y = 0.4;
+    // Sin luz propia: añadir o quitar una luz cambia el número de luces y obliga a recompilar todos los shaders
+    // (congelaba el juego unos segundos cada vez que caía un arma). El haz y el anillo ya marcan la rareza.
     const scan = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.36, 32), new THREE.MeshBasicMaterial({ color: 0x9fe8ee, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
     scan.rotation.x = -Math.PI / 2;
-    root.add(beam, ring, light, scan);
+    root.add(beam, ring, scan);
     // Cuanto más rara, más alto y más visible el haz, con partículas que suben (se distingue de lejos)
     const lvl = LEVEL[item.spec.rarity.id] ?? 0;
     beam.scale.set(1 + lvl * 0.15, 1 + lvl * 0.2, 1 + lvl * 0.15); beam.position.y = 1.3 * (1 + lvl * 0.2);
