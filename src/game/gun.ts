@@ -477,17 +477,19 @@ export class Gun {
       else if (ph.id === "settle") left = h.charge.clone().lerp(sup, ease(ph.t));
     } else if (this.cycleT > 0 && this.spec?.fireMode === "pump") {
       left = this.moving.pump ? sup.clone().add(pumpOff) : sup.clone().add(new THREE.Vector3(-0.07 * tri(1 - this.cycleT / 0.45, 0, 1), 0, 0));
-    } else if (this.cycleT > 0 && this.spec?.fireMode === "bolt") {
-      left = h.charge.clone().add(new THREE.Vector3(-0.04 * tri(1 - this.cycleT / 0.45, 0, 1), 0.02, 0.04));
     }
+    // Cerrojo: lo acciona la mano derecha (va a la manilla, a la derecha del cajón, tira atrás y vuelve); la izquierda sujeta
+    const boltK = this.cycleT > 0 && this.spec?.fireMode === "bolt" ? tri(1 - this.cycleT / 0.45, 0, 1) : 0;
+    const reach = Math.min(1, boltK * 1.8);
+    const rightAt = h.grip.clone().lerp(h.charge.clone().add(new THREE.Vector3(-0.02, -0.012, 0.045)), ease(reach)).add(new THREE.Vector3(-0.06 * boltK * reach, 0, 0));
     // Agarre de cada mano (marco del arma en primera persona: -Z boca, +Y arriba, +X derecha)
     const hq = camQ.clone().multiply(this.holder.getWorldQuaternion(new THREE.Quaternion())); void orient;
     const kind: HandKind = ph ? (style === "shells" ? (ph.id === "rack" ? "under" : "grab") : ph.id === "rack" || ph.id === "settle" ? "grab" : "grab")
-      : this.cycleT > 0 && this.spec?.fireMode === "bolt" ? "grab" : supportKind(left && base && left.equals(base) ? (k > 0.5 ? hold?.ads : hold?.hip) : undefined, this.spec?.type);
+      : supportKind(left && base && left.equals(base) ? (k > 0.5 ? hold?.ads : hold?.hip) : undefined, this.spec?.type);
     const pose = (at: THREE.Vector3, g: HandGrip, curl: Curl): HandPose => ({ pos: toCam(at).add(g.off.clone().applyQuaternion(hq)), orient: hq.clone().multiply(g.q), curl });
     const R = GRIPS.right, sp = this.sprintT, ready = Math.max(this.aimT, Math.min(1, this.onTrigT * 3)) * (1 - sp);
     const trig = 0.06 + 0.28 * ready + 0.38 * this.trigT;
-    const right = pose(h.grip, R, { fingers: [trig, 0.86 - 0.1 * sp, 0.9 - 0.1 * sp, 0.93 - 0.1 * sp], thumb: 0.4 - 0.15 * sp });
+    const right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [trig, 0.86 - 0.1 * sp, 0.9 - 0.1 * sp, 0.93 - 0.1 * sp], thumb: 0.4 - 0.15 * sp });
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
     this.arms.update({ right, left: left ? pose(left, L, loose) : null, dt });
