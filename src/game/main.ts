@@ -187,7 +187,7 @@ async function boot() {
     nav.setRoot($(s === "workbench" ? "workbench" : s)); setTimeout(() => nav.first(), 0);
   }
   function openStart(panel?: "saves") {
-    state = inGame ? "pause" : "title"; input.unlock();
+    state = inGame ? "pause" : "title"; input.unlock(); if (inGame) autosave(); // guardar al pausar
     start.open(panel); nav.setRoot($("start")); setTimeout(() => (panel ? undefined : $("start").querySelector<HTMLElement>(".mainmenu button")?.focus()), 0);
   }
   function resume() {
@@ -260,6 +260,9 @@ async function boot() {
     resume();
   }
   let autosaveT = 0, saveDotT = 0;
+  // Autoguardado también al salir de la pestaña o cerrar la ventana (sin perder lo último)
+  addEventListener("visibilitychange", () => { if (document.hidden) autosave(); });
+  addEventListener("pagehide", () => autosave());
   function autosave() {
     if (!inGame) return;
     autosaveT = 0;
@@ -477,7 +480,7 @@ async function boot() {
       gun.update(dt, { fire: f.fire, aim: f.aim, moving: Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5), sprinting: player.sprinting, lookX: f.lookX, lookY: f.lookY, vy: player.vel.y, grounded: player.onGround, inspect: f.inspect });
       const base = settings.fov, aimFov = gun.sight === "scope" ? base / gun.zoom : gun.sight === "iron" ? base / 1.35 : base / 1.6;
       camera.fov = THREE.MathUtils.lerp((player.sprinting ? base + 7 : base) + 9 * player.slideK, aimFov, gun.aimT); camera.updateProjectionMatrix();
-      playSeconds += dt; autosaveT += dt; if (autosaveT > 180) autosave(); // autoguardado cada 3 minutos de juego
+      playSeconds += dt; autosaveT += dt; if (autosaveT > 60) autosave(); // autoguardado cada minuto de juego
     } else {
       $("prompt").hidden = true; $("pickcard").hidden = true; shownPickup = null;
       gun.update(dt, { fire: false, aim: false, moving: 0, sprinting: false, lookX: 0, lookY: 0, vy: 0, grounded: true, inspect: false });

@@ -74,8 +74,8 @@ export const LONG_ARCHES: LArch[] = [
   // ---- Escopetas: corredera, semiautomática, cañones gemelos, tambor o caja ----
   { id: "pump", label: "Pump", family: "shotgun", eras: ["classic", "modern", "rustic"], d: sg({ feed: { kind: "tube", x: 0, len: 0.4, w: 0.02 }, barrel: { len: 0.5, d: 0.021, profile: "plain", muzzle: "none" } }) },
   { id: "semi", label: "Semi", family: "shotgun", eras: ["modern", "scifi", "classic"], d: sg({ recv: { len: 0.26, up: 0.04, down: 0.04, w: 0.044, style: "slab", rearSlope: 0.2 }, stock: { kind: "solid", len: 0.32, drop: 0.04, h: 0.09 }, feed: { kind: "tube", x: 0, len: 0.36, w: 0.02 }, barrel: { len: 0.46, d: 0.02, profile: "plain", muzzle: "choke" }, fore: { kind: "wood", len: 0.22, h: 0.05 }, top: "rail" }) },
-  { id: "double", label: "Double", family: "shotgun", eras: ["classic", "rustic"], d: sg({ recv: { len: 0.1, up: 0.03, down: 0.04, w: 0.05, style: "round", rearSlope: 0.15 }, stock: { kind: "wood", len: 0.36, drop: 0.06, h: 0.1 }, grip: { x: 0.0, angle: 0.5, len: 0.08, kind: "wrist" }, feed: { kind: "none", x: 0, len: 0, w: 0 }, barrel: { len: 0.6, d: 0.02, profile: "sbs", muzzle: "none" }, fore: { kind: "wood", len: 0.18, h: 0.04 }, top: "rib" }) },
-  { id: "coach", label: "Coach", family: "shotgun", eras: ["classic", "rustic", "modern"], d: sg({ recv: { len: 0.09, up: 0.03, down: 0.04, w: 0.045, style: "round", rearSlope: 0.15 }, stock: { kind: "wood", len: 0.26, drop: 0.06, h: 0.09 }, grip: { x: 0.0, angle: 0.55, len: 0.08, kind: "pistol" }, feed: { kind: "none", x: 0, len: 0, w: 0 }, barrel: { len: 0.34, d: 0.02, profile: "ou", muzzle: "none" }, fore: { kind: "wood", len: 0.14, h: 0.045 }, top: "rib" }) },
+  { id: "double", label: "Double", family: "shotgun", eras: ["classic", "rustic"], d: sg({ recv: { len: 0.1, up: 0.03, down: 0.04, w: 0.05, style: "round", rearSlope: 0.15 }, stock: { kind: "wood", len: 0.36, drop: 0.06, h: 0.1 }, grip: { x: 0.0, angle: 0.5, len: 0.08, kind: "wrist" }, feed: { kind: "none", x: 0, len: 0, w: 0 }, barrel: { len: 0.6, d: 0.026, profile: "sbs", muzzle: "none" }, fore: { kind: "wood", len: 0.18, h: 0.04 }, top: "rib" }) },
+  { id: "coach", label: "Coach", family: "shotgun", eras: ["classic", "rustic", "modern"], d: sg({ recv: { len: 0.09, up: 0.03, down: 0.04, w: 0.045, style: "round", rearSlope: 0.15 }, stock: { kind: "wood", len: 0.26, drop: 0.06, h: 0.09 }, grip: { x: 0.0, angle: 0.55, len: 0.08, kind: "pistol" }, feed: { kind: "none", x: 0, len: 0, w: 0 }, barrel: { len: 0.34, d: 0.024, profile: "ou", muzzle: "none" }, fore: { kind: "wood", len: 0.14, h: 0.045 }, top: "rib" }) },
   { id: "sdrum", label: "Drum", family: "shotgun", eras: ["modern", "rustic", "scifi"], d: sg({ recv: { len: 0.24, up: 0.04, down: 0.04, w: 0.05, style: "slab", rearSlope: 0.3 }, stock: { kind: "folding", len: 0.28, drop: 0.03, h: 0.08 }, feed: { kind: "cylinder", x: 0.18, len: 0.07, w: 0.09 }, barrel: { len: 0.32, d: 0.021, profile: "plain", muzzle: "comp" }, fore: { kind: "heatshield", len: 0.2, h: 0.055 }, top: "rail", extras: { bipod: false, carry: false, cheek: false, vgrip: true } }) },
   { id: "sbox", label: "Box", family: "shotgun", eras: ["modern", "scifi", "rustic"], d: sg({ recv: { len: 0.34, up: 0.05, down: 0.04, w: 0.056, style: "angular", rearSlope: 0.15 }, stock: { kind: "solid", len: 0.26, drop: 0.015, h: 0.1 }, grip: { x: 0.12, angle: 0.3, len: 0.1, kind: "pistol" }, feed: { kind: "box", x: 0.22, len: 0.13, w: 0.05 }, barrel: { len: 0.3, d: 0.022, profile: "heavy", muzzle: "brake" }, fore: { kind: "slot", len: 0.22, h: 0.06 }, top: "rail", extras: { bipod: false, carry: true, cheek: false, vgrip: false } }) },
 ];
@@ -191,19 +191,23 @@ export function longPolys(d: LongDesign): LPoly[] {
     const sx0 = -S.len, by = bot - S.drop, sh = S.h;
     if (S.kind === "wood" || S.kind === "solid") {
       const wrist = d.grip.kind === "wrist";
-      const poly: Pt[] = wrist
-        ? [[0, top - 0.004], [sx0 * 0.3, top - S.drop * 0.3 - 0.004], [sx0, top - S.drop - 0.006], [sx0, by - sh * 0.55], [sx0 * 0.6, by - sh * 0.35], [sx0 * 0.25, bot - 0.03], [0, bot - 0.012]]
-        : S.kind === "solid"
-          ? [[0, top - 0.008], [sx0 * 0.35, top - S.drop * 0.35 - 0.006], [sx0 * 0.4, top - S.drop * 0.4 + 0.006], [sx0, top - S.drop + 0.004], [sx0, by - sh * 0.5], [sx0 * 0.55, by - sh * 0.38], [sx0 * 0.42, by - sh * 0.2], [-0.03, bot - 0.004], [0, bot]]
-          : [[0, top - 0.008], [sx0, top - S.drop - 0.008], [sx0, by - sh * 0.5], [sx0 * 0.5, by - sh * 0.3], [-0.03, bot - 0.008], [0, bot]];
+      // Culatas con forma de verdad: lomo con caída, talón y punta de la cantonera, quilla curva que se estrecha hacia la
+      // garganta (en las de madera clásica, la garganta es la empuñadura); las de polímero, con hueco de pulgar y escalón
+      const yT0 = top - (wrist ? 0.004 : 0.008), yHeel = top - S.drop - 0.004, yToe = by - sh * 0.55;
+      const curve = (n: number, f: (t: number) => Pt) => Array.from({ length: n + 1 }, (_, k) => f(k / n));
+      const belly = curve(5, (t) => { const x = sx0 + (-(wrist ? 0.0 : 0.03) - sx0) * t; const yb = yToe + (bot - (wrist ? 0.03 : 0.006) - yToe) * Math.pow(t, 0.65); return [x, yb + Math.sin(t * Math.PI) * sh * 0.06]; });
+      let poly: Pt[];
+      if (wrist) poly = [[0, yT0], [sx0 * 0.25, yT0 - S.drop * 0.25], [sx0 * 0.7, yHeel + 0.004], [sx0, yHeel], [sx0 - 0.004, (yHeel + yToe) / 2], [sx0, yToe], ...belly, [-0.0, bot - 0.012]];
+      else if (S.kind === "solid") poly = [[0, yT0], [sx0 * 0.3, yT0 - S.drop * 0.3], [sx0 * 0.36, yT0 - S.drop * 0.36 + 0.008], [sx0 * 0.9, yHeel + 0.008], [sx0, yHeel], [sx0, yToe], [sx0 * 0.62, yToe + sh * 0.12], [sx0 * 0.5, yToe + sh * 0.3], [sx0 * 0.32, bot - 0.012], [-0.03, bot - 0.004], [0, bot]];
+      else poly = [[0, yT0], [sx0 * 0.5, yT0 - S.drop * 0.5], [sx0, yHeel], [sx0 - 0.003, (yHeel + yToe) / 2], [sx0, yToe], ...belly, [0, bot]];
       out.push({ role: "stock", depth: w * (S.kind === "wood" ? 0.9 : 0.85), poly });
     } else if (S.kind === "frame") {
       // Marco de pletina con su hueco (una sola pieza, con volumen)
       out.push({ role: "stock", depth: w * 0.55, poly: [[0, top - 0.006], [sx0, top - S.drop - 0.004], [sx0, by - sh * 0.45], [0, bot + 0.004], [-0.025, bot + 0.012], [sx0 + 0.04, by - sh * 0.3], [sx0 + 0.035, top - S.drop - 0.02], [-0.02, top - 0.02]] });
     } else if (S.kind === "folding") {
       // Plegable: brazo de pletina gruesa (barra superior + cantonera) con su bisagra; una sola pieza con volumen
-      const t = 0.016, yT = top - 0.006, yB = by - sh * 0.4;
-      out.push({ role: "stock", depth: w * 0.5, poly: [[0, yT], [sx0, yT - S.drop], [sx0, yB], [sx0 + 0.018, yB], [sx0 + 0.018, yT - S.drop - t], [0, yT - t]] });
+      const t = 0.022, yT = top - 0.006, yB = by - sh * 0.4;
+      out.push({ role: "stock", depth: w * 0.62, poly: [[0, yT], [sx0, yT - S.drop], [sx0, yB], [sx0 + 0.022, yB], [sx0 + 0.022, yT - S.drop - t], [0, yT - t]] });
     } else if (S.kind === "tube") {
       out.push({ role: "stock", depth: 0.026, poly: rect(sx0 + 0.02, BORE - 0.012, 0, BORE + 0.012) });
       out.push({ role: "stock", depth: w * 0.7, poly: rect(sx0, by - sh * 0.45, sx0 + 0.02, top - S.drop * 0.8) });

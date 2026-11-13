@@ -1,3 +1,4 @@
+import pkg from "../../../package.json";
 // Inicio y pausa en una sola pantalla con identidad: título, versión, menú (jugar/continuar, partidas, ajustes,
 // controles, idioma, salir) y un panel que muestra el arma equipada girando, los ajustes, las ranuras o los controles.
 import { LANGS, getLang, setLang, t, type Lang } from "../../i18n";
@@ -20,7 +21,7 @@ export interface StartHooks {
   quit(): void; canQuit(): boolean;
   current(): WeaponSpec | null;
 }
-export const VERSION = "0.5.0";
+export const VERSION: string = pkg.version;
 
 export class StartScreen {
   private el = $("start");

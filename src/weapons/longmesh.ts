@@ -44,6 +44,12 @@ export function buildLong(d: LongDesign, look: { legendary?: boolean } = {}): Bu
         // Ventana de expulsión (lado derecho) con el cerrojo a la vista y palanca de carga
         const ex = d.family === "bullpup" ? d.feed.x + 0.02 : f.x1 * 0.55;
         g.add(box(0.07, 0.02, 0.001, ex, 0.004, w / 2 + 0.0004, "procpad"));
+        // Junta entre cajón superior e inferior, brocal del cargador, selector, retén y pasadores (se lee como un arma)
+        if (d.family !== "bullpup") for (const z of [-1, 1]) g.add(box(f.x1 * 0.96, 0.0016, 0.0008, f.x1 * 0.5, -0.002, z * (w / 2 + 0.0003), "procpad"));
+        if (["box", "curved"].includes(d.feed.kind)) { const mx = d.feed.x; g.add(box(0.052, 0.012, w * 1.06, mx + 0.004, f.bot - 0.002, 0, M.body)); for (const z of [-1, 1]) g.add(box(0.008, 0.006, 0.002, mx + 0.032, f.bot + 0.006, z * (w / 2 + 0.001), "procmetal")); }
+        if (d.grip.kind === "pistol") { const sx = d.grip.x - 0.012; for (const z of [-1, 1]) { g.add(disc(0.0045, 0.0016, sx, f.bot + 0.012, z * (w / 2 + 0.0006), "procmetal", 10)); g.add(box(0.008, 0.0024, 0.001, sx + 0.004, f.bot + 0.014, z * (w / 2 + 0.0014), "procmetal")); } for (const px of [d.grip.x + 0.02, d.grip.x + 0.05]) screws(g, px, f.bot + 0.006, w / 2, 0.0016); }
+        if (d.family !== "bullpup" && era !== "classic") for (const z of [-1, 1]) g.add(box(f.x1 * 0.3, (f.top - f.bot) * 0.32, 0.0014, f.x1 * 0.32, (f.top + f.bot) / 2 + 0.006, z * (w / 2 + 0.0005), M.body)); // panel en relieve
+        if (d.family === "bullpup") { const c = (f.top + f.bot) / 2; for (const z of [-1, 1]) { g.add(box(d.grip.x - 0.16, (f.top - f.bot) * 0.5, 0.0014, (d.grip.x - 0.16) / 2 + 0.03, c - 0.01, z * (w / 2 + 0.0005), "proctape")); g.add(box(0.012, 0.03, 0.002, 0.02, c - 0.02, z * (w / 2 + 0.001), "procpad")); } }
         // Juntas de panel, tornillos y remaches según la era
         if (era === "scifi") for (const z of [-1, 1]) { g.add(box(f.x1 * 0.8, 0.0012, 0.0008, f.x1 * 0.5, f.top - 0.012, z * (w / 2 + 0.0003), "procpad")); g.add(box(0.0012, (f.top - f.bot) * 0.6, 0.0008, f.x1 * 0.3, 0, z * (w / 2 + 0.0003), "procpad")); }
         if (era === "rustic") { g.add(box(f.x1 * 0.22, (f.top - f.bot) * 0.45, 0.0016, f.x1 * 0.3, -0.004, -(w / 2 + 0.0008), "procrust")); for (let k = 0; k < 4; k++) g.add(disc(0.0018, 0.002, f.x1 * (0.2 + k * 0.06), f.bot + 0.008, w / 2 + 0.001, "procmetal", 6)); }
@@ -67,7 +73,8 @@ export function buildLong(d: LongDesign, look: { legendary?: boolean } = {}): Bu
         // Cantonera de goma y anilla de correa
         const xs = p.poly.map((q) => q[0]), x0 = Math.min(...xs);
         if (d.stock.kind !== "tube") { const c = cutPoly(p.poly, x0 + 0.003); if (c) g.add(box(0.012, c[1] - c[0] + 0.002, p.depth * 1.04, x0 + 0.004, (c[0] + c[1]) / 2, 0, "procpad")); }
-        if (d.stock.kind === "folding") g.add(disc(0.006, w * 0.7, -0.008, f.bot + 0.012, 0, "procmetal", 10));
+        if (d.stock.kind === "folding") g.add(disc(0.007, w * 0.8, -0.01, f.top - 0.016, 0, "procmetal", 10));
+        if (d.stock.kind === "wood" || d.stock.kind === "solid") { const c = cutPoly(p.poly, x0 * 0.7); if (c) g.add(box(0.012, 0.004, 0.006, x0 * 0.7, c[0] - 0.001, 0, "procmetal")); }
         break;
       }
       case "cheek": G("stock").add(loft(p, M.furn === "procwood" ? "procwood" : "proctape", 0.8, 0.3, 2, 10)); break;
@@ -153,7 +160,7 @@ export function buildLong(d: LongDesign, look: { legendary?: boolean } = {}): Bu
           const x0 = Math.min(...xs), x1 = Math.max(...xs), top = Math.max(...ys);
           g.add(box(x1 - x0 + 0.004, 0.006, p.depth * 1.04, (x0 + x1) / 2, top - 0.003, 0, "procmetal"));
           for (let k = 0; k < 5; k++) { const lk = box(0.009, 0.014, 0.006, x0 + 0.02 + k * 0.011, top + 0.004, p.depth * 0.32, "procsteel"); lk.rotation.z = 0.3; g.add(lk); }
-          g.add(box(0.03, 0.02, 0.002, (x0 + x1) / 2, (top + Math.min(...ys)) / 2, p.depth / 2 + 0.001, "procengrave"));
+          g.add(box(0.016, 0.008, 0.003, (x0 + x1) / 2, top - 0.02, p.depth / 2 + 0.0015, "procmetal")); for (const z of [-1, 1]) g.add(box(x1 - x0 - 0.01, 0.002, 0.001, (x0 + x1) / 2, (top + Math.min(...ys)) / 2, z * (p.depth / 2 + 0.0004), "procpad"));
         } else if (d.feed.kind === "pan") {
           const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2, R = (Math.max(...xs) - Math.min(...xs)) / 2;
           const pan = new THREE.Mesh(new THREE.CylinderGeometry(R, R, Math.max(...ys) - Math.min(...ys), 22), mat("magazine")); pan.position.set(cx, cy, 0); g.add(pan);
