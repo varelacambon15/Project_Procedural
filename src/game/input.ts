@@ -6,6 +6,8 @@ export interface Frame {
   fire: boolean; aim: boolean;           // mantenidos
   jump: boolean; reload: boolean; interact: boolean; swap: boolean; inventory: boolean; pause: boolean; // pulsados este fotograma
   sprint: boolean;
+  /** Agacharse (mantenido); agacharse corriendo = deslizarse. */
+  crouch: boolean;
   slot1: boolean; slot2: boolean; inspect: boolean;
   device: "kbm" | "pad";
 }
@@ -65,7 +67,7 @@ export class Input {
     const f: Frame = {
       moveX: (k("KeyD") ? 1 : 0) - (k("KeyA") ? 1 : 0), moveZ: (k("KeyW") ? 1 : 0) - (k("KeyS") ? 1 : 0),
       lookX: this.mouse.dx * this.sensitivity, lookY: this.mouse.dy * this.sensitivity,
-      fire: this.mouse.left, aim: this.mouse.right, sprint: k("ShiftLeft"),
+      fire: this.mouse.left, aim: this.mouse.right, sprint: k("ShiftLeft"), crouch: k("KeyC") || k("ControlLeft"),
       jump: kp("Space"), reload: kp("KeyR"), interact: kp("KeyE"), swap: this.mouse.wheel !== 0 || kp("KeyQ"),
       inventory: kp("Tab") || kp("KeyI"), pause: kp("Escape"), slot1: kp("Digit1"), slot2: kp("Digit2"), inspect: kp("KeyF"), device: this.device,
     };
@@ -76,7 +78,7 @@ export class Input {
       f.moveX += stick(p.axes[0] ?? 0, 1); f.moveZ -= stick(p.axes[1] ?? 0, 1);
       f.lookX += stick(p.axes[2] ?? 0, 2.2) * this.padSensitivity * this.assist * dt;
       f.lookY += stick(p.axes[3] ?? 0, 2.2) * this.padSensitivity * 0.75 * this.assist * dt;
-      f.fire ||= b(7); f.aim ||= b(6); f.sprint ||= b(10);
+      f.fire ||= b(7); f.aim ||= b(6); f.sprint ||= b(10); f.crouch ||= b(11);
       f.inventory ||= !!edges[8]; f.pause ||= !!edges[9];
       // Mando: Ⓐ saltar, Ⓑ interactuar, Ⓧ recargar, Ⓨ cambiar arma, View inventario, Start pausa
       f.interact ||= !!edges[1];

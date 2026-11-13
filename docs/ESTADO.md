@@ -58,6 +58,18 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
   técnicos con neón rosa/rojo y cian, hologramas, suelos hexagonales, HUD cian segmentado). Estilo propio inspirado.
 - Punto de mira: anillo fino, punto central y cuatro marcas diagonales.
 
+## Ronda 10
+
+- Noche = recinto de campo de tiro (muros altos, cubierta, deflectores, parapeto) con el tono del callejón; rótulos
+  en japonés; solo 8 luces reales (el resto, halos pintados).
+- Barra del jefe arriba, solo mientras se le ataca; vida del jugador abajo a la izquierda.
+- Puños sin arma (`fistsInput`/`updateFists` en gun.ts): 20 / 40 al esprintar, imán de embestida corta.
+- Movimiento: agacharse (C/Ctrl, R3) y deslizarse al agacharse corriendo (player.ts).
+- Música: `assets/music/ambient-02.ogg`, compuesta con `tools/music/compose2.py` + `render2.sh` (sin voz; vaivenes
+  de dos notas). Perfil tomado del análisis de la referencia del usuario (remake de System Shock, Medical): sin
+  pulso, Si menor, oscura, muy ancha. No copiar notas ni melodías de la referencia.
+- Referencias de jugabilidad del usuario: Apex y Titanfall 2 (movimiento y gunplay).
+
 ## Pendiente
 
 - Integrar packs nuevos (revólveres PSX, Semi Realistic convertidos a glb; aún no integrados).

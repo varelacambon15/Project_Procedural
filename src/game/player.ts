@@ -2,13 +2,22 @@
 import * as THREE from "three";
 import type { Frame } from "./input";
 
+const SLIDE = 0.9; // duración del deslizamiento (s)
+
 export class Player {
   readonly pos = new THREE.Vector3(0, 0, 6);
   readonly vel = new THREE.Vector3();
   yaw = 0; pitch = 0;
   onGround = true;
   readonly radius = 0.35;
-  readonly eye = 1.65;
+  /** Altura de los ojos: baja al agacharse o deslizarse. */
+  get eye() { return 1.65 - 0.55 * this.crouchK; }
+  /** 0 de pie … 1 agachado (suavizado). */
+  crouchK = 0;
+  /** Deslizamiento: tiempo restante, dirección y velocidad inicial; slideK (0..1) para la cámara. */
+  private slideT = 0; private slideDir = new THREE.Vector3(); private slideV = 0; private prevCrouch = false; private wasSprinting = false;
+  slideK = 0;
+  get sliding() { return this.slideT > 0; }
   sprinting = false;
   bob = 0;
   /** Embestida corta del cuerpo a cuerpo: velocidad extra durante unas décimas (respeta las colisiones). */
@@ -20,14 +29,32 @@ export class Player {
   update(dt: number, f: Frame, aiming: boolean, lookScale: number) {
     this.yaw -= f.lookX * lookScale;
     this.pitch = THREE.MathUtils.clamp(this.pitch - f.lookY * lookScale, -1.45, 1.45);
-    this.sprinting = f.sprint && f.moveZ > 0.3 && !aiming;
-    const speed = aiming ? 2.6 : this.sprinting ? 7.2 : 4.6;
+    const hsNow = Math.hypot(this.vel.x, this.vel.z);
+    // Deslizamiento: agacharse mientras se esprinta (en el suelo y con velocidad) lanza un deslizamiento con impulso
+    if (f.crouch && !this.prevCrouch && this.wasSprinting && this.onGround && hsNow > 5) {
+      this.slideT = SLIDE; this.slideDir.set(this.vel.x, 0, this.vel.z).normalize(); this.slideV = Math.min(10.5, hsNow + 2.6);
+    }
+    this.prevCrouch = f.crouch;
+    if (this.slideT > 0 && (!f.crouch || (!this.onGround && this.vel.y > 0))) this.slideT = 0; // soltar o saltar termina el deslizamiento (con su inercia)
+    this.crouchK += ((f.crouch || this.slideT > 0 ? 1 : 0) - this.crouchK) * Math.min(1, dt * 12);
+    this.slideK += ((this.slideT > 0 ? 1 : 0) - this.slideK) * Math.min(1, dt * 10);
+    this.sprinting = f.sprint && f.moveZ > 0.3 && !aiming && !f.crouch && this.slideT <= 0;
+    this.wasSprinting = this.sprinting;
+    const speed = aiming ? 2.6 : this.sprinting ? 7.2 : this.crouchK > 0.5 ? 2.4 : 4.6;
     const fwd = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
     const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
     const wish = fwd.multiplyScalar(f.moveZ).add(right.multiplyScalar(f.moveX)).multiplyScalar(speed);
-    const accel = this.onGround ? 14 : 3;
-    this.vel.x += (wish.x - this.vel.x) * Math.min(1, accel * dt);
-    this.vel.z += (wish.z - this.vel.z) * Math.min(1, accel * dt);
+    if (this.slideT > 0) {
+      // Durante el deslizamiento la velocidad cae poco a poco hacia la de ir agachado; se puede corregir un poco
+      this.slideT -= dt;
+      const k = Math.max(0, this.slideT / SLIDE), v = 2.4 + (this.slideV - 2.4) * Math.pow(k, 0.7);
+      this.slideDir.addScaledVector(wish.clone().setY(0).normalize(), dt * 0.9).setY(0).normalize();
+      this.vel.x = this.slideDir.x * v; this.vel.z = this.slideDir.z * v;
+    } else {
+      const accel = this.onGround ? 14 : 3;
+      this.vel.x += (wish.x - this.vel.x) * Math.min(1, accel * dt);
+      this.vel.z += (wish.z - this.vel.z) * Math.min(1, accel * dt);
+    }
     if (f.jump && this.onGround) { this.vel.y = 5.2; this.onGround = false; }
     this.vel.y -= 16 * dt;
     this.move(this.vel.x * dt, 0); this.move(0, this.vel.z * dt);
@@ -50,6 +77,6 @@ export class Player {
   applyCamera(cam: THREE.PerspectiveCamera, recoilPitch: number) {
     const bobY = Math.sin(this.bob * 2) * 0.025, bobX = Math.cos(this.bob) * 0.015;
     cam.position.set(this.pos.x + bobX, this.pos.y + this.eye + bobY, this.pos.z);
-    cam.rotation.set(this.pitch + recoilPitch, this.yaw, 0, "YXZ");
+    cam.rotation.set(this.pitch + recoilPitch, this.yaw, -0.06 * this.slideK, "YXZ"); // leve inclinación al deslizarse
   }
 }

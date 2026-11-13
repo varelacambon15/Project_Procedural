@@ -80,8 +80,8 @@ export class StartScreen {
 
   // ---------- Controles ----------
   private controlsHTML() {
-    const kb: [string, string][] = [["WASD", "c.move"], ["Mouse", "c.look"], ["LMB / RMB", "c.fire"], ["R", "c.reload"], ["1 · 2 · Q · wheel", "c.swap"], ["Shift · Space", "c.sprint"], ["F", "c.inspect"], ["E", "c.use"], ["Tab", "c.inv"], ["Esc", "c.pause"], ["N · P · L", "c.toggles"]];
-    const pad: [string, string][] = [["Sticks", "c.sticks"], ["RT / LT", "c.fire"], ["Ⓧ", "c.reload"], ["Ⓨ", "c.swap"], ["Ⓐ · L3", "c.sprint"], ["✚ ↓", "c.inspect"], ["Ⓑ", "c.use"], ["View", "c.inv"], ["Start", "c.pause"], ["✚ · Ⓐ · Ⓑ", "c.menus.d"]];
+    const kb: [string, string][] = [["WASD", "c.move"], ["Mouse", "c.look"], ["LMB / RMB", "c.fire"], ["R", "c.reload"], ["1 · 2 · Q · wheel", "c.swap"], ["Shift · Space", "c.sprint"], ["C · Ctrl", "c.crouch"], ["F", "c.inspect"], ["E", "c.use"], ["Tab", "c.inv"], ["Esc", "c.pause"], ["N · P · L", "c.toggles"]];
+    const pad: [string, string][] = [["Sticks", "c.sticks"], ["RT / LT", "c.fire"], ["Ⓧ", "c.reload"], ["Ⓨ", "c.swap"], ["Ⓐ · L3", "c.sprint"], ["R3", "c.crouch"], ["✚ ↓", "c.inspect"], ["Ⓑ", "c.use"], ["View", "c.inv"], ["Start", "c.pause"], ["✚ · Ⓐ · Ⓑ", "c.menus.d"]];
     const dl = (rows: [string, string][]) => `<dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${t(v)}</dd>`).join("")}</dl>`;
     return `<h2>${t("ui.controls")}</h2><div class="ctrl"><div><h3>${t("ui.kbm")}</h3>${dl(kb)}</div><div><h3>${t("ui.pad")}</h3>${dl(pad)}</div></div>`;
   }
