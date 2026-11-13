@@ -216,7 +216,9 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         break;
       }
       case "barrel": {
-        const b = G("barrel"); const r = (p.poly[2][1] - p.poly[0][1]) / 2, x0 = p.poly[0][0], len = p.poly[1][0] - x0, y = (p.poly[0][1] + p.poly[2][1]) / 2;
+        const b = G("barrel"); const x0 = p.poly[0][0], len = p.poly[1][0] - x0, y = (p.poly[0][1] + p.poly[2][1]) / 2;
+        // Revólver de cañón largo: algo más grueso para que no parezca una varilla (proporción de los magnum reales)
+        const r = ((p.poly[2][1] - p.poly[0][1]) / 2) * (rev && len > 0.1 ? 1 + Math.min(0.14, (len - 0.1) * 1.6) : 1);
         if (d.barrel.shroud) { b.add(tube(r, len, x0, y, "barrel", 8)); for (let k = 0; k < 3; k++) b.add(box(0.004, r * 2.05, r * 1.4, x0 + len * (0.25 + k * 0.25), y, 0, "procpad")); }
         else {
           b.add(tube(r, len, x0, y, "procsteel", 14));
