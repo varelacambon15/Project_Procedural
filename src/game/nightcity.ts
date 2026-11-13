@@ -286,6 +286,47 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
     spots.push({ pos: new THREE.Vector3(x, 2, z), color: col, power: 18 });
   }
 
+  // ---------- Recinto del campo de tiro (de noche): muros altos, cubierta, deflectores y parapeto ----------
+  const TOP = 15; // altura de los muros de noche
+  const brick = new THREE.MeshStandardMaterial({ map: (() => { const t2 = wallMap.clone(); t2.needsUpdate = true; t2.wrapS = t2.wrapT = THREE.RepeatWrapping; t2.repeat.set((BACK - FRONT) / 3, (TOP - H) / 5); return t2; })(), roughness: 0.9 });
+  const concrete = new THREE.MeshStandardMaterial({ map: canvasTex(32, 32, (c) => { c.fillStyle = "#3a3440"; c.fillRect(0, 0, 32, 32); for (let i = 0; i < 260; i++) { const v = Math.floor(r() * 30); c.fillStyle = `rgba(${v + 20},${v + 16},${v + 26},0.5)`; c.fillRect(Math.floor(r() * 32), Math.floor(r() * 32), 1, 1); } c.fillStyle = "rgba(0,0,0,0.4)"; c.fillRect(0, 0, 32, 1); c.fillRect(0, 0, 1, 32); }, [8, 2]), roughness: 0.95 });
+  const steelDark = new THREE.MeshStandardMaterial({ color: 0x24222c, metalness: 0.6, roughness: 0.55 });
+  const corr = new THREE.MeshStandardMaterial({ map: canvasTex(16, 8, (c) => { for (let x = 0; x < 16; x++) { c.fillStyle = x % 4 < 2 ? "#3a3646" : "#2a2634"; c.fillRect(x, 0, 1, 8); } }, [W / 2, 6]), metalness: 0.5, roughness: 0.6, side: THREE.DoubleSide });
+  const blk = (w: number, h: number, dd: number, x: number, y: number, z: number, m: THREE.Material) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, dd), m); b.position.set(x, y, z); add(b); return b; };
+  const LEN = BACK - FRONT, MID = (BACK + FRONT) / 2;
+  // Muros laterales que siguen hacia arriba (ladrillo), con una cornisa de hormigón y un remate
+  for (const side of [-1, 1]) {
+    blk(1, TOP - H, LEN + 2, side * (W / 2 + 0.5), (H + TOP) / 2, MID, brick);
+    blk(1.3, 0.4, LEN + 2, side * (W / 2 + 0.35), H + 0.2, MID, concrete);       // cornisa sobre la parte baja
+    blk(1.4, 0.5, LEN + 2, side * (W / 2 + 0.4), TOP + 0.25, MID, concrete);       // remate
+    // Pilastras de hormigón cada 8 m (dan ritmo de nave)
+    for (let z = BACK - 4; z > FRONT; z -= 8) blk(0.5, TOP, 0.9, side * (W / 2 - 0.2), TOP / 2, z, concrete);
+  }
+  // Muro del fondo y muro de la zona de equipo, también altos
+  blk(W + 2, TOP - H, 1, 0, (H + TOP) / 2, FRONT - 0.5, brick);
+  blk(W + 2, TOP - H, 1, 0, (H + TOP) / 2, BACK + 0.5, brick);
+  // Parapeto de tiro al fondo: rampa inclinada de chapas oscuras que recoge las balas (con su zócalo de hormigón)
+  const berm = new THREE.Mesh(new THREE.PlaneGeometry(W, 9), corr); berm.rotation.x = -Math.PI / 2 + 0.75; berm.position.set(0, 3.1, FRONT + 3.0); add(berm);
+  blk(W, 1.2, 1.2, 0, 0.6, FRONT + 6.2, concrete);
+  // Cubierta de chapa sobre la línea de tiro y la zona de equipo, sobre vigas de acero
+  const roofZ0 = -1.5, roofLen = BACK - roofZ0;
+  const roof = new THREE.Mesh(new THREE.PlaneGeometry(W + 1, roofLen), corr); roof.rotation.x = Math.PI / 2 - 0.06; roof.position.set(0, H + 1.2, (BACK + roofZ0) / 2); add(roof);
+  for (let z = BACK - 1; z >= roofZ0; z -= 4) blk(W + 1, 0.35, 0.25, 0, H + 0.85, z, steelDark);
+  blk(W + 1, 0.5, 0.35, 0, H + 0.7, roofZ0, steelDark); // viga del borde (aquí acaba la cubierta)
+  { const e = new THREE.Mesh(new THREE.BoxGeometry(W - 1, 0.05, 0.06), new THREE.MeshBasicMaterial({ color: NEON.pink })); e.position.set(0, H + 0.42, roofZ0 - 0.2); add(e); }
+  // Deflectores colgados sobre las calles (los de los campos de tiro reales): paneles inclinados cada 9 m,
+  // de muro a muro; entre ellos se ve el cielo
+  for (const z of [-17, -33, -48]) {
+    const baf = new THREE.Mesh(new THREE.BoxGeometry(W, 1.6, 0.16), concrete); baf.position.set(0, H + 2.2, z); baf.rotation.x = -0.45; add(baf);
+    blk(W, 0.22, 0.28, 0, H + 1.45, z + 0.35, steelDark);
+    // Tira de luz bajo cada deflector (alterna rosa y ámbar): ilumina las calles desde arriba
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(W - 2, 0.06, 0.08), new THREE.MeshBasicMaterial({ color: Math.round(z / 9) % 2 ? NEON.pink : NEON.amber })); strip.position.set(0, H + 1.3, z + 0.35); add(strip);
+  }
+  // Pasarela de mantenimiento a media altura en el muro izquierdo, con barandilla
+  blk(1.4, 0.12, LEN - 6, -W / 2 + 0.7, 5.2, MID - 2, steelDark);
+  for (let z = BACK - 6; z > FRONT + 4; z -= 2.5) blk(0.05, 1.0, 0.05, -W / 2 + 1.35, 5.75, z, steelDark);
+  blk(0.05, 0.05, LEN - 6, -W / 2 + 1.35, 6.25, MID - 2, steelDark);
+
   // Las 8 lámparas de la sala cubren los primeros puntos; el resto lleva luz propia (solo existe de noche)
   for (const sp of spots.slice(8)) { const l = new THREE.PointLight(sp.color, sp.power, 14, 1.6); l.position.copy(sp.pos); g.add(l); }
 

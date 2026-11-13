@@ -82,6 +82,8 @@ export class Dummy {
     (kind.boss ? document.getElementById("bossbar")! : overlay).appendChild(this.bar);
   }
 
+  /** Segundos que quedan de "combate" (el jefe solo enseña su barra mientras se le está atacando). */
+  engagedT = 0;
   get health() { return this.layers[this.layers.length - 1].value; }
   relabel() { this.bar.querySelector(".nm")!.textContent = t(`dummy.${this.kind.key}`); }
   setPath(a: THREE.Vector3, b: THREE.Vector3, speed: number) { this.path = { a, b, speed, t: Math.random() }; }
@@ -121,7 +123,7 @@ export class Dummy {
   /** Aplica daño a las capas, de fuera adentro (hoy, solo vida). Devuelve el daño infligido. */
   damage(amount: number, element: Element, crit: boolean, at: THREE.Vector3): number {
     if (!this.alive) return 0;
-    this.flash = 0.08;
+    this.flash = 0.08; this.engagedT = 12;
     let left = amount, dealt = 0;
     for (const layer of this.layers) { if (left <= 0) break; const d = Math.min(layer.value, left); layer.value -= d; left -= d; dealt += d; }
     const color = element ? ELEMENT_COLOR[element] : crit ? "#ffd84a" : "#ffffff";
@@ -194,7 +196,11 @@ export class Dummy {
     const hp = this.layers[this.layers.length - 1];
     b.querySelector<HTMLElement>(".hp")!.style.width = `${Math.max(0, (hp.value / hp.max) * 100)}%`;
     b.classList.toggle("status-fire", this.burnT > 0); b.classList.toggle("status-shock", this.stunT > 0);
-    if (this.kind.boss) { b.style.opacity = this.alive ? "1" : "0.4"; return; }
+    if (this.kind.boss) {
+      // Barra del jefe arriba, solo durante el combate con él (se oculta 12 s después del último golpe)
+      this.engagedT = Math.max(0, this.engagedT - dt);
+      b.style.display = this.engagedT > 0 || (!this.alive && this.deadT < 2) ? "" : "none"; b.style.opacity = this.alive ? "1" : "0.4"; return;
+    }
     const top = this.group.localToWorld(new THREE.Vector3(0, 2.45 * (this.kind.scale ?? 1), 0));
     const dist = top.distanceTo(camera.position);
     top.project(camera);
