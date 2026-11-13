@@ -210,9 +210,9 @@ export function buildRange(scene: THREE.Scene): World {
     key.position.set(on ? 20 : -10, on ? 40 : 20, on ? -60 : 12);
     // Las lámparas de la sala pasan a ser la luz de los rótulos y farolas (mismo número de luces: sin coste extra)
     lamps.forEach((l, i) => {
-      const sp = city.spots[i % city.spots.length];
+      const sp = city.keyLights[i];
       l.mesh.visible = !on;
-      if (on && sp) { l.light.position.copy(sp.pos); l.light.color.set(sp.color); l.base = sp.power; l.light.distance = 14; l.light.decay = 1.6; }
+      if (on && sp) { l.light.position.copy(sp.pos); l.light.color.set(sp.color); l.base = sp.power; l.light.distance = 18; l.light.decay = 1.5; }
       else { l.light.position.copy(lampHome[i]); l.light.color.set(WARM); l.base = 34; l.light.distance = 24; l.light.decay = 1.4; }
     });
     const bg = on ? 0x1a1430 : 0x2c333b; (scene.background as THREE.Color).set(bg);

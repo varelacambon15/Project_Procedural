@@ -403,7 +403,8 @@ export class Gun {
       this.ray.set(eye, dir); this.ray.far = reach;
       const hit = this.ray.intersectObjects(targets, false)[0]; if (!hit) continue;
       const d = hit.object.userData.dummy as Dummy, zone = hit.object.userData.zone as Zone, crit = zone === "head";
-      const dmg = (this.punchHeavy ? 95 : 48) * (crit ? 1.5 : 1);
+      // Cuerpo a cuerpo de emergencia (como en los shooters rápidos): no compite con un arma
+      const dmg = (this.punchHeavy ? 40 : 20) * (crit ? 1.25 : 1);
       const alive = d.alive;
       this.hooks.onHit(d, zone, hit.point, dmg, null, crit);
       d.push(dir.clone().setY(0).normalize(), this.punchHeavy ? 1.4 : 0.5);

@@ -10,6 +10,8 @@ export interface NightCity {
   wallMap: THREE.Texture; floorMap: THREE.Texture;
   /** Puntos de luz de los rótulos (las luces de la sala se recolocan aquí de noche). */
   spots: { pos: THREE.Vector3; color: number; power: number }[];
+  /** Las 8 que llevan luz real (repartidas por la sala; el resto solo tiene halo pintado, sin coste de luz). */
+  keyLights: { pos: THREE.Vector3; color: number; power: number }[];
   update(dt: number): void;
 }
 
@@ -32,6 +34,12 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   const g = new THREE.Group(); g.name = "nightcity"; scene.add(g);
   const spots: NightCity["spots"] = [];
   const flickers: { m: THREE.MeshBasicMaterial; base: number; ph: number; rate: number }[] = [];
+  // Halo pintado (gradiente radial aditivo): simula la luz de un neón o una farola sin luz real
+  const haloTex = canvasTex(64, 64, (c) => { const gr = c.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, "rgba(255,255,255,0.9)"); gr.addColorStop(0.35, "rgba(255,255,255,0.35)"); gr.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = gr; c.fillRect(0, 0, 64, 64); }, undefined, true);
+  const halo = (pos: THREE.Vector3, color: number, size: number, opacity: number, rotX = 0, rotY = 0) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ map: haloTex, color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false }));
+    m.position.copy(pos); m.rotation.set(rotX, rotY, 0, "YXZ"); g.add(m); return m;
+  };
 
   // ---------- Texturas ----------
   // Ladrillo sucio verde azulado, con churretes, manchas de humedad y algún desconchón
@@ -123,6 +131,8 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
     // Luz y reflejo en el suelo mojado (mancha alargada del mismo color)
     const normal = new THREE.Vector3(Math.sin(facing), 0, Math.cos(facing));
     spots.push({ pos: at.clone().addScaledVector(normal, 1.2), color, power: 10 + sh * 4 });
+    halo(at.clone().addScaledVector(normal, 0.03), color, Math.max(sw, sh) * 2.0, 0.2, 0, facing);            // resplandor en el muro
+    const foot = at.clone().addScaledVector(normal, 1.6); foot.y = 0.025; halo(foot, color, 3 + sh * 1.5, 0.3, -Math.PI / 2); // charco de luz en el suelo
     const refl = canvasTex(16, 64, (c) => { const gr = c.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.5, "rgba(255,255,255,0.55)"); gr.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = gr; for (let y = 0; y < 64; y += 2) c.fillRect(4 + Math.floor(r() * 3), y, 8 - Math.floor(r() * 3), 1); }, undefined, true);
     const rm = new THREE.Mesh(new THREE.PlaneGeometry(sw * 0.9, 2.2 + sh), new THREE.MeshBasicMaterial({ map: refl, color, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
     rm.rotation.x = -Math.PI / 2; rm.rotation.z = facing; rm.position.copy(at).addScaledVector(normal, 1.2 + sh * 0.3); rm.position.y = 0.02; g.add(rm);
@@ -223,6 +233,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
     const arm = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.07, 0.07), metal); arm.position.set(x + s * 0.7, H - 0.6, z); add(arm);
     const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.25), new THREE.MeshBasicMaterial({ color: 0xffb060 })); head.position.set(x + s * 1.35, H - 0.68, z); add(head);
     spots.push({ pos: new THREE.Vector3(x + s * 1.35, H - 1.0, z), color: 0xff9a40, power: 26 });
+    halo(new THREE.Vector3(x + s * 1.6, 0.03, z), 0xff9a40, 7, 0.28, -Math.PI / 2);
   }
 
   // ---------- Más calle: persianas metálicas, valla al fondo, andamio, rejilla de desagüe, alcantarilla y foco ----------
@@ -327,12 +338,18 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   for (let z = BACK - 6; z > FRONT + 4; z -= 2.5) blk(0.05, 1.0, 0.05, -W / 2 + 1.35, 5.75, z, steelDark);
   blk(0.05, 0.05, LEN - 6, -W / 2 + 1.35, 6.25, MID - 2, steelDark);
 
-  // Las 8 lámparas de la sala cubren los primeros puntos; el resto lleva luz propia (solo existe de noche)
-  for (const sp of spots.slice(8)) { const l = new THREE.PointLight(sp.color, sp.power, 14, 1.6); l.position.copy(sp.pos); g.add(l); }
+  // Optimización: solo 8 luces reales (las de la sala, recolocadas de noche). Se eligen las más potentes que estén
+  // repartidas (a más de 9 m entre sí); el resto se apoya en su halo pintado.
+  const keyLights: typeof spots = [];
+  for (const sp of [...spots].sort((a2, b2) => b2.power - a2.power)) {
+    if (keyLights.length >= 8) break;
+    if (keyLights.every((k2) => k2.pos.distanceTo(sp.pos) > 9)) keyLights.push(sp);
+  }
+  for (const sp of spots) if (keyLights.length < 8 && !keyLights.includes(sp)) keyLights.push(sp);
 
   let t = 0;
   return {
-    group: g, wallMap, floorMap, spots,
+    group: g, wallMap, floorMap, spots, keyLights,
     update(dt: number) {
       t += dt;
       // Rótulos: casi siempre fijos; de vez en cuando uno titila un instante
