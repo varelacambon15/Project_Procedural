@@ -87,7 +87,7 @@ export function buildRange(scene: THREE.Scene): World {
     box(4.2, 0.95, 0.12, x, 0.48, -0.2, wall);
     box(0.08, 0.9, 0.7, x - 1.7, 0.48, 0.25, steel, false);
     box(0.08, 0.9, 0.7, x + 1.7, 0.48, 0.25, steel, false);
-    box(0.6, 0.02, 0.3, x + 1.2, 1.05, 0.1, neonC, false, false); // piloto de la calle
+    box(0.36, 0.015, 0.04, x + 1.2, 1.05, 0.55, neonC, false, false); // piloto de la calle
   }
   colliders.push(new THREE.Box3(new THREE.Vector3(-15.2, 0, -0.3), new THREE.Vector3(15.2, 1.05, 0.7)));
   for (const x of [-15, -10, -5, 0, 5, 10, 15]) box(0.1, 2.4, 1.6, x, 1.2, 0.6, new THREE.MeshStandardMaterial({ color: 0x3a4248, transparent: true, opacity: 0.7, roughness: 0.3, metalness: 0.3 }));

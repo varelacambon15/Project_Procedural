@@ -10,7 +10,7 @@ import { EffectRunner, type FxAction } from "../weapons/effects";
 import { accessory } from "../weapons/accessories";
 import type { Item } from "./inventory";
 import type { Dummy, Element, Zone } from "./dummies";
-import { Arms } from "./arms";
+import { Arms, handBasis, type Curl, type HandPose } from "./arms";
 import { audio, out, out as masterOut } from "./audio";
 import { settings } from "./settings";
 import { ViewAnimator, animParams, ease, phaseAt, tri, type AnimInput, type MovingPart, type Phase } from "./anim";
@@ -109,6 +109,8 @@ export class Gun {
   private audio: AudioContext | null = null;
   hitmarker = 0; critmarker = 0; killmarker = 0;
   private arms: Arms;
+  /** Dedo del gatillo: 1 justo al disparar, vuelve solo. */
+  private trigT = 0;
   private reloadPhase: Phase | null = null;
   private sprayIndex = 0; private sprayT = 0;
   private casings: { mesh: THREE.Mesh; vel: THREE.Vector3; spin: THREE.Vector3; t: number }[] = [];
@@ -317,7 +319,8 @@ export class Gun {
     this.viewmodel.visible = !this.hidden && !(this.sight === "scope" && this.aimT > 0.9);
     // Manos obligatorias (05-E): siempre que se ve el arma
     this.arms.visible = this.viewmodel.visible && !!this.model;
-    if (this.model) this.updateHands();
+    this.trigT = Math.max(0, this.trigT - dt * 9);
+    if (this.model) this.updateHands(dt);
 
     // Efectos
     const fm = this.flash.material as THREE.MeshBasicMaterial;
@@ -370,7 +373,7 @@ export class Gun {
   }
 
   /** Manos: la derecha en la empuñadura; la izquierda en el guardamanos o siguiendo la fase de recarga / corredera. */
-  private updateHands() {
+  private updateHands(dt: number) {
     const m = this.model!; const h = m.handles;
     this.viewmodel.updateMatrixWorld(true);
     const toCam = (p: THREE.Vector3) => this.camera.worldToLocal(m.group.localToWorld(p.clone()));
@@ -418,11 +421,19 @@ export class Gun {
     } else if (this.cycleT > 0 && this.spec?.fireMode === "bolt") {
       left = h.charge.clone().add(new THREE.Vector3(-0.04 * tri(1 - this.cycleT / 0.45, 0, 1), 0.02, 0.04));
     }
-    this.arms.update({ right: toCam(h.grip), left: left ? toCam(left) : null, orient });
+    // Agarre de cada mano (marco del arma en primera persona: -Z boca, +Y arriba, +X derecha)
+    const hq = camQ.clone().multiply(this.holder.getWorldQuaternion(new THREE.Quaternion())); void orient;
+    const kind: HandKind = ph ? (style === "shells" ? (ph.id === "rack" ? "under" : "grab") : ph.id === "rack" || ph.id === "settle" ? "grab" : "grab")
+      : this.cycleT > 0 && this.spec?.fireMode === "bolt" ? "grab" : supportKind(left && base && left.equals(base) ? (k > 0.5 ? hold?.ads : hold?.hip) : undefined, this.spec?.type);
+    const pose = (at: THREE.Vector3, g: HandGrip, curl: Curl): HandPose => ({ pos: toCam(at).add(g.off.clone().applyQuaternion(hq)), orient: hq.clone().multiply(g.q), curl });
+    const R = GRIPS.right, trig = 0.32 + 0.38 * this.trigT;
+    const right = pose(h.grip, R, { fingers: [trig, 0.86, 0.9, 0.93], thumb: 0.4 });
+    const L = GRIPS[kind];
+    this.arms.update({ right, left: left ? pose(left, L, L.curl) : null, dt });
   }
 
   private fire(moving: number, echo = false) {
-    const s = this.spec!, it = this.item!;
+    const s = this.spec!, it = this.item!; this.trigT = 1;
     const fx = this.fx!;
     const fullMag = it.ammo === s.stats.cargador;
     const ammoFrac = it.ammo / s.stats.cargador;
@@ -610,4 +621,30 @@ export class Gun {
     }
     while (this.sparks.length > 80) { const o = this.sparks.shift()!; this.scene.remove(o.mesh); }
   }
+}
+
+// ---------- Agarres de las manos (05-E / 08) ----------
+type HandKind = "under" | "wrap" | "vgrip" | "grab";
+interface HandGrip { q: THREE.Quaternion; off: THREE.Vector3; curl: Curl }
+const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+const rx = (a: number) => new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), a);
+const C = (f: number, t: number): Curl => ({ fingers: [f, f + 0.04, f + 0.06, f + 0.08], thumb: t });
+/** Orientación (dedos, dorso), desplazamiento de la palma respecto al anclaje y cierre de cada agarre. */
+const GRIPS: Record<HandKind | "right", HandGrip> = {
+  // Empuñadura: dorso a la derecha, dedos rodeando el frente; la palma sigue la inclinación de la empuñadura
+  right: { q: rx(-0.3).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.026, 0.0, 0.032), curl: C(0.85, 0.4) },
+  // Bajo el guardamanos: palma arriba, dedos hacia la derecha envolviéndolo
+  under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.014, -0.03, 0.004), curl: C(0.72, 0.45) },
+  // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
+  wrap: { q: rx(-0.3).multiply(handBasis(V(0.32, -0.15, -1), V(-1, 0.12, 0))), off: V(-0.03, -0.014, 0.018), curl: C(0.78, 0.25) },
+  // Empuñadura vertical o cargador: mano cerrada alrededor, dorso a la izquierda
+  vgrip: { q: rx(-0.1).multiply(handBasis(V(0.35, -0.05, -1), V(-1, 0.2, 0))), off: V(-0.026, 0, 0.03), curl: C(0.88, 0.4) },
+  // Coger el cargador o la palanca: mano semiabierta que llega desde la izquierda
+  grab: { q: handBasis(V(0.45, -0.25, -0.85), V(-0.85, 0.3, 0.2)), off: V(-0.02, 0, 0), curl: C(0.55, 0.35) },
+};
+function supportKind(s: string | undefined, type: string | undefined): HandKind {
+  if (s === "grip") return "wrap";
+  if (s === "vgrip" || s === "mag") return "vgrip";
+  if (s === "front" || s === "pump" || s === "frame") return "under";
+  return type === "pistol" || type === "revolver" ? "wrap" : "under";
 }
