@@ -377,7 +377,8 @@ export class WeaponAssembler {
       }
     } else if (muzAcc && muzzle && !isKit(spec.muzzle)) {
       // Dispositivo de boca propio, del diámetro exacto del cañón
-      const { group: dev, length: dl } = buildMuzzle(muzAcc.id, muzzleDiameter, length0);
+      // Revólver clásico: el compensador se dibuja como un contrapeso liso de cañón (sin ranuras modernas)
+      const { group: dev, length: dl } = buildMuzzle(spec.type === "revolver" && spec.era === "classic" && muzAcc.id === "acc:compensator" ? "acc:weight" : muzAcc.id, muzzleDiameter, length0);
       dev.position.copy(muzzle).add(new THREE.Vector3(-0.002, 0, 0));
       group.add(dev);
       parts.push({ object: dev, role: "muzzle", from: { id: muzAcc.id, label: muzAcc.id, pack: "acc" } as AssetEntry, explode: new THREE.Vector3(1.2, 0.3, 0), base: dev.position.clone() });

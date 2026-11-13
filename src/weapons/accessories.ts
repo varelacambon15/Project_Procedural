@@ -62,6 +62,11 @@ export function buildMuzzle(id: string, d: number, L: number): { group: THREE.Gr
       for (let i = 1; i < 4; i++) g.add(tube(R * 1.03, len * 0.012, steel, len * (0.1 + i * 0.2), 20));
       break;
     }
+    case "acc:weight": { // contrapeso liso (revólveres clásicos)
+      len = Math.max(0.03, L * 0.1);
+      g.add(tube(r * 1.45, len, steel, 0)); g.add(tube(r * 1.55, len * 0.12, steel, len * 0.88));
+      break;
+    }
     case "acc:compensator": {
       len = Math.max(0.035, L * 0.06);
       g.add(tube(r * 1.5, len, steel, 0));
