@@ -10,6 +10,8 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Luces de color o sci-fi solo en legendarias (detalle de latón en gatillo o palanca, nunca boquillas de color).
 - Sci-fi = "arma moderna de última generación": polímero, raíles, formas anguladas. Nada de celdas, aletas o pantallas.
 - Armas nuevas = piezas que varían bases existentes, no modelos casi idénticos.
+- Un arma es nueva por la combinación de piezas distintas. Si una combinación sale mal montada, se arregla el montaje;
+  nunca se cambian sus piezas por las de la base (eso la convierte en una copia de la base).
 - No recrear juegos existentes. No editar CREDITS.md.
 - Commits pequeños con `npm test` y `npm run build` en verde; los tests existentes no cambian sus valores.
 - No publicar ni compilar distribuible sin permiso.
