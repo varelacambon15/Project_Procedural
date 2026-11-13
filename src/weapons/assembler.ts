@@ -1,5 +1,6 @@
 // Monta en 3D un arma generada: carga los .glb de cada pieza y las coloca en sus puntos de anclaje.
 import * as THREE from "three";
+import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { NO_TWEAKS, type AssetEntry, type PartRole, type WeaponSpec } from "./types";
 import { BASE_SIZE, TYPE_LENGTH, bodyZones, drumOf, pieceScale, type WeaponGenerator } from "./generator";
@@ -38,7 +39,13 @@ export class WeaponAssembler {
   constructor(private gen: WeaponGenerator, private baseUrl: string) {}
 
   private load(entry: AssetEntry): Promise<THREE.Group> {
-    if (!this.cache.has(entry.id)) this.cache.set(entry.id, this.fetchModel(this.baseUrl + entry.file));
+    if (!this.cache.has(entry.id)) {
+      let p = this.fetchModel(this.baseUrl + entry.file);
+      // Modelos del usuario (u-…): superficie con mucho ruido fino; normales suavizadas con pliegue (las aristas de
+      // verdad, por encima de ~40°, siguen marcadas) para que no se vean como papel arrugado
+      if (entry.id.startsWith("u-")) p = p.then((sc) => { sc.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.geometry = toCreasedNormals(m.geometry, 0.7); }); return sc; });
+      this.cache.set(entry.id, p);
+    }
     return this.cache.get(entry.id)!;
   }
 

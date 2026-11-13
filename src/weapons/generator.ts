@@ -226,7 +226,7 @@ export class WeaponGenerator {
     this.kit = new KitIndex(manifest.kit ?? []);
     for (const w of manifest.weapons) {
       this.byId.set(w.id, w);
-      if (w.excluded) continue; // se puede leer (armas guardadas), pero no sale en el botín
+      if (w.excluded || RETIRED.has(w.id)) continue; // se puede leer (armas guardadas), pero no sale en el botín
       if (!this.byType.has(w.type)) this.byType.set(w.type, []);
       this.byType.get(w.type)!.push(w);
     }
@@ -944,7 +944,15 @@ export class WeaponGenerator {
         const x0 = k === "handle" ? (layout === "body" ? a + l * 0.32 : a + l * 0.25) : a + l * 0.35, x1 = k === "handle" ? (layout === "body" ? a + l * 0.5 : a + l * 0.7) : b - l * 0.12;
         const tops = sp.filter((p) => p[0] >= x0 && p[0] <= x1).map((p) => p[2]); if (!tops.length) continue;
         const H = Math.max(...cols.map((c) => c.hi)) - Math.min(...cols.map((c) => c.lo));
-        out.push({ kind: k, x0, x1, y: Math.max(...tops) - 0.002, h: k === "handle" ? Math.min(0.045, Math.max(0.025, H * 0.3)) : 0.02 });
+        if (k === "handle") {
+          // Asa apoyada de verdad: las patas bajan hasta el cajón bajo cada una (antes salían del punto más alto del
+          // tramo y quedaban flotando) y es baja, para no tapar la vista. Si el cajón es muy irregular ahí, no se pone.
+          const near = (x: number) => { const c = sp.filter((p) => Math.abs(p[0] - x) < 0.012).map((p) => p[2]); return c.length ? Math.max(...c) : null; };
+          const t0 = near(x0), t1 = near(x1), hi = Math.max(...tops);
+          if (t0 == null || t1 == null || hi - Math.min(t0, t1) > 0.02) continue;
+          const lo = Math.min(t0, t1) - 0.002;
+          out.push({ kind: k, x0, x1, y: lo, h: hi - lo + Math.min(0.026, Math.max(0.018, H * 0.16)) });
+        } else out.push({ kind: k, x0, x1, y: Math.max(...tops) - 0.002, h: 0.02 });
       } else if (k === "ladder") {
         const x0 = sx0 - 0.07, c = cols.filter((cc) => Math.abs(cc.x - x0) < 0.012);
         if (c.length) out.push({ kind: k, x0, x1: x0 + 0.034, y: Math.max(...c.map((cc) => cc.hi)) - 0.002, h: 0.028 });
@@ -1109,6 +1117,11 @@ export const BASE_SIZE: Record<string, number> = {
   "w-mp5k": 0.62, "m-mp7": 0.72, "z-submachinegun-01": 0.65, "z-submachinegun-05": 0.8,
   "p-submachine-gun-3": 0.82, "p-submachine-gun-4": 0.82,
 };
+/** Bases retiradas del sorteo (se siguen pudiendo cargar en partidas guardadas), con el motivo. */
+const RETIRED = new Set<string>([
+  "v-ppsh-drum", // el tambor viene girado 90° dentro de la misma malla del cuerpo (se ve de canto); quedan w-ppsh y v-ppsh
+  "w-f2000", // demasiado parecidas entre sí (decisión del usuario); los bullpups por código y u-bullpup-b cubren el tipo
+]);
 export const TYPE_LENGTH: Partial<Record<WeaponType, number>> = { pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, lmg: 1.15, launcher: 1.1, flamethrower: 0.95 };
 const within = (v: number, lo: number, hi: number) => v >= lo && v <= hi;
 /** Escala con la que una pieza encaja en la junta del cajón (relación de secciones). */

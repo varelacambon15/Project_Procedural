@@ -64,9 +64,11 @@ export function buildAddon(a: Addon, thick: number): THREE.Group {
     }
     case "handle": {
       // Asa de transporte: dos postes y la barra superior
-      g.add(box(0.009, a.h, t * 0.5, a.x0 + 0.0045, cy));
-      g.add(box(0.009, a.h, t * 0.5, a.x1 - 0.0045, cy));
-      g.add(box(L, a.h * 0.3, t * 0.55, cx, a.y + a.h * 0.85));
+      // (patas desde la base hasta la barra; barra de altura fija, no proporcional a toda el asa)
+      const bar = Math.min(0.009, a.h * 0.4);
+      g.add(box(0.011, a.h, t * 0.55, a.x0 + 0.0055, cy));
+      g.add(box(0.011, a.h, t * 0.55, a.x1 - 0.0055, cy));
+      g.add(box(L, bar, t * 0.6, cx, a.y + a.h - bar / 2));
       break;
     }
     case "cheek": {
