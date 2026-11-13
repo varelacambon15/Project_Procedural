@@ -47,6 +47,11 @@ const rod = (a: THREE.Vector3, b: THREE.Vector3, r: number, seg = 10) => {
   m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); return m;
 };
 
+/** Pletina de sección rectangular entre dos puntos del plano XY (alto `t`, ancho `w`). */
+const bar = (a: THREE.Vector3, b: THREE.Vector3, t: number, w: number) => {
+  const len = a.distanceTo(b); const m = new THREE.Mesh(new THREE.BoxGeometry(len + t * 0.6, t, w), new THREE.MeshStandardMaterial({ name: "procmetal" }));
+  m.position.copy(a).add(b).multiplyScalar(0.5); m.rotation.z = Math.atan2(b.y - a.y, b.x - a.x); return m;
+};
 /** Culata por código (coordenadas del arma). */
 export function buildStock(s: ProcStock): THREE.Group {
   const g = new THREE.Group(); const [ax, ay] = s.at; const bx = ax - s.len, by = ay - s.drop;
@@ -55,15 +60,13 @@ export function buildStock(s: ProcStock): THREE.Group {
     g.add(rod(new THREE.Vector3(ax, ay + s.h * 0.05, 0), new THREE.Vector3(bx + 0.01, by + s.h * 0.05, 0), Math.max(0.006, s.h * 0.12)));
     g.add(box(0.03, s.h * 0.7, s.w * 0.9, ax - 0.015, ay, "procmetal"));
   } else if (s.kind === "skeleton") {
-    // Esqueleto: marco cerrado (varilla superior, inferior y travesaño) a cada lado, con la cantonera
-    const rr = Math.max(0.004, s.h * 0.13);
-    for (const z of [-1, 1]) {
-      const zz = z * s.w * 0.32;
-      const top = rod(new THREE.Vector3(ax, ay + s.h * 0.3, zz), new THREE.Vector3(bx + 0.01, by + s.h * 0.3, zz), rr, 6);
-      const lo = rod(new THREE.Vector3(ax, ay - s.h * 0.35, zz), new THREE.Vector3(bx + 0.01, by - s.h * 0.55, zz), rr, 6);
-      const mid = rod(new THREE.Vector3(ax - s.len * 0.45, ay - s.drop * 0.45 + s.h * 0.3, zz), new THREE.Vector3(ax - s.len * 0.62, ay - s.drop * 0.62 - s.h * 0.42, zz), rr * 0.85, 6);
-      g.add(top, lo, mid);
-    }
+    // Esqueleto: marco de pletina (barra superior, inferior y travesaño), una sola pieza ancha como las reales
+    // (las varillas finas a cada lado se leían como alambre en armas largas)
+    const th = Math.max(0.011, s.h * 0.24), wd = Math.max(0.012, s.w * 0.55);
+    const top = bar(new THREE.Vector3(ax, ay + s.h * 0.3, 0), new THREE.Vector3(bx + 0.01, by + s.h * 0.3, 0), th, wd);
+    const lo = bar(new THREE.Vector3(ax, ay - s.h * 0.35, 0), new THREE.Vector3(bx + 0.01, by - s.h * 0.55, 0), th, wd);
+    const mid = bar(new THREE.Vector3(ax - s.len * 0.45, ay - s.drop * 0.45 + s.h * 0.3, 0), new THREE.Vector3(ax - s.len * 0.62, ay - s.drop * 0.62 - s.h * 0.42, 0), th * 0.85, wd * 0.9);
+    g.add(top, lo, mid);
     g.add(box(0.02, s.h * 0.8, s.w * 0.8, ax - 0.01, ay - s.h * 0.02, "procmetal"));
   } else if (s.kind === "folding") {
     // Plegable de alambre: varilla superior, diagonal desde abajo de la junta y bisagra
