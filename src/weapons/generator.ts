@@ -329,7 +329,10 @@ export class WeaponGenerator {
         // Cargador de otra arma de la familia solo si aún no se han cambiado 2 piezas
         const swapped = parts.slice(1).filter((p) => p.from !== base.id).length;
         // Solo cargadores de forma parecida (curvatura e inclinación): uno curvo en un pozo recto queda torcido
-        const mags = pool.filter((w) => w.pack === base.pack && w.id !== base.id && w.parts.some((p) => p.role === "magazine") && Math.abs(magSpread(w) - magSpread(base)) < 0.25);
+        // (forma parecida y también alto parecido: un cargador de caja de ametralladora en un AK quedaba gigante)
+        const magH = (w: AssetEntry) => { const pb = w.partBounds?.magazine; return pb ? pb.max[1] - pb.min[1] : 0; };
+        const hRatio = (w: AssetEntry) => (magH(base) > 0 ? magH(w) / magH(base) : 1);
+        const mags = pool.filter((w) => w.pack === base.pack && w.id !== base.id && w.parts.some((p) => p.role === "magazine") && Math.abs(magSpread(w) - magSpread(base)) < 0.25 && hRatio(w) > 0.75 && hRatio(w) < 1.3);
         parts.push({ role: "magazine", from: (swapped < 2 && mags.length && r() < 0.35 ? pick(r, mags) : base).id });
       }
     }
@@ -436,7 +439,9 @@ export class WeaponGenerator {
    */
   private mixLong(r: Rng, base: AssetEntry, type: BaseType, tweaks: Tweaks): { stock: AssetEntry; front: AssetEntry; grip: AssetEntry } | null {
         // Una base y poco más: 1-2 piezas de la misma familia (se adaptan a la junta: pieceScale)
-        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && !w.excluded && w.pack === base.pack && w.id !== base.id && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)) && !w.quarantine);
+        // (los modelos del usuario, u-…, no prestan piezas: su superficie no casa con la del resto y el guardamanos
+        // en cuña quedaba como un pico pegado en otros fusiles; sí reciben piezas de otros)
+        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && !w.excluded && !RETIRED.has(w.id) && !w.id.startsWith("u-") && w.pack === base.pack && w.id !== base.id && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)) && !w.quarantine);
         const cls = (t: WeaponType) => (t === "smg" ? "compact" : "long");
         const fit = (joint: "rear" | "front" | "grip", lo: number, hi: number) => (w: AssetEntry) => within(jointScale(base, w, joint), lo, hi);
         const stocks = donors("stock", (w) => cls(w.type) === cls(type)).filter(fit("rear", 0.7, 1.4));
@@ -458,7 +463,7 @@ export class WeaponGenerator {
     return parts.map((p, i) => {
       if (i === 0) return p;
       const k = this.kit.byId.get(p.from); if (!k || k.slot === "Device") return p;
-      const first = this.kit.options(k.slot, cal)[0];
+      const first = this.kit.options(k.slot, cal)[0]; // (las piezas retiradas no cuentan: la de serie pasa a ser la siguiente)
       return first && KIT_ROLE[k.slot] === p.role ? { role: p.role, from: first.id } : p;
     }).filter((p) => !(this.kit.byId.get(p.from)?.slot === "Device"));
   }
@@ -808,7 +813,8 @@ export class WeaponGenerator {
     } else {
       ops.push({ id: "barrel", run: () => { const k = kitLengths(r, type, parts); bl = k.barrelLength; tw.front = k.front; } });
       if (type !== "pistol") ops.push({ id: "stock", run: () => (tw.stock = away(0.8, 1.2, 0.08)) });
-      if (type === "shotgun" || type === "rifle") if (rare.nostock) ops.push({ id: "nostock", run: () => (tw.nostock = true) });
+      // (sin culata solo en escopetas: en los fusiles del kit quedaba un cajón suelto con un cañón larguísimo)
+      if (type === "shotgun") if (rare.nostock) ops.push({ id: "nostock", run: () => (tw.nostock = true) });
       if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = type === "pistol" ? 1.12 + r() * 0.12 : 1.2 + r() * 0.3) });
       // Culata y guardamanos por código sobre los sockets de la plataforma (el cañón real del kit se conserva)
       const plat = this.kit.byId.get(parts[0].from);
@@ -824,7 +830,9 @@ export class WeaponGenerator {
       if (type === "revolver") { wantAdd("rib"); wantAdd("lug"); }
       if (type === "pistol") wantAdd("lug");
       if (type === "shotgun") { if (!sawedGun) wantAdd("shield"); wantAdd("rib"); }
-      // (sin cubrecañón en subfusiles: los que lo llevan ya lo traen de serie; añadido quedaba como una caja pegada)
+      // (sin cubrecañón en subfusiles: los que lo llevan ya lo traen de serie; añadido quedaba como una caja pegada).
+      // En su lugar, alza de escalera: detalle pequeño y natural en un subfusil
+      if (type === "smg") wantAdd("ladder");
       if (type === "rifle" || type === "sniper") wantAdd("ladder");
       if (type === "bullpup") wantAdd("bipod");
       if (type === "lmg" || type === "sniper") wantAdd("bipod");
@@ -1125,6 +1133,7 @@ export const BASE_SIZE: Record<string, number> = {
 /** Bases retiradas del sorteo (se siguen pudiendo cargar en partidas guardadas), con el motivo. */
 const RETIRED = new Set<string>([
   "v-ppsh-drum", // el tambor viene girado 90° dentro de la misma malla del cuerpo (se ve de canto); quedan w-ppsh y v-ppsh
+  "p-machine-gun-2", // como fusil quedaba un cajón de ametralladora tosco con culata de caja
   "w-f2000", // demasiado parecidas entre sí (decisión del usuario); los bullpups por código y u-bullpup-b cubren el tipo
 ]);
 export const TYPE_LENGTH: Partial<Record<WeaponType, number>> = { pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, lmg: 1.15, launcher: 1.1, flamethrower: 0.95 };

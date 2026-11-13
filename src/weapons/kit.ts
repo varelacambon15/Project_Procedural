@@ -72,12 +72,15 @@ export class KitIndex {
   /** Tipos de arma que se pueden montar con el kit. */
   types(): WeaponType[] { return [...new Set(this.parts.filter((p) => p.slot === "Platform").map((p) => KIT_PLATFORM_TYPE[p.id]).filter(Boolean))]; }
   /** Piezas para un socket y calibre. */
-  options(slot: string, caliber: Caliber, type?: WeaponType): KitPart[] {
-    return this.parts.filter((p) => p.slot === slot && (p.caliber === caliber || p.caliber === "any") && !(slot === "Device" && type === "pistol" && FOREGRIP.test(p.id)));
+  options(slot: string, caliber: Caliber, type?: WeaponType, all = false): KitPart[] {
+    return this.parts.filter((p) => p.slot === slot && (p.caliber === caliber || p.caliber === "any") && !(slot === "Device" && type === "pistol" && FOREGRIP.test(p.id)) && (all || !KIT_RETIRED.has(p.id)));
   }
   platformOf(spec: Pick<WeaponSpec, "parts">): KitPart { return this.byId.get(spec.parts[0].from)!; }
   caliberOf(spec: Pick<WeaponSpec, "parts">): Caliber { return this.platformOf(spec).caliber; }
 }
+
+/** Piezas del kit que no se eligen al generar (siguen siendo la referencia "de serie" de la plataforma). */
+const KIT_RETIRED = new Set(["k-handguard-556-01"]); // guardamanos liso: parecía una cuña sin terminar
 
 /** Pieza colocada: dónde va (metros, coordenadas del arma) y cuánto se estira a lo largo. */
 export interface Placement { part: KitPart; role: PartRole | "sight"; pos: V3; stretch: number }
@@ -167,7 +170,8 @@ export function rollKit(kit: KitIndex, r: Rng, type: WeaponType): { parts: PartP
   // Una base y poco más: la configuración de serie (primera variante de cada pieza) y 1-2 piezas cambiadas
   const slots = Object.keys(platform.sockets).filter((slot) => KIT_ROLE[slot] && slot !== "Sights_Rear" && slot !== "Device");
   for (const slot of slots) want(slot, true);
-  const changeable = slots.filter((slot) => kit.options(slot, cal, type).length > 1);
+  // (gatillo y palanca de carga apenas se ven: los cambios van a piezas que cambian la silueta)
+  const changeable = slots.filter((slot) => kit.options(slot, cal, type).length > 1 && slot !== "Trigger" && slot !== "ChargingHandle");
   const n = Math.min(changeable.length, 1 + (r() < 0.5 ? 1 : 0));
   for (let i = 0; i < n; i++) {
     const slot = changeable.splice(Math.floor(r() * changeable.length), 1)[0];

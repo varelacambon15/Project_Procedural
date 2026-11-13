@@ -72,8 +72,15 @@ export function buildAddon(a: Addon, thick: number): THREE.Group {
       break;
     }
     case "cheek": {
-      // Carrillera sobre la culata
-      g.add(box(L, a.h, t * 0.85, cx, cy));
+      // Carrillera: cuña baja y biselada que sube hacia atrás, apoyada en el lomo de la culata (antes era una caja)
+      const sh = new THREE.Shape();
+      sh.moveTo(a.x1, a.y); sh.lineTo(a.x1 - L * 0.12, a.y + a.h * 0.35);
+      sh.quadraticCurveTo(a.x0 + L * 0.55, a.y + a.h * 0.85, a.x0 + L * 0.08, a.y + a.h * 0.9);
+      sh.quadraticCurveTo(a.x0, a.y + a.h * 0.9, a.x0, a.y + a.h * 0.6); sh.lineTo(a.x0, a.y); sh.closePath();
+      const depth = t * 0.72;
+      const geo = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.0025, bevelSegments: 2, curveSegments: 6 });
+      geo.translate(0, 0, -depth / 2);
+      g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ name: "add" })));
       break;
     }
   }
