@@ -115,6 +115,7 @@ export class Gun {
   private sprintT = 0;
   /** Dedo dentro del gatillo un rato tras disparar (si no, va estirado sobre el armazón). */
   private onTrigT = 0;
+  private holdAvg: THREE.Vector3 | null = null;
   private reloadPhase: Phase | null = null;
   private sprayIndex = 0; private sprayT = 0;
   private casings: { mesh: THREE.Object3D; vel: THREE.Vector3; spin: THREE.Vector3; t: number }[] = [];
@@ -492,7 +493,11 @@ export class Gun {
     const right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [trig, 0.86 - 0.1 * sp, 0.9 - 0.1 * sp, 0.93 - 0.1 * sp], thumb: 0.4 - 0.15 * sp });
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
-    this.arms.update({ right, left: left ? pose(left, L, loose) : null, dt });
+    // Hombros: siguen la mitad de los movimientos rápidos del arma (retroceso, balanceo) respecto a su media lenta
+    const hc = this.camera.worldToLocal(this.holder.getWorldPosition(new THREE.Vector3()));
+    if (!this.holdAvg) this.holdAvg = hc.clone(); else this.holdAvg.lerp(hc, Math.min(1, dt * 2.5));
+    const shoulder = hc.clone().sub(this.holdAvg).multiplyScalar(0.5).clampLength(0, 0.08);
+    this.arms.update({ right, left: left ? pose(left, L, loose) : null, dt, shoulder });
   }
 
   private fire(moving: number, echo = false) {

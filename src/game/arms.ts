@@ -18,7 +18,7 @@ export const ARM_DATA = {
 /** Cierre de la mano: índice, corazón, anular, meñique (0 abierta … 1 puño) y pulgar. */
 export interface Curl { fingers: [number, number, number, number]; thumb: number }
 export interface HandPose { pos: THREE.Vector3; orient: THREE.Quaternion; curl: Curl }
-export interface HandTargets { right: HandPose; left: HandPose | null; dt?: number }
+export interface HandTargets { right: HandPose; left: HandPose | null; dt?: number; /** Desplazamiento de los hombros (movimientos rápidos del arma). */ shoulder?: THREE.Vector3 }
 
 /** IK de dos huesos: devuelve la posición del codo. */
 export function solveTwoBone(shoulder: THREE.Vector3, target: THREE.Vector3, a: number, b: number, pole: THREE.Vector3): THREE.Vector3 {
@@ -186,9 +186,10 @@ export class Arms {
   /** Coloca las manos (coordenadas de la cámara). Si `left` es null, el brazo izquierdo baja fuera de la vista. */
   update(t: HandTargets) {
     const dt = t.dt ?? 1;
-    this.right.set(ARM_DATA.shoulderR, t.right, ARM_DATA.poleR, dt);
+    const sh = t.shoulder ?? new THREE.Vector3();
+    this.right.set(ARM_DATA.shoulderR.clone().add(sh), t.right, ARM_DATA.poleR, dt);
     const left = t.left ?? { pos: new THREE.Vector3(-0.24, -0.62, -0.08), orient: t.right.orient, curl: { fingers: [0.4, 0.45, 0.5, 0.55], thumb: 0.2 } };
-    this.left.set(ARM_DATA.shoulderL, left, ARM_DATA.poleL, dt);
+    this.left.set(ARM_DATA.shoulderL.clone().add(sh), left, ARM_DATA.poleL, dt);
   }
   set visible(v: boolean) { this.group.visible = v; }
 }
