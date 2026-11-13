@@ -8,7 +8,7 @@ export type MovingPart = "slide" | "pump" | "charging";
 export interface Phase { id: string; t: number; index: number }
 
 export interface AnimParams {
-  hip: V3; aimZ: number; adsRoll: number;
+  hip: V3; aimZ: number; adsRoll: number; gripZ?: number;
   kick: { k: number; zeta: number; peak: number; back: number; up: number; pitch: number; roll: number };
   recoil: { power: number; vertical: number; horizontal: number };
   sway: { gain: number; maxX: number; maxY: number; lag: number; adsKeep: number };
@@ -53,6 +53,7 @@ export interface AnimInput {
   moving: number; sprinting: boolean; grounded: boolean; vy: number;
   lookX: number; lookY: number;
   /** Largo del modelo y altura de la línea de mira (para la posición de apuntado). */ length: number; sightY: number;
+  /** X local de la empuñadura respecto al centro del modelo (la boca está en +X). */ gripX?: number;
   /** Progreso de la recarga 0..1, o null. */ reload: number | null;
   /** Progreso de sacar el arma (1 al empezar … 0 lista), de guardarla (0 … 1 guardada) y de la inspección (0..1 o null). */
   draw: number; holster: number; inspect: number | null;
@@ -104,7 +105,11 @@ export class ViewAnimator {
 
     const ads = i.ads, e = ease(ads);
     // Cadera → mira (con un leve giro a mitad del gesto, como al subir el arma a la cara)
-    const pos: V3 = [lerp(p.hip[0], 0, e), lerp(p.hip[1], -i.sightY, e), -(i.length * 0.5 + lerp(p.hip[2], p.aimZ, e))];
+    // En cadera, la empuñadura queda a `gripZ` de la cámara (sin que la culata pase de 12 cm detrás del ojo); al
+    // apuntar, la culata a `aimZ` delante, como antes
+    const adsZ = -(i.length * 0.5 + p.aimZ);
+    const hipZ = i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, 0.12 - i.length * 0.5) : -(i.length * 0.5 + p.hip[2]);
+    const pos: V3 = [lerp(p.hip[0], 0, e), lerp(p.hip[1], -i.sightY, e), lerp(hipZ, adsZ, e)];
     const rot: V3 = [0, 0, -p.adsRoll * tri(ads, 0, 1)];
     // Sprint
     this.sprint = lerp(this.sprint, i.sprinting && i.reload === null ? 1 : 0, Math.min(1, dt * p.sprint.speed));

@@ -2,7 +2,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { NO_TWEAKS, type AssetEntry, type PartRole, type WeaponSpec } from "./types";
-import { TYPE_LENGTH, bodyZones, drumOf, pieceScale, type WeaponGenerator } from "./generator";
+import { BASE_SIZE, TYPE_LENGTH, bodyZones, drumOf, pieceScale, type WeaponGenerator } from "./generator";
 import { midZone, stretchAll, stretchX, type Stretches } from "./variation";
 import { KIT_FLIP, isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
 import { accessory, buildFrontSight, buildMuzzle, buildOptic } from "./accessories";
@@ -465,6 +465,13 @@ export class WeaponAssembler {
     const maxRatio = MAX_THICKNESS[spec.type] ?? 0.1;
     if (thick / long > maxRatio) group.scale.z = Math.max(0.6, (maxRatio * long) / thick);
 
+    // Modelos con escala propia (compactos que el conversor agrandó): se encoge el arma entera alrededor del origen
+    const size = BASE_SIZE[spec.parts[0]?.from ?? ""] ?? 1;
+    if (size !== 1) {
+      for (const p of parts) { p.object.position.multiplyScalar(size); p.object.scale.multiplyScalar(size); }
+      muzzle?.multiplyScalar(size); if (sight !== null) sight *= size;
+      group.updateMatrixWorld(true);
+    }
     // Centrar y guardar posiciones base para el despiece.
     const box = new THREE.Box3().setFromObject(group);
     // Mira integrada en el modelo (asa-mira, visor de fábrica) sin óptica añadida: la línea de mira pasa por el centro de

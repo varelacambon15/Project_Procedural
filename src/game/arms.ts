@@ -49,7 +49,7 @@ function pixTex(w: number, h: number, draw: (g: CanvasRenderingContext2D) => voi
 const rnd = (() => { let s = 7; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
 /** Tela de la chaqueta: sarga con ruido, costura longitudinal. */
 const fabricTex = pixTex(32, 32, (g) => {
-  g.fillStyle = "#454b3c"; g.fillRect(0, 0, 32, 32);
+  g.fillStyle = "#4b5462"; g.fillRect(0, 0, 32, 32); // gris pizarra (antes verde oliva)
   for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) if ((x + y) % 3 === 0) { g.fillStyle = "rgba(0,0,0,0.06)"; g.fillRect(x, y, 1, 1); }
   for (let i = 0; i < 120; i++) { const v = rnd() > 0.5 ? 255 : 0; g.fillStyle = `rgba(${v},${v},${v},${rnd() * 0.06})`; g.fillRect(Math.floor(rnd() * 32), Math.floor(rnd() * 32), 1, 1); }
   g.fillStyle = "rgba(0,0,0,0.25)"; g.fillRect(15, 0, 1, 32); g.fillStyle = "rgba(255,255,255,0.05)"; g.fillRect(16, 0, 1, 32);
@@ -57,17 +57,17 @@ const fabricTex = pixTex(32, 32, (g) => {
 fabricTex?.repeat.set(2, 3);
 /** Guante: material sintético con relieve fino. */
 const gloveTex = pixTex(16, 16, (g) => {
-  g.fillStyle = "#26282a"; g.fillRect(0, 0, 16, 16);
+  g.fillStyle = "#43392f"; g.fillRect(0, 0, 16, 16); // coyote oscuro
   for (let i = 0; i < 50; i++) { g.fillStyle = `rgba(255,255,255,${rnd() * 0.07})`; g.fillRect(Math.floor(rnd() * 16), Math.floor(rnd() * 16), 1, 1); }
   for (let y = 0; y < 16; y += 4) { g.fillStyle = "rgba(0,0,0,0.2)"; g.fillRect(0, y, 16, 1); }
 });
 const sleeve = new THREE.MeshStandardMaterial({ map: fabricTex, roughness: 0.92 });
-const sleeveDark = new THREE.MeshStandardMaterial({ color: 0x2f3329, roughness: 0.95 });
+const sleeveDark = new THREE.MeshStandardMaterial({ color: 0x262b33, roughness: 0.95 });
 const glove = new THREE.MeshStandardMaterial({ map: gloveTex, roughness: 0.7, metalness: 0.05 });
-const gloveArmor = new THREE.MeshStandardMaterial({ color: 0x3a3e42, roughness: 0.5, metalness: 0.25 });
+const gloveArmor = new THREE.MeshStandardMaterial({ color: 0x2c2f34, roughness: 0.5, metalness: 0.25 });
 const strap = new THREE.MeshStandardMaterial({ color: 0x1a1b1c, roughness: 0.6 });
 const watchFace = new THREE.MeshStandardMaterial({ color: 0x0c1410, emissive: 0x2a6a4a, emissiveIntensity: 0.25, roughness: 0.25, metalness: 0.4 });
-const patchMat = new THREE.MeshStandardMaterial({ map: pixTex(8, 8, (g) => { g.fillStyle = "#3a3f33"; g.fillRect(0, 0, 8, 8); g.fillStyle = "#8a8f70"; g.fillRect(1, 1, 6, 1); g.fillRect(1, 3, 4, 1); g.fillRect(1, 5, 5, 1); g.strokeStyle = "#20231c"; g.strokeRect(0.5, 0.5, 7, 7); }), roughness: 0.9 });
+const patchMat = new THREE.MeshStandardMaterial({ map: pixTex(8, 8, (g) => { g.fillStyle = "#2b3038"; g.fillRect(0, 0, 8, 8); g.fillStyle = "#e07a2a"; g.fillRect(1, 1, 6, 1); g.fillRect(1, 3, 4, 1); g.fillRect(1, 5, 5, 1); g.strokeStyle = "#1a1d22"; g.strokeRect(0.5, 0.5, 7, 7); }), roughness: 0.9 });
 
 const Y = new THREE.Vector3(0, 1, 0);
 const cyl = (rTop: number, rBot: number, mat: THREE.Material, seg = 10) => new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, 1, seg, 1), mat);

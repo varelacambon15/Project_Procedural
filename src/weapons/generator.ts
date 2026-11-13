@@ -1101,6 +1101,14 @@ export function drumOf(base: AssetEntry) {
 }
 
 /** Longitud de referencia de cada tipo (m), la misma que usa el conversor. */
+/**
+ * Escala propia de algunos modelos: el conversor lleva todos los de un tipo al mismo largo (subfusil 0,5 m), y los
+ * compactos (MP5K, MP7…) quedaban casi el doble de grandes que los reales. Se aplica al arma montada entera.
+ */
+export const BASE_SIZE: Record<string, number> = {
+  "w-mp5k": 0.62, "m-mp7": 0.72, "z-submachinegun-01": 0.65, "z-submachinegun-05": 0.8,
+  "p-submachine-gun-3": 0.82, "p-submachine-gun-4": 0.82,
+};
 export const TYPE_LENGTH: Partial<Record<WeaponType, number>> = { pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, lmg: 1.15, launcher: 1.1, flamethrower: 0.95 };
 const within = (v: number, lo: number, hi: number) => v >= lo && v <= hi;
 /** Escala con la que una pieza encaja en la junta del cajón (relación de secciones). */

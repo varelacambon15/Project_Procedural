@@ -1,5 +1,5 @@
 {
-  "_doc": "Capa de animación procedural del arma en primera persona. 'default' se mezcla con cada clase. Distancias en metros, ángulos en radianes. kick = muelle (rigidez k, amortiguación zeta, 'peak' = altura del pico por disparo); recoil = retroceso de cámara (jugabilidad: power por clase, sin cambiar los valores de antes). reload.phases = fracciones del tiempo de recarga (que sale del manejo y los efectos). cycle.part = pieza que se mueve al disparar (slide, pump, charging).",
+  "_doc": "gripZ = distancia (m) de la cámara a la empuñadura en cadera: todas las armas se sujetan a la misma distancia (antes era la culata, y las largas quedaban lejos). Capa de animación procedural del arma en primera persona. 'default' se mezcla con cada clase. Distancias en metros, ángulos en radianes. kick = muelle (rigidez k, amortiguación zeta, 'peak' = altura del pico por disparo); recoil = retroceso de cámara (jugabilidad: power por clase, sin cambiar los valores de antes). reload.phases = fracciones del tiempo de recarga (que sale del manejo y los efectos). cycle.part = pieza que se mueve al disparar (slide, pump, charging).",
   "default": {
     "hip": [
       0.15,
@@ -7,6 +7,7 @@
       0.08
     ],
     "aimZ": 0.07,
+    "gripZ": 0.32,
     "adsRoll": 0.06,
     "kick": {
       "k": 380,
@@ -118,6 +119,7 @@
   },
   "classes": {
     "pistol": {
+      "gripZ": 0.27,
       "hip": [
         0.15,
         -0.135,
@@ -202,6 +204,7 @@
       }
     },
     "revolver": {
+      "gripZ": 0.26,
       "hip": [
         0.15,
         -0.135,
@@ -306,6 +309,7 @@
       }
     },
     "bullpup": {
+      "gripZ": 0.4,
       "hip": [
         0.15,
         -0.15,
@@ -420,6 +424,7 @@
       }
     },
     "lmg": {
+      "gripZ": 0.34,
       "hip": [
         0.16,
         -0.17,
