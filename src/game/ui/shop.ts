@@ -1,13 +1,13 @@
 // Tienda (terminal de la simulación), prompt 05-D: escaparate de 5 armas (imagen fija de cada una, ficha completa
 // con comparación al elegirla, se renueva cada cierto tiempo de juego con contador; cada arma se vende una vez) y dos
 // cajas (común y avanzada) con probabilidades a la vista, garantía de la avanzada, confirmación suave, revelación
-// corta y saltable con señal por rareza, e historial. Si te quedas sin armas, un arma básica gratis (nunca sin salida).
+// corta y saltable con señal por rareza, e historial. Compra con un clic (sin confirmación). Sin armas, los puños y los muñecos de práctica dan créditos.
 import { RARITIES, type WeaponGenerator } from "../../weapons/generator";
 import type { WeaponSpec, RarityId } from "../../weapons/types";
 import { t } from "../../i18n";
 import { CRATES, SHOP, SHOWCASE, buyShowcase, crateOdds, ensureShowcase, openCrate, pityLeft, record, showcasePrice, showcaseRarities, showcaseSeed, type CrateId, type ShopState } from "../shop";
 import type { Inventory, Item } from "../inventory";
-import { $, esc, keyHint, softConfirm, weaponCard, type Thumbnails } from "./common";
+import { $, esc, keyHint, weaponCard, type Thumbnails } from "./common";
 
 const color = (r: RarityId) => RARITIES.find((x) => x.id === r)!.color;
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -77,9 +77,8 @@ export class ShopScreen {
         <div class="floor">${t("shop.floor")} <b style="color:${color(top)}">${t(`rarity.${top}`)}</b>${id === "advanced" ? ` · ${t("shop.pity", { n: pityLeft(st) })}` : ""}</div>
         <div class="odds">${bars}</div>${btn}</div>`;
     }).join("");
-    const basic = this.inv.all.length === 0 ? `<button type="button" class="btn" data-basic="1">${t("shop.basic")}</button>` : "";
     const detail = this.sel >= 0 ? weaponCard(specs[this.sel], this.inv.current?.spec ?? null, this.inv.current ? t("ui.compared") : "") : `<p class="hint-sel">${t("shop.pick")}</p>`;
-    $("shop-tiers").innerHTML = `<div class="sc-head"><h2>${t("shop.showcase")}</h2><span class="timer">${t("shop.refreshIn", { t: mmss(Math.max(0, sc.refreshAt - this.hooks.gameTime())) })}</span>${basic}</div>
+    $("shop-tiers").innerHTML = `<div class="sc-head"><h2>${t("shop.showcase")}</h2><span class="timer">${t("shop.refreshIn", { t: mmss(Math.max(0, sc.refreshAt - this.hooks.gameTime())) })}</span></div>
       <div class="sc-row">${tiles}</div><div class="crates">${crates}</div>`;
     $("shop-detail").innerHTML = detail;
     // Imagen fija de cada arma del escaparate (miniatura; se cachea por semilla, ronda y ranura)
@@ -103,14 +102,8 @@ export class ShopScreen {
       return;
     }
     if (target.closest("[data-close]")) return this.close();
-    if (target.closest("[data-basic]")) {
-      // Sin armas: una básica gratis (el juego nunca se queda sin salida)
-      const got = this.hooks.deliverSpec(this.gen.generate(Math.floor(Math.random() * 1e9), undefined, "comun"));
-      this.show(got, true); return;
-    }
     const slotBtn = target.closest<HTMLElement>("[data-buyslot]");
     if (slotBtn) {
-      if (!softConfirm(slotBtn, slotBtn.dataset.confirm!)) return;
       const i = Number(slotBtn.dataset.buyslot), { sc, specs } = this.showcase(), spec = specs[i];
       const r = buyShowcase(sc, this.inv.credits, i, showcasePrice(spec.rarity.id, spec.level));
       if (!r.ok) { this.hooks.toast(t(`shop.err.${r.reason}`)); return; }
@@ -121,7 +114,6 @@ export class ShopScreen {
     }
     const crateBtn = target.closest<HTMLElement>("[data-crate]");
     if (crateBtn) {
-      if (!softConfirm(crateBtn, crateBtn.dataset.confirm!)) return;
       const id = crateBtn.dataset.crate as CrateId;
       const r = openCrate(this.state(), this.inv.credits, id, Math.random);
       if (!r.ok) { this.hooks.toast(t(`shop.err.${r.reason}`)); return; }

@@ -75,7 +75,7 @@ export class ViewAnimator {
   p: AnimParams = animParams("rifle");
   private kx = 0; private kv = 0; private roll = 0;
   private sprint = 0; private bobT = 0; private landT = 0; private wasGrounded = true;
-  private swayX = 0; private swayY = 0;
+  private swayX = 0; private swayY = 0; private lookVX = 0; private lookVY = 0;
   private shotT = 1;
 
   /** Clase del arma y postura del perfil de agarre (las cortas con culata van al hombro). */
@@ -170,11 +170,17 @@ export class ViewAnimator {
 
     // Inercia al girar la cámara: el arma se queda un poco atrás
     const keep = lerp(1, p.sway.adsKeep, ads);
-    this.swayX += (clamp(i.lookX * p.sway.gain, -p.sway.maxX, p.sway.maxX) - this.swayX) * Math.min(1, dt * p.sway.lag);
-    this.swayY += (clamp(i.lookY * p.sway.gain, -p.sway.maxY, p.sway.maxY) - this.swayY) * Math.min(1, dt * p.sway.lag);
+    // Se usa la velocidad de giro (rad/s) filtrada, no el giro de este fotograma: el ratón entrega movimientos a
+    // trompicones (fotogramas con 0 y otros con el doble) y con tirones de fotograma el arma daba bandazos de lado
+    // a lado arrastrando los brazos. `gain` sigue expresado como a 60 fps.
+    const idt = 1 / Math.max(dt, 1 / 240);
+    this.lookVX += (i.lookX * idt - this.lookVX) * Math.min(1, dt * 14);
+    this.lookVY += (i.lookY * idt - this.lookVY) * Math.min(1, dt * 14);
+    this.swayX += (clamp(this.lookVX / 60 * p.sway.gain, -p.sway.maxX, p.sway.maxX) - this.swayX) * Math.min(1, dt * p.sway.lag);
+    this.swayY += (clamp(this.lookVY / 60 * p.sway.gain, -p.sway.maxY, p.sway.maxY) - this.swayY) * Math.min(1, dt * p.sway.lag);
     return {
       pos, rot,
-      swayRot: [-this.swayY * keep, this.swayX * keep, this.swayX * 1.4 * keep],
+      swayRot: [-this.swayY * keep, this.swayX * keep, this.swayX * 0.8 * keep],
       swayPos: [-this.swayX * 0.15 * keep, this.swayY * 0.1 * keep, 0],
       mag, parts, phase,
     };

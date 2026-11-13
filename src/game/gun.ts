@@ -141,6 +141,8 @@ export class Gun {
 
   get spec() { return this.item?.spec ?? null; }
   get reloading() { return this.reloadT > 0; }
+  /** Apertura visual de la retícula al disparar (0 en reposo; se suma en ráfaga). */
+  crossKick = 0;
   /** Dispersión actual en grados (la usa también la retícula). */
   spread(moving: number) {
     const s = this.spec; if (!s) return 1;
@@ -149,6 +151,8 @@ export class Gun {
     return ((100 - s.stats.precision) * 0.055 + 0.08) * (1 - this.aimT * 0.75) * (1 + moving * 0.6) * focus;
   }
 
+  /** Compila los shaders de un objeto en segundo plano (lo pone main.ts con renderer.compileAsync). */
+  prewarm: ((o: THREE.Object3D) => Promise<unknown>) | null = null;
   forget(uid: number) { this.cache.delete(uid); }
   modelFor(item: Item, rebuild = false): Promise<AssembledWeapon> {
     if (rebuild || !this.cache.has(item.uid)) this.cache.set(item.uid, this.asm.assemble(item.spec));
@@ -193,6 +197,8 @@ export class Gun {
     this.mag = m.parts.find((p) => p.role === "magazine") ?? null;
     this.moving = {};
     for (const role of ["slide", "pump", "charging"] as MovingPart[]) { const part = m.parts.find((p) => p.role === role); if (part) this.moving[role] = part; }
+    // Shaders del arma compilados en segundo plano mientras se saca (sin tirón al aparecer)
+    if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item) return; }
     this.model = m;
     // Rendimiento: dentro de cada pieza (que se anima entera) se fusionan sus mallas por material
     if (!m.group.userData.merged) { for (const p of m.parts) mergeStatic(p.object); m.group.userData.merged = true; }
@@ -267,6 +273,7 @@ export class Gun {
     if (this.holsterT > 0) { this.holsterT -= dt; if (this.holsterT <= 0 && this.pending) { const pnd = this.pending; this.pending = null; this.holsterT = 0; void this.doEquip(pnd.item, pnd.rebuild); } }
     this.fx?.tick(dt, { aiming: this.aimT > 0.6, firing: c.fire, sprinting: c.sprinting });
     this.sprintT += ((c.sprinting ? 1 : 0) - this.sprintT) * Math.min(1, dt * 8);
+    this.crossKick = Math.max(0, this.crossKick - dt * (2.2 + (this.spec?.stats.manejo ?? 60) / 40));
     this.hitmarker = Math.max(0, this.hitmarker - dt); this.critmarker = Math.max(0, this.critmarker - dt); this.killmarker = Math.max(0, this.killmarker - dt);
     if (this.reloadT > 0) { this.reloadT -= dt; if (this.reloadT <= 0 && it && s) { it.ammo = s.stats.cargador; this.sfx("cycle"); this.fx?.reloadEnd(); } }
     if (c.inspect && s && this.reloadT <= 0 && this.aimT < 0.2) this.inspectT = 2.6;
@@ -591,6 +598,8 @@ export class Gun {
 
   private fire(moving: number, echo = false) {
     const s = this.spec!, it = this.item!; this.trigT = 1;
+    // Retícula: se abre con cada disparo y se acumula en ráfaga (solo visual: la dispersión real no cambia)
+    this.crossKick = Math.min(1.8, this.crossKick + 0.35 + (100 - s.stats.precision) / 160 + (s.type === "shotgun" || s.type === "sniper" || s.type === "revolver" ? 0.4 : 0));
     const fx = this.fx!;
     const fullMag = it.ammo === s.stats.cargador;
     const ammoFrac = it.ammo / s.stats.cargador;

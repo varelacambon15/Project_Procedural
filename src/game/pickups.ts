@@ -20,6 +20,8 @@ const ringGeo = new THREE.RingGeometry(0.28, 0.34, 32);
 
 export class Pickups {
   readonly list: Pickup[] = [];
+  /** Compila los shaders de un objeto en segundo plano antes de mostrarlo (sin tirón). Lo pone main.ts. */
+  prewarm: ((o: THREE.Object3D) => Promise<unknown>) | null = null;
   constructor(private scene: THREE.Scene, private asm: WeaponAssembler, private colliders: THREE.Box3[]) {}
 
   /** Suelta un arma en `pos`, con un impulso opcional (p. ej. al salir del cofre). */
@@ -59,7 +61,8 @@ export class Pickups {
         const conv = (src: THREE.Material) => { if (!cache.has(src)) { const c = src.clone(); c.clippingPlanes = [p.clip]; cache.set(src, c); } return cache.get(src)!; };
         m.material = Array.isArray(m.material) ? m.material.map(conv) : conv(m.material);
       });
-      p.model = built.group; root.add(built.group);
+      const show = () => { if (this.list.includes(p)) { p.model = built.group; root.add(built.group); } };
+      if (this.prewarm) this.prewarm(built.group).then(show, show); else show();
     }).catch(() => undefined);
     return p;
   }
