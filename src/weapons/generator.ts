@@ -797,9 +797,10 @@ export class WeaponGenerator {
           // Donde acaba de verdad la silueta del cuerpo (algunos modelos traen la boca desplazada): nada flotando
           let kEnd = prof.top.length - 1; while (kEnd > 0 && (prof.top[kEnd] == null || prof.bot[kEnd] == null)) kEnd--;
           const xEnd = Math.min(mz.pos[0], prof.x0 + ((prof.x1 - prof.x0) * (kEnd + 1)) / prof.top.length);
-          const len = (long ? 0.12 : 0.07) + r() * (long ? 0.12 : 0.07);
+          // (subfusiles: conjunto corto; uno largo y fino parecía un tubo pegado en la boca)
+          const len = type === "smg" ? 0.07 + r() * 0.06 : (long ? 0.12 : 0.07) + r() * (long ? 0.12 : 0.07);
           tw.body = 1; tw.cutFront = null; // sin estirar ni cortar el cuerpo: el conjunto va en la boca de serie
-          tw.pfront = { kind: era === "classic" ? (r(), "tube") : (["tube", "quad", "slot"] as const)[Math.floor(r() * 3)], at: [xEnd - 0.012, mz.pos[1]], h, w: Math.min(0.04, h * 0.9), len, barrel: 0.02 + r() * 0.05, d: Math.min(0.02, Math.max(0.011, mz.diameter ?? 0.013)) };
+          tw.pfront = { kind: era === "classic" ? (r(), "tube") : (["tube", "quad", "slot"] as const)[Math.floor(r() * 3)], at: [xEnd - 0.012, mz.pos[1]], h, w: Math.min(0.04, h * 0.9), len, barrel: type === "smg" ? 0.015 + r() * 0.035 : 0.02 + r() * 0.05, d: Math.min(0.02, Math.max(0.011, mz.diameter ?? 0.013)) };
         } });
       }
       if (long && prof && !sawed) {
@@ -809,13 +810,14 @@ export class WeaponGenerator {
         ops.push({ id: "pfront", run: () => { const x = prof.x0 + L * (0.6 + r() * 0.08); const c = col(x); if (c && c.h < maxH && c.h > 0.015) { tw.cutFront = x; tw.body = 1; tw.pfront = procFront(r, type, [x, c.y], c.h, thick); } } });
         if (type !== "sniper") ops.push({ id: "pstock", run: () => { const x = prof.x0 + L * (0.22 + r() * 0.08); const c = col(x); if (c && c.h < 0.09 && c.h > 0.015) { tw.cutRear = x; tw.stock = 1; tw.pstock = procStock(r, type, [x, c.y], c.h, thick); } } });
       }
-      if (long) ops.push({ id: "stock", run: () => (tw.stock = away(0.75, 1.3)) });
+      // (culata integrada en el cuerpo, como el P90: estirarla mucho dejaba un bloque trasero enorme; solo un poco)
+      if (long) ops.push({ id: "stock", run: () => (tw.stock = INTEGRAL_STOCK.has(parts[0].from) ? away(0.88, 1.12, 0.05) : away(0.75, 1.3)) });
     } else {
       ops.push({ id: "barrel", run: () => { const k = kitLengths(r, type, parts); bl = k.barrelLength; tw.front = k.front; } });
       if (type !== "pistol") ops.push({ id: "stock", run: () => (tw.stock = away(0.8, 1.2, 0.08)) });
       // (sin culata solo en escopetas: en los fusiles del kit quedaba un cajón suelto con un cañón larguísimo)
       if (type === "shotgun") if (rare.nostock) ops.push({ id: "nostock", run: () => (tw.nostock = true) });
-      if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = type === "pistol" ? 1.12 + r() * 0.12 : 1.2 + r() * 0.3) });
+      if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = type === "pistol" ? 1.15 + r() * 0.15 : 1.2 + r() * 0.3) });
       // Culata y guardamanos por código sobre los sockets de la plataforma (el cañón real del kit se conserva)
       const plat = this.kit.byId.get(parts[0].from);
       const sStock = plat?.sockets.Stock?.[0], sHand = plat?.sockets.Handguard?.[0];
@@ -1009,7 +1011,7 @@ export class WeaponGenerator {
       const spread = (v: number[]) => Math.max(...v) - Math.min(...v);
       return spread(sel.map((p) => p[2])) < 0.018 && spread(sel.map((p) => p[1])) < 0.025;
     };
-    const addCover = () => { const s = sect(front, 0.12, 0.7); if (s && s.h < 0.1 && s.x1 - s.x0 > 0.05 && regular(front, 0.12, 0.7)) { out.cover = [s.x0, s.x1, s.y, s.h * 1.12, thick * 1.2]; out.adapters!.push([s.x0 - 0.008, s.y, thick]); any = true; } }; // (adaptador solo detrás: el delantero quedaba colgando)
+    const addCover = () => { const s = sect(front, 0.12, 0.7); if (s && s.h < (type === "rifle" ? 0.07 : 0.055) && s.x1 - s.x0 > 0.05 && regular(front, 0.12, 0.7)) { out.cover = [s.x0, s.x1, s.y, s.h * 1.12, thick * 1.2]; out.adapters!.push([s.x0 - 0.008, s.y, thick]); any = true; } }; // (adaptador solo detrás: el delantero quedaba colgando)
     const addCell = () => { if (mag && magBelow && !tw.drum && long) { out.cell = [mag.x, mag.y, mag.h * 0.85, Math.min(0.04, thick)]; any = true; } };
     const addDisplay = () => { const s = sect(recv, 0.45, 0.6); if (s) { out.display = [s.x0, s.y + s.h * 0.15, thick * 0.55 + 0.003]; any = true; } };
     if (era === "scifi") { if (r() < 0.7) addCover(); if (r() < 0.4) addCell(); if (r() < 0.6) addDisplay(); }
@@ -1130,6 +1132,8 @@ export const BASE_SIZE: Record<string, number> = {
   "w-mp5k": 0.62, "m-mp7": 0.72, "z-submachinegun-01": 0.65, "z-submachinegun-05": 0.8,
   "p-submachine-gun-3": 0.82, "p-submachine-gun-4": 0.82,
 };
+/** Cuerpos con la culata integrada (no se estira el tramo trasero). */
+const INTEGRAL_STOCK = new Set(["w-p90", "z-submachinegun-03", "u-bullpup-b"]);
 /** Bases retiradas del sorteo (se siguen pudiendo cargar en partidas guardadas), con el motivo. */
 const RETIRED = new Set<string>([
   "v-ppsh-drum", // el tambor viene girado 90° dentro de la misma malla del cuerpo (se ve de canto); quedan w-ppsh y v-ppsh
