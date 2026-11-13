@@ -98,6 +98,7 @@ async function boot() {
   // Números de daño (tecla N) y nivel de pixelado (tecla P): atajos en la sala; también en Ajustes. Se guardan.
   addEventListener("keydown", (e) => {
     if (state !== "play") return;
+    if (e.code === "KeyL") { setSetting("night", !settings.night); toast(t(settings.night ? "ui.night" : "ui.day")); }
     if (e.code === "KeyN") { setSetting("damageNumbers", !settings.damageNumbers); toast(t(settings.damageNumbers ? "ui.dmgOn" : "ui.dmgOff")); }
     if (e.code === "KeyP") { const i = PIXEL_LEVELS.indexOf(pixelLevel()); setPixelLevel(PIXEL_LEVELS[(i + 1) % PIXEL_LEVELS.length]); toast(t("ui.pixelLevel", { n: pixelLevel() })); }
   });
