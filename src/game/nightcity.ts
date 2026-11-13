@@ -260,6 +260,35 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   const bin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.1, 1.0), new THREE.MeshStandardMaterial({ color: 0x8a5a8e, roughness: 0.6 })); bin.position.set(-W / 2 + 1.1, 0.55, -27); add(bin);
   const lid = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.08, 1.05), new THREE.MeshStandardMaterial({ color: 0x5a3a5e })); lid.position.set(-W / 2 + 1.1, 1.14, -27); lid.rotation.z = 0.08; add(lid);
 
+  // ---------- Toque de simulación: columnas holográficas de datos que caen y pilares de luz ----------
+  // (el callejón es una simulación: a ratos se le ven las costuras)
+  const rainCanvas = document.createElement("canvas"); rainCanvas.width = 64; rainCanvas.height = 128;
+  const rainTex = new THREE.CanvasTexture(rainCanvas); rainTex.magFilter = THREE.NearestFilter; rainTex.minFilter = THREE.NearestFilter; rainTex.colorSpace = THREE.SRGBColorSpace;
+  const drops = Array.from({ length: 8 }, () => ({ y: r() * 128, v: 30 + r() * 50 }));
+  const rainMat = new THREE.MeshBasicMaterial({ map: rainTex, color: 0x7ae0ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+  for (const [x, z, w, h, ry] of [[-11, FRONT + 0.2, 3, 6, 0], [13, FRONT + 0.2, 2.2, 5, 0], [L + 0.05, -20, 2, 5.5, Math.PI / 2], [R - 0.05, -36, 2.4, 6, -Math.PI / 2]] as [number, number, number, number, number][]) {
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), rainMat); pl.position.set(x, h / 2 + 0.3, z); pl.rotation.y = ry; add(pl);
+  }
+  let rainT = 0;
+  const drawRain = (dt: number) => {
+    const c = rainCanvas.getContext("2d")!;
+    c.fillStyle = "rgba(0,0,0,0.28)"; c.fillRect(0, 0, 64, 128); c.font = "8px monospace";
+    drops.forEach((dr, i) => {
+      dr.y += dr.v * dt; if (dr.y > 140) { dr.y = -8; dr.v = 30 + Math.random() * 50; }
+      c.fillStyle = "#ffffff"; c.fillText(String(Math.floor(Math.random() * 10)), i * 8, dr.y);
+      c.fillStyle = "rgba(160,230,255,0.7)"; c.fillText(String(Math.floor(Math.random() * 10)), i * 8, dr.y - 9);
+    });
+    rainTex.needsUpdate = true;
+  };
+  // Pilares de luz verticales al fondo (zona de aparición de los blancos)
+  const beamTex = canvasTex(16, 4, (c) => { const gr = c.createLinearGradient(0, 0, 16, 0); gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.5, "rgba(255,255,255,1)"); gr.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = gr; c.fillRect(0, 0, 16, 4); }, undefined, true);
+  const beams: THREE.MeshBasicMaterial[] = [];
+  for (const [x, z, col] of [[-16, -56, 0xff7ad8], [16, -56, 0x9ad8ff]] as [number, number, number][]) {
+    const bm = new THREE.MeshBasicMaterial({ map: beamTex, color: col, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }); beams.push(bm);
+    for (const ry of [0, Math.PI / 2]) { const b = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 40), bm); b.position.set(x, 20, z); b.rotation.y = ry; add(b); }
+    spots.push({ pos: new THREE.Vector3(x, 2, z), color: col, power: 18 });
+  }
+
   // Las 8 lámparas de la sala cubren los primeros puntos; el resto lleva luz propia (solo existe de noche)
   for (const sp of spots.slice(8)) { const l = new THREE.PointLight(sp.color, sp.power, 14, 1.6); l.position.copy(sp.pos); g.add(l); }
 
@@ -271,6 +300,8 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
       // Rótulos: casi siempre fijos; de vez en cuando uno titila un instante
       for (const f of flickers) { f.ph += dt * f.rate; f.m.opacity = Math.sin(f.ph * 3.1) > 0.985 ? 0.25 + Math.random() * 0.5 : 1; }
       stars.material.opacity = 0.7 + 0.1 * Math.sin(t * 0.5);
+      rainT += dt; if (rainT > 0.06) { drawRain(rainT); rainT = 0; }
+      beams.forEach((b, i) => { b.opacity = 0.45 + 0.12 * Math.sin(t * 1.3 + i * 2); });
     },
   };
 }

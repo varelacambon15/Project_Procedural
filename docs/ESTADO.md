@@ -49,6 +49,15 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Noche: aristas de neón en volúmenes, números de calle, pared de la zona de equipo; tecla L alterna noche/día.
 - Tests: si el contenedor va justo de memoria, `npx vitest run --minWorkers=1 --maxWorkers=2`.
 
+## Ronda 09 (estilo)
+
+- Noche = callejón urbano propio (`src/game/nightcity.ts`): paleta morada y rosa, ladrillo rojizo, asfalto mojado,
+  rótulos de neón con reflejo, cielo con luna y edificios; toques de simulación (columnas de datos, pilares de luz).
+  Nada de rejillas tipo Tron. De día sigue la sala cubierta.
+- Referencias de estética del usuario: callejón cyberpunk morado/rosa y shooters de simulación de PSP (interiores
+  técnicos con neón rosa/rojo y cian, hologramas, suelos hexagonales, HUD cian segmentado). Estilo propio inspirado.
+- Punto de mira: anillo fino, punto central y cuatro marcas diagonales.
+
 ## Pendiente
 
 - Integrar packs nuevos (revólveres PSX, Semi Realistic convertidos a glb; aún no integrados).
