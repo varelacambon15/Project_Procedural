@@ -177,7 +177,7 @@ function weighted<T>(r: Rng, arr: T[], w: (x: T) => number): T {
   return arr[arr.length - 1];
 }
 /** Proporción de armas del kit modular en cada tipo que lo admite. */
-const KIT_SHARE: Partial<Record<WeaponType, number>> = { rifle: 0.4, pistol: 0.3, shotgun: 0.4 };
+const KIT_SHARE: Partial<Record<WeaponType, number>> = { rifle: 0.3, pistol: 0.2, shotgun: 0.4 };
 /** Parte de las pistolas que son modulares generadas por código (el resto: kit y modelos enteros). */
 const PROC_PISTOL_SHARE = 0.65;
 /** Parte de los revólveres generados por código (el resto: modelos enteros). */
