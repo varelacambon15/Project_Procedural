@@ -96,6 +96,15 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
   El día es lo predeterminado; la noche sigue como opción (al usuario le gusta la idea: seguir trabajándola).
 - Inventario: arrastrar armas entre las ranuras, la mochila y la zona de soltar (cae al suelo).
 
+## Ronda 13 (versión 0.6.8)
+
+- Tienda: compra de un clic, sin arma básica gratis; partida nueva con 200 CR. Venta de armas (`sell` en
+  shop.json, por rareza; los accesorios montados pasan al banco), con historial "+CR".
+- Almacén (puesto donde estaba Inspección): 40 huecos (`inv.storage`), solo visible en su puesto
+  (`openScreen("inventory", true)`); se guarda con la partida (área "storage").
+- Balanceo del arma con la velocidad de giro filtrada (anim.ts); retícula que se abre al disparar (`crossKick`,
+  solo visual). Shaders de armas nuevas compilados en segundo plano (`prewarm`).
+
 ## Pendiente (prompt 06)
 
 - Miras que no funcionan: falta auditarlas (comparar sightY con el centro de la óptica en muchas armas).

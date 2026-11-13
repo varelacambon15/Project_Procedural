@@ -166,7 +166,7 @@ async function boot() {
   const invScreen = new InventoryScreen(inv, thumbs, { close: () => resume(), drop: (it) => dropItem(it), rename: (it) => void renameItem(it), toast, changed: onWeaponChanged });
   const bench = new WorkshopScreen(inv, gen, view, thumbs, { close: () => { resume(); autosave(); }, changed: onWeaponChanged, rename: (it) => void renameItem(it), toast });
   const shop = new ShopScreen(inv, () => shopState, {
-    close: () => { resume(); autosave(); }, toast, chime: (l) => lootChime(l),
+    close: () => { resume(); autosave(); }, toast, chime: (l) => lootChime(l), sold: (it) => { gun.forget(it.uid); onWeaponChanged(null); },
     deliver: (rarity) => deliverPurchase(rarity),
     deliverSpec: (spec) => deliverSpec(spec),
     gameTime: () => playSeconds,
@@ -184,9 +184,9 @@ async function boot() {
   });
   onLang(() => { renderSlots(); if (invScreen.isOpen) invScreen.render(); if (bench.isOpen) bench.render(); if (shop.isOpen) shop.render(); if (start.isOpen) start.render(); });
 
-  function openScreen(s: "inventory" | "workbench" | "shop") {
+  function openScreen(s: "inventory" | "workbench" | "shop", storage = false) {
     state = s; input.unlock();
-    if (s === "inventory") invScreen.open(); else if (s === "workbench") bench.open(); else shop.open();
+    if (s === "inventory") invScreen.open(storage); else if (s === "workbench") bench.open(); else shop.open();
     nav.setRoot($(s === "workbench" ? "workbench" : s)); setTimeout(() => nav.first(), 0);
   }
   function openStart(panel?: "saves") {
@@ -213,7 +213,7 @@ async function boot() {
     toast(t("ui.practiceTip"));
   }
   function collect(name = ""): SaveData {
-    const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i }))]
+    const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i })), ...inv.storage.map((it, i) => ({ it, area: "storage" as const, index: i }))]
       .filter((x) => x.it).map((x) => ({ spec: x.it!.spec, ammo: x.it!.ammo, area: x.area, index: x.index }));
     return { version: SAVE_VERSION, savedAt: "", name, playSeconds: Math.round(playSeconds), credits: inv.credits, weapons, active: inv.active, bank: inv.bank, shop: shopState,
       settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel() };
@@ -225,7 +225,7 @@ async function boot() {
       spec.rarity = RARITIES.find((r) => r.id === spec.rarity.id) ?? spec.rarity; // rareza con los datos actuales
       try { gen.refresh(spec); } catch { continue; } // estadísticas recalculadas desde las piezas (no se guardan mallas)
       const it = makeItem(spec, Math.min(w.ammo, spec.stats.cargador));
-      const list = w.area === "equip" ? inv.equip : inv.pack;
+      const list = inv.list(w.area);
       if (w.index >= 0 && w.index < list.length && !list[w.index]) list[w.index] = it; else inv.add(it);
     }
     inv.bank = d.bank; setAccUid(Math.max(0, ...d.bank.map((a) => a.uid)) + 1);
@@ -323,7 +323,7 @@ async function boot() {
     gen.refresh(spec);
     const it = makeItem(spec);
     machineT = 0; world.chestGlow.color.set(spec.rarity.color);
-    if (inv.add(it)) return { spec, where: inv.find(it.uid)!.area };
+    if (inv.add(it)) return { spec, where: inv.find(it.uid)!.area as "pack" | "equip" };
     const pos = world.interactables.find((i) => i.id === "chest")!.position;
     const toward = player.pos.clone().sub(pos).setY(0).normalize();
     pickups.spawn(it, pos.clone().add(new THREE.Vector3(0, 0.9, 0)).addScaledVector(toward, 0.3), toward.multiplyScalar(2.2).setY(4.2), { compile: true });
@@ -463,7 +463,7 @@ async function boot() {
       const near = ground ? null : nearInteractable();
       $("prompt").hidden = !ground && !near;
       if (ground) $("prompt").innerHTML = `${key}${t("ui.pickup")}`;
-      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "inspect" ? "ui.inspect" : "ui.useBench")}`;
+      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : "ui.useBench")}`;
       // Ficha del arma del suelo comparada con la que llevas
       const card = $("pickcard");
       if (ground !== shownPickup) {
@@ -476,7 +476,7 @@ async function boot() {
         else if (near) {
           if (near.id === "chest") openScreen("shop");
           else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); waves.start(); toast(t("ui.wavesGo")); } }
-          else if (near.id === "inspect") { bench.inspect = true; openScreen("workbench"); }
+          else if (near.id === "storage") openScreen("inventory", true);
           else { bench.inspect = false; openScreen("workbench"); }
         }
       }

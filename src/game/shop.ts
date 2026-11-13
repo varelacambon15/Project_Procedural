@@ -3,7 +3,7 @@
 // Datos en src/data/shop.json (propuesta de economía). No sustituye al botín: el precio no depende de él.
 import data from "../data/shop.json";
 import { RARITIES } from "../weapons/generator";
-import type { RarityId } from "../weapons/types";
+import type { RarityId, WeaponSpec } from "../weapons/types";
 import { mulberry32, type Rng } from "../weapons/rng";
 
 export const SHOP = data;
@@ -50,6 +50,8 @@ export function buy(state: ShopState, credits: number, tierId: TierId, r: Rng): 
   state.spent += t.price;
   return { ok: true, rarity: rollTier(r, t.floor), price: t.price };
 }
+/** Precio de venta de un arma en la tienda (por rareza; ver shop.json). */
+export function sellPrice(spec: WeaponSpec): number { return (data as unknown as { sell: Record<string, number> }).sell[spec.rarity.id] ?? 0; }
 export function record(state: ShopState, p: Purchase) {
   state.history.unshift(p); state.history.length = Math.min(state.history.length, data.historySize);
 }

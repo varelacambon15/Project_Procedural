@@ -5,7 +5,9 @@
 import { RARITIES, type WeaponGenerator } from "../../weapons/generator";
 import type { WeaponSpec, RarityId } from "../../weapons/types";
 import { t } from "../../i18n";
-import { CRATES, SHOP, SHOWCASE, buyShowcase, crateOdds, ensureShowcase, openCrate, pityLeft, record, showcasePrice, showcaseRarities, showcaseSeed, type CrateId, type ShopState } from "../shop";
+import { accessoriesOf } from "../../weapons/accbank";
+import { displayName } from "../../weapons/naming";
+import { CRATES, SHOP, SHOWCASE, sellPrice, buyShowcase, crateOdds, ensureShowcase, openCrate, pityLeft, record, showcasePrice, showcaseRarities, showcaseSeed, type CrateId, type ShopState } from "../shop";
 import type { Inventory, Item } from "../inventory";
 import { $, esc, keyHint, weaponCard, type Thumbnails } from "./common";
 
@@ -19,6 +21,8 @@ export interface ShopHooks {
   /** Entrega un arma ya hecha (escaparate, arma básica). */
   deliverSpec(spec: WeaponSpec): { spec: WeaponSpec; where: "pack" | "equip" | "tray" };
   chime(level: number): void;
+  /** Se ha vendido un arma (para soltarla de la mano si estaba equipada). */
+  sold(it: Item): void;
   equipNow(spec: WeaponSpec): void;
   /** Reloj del escaparate: tiempo de juego (se pausa con el juego y se guarda). */
   gameTime(): number;
@@ -79,18 +83,29 @@ export class ShopScreen {
     }).join("");
     const detail = this.sel >= 0 ? weaponCard(specs[this.sel], this.inv.current?.spec ?? null, this.inv.current ? t("ui.compared") : "") : `<p class="hint-sel">${t("shop.pick")}</p>`;
     $("shop-tiers").innerHTML = `<div class="sc-head"><h2>${t("shop.showcase")}</h2><span class="timer">${t("shop.refreshIn", { t: mmss(Math.max(0, sc.refreshAt - this.hooks.gameTime())) })}</span></div>
-      <div class="sc-row">${tiles}</div><div class="crates">${crates}</div>`;
+      <div class="sc-row">${tiles}</div><div class="crates">${crates}</div>${this.sellHTML()}`;
     $("shop-detail").innerHTML = detail;
     // Imagen fija de cada arma del escaparate (miniatura; se cachea por semilla, ronda y ranura)
     specs.forEach((s, i) => {
       const it = { uid: -((sc.seed % 100000) * 1000 + (sc.round % 100) * 10 + i + 1), spec: s } as unknown as Item;
       void this.thumbs.get(it).then((url) => { const img = this.el.querySelector<HTMLImageElement>(`img[data-thumb="${i}"]`); if (img && this.stock?.specs[i] === s) img.src = url; }).catch(() => undefined);
     });
-    $("shop-history").innerHTML = st.history.length ? st.history.map((h) => `<li style="--c:${color(h.rarity)}"><b>${esc(h.name)}</b><span>${t(`rarity.${h.rarity}`)} · ${this.source(h.tier)}</span><span>−${h.price} ${t("unit.cr")}</span></li>`).join("") : `<li class="none">${t("shop.noHistory")}</li>`;
+    $("shop-history").innerHTML = st.history.length ? st.history.map((h) => `<li style="--c:${color(h.rarity)}"><b>${esc(h.name)}</b><span>${t(`rarity.${h.rarity}`)} · ${this.source(h.tier)}</span><span>${h.price < 0 ? `+${-h.price}` : `−${h.price}`} ${t("unit.cr")}</span></li>`).join("") : `<li class="none">${t("shop.noHistory")}</li>`;
     $("shop-reveal").hidden = !this.reveal;
     $("shop-foot").innerHTML = keyHint("Enter", "Ⓐ", t("shop.buyKey")) + keyHint("Esc", "Ⓑ", this.reveal ? t("shop.skip") : t("ui.back"));
   }
-  private source(tier: string) { return tier.startsWith("crate:") ? t(`shop.crate.${tier.slice(6)}`) : tier.startsWith("shop:") ? t("shop.showcase") : t("shop.tier", { n: SHOP.tiers.findIndex((x) => x.id === tier) + 1 }); }
+  /** Vender: las armas que llevas encima (equipadas y mochila), con su precio; un clic vende. */
+  private sellHTML() {
+    const list = this.inv.carried;
+    const rows = list.map((it) => {
+      const w = this.inv.find(it.uid)!, acc = accessoriesOf(it.spec).length;
+      return `<div class="sell-row" style="--c:${it.spec.rarity.color}"><span class="nm">${esc(displayName(it.spec))}</span>
+        <span class="meta">${t(`rarity.${it.spec.rarity.id}`)} · ${t(`type.${it.spec.type}`)}${w.area === "equip" ? ` · ${t("ui.equipped")} ${w.index + 1}` : ""}${acc ? ` · ${t("shop.sellAcc", { n: acc })}` : ""}</span>
+        <button type="button" class="btn sm" data-sell="${it.uid}">${t("shop.sellFor", { c: sellPrice(it.spec) })}</button></div>`;
+    }).join("");
+    return `<div class="sell"><h2>${t("shop.sell")}</h2>${rows || `<p class="hint-sel">${t("shop.nothingToSell")}</p>`}</div>`;
+  }
+  private source(tier: string) { if (tier === "sell") return t("shop.sold"); return tier.startsWith("crate:") ? t(`shop.crate.${tier.slice(6)}`) : tier.startsWith("shop:") ? t("shop.showcase") : t("shop.tier", { n: SHOP.tiers.findIndex((x) => x.id === tier) + 1 }); }
 
   private click(e: Event) {
     const target = e.target as HTMLElement;
@@ -102,6 +117,16 @@ export class ShopScreen {
       return;
     }
     if (target.closest("[data-close]")) return this.close();
+    const sellBtn = target.closest<HTMLElement>("[data-sell]");
+    if (sellBtn) {
+      const it = this.inv.byUid(Number(sellBtn.dataset.sell)), w = it && this.inv.find(it.uid);
+      if (!it || !w || w.area === "storage") return;
+      const price = sellPrice(it.spec), acc = accessoriesOf(it.spec);
+      this.inv.credits += price; this.inv.bank.push(...acc); this.inv.remove(w);
+      record(this.state(), { tier: "sell", rarity: it.spec.rarity.id, name: it.spec.customName || it.spec.name, price: -price, at: Date.now() });
+      this.hooks.toast(t(acc.length ? "shop.soldAcc" : "shop.soldMsg", { c: price, n: acc.length }));
+      this.hooks.sold(it); this.render(); return;
+    }
     const slotBtn = target.closest<HTMLElement>("[data-buyslot]");
     if (slotBtn) {
       const i = Number(slotBtn.dataset.buyslot), { sc, specs } = this.showcase(), spec = specs[i];

@@ -12,7 +12,7 @@ export const SLOTS = ["slot1", "slot2", "slot3"] as const;
 export const AUTO = "auto";
 export type SlotId = (typeof SLOTS)[number] | typeof AUTO;
 
-export interface SavedWeapon { spec: WeaponSpec; ammo: number; area: "equip" | "pack"; index: number }
+export interface SavedWeapon { spec: WeaponSpec; ammo: number; area: "equip" | "pack" | "storage"; index: number }
 export interface SaveData {
   version: number;
   savedAt: string;          // ISO
@@ -60,7 +60,7 @@ function validWeapon(w: unknown): w is SavedWeapon {
   if (!isObj(w) || !isObj(w.spec)) return false;
   const s = w.spec as Raw;
   return typeof s.type === "string" && Array.isArray(s.parts) && s.parts.length > 0 && isObj(s.rarity) && RARITY_IDS.has((s.rarity as Raw).id as RarityId)
-    && isObj(s.stats) && isObj(s.paint) && typeof s.name === "string" && (w.area === "equip" || w.area === "pack") && Number.isInteger(w.index);
+    && isObj(s.stats) && isObj(s.paint) && typeof s.name === "string" && (w.area === "equip" || w.area === "pack" || w.area === "storage") && Number.isInteger(w.index);
 }
 
 /** Lee el texto de un guardado: migra versiones antiguas, valida y repara lo que se puede. Nunca lanza. */

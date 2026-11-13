@@ -38,7 +38,7 @@ export class WorkshopScreen {
 
   open() {
     this.isOpen = true; this.el.hidden = false; this.pending = null; this.showBefore = false;
-    this.sel = this.inv.current ?? this.inv.all[0] ?? null;
+    this.sel = this.inv.current ?? this.inv.carried[0] ?? null;
     this.view.attach($("ws-view")); this.view.zoom = 1;
     this.render();
   }
@@ -57,8 +57,8 @@ export class WorkshopScreen {
     this.el.classList.toggle("inspect", this.inspect);
     $("ws-title").textContent = t(this.inspect ? "ui.inspect" : "ui.workbench");
     $("ws-credits").textContent = `${this.inv.credits} ${t("unit.cr")}`;
-    $("ws-list").innerHTML = this.inv.all.map((x) => tileHTML(x, { sel: x === it, small: true, slot: this.inv.find(x.uid)?.area === "equip" ? this.inv.find(x.uid)!.index : null })).join("");
-    this.thumbs.fill($("ws-list"), this.inv.all);
+    $("ws-list").innerHTML = this.inv.carried.map((x) => tileHTML(x, { sel: x === it, small: true, slot: this.inv.find(x.uid)?.area === "equip" ? this.inv.find(x.uid)!.index : null })).join("");
+    this.thumbs.fill($("ws-list"), this.inv.carried);
     // Vista y ficha
     const eq = this.inv.current;
     const p = this.pending;

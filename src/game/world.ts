@@ -8,7 +8,7 @@ import { t } from "../i18n";
 import { buildNightCity } from "./nightcity";
 import { mergeStatic } from "./merge";
 
-export interface Interactable { id: "chest" | "workbench" | "waves" | "inspect"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
+export interface Interactable { id: "chest" | "workbench" | "waves" | "storage"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
 export interface RangeData { dps: number; ttk: number | null; accuracy: number | null; distance: number | null; message: string }
 export interface World {
   colliders: THREE.Box3[]; interactables: Interactable[]; chestLid: THREE.Object3D; chestGlow: THREE.PointLight; wavesRoom: { z0: number; z1: number }; shootables: THREE.Object3D[]; lanes: number[];
@@ -195,14 +195,23 @@ export function buildRange(scene: THREE.Scene): World {
     scene.add(g); colliders.push(new THREE.Box3(new THREE.Vector3(x - 0.45, 0, z - 0.35), new THREE.Vector3(x + 0.45, 1.1, z + 0.35)));
     return g;
   };
-  const inspectStand = consoleAt(4, "INSPECT", neonC);
+  // ---------- Almacén: taquillas de armas (sustituye al pedestal de inspección; el banco ya enseña el arma) ----------
+  const storage = new THREE.Group(); storage.position.set(4, 0, 13.2);
+  const locker = new THREE.MeshStandardMaterial({ color: 0x4f7a5c, roughness: 0.6, metalness: 0.35 });
+  for (const x of [-0.82, 0, 0.82]) {
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.78, 2.1, 0.6), locker); door.position.set(x, 1.05, 0); door.castShadow = door.receiveShadow = true; storage.add(door);
+    for (const y of [1.75, 1.6]) { const vent = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.01), steel); vent.position.set(x, y, 0.305); storage.add(vent); }
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.22, 0.04), steel); handle.position.set(x + 0.28, 1.05, 0.32); storage.add(handle);
+  }
+  const lockerStrip = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.04, 0.02), neonC); lockerStrip.position.set(0, 2.12, 0.31); storage.add(lockerStrip);
+  scene.add(storage); colliders.push(new THREE.Box3(new THREE.Vector3(2.75, 0, 12.85), new THREE.Vector3(5.25, 2.1, 13.55)));
 
   // ---------- Carteles de cada puesto (colgados, legibles desde lejos) ----------
   // (dos caras: se leen al llegar desde la línea de tiro y desde el fondo del vestíbulo)
   const hang = (text: string, color: string, x: number, z: number, w = 3.2) => {
     for (const back of [false, true]) { const m = sign(text, color, w, 0.8); m.position.set(x, 3.4, z + (back ? 0.02 : -0.02)); m.rotation.y = back ? 0 : Math.PI; scene.add(m); }
   };
-  hang(t("sign.shop"), "#e0a030", -12, 12.2); hang(t("sign.workshop"), "#3a9ad8", 12, 12.2); hang(t("sign.inspect"), "#3fb8a0", 4, 12.6, 2.6);
+  hang(t("sign.shop"), "#e0a030", -12, 12.2); hang(t("sign.workshop"), "#3a9ad8", 12, 12.2); hang(t("sign.storage"), "#4f9a6c", 4, 12.6, 2.8);
 
   // ---------- Zona de entrenamiento cuerpo a cuerpo (muñecos en dummies.ts, junto a la pared izquierda) ----------
   const mat = new THREE.Mesh(new THREE.PlaneGeometry(4, 9), new THREE.MeshStandardMaterial({ color: 0x3f5a46, roughness: 0.95 }));
@@ -305,7 +314,7 @@ export function buildRange(scene: THREE.Scene): World {
       { id: "chest", position: new THREE.Vector3(-12, 0, 13), radius: 2.2, label: "Terminal", object: chest },
       { id: "workbench", position: new THREE.Vector3(12, 0, 13), radius: 2.4, label: "Banco", object: bench },
       { id: "waves", position: WAVES_AT, radius: 1.8, label: "Oleadas", object: wavesConsole },
-      { id: "inspect", position: new THREE.Vector3(4, 0, 13.2), radius: 1.8, label: "Inspección", object: inspectStand },
+      { id: "storage", position: new THREE.Vector3(4, 0, 12.6), radius: 2.0, label: "Almacén", object: storage },
     ],
     update(dt: number, data: RangeData) {
       // Parpadeo: la mayoría estables; de vez en cuando una lámpara titila un instante

@@ -1,9 +1,10 @@
-// Inventario: 2 ranuras equipadas + mochila, créditos y banco de accesorios desmontados (sin límite de ranuras).
+// Inventario: 2 ranuras equipadas + mochila + almacén (solo se usa en su puesto), créditos y banco de accesorios desmontados (sin límite de ranuras).
 import type { WeaponSpec } from "../weapons/types";
 import type { AccItem } from "../weapons/accbank";
 
 export interface Item { uid: number; spec: WeaponSpec; ammo: number }
-export type Where = { area: "equip" | "pack"; index: number };
+export type Area = "equip" | "pack" | "storage";
+export type Where = { area: Area; index: number };
 
 let uid = 1;
 export const makeItem = (spec: WeaponSpec, ammo = spec.stats.cargador): Item => ({ uid: uid++, spec, ammo });
@@ -11,6 +12,8 @@ export const makeItem = (spec: WeaponSpec, ammo = spec.stats.cargador): Item => 
 export class Inventory {
   readonly equip: (Item | null)[] = [null, null];
   readonly pack: (Item | null)[] = Array(18).fill(null);
+  /** Almacén: armas guardadas en el puesto del vestíbulo (no se llevan encima). */
+  readonly storage: (Item | null)[] = Array(40).fill(null);
   /** Accesorios desmontados (solo se consiguen desmontándolos de tus armas). */
   bank: AccItem[] = [];
   credits = 0;
@@ -20,8 +23,9 @@ export class Inventory {
   onChange(fn: () => void) { this.listeners.push(fn); }
   changed() { for (const f of this.listeners) f(); }
 
-  get(w: Where) { return w.area === "equip" ? this.equip[w.index] : this.pack[w.index]; }
-  set(w: Where, it: Item | null) { (w.area === "equip" ? this.equip : this.pack)[w.index] = it; }
+  list(a: Area) { return a === "equip" ? this.equip : a === "pack" ? this.pack : this.storage; }
+  get(w: Where) { return this.list(w.area)[w.index]; }
+  set(w: Where, it: Item | null) { this.list(w.area)[w.index] = it; }
   get current(): Item | null { return this.equip[this.active]; }
   get full() { return !this.equip.includes(null) && !this.pack.includes(null); }
 
@@ -47,10 +51,14 @@ export class Inventory {
   find(uidToFind: number): Where | null {
     const e = this.equip.findIndex((x) => x?.uid === uidToFind); if (e >= 0) return { area: "equip", index: e };
     const p = this.pack.findIndex((x) => x?.uid === uidToFind); if (p >= 0) return { area: "pack", index: p };
+    const s = this.storage.findIndex((x) => x?.uid === uidToFind); if (s >= 0) return { area: "storage", index: s };
     return null;
   }
   byUid(u: number) { return this.all.find((x) => x.uid === u) ?? null; }
-  get all(): Item[] { return [...this.equip, ...this.pack].filter((x): x is Item => !!x); }
+  /** Armas que lleva encima (equipadas y mochila). */
+  get carried(): Item[] { return [...this.equip, ...this.pack].filter((x): x is Item => !!x); }
+  /** Todas, también las del almacén. */
+  get all(): Item[] { return [...this.equip, ...this.pack, ...this.storage].filter((x): x is Item => !!x); }
   /** Vacía todo (nueva partida o carga). */
-  clear() { this.equip.fill(null); this.pack.fill(null); this.bank = []; this.credits = 0; this.active = 0; }
+  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; }
 }

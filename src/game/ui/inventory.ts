@@ -36,7 +36,7 @@ export class InventoryScreen {
   /** Arrastrar armas: entre las dos ranuras equipadas, a la mochila o a la zona de soltar (cae al suelo). */
   private dragAndDrop() {
     let dragged: number | null = null;
-    const target = (e: DragEvent) => (e.target as HTMLElement).closest<HTMLElement>("[data-eqslot], [data-packzone], [data-dropzone]");
+    const target = (e: DragEvent) => (e.target as HTMLElement).closest<HTMLElement>("[data-eqslot], [data-packzone], [data-dropzone], [data-storezone]");
     this.el.addEventListener("dragstart", (e) => {
       const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile[data-uid]"); if (!tile) return;
       dragged = Number(tile.dataset.uid); this.select(dragged, false);
@@ -62,13 +62,26 @@ export class InventoryScreen {
         if (from.area === "equip" && from.index === slot) return this.render();
         this.inv.move(from, { area: "equip", index: slot }); this.hooks.changed(it); return;
       }
-      if (t.dataset.packzone != null && from.area === "equip") this.action("store");
+      if (t.dataset.storezone != null && from.area !== "storage") this.action("tostore");
+      else if (t.dataset.packzone != null && from.area === "equip") this.action("store");
+      else if (t.dataset.packzone != null && from.area === "storage") this.action("fromstore");
       else this.render();
     });
   }
 
-  open() { this.isOpen = true; this.el.hidden = false; if (!this.selected) this.sel = this.inv.current?.uid ?? this.inv.all[0]?.uid ?? null; this.render(); }
-  close() { this.isOpen = false; this.el.hidden = true; this.hooks.close(); }
+  /** En el puesto de almacén se ve también el almacén (el inventario normal solo enseña lo que llevas encima). */
+  storageMode = false;
+  open(storage = false) {
+    this.storageMode = storage; this.isOpen = true; this.el.hidden = false;
+    this.el.classList.toggle("storage-mode", storage);
+    this.el.querySelector("h1")!.textContent = t(storage ? "ui.storage" : "ui.inventory");
+    const w = this.selected && this.inv.find(this.selected.uid);
+    if (!this.selected || (!storage && w?.area === "storage")) this.sel = this.inv.current?.uid ?? this.inv.carried[0]?.uid ?? (storage ? this.inv.all[0]?.uid : null) ?? null;
+    this.render();
+  }
+  close() { this.isOpen = false; this.el.hidden = true; this.el.classList.remove("storage-mode"); this.el.querySelector("h1")!.textContent = t("ui.inventory"); this.hooks.close(); }
+  /** Tras quitar el arma elegida: la equipada, o la primera que se vea. */
+  private reselect() { this.sel = this.inv.current?.uid ?? (this.storageMode ? this.inv.all : this.inv.carried)[0]?.uid ?? null; }
   get selected() { return this.sel != null ? this.inv.byUid(this.sel) : null; }
 
   private visible(list: Item[]) {
@@ -107,6 +120,7 @@ export class InventoryScreen {
         <h2>${t("ui.backpack")} <small>${18 - free}/18</small></h2>
         <div class="tiles" data-packzone>${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${packItems.length ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
         <div class="dropzone" data-dropzone>${t("ui.dropZone")}</div>
+        ${this.storageMode ? this.storageHTML() : ""}
       </section>
       <section class="panel detail">
         ${it ? weaponCard(it.spec, cur && cur !== it ? cur.spec : null, cur && cur !== it ? t("ui.vsEquipped") : t("ui.equippedNow"), { wide: true }) : `<div class="card empty">${t("ui.noWeapons")}</div>`}
@@ -116,16 +130,28 @@ export class InventoryScreen {
     $("inv-foot").innerHTML = `<span>${t("ui.bankCount", { n: i.bank.length })}</span>` +
       keyHint("Enter", "Ⓐ", t("ui.select")) + keyHint("1 / 2", "LB / RB", t("ui.equipSlot")) + keyHint("R", "Ⓨ", t("ui.rename")) + keyHint("G", "RS", t("ui.drop")) + keyHint("X", "Ⓧ", t("ui.scrapAction")) + keyHint("Esc", "Ⓑ", t("ui.back"));
     this.el.querySelectorAll<HTMLElement>(".tile[data-uid]").forEach((x) => { x.draggable = true; });
-    this.thumbs.fill(this.el, i.all);
+    this.thumbs.fill(this.el, this.storageMode ? i.all : i.carried);
+  }
+
+  private storageHTML() {
+    const items = this.visible(this.inv.storage.filter((x): x is Item => !!x)), used = this.inv.storage.filter(Boolean).length;
+    return `<h2>${t("ui.storage")} <small>${used}/${this.inv.storage.length}</small></h2>
+      <div class="tiles store" data-storezone>${items.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${items.length ? "" : `<div class="tile empty wide">${used ? t("ui.noMatch") : t("ui.storageEmpty")}</div>`}</div>`;
   }
 
   private actions(it: Item) {
     const where = this.inv.find(it.uid)!, inPack = where.area === "pack";
+    if (where.area === "storage") return `<div class="actions">
+      <button type="button" class="btn" data-act="fromstore" ${this.inv.pack.includes(null) ? "" : "disabled"}>${t("ui.toPack")}</button>
+      <button type="button" class="btn" data-act="eq0">${t("ui.equipTo", { n: 1 })}</button><button type="button" class="btn" data-act="eq1">${t("ui.equipTo", { n: 2 })}</button>
+      <button type="button" class="btn ghost" data-act="rename">${t("ui.rename")}</button>
+    </div>`;
     const value = scrap(it.spec).scrap, acc = accessoriesOf(it.spec).length;
     const lastWeapon = this.inv.all.length <= 1;
     return `<div class="actions">
       ${inPack ? `<button type="button" class="btn" data-act="eq0">${t("ui.equipTo", { n: 1 })}</button><button type="button" class="btn" data-act="eq1">${t("ui.equipTo", { n: 2 })}</button>`
         : `<button type="button" class="btn" data-act="use" ${where.index === this.inv.active ? "disabled" : ""}>${t("ui.useNow")}</button><button type="button" class="btn ghost" data-act="store" ${this.inv.pack.includes(null) ? "" : "disabled"}>${t("ui.toPack")}</button>`}
+      ${this.storageMode ? `<button type="button" class="btn" data-act="tostore" ${this.inv.storage.includes(null) ? "" : "disabled"}>${t("ui.toStorage")}</button>` : ""}
       <button type="button" class="btn ghost" data-act="rename">${t("ui.rename")}</button>
       <button type="button" class="btn ghost" data-act="drop">${t("ui.drop")}</button>
       <button type="button" class="btn danger" data-act="scrap" ${lastWeapon ? "disabled" : ""} data-confirm="${t("ui.scrapConfirm", { s: value, a: acc })}">${t("ui.scrapFor", { s: value })}</button>
@@ -176,8 +202,11 @@ export class InventoryScreen {
     if (a === "eq0" || a === "eq1") { const slot = a === "eq0" ? 0 : 1; this.inv.move(where, { area: "equip", index: slot }); this.inv.active = slot; this.inv.changed(); this.hooks.changed(it); return; }
     if (a === "use" && where.area === "equip") { this.inv.active = where.index; this.inv.changed(); return; }
     if (a === "store" && where.area === "equip") { const free = this.inv.pack.indexOf(null); if (free < 0) return this.hooks.toast(t("ui.packFull")); this.inv.move(where, { area: "pack", index: free }); return; }
+    if (a === "tostore" && where.area !== "storage") { if (!this.storageMode) return; const free = this.inv.storage.indexOf(null); if (free < 0) return this.hooks.toast(t("ui.storageFull")); this.inv.move(where, { area: "storage", index: free }); if (where.area === "equip") this.hooks.changed(null); return; }
+    if (a === "fromstore" && where.area === "storage") { const free = this.inv.pack.indexOf(null); if (free < 0) return this.hooks.toast(t("ui.packFull")); this.inv.move(where, { area: "pack", index: free }); return; }
+    if (where.area === "storage" && (a === "drop" || a === "scrap" || a === "use" || a === "store")) return;
     if (a === "rename") return this.hooks.rename(it);
-    if (a === "drop") { this.inv.remove(where); this.hooks.drop(it); this.sel = this.inv.current?.uid ?? this.inv.all[0]?.uid ?? null; this.render(); return; }
+    if (a === "drop") { this.inv.remove(where); this.hooks.drop(it); this.reselect(); this.render(); return; }
     if (a === "scrap") {
       if (this.inv.all.length <= 1) return;
       const b = btn ?? this.el.querySelector<HTMLElement>('[data-act="scrap"]');
@@ -185,13 +214,13 @@ export class InventoryScreen {
       const r = scrap(it.spec), acc = accessoriesOf(it.spec);
       this.inv.credits += r.scrap; this.inv.bank.push(...acc); this.inv.remove(where);
       this.hooks.toast(t(acc.length ? "ui.scrappedAcc" : "ui.scrappedCr", { s: r.scrap, a: acc.length }));
-      this.sel = this.inv.current?.uid ?? this.inv.all[0]?.uid ?? null; this.hooks.changed(null); this.render();
+      this.reselect(); this.hooks.changed(null); this.render();
     }
   }
   /** Clic derecho / atajo: equipar en la ranura activa o guardar en la mochila. */
   quickEquip() {
     const it = this.selected; if (!it) return; const w = this.inv.find(it.uid)!;
-    this.action(w.area === "pack" ? (this.inv.active === 0 ? "eq0" : "eq1") : "store");
+    this.action(w.area === "storage" ? "fromstore" : w.area === "pack" ? (this.storageMode ? "tostore" : this.inv.active === 0 ? "eq0" : "eq1") : "store");
   }
   key(code: string) {
     const map: Record<string, string> = { Digit1: "eq0", Digit2: "eq1", KeyR: "rename", KeyG: "drop", KeyX: "scrap" };

@@ -91,6 +91,8 @@
       "pity": 15
     }
   },
+  "_sell": "Venta en la tienda: créditos por rareza (unas 2,5 veces el desguace). Los accesorios montados pasan al banco.",
+  "sell": { "comun": 12, "poco": 25, "rara": 50, "epica": 100, "legendaria": 200 },
   "scrap": {
     "comun": 5,
     "poco": 10,
