@@ -1,0 +1,6 @@
+{
+  "appId": "local.projectprocedural.game",
+  "appName": "Proving Grounds",
+  "webDir": "dist",
+  "android": { "backgroundColor": "#15171a" }
+}

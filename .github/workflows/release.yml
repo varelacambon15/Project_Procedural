@@ -1,4 +1,4 @@
-# Compila el juego y publica el ejecutable de Windows (y Linux) en GitHub Releases.
+# Compila el juego y publica el ejecutable de Windows, Linux y el APK de Android en GitHub Releases.
 # Se lanza al subir una etiqueta de versión (v0.2.0…) o a mano desde la pestaña Actions
 # (entonces crea la versión v<versión de package.json>). Los archivos van directos a Releases,
 # sin pasar por el almacenamiento de artefactos de Actions.
@@ -55,3 +55,34 @@ jobs:
             release/*.exe
             release/*.AppImage
           fail_on_unmatched_files: false
+
+  # APK de Android (controles táctiles): la versión web envuelta con Capacitor, firmada con la clave de depuración
+  # (se instala a mano: "instalar apps de origen desconocido").
+  android:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm ci
+      - run: npm run build
+      - run: npm install --no-save @capacitor/core@6.2.0 @capacitor/cli@6.2.0 @capacitor/android@6.2.0
+      - run: npx cap add android && npx cap sync android
+      - name: Pantalla completa y en horizontal
+        run: |
+          sed -i 's/<activity/<activity android:screenOrientation="sensorLandscape"/' android/app/src/main/AndroidManifest.xml
+          sed -i 's/Theme.SplashScreen/Theme.AppCompat.NoActionBar/; s/AppTheme.NoActionBarLaunch/AppTheme.NoActionBar/' android/app/src/main/AndroidManifest.xml || true
+      - run: cd android && ./gradlew assembleDebug --no-daemon
+      - run: cp android/app/build/outputs/apk/debug/app-debug.apk "ProvingGrounds-${{ needs.prepare.outputs.tag }}-android.apk"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          files: ProvingGrounds-*-android.apk
+          fail_on_unmatched_files: true

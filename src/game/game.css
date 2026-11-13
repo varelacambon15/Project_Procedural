@@ -119,3 +119,27 @@ body.menu-cursor, body.menu-cursor * { cursor: none !important; }
 /* Créditos en el HUD y HUD oculto en menús */
 #crhud { font-family: var(--display); font-size: 20px; color: var(--amber); }
 body.in-menu #crosshair, body.in-menu #weaponhud, body.in-menu #hint, body.in-menu #bossbar, body.in-menu #bars, body.in-menu #numbers, body.in-menu #phealth { visibility: hidden; }
+
+/* ---------- Controles táctiles (móvil / APK) ---------- */
+#touch { position: fixed; inset: 0; z-index: 30; pointer-events: none; touch-action: none; user-select: none; -webkit-user-select: none; }
+#touch[hidden] { display: none; }
+body.in-menu #touch { display: none; }
+#touch .t-look { position: absolute; top: 0; right: 0; width: 55%; height: 100%; pointer-events: auto; }
+#touch .t-stickzone { position: absolute; left: 0; bottom: 0; width: 45%; height: 70%; pointer-events: auto; }
+#touch .t-base { position: fixed; left: 18%; top: 72%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 2px solid rgba(255,255,255,.22); background: rgba(10,14,18,.18); opacity: .55; }
+#touch .t-base.on { opacity: 1; }
+#touch .t-knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,.35); transform: translate(-50%, -50%); }
+#touch .t-btn { position: absolute; pointer-events: auto; width: 62px; height: 62px; border-radius: 50%; border: 2px solid rgba(255,255,255,.28); background: rgba(10,14,18,.35); color: rgba(255,255,255,.85); font: 600 20px/1 var(--mono, monospace); display: grid; place-items: center; padding: 0; touch-action: none; }
+#touch .t-btn.on { background: rgba(224,122,42,.55); border-color: rgba(255,200,150,.8); }
+#touch .t-sm { width: 46px; height: 46px; font-size: 15px; }
+#touch .t-fire { right: calc(26px + env(safe-area-inset-right, 0px)); bottom: calc(110px + env(safe-area-inset-bottom, 0px)); width: 86px; height: 86px; font-size: 30px; }
+#touch .t-aim { right: calc(128px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+#touch .t-jump { right: calc(32px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
+#touch .t-crouch { right: calc(110px + env(safe-area-inset-right, 0px)); bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+#touch .t-reload { right: calc(132px + env(safe-area-inset-right, 0px)); bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
+#touch .t-use { right: calc(48px + env(safe-area-inset-right, 0px)); bottom: calc(218px + env(safe-area-inset-bottom, 0px)); }
+#touch .t-swap { right: calc(210px + env(safe-area-inset-right, 0px)); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+#touch .t-inv { left: calc(16px + env(safe-area-inset-left, 0px)); top: calc(16px + env(safe-area-inset-top, 0px)); }
+#touch .t-pause { left: calc(70px + env(safe-area-inset-left, 0px)); top: calc(16px + env(safe-area-inset-top, 0px)); }
+body.touch #hint { display: none; }
+body.touch #weaponhud { bottom: auto; top: calc(12px + env(safe-area-inset-top, 0px)); }

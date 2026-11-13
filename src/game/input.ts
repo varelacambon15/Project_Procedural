@@ -1,4 +1,5 @@
-// Capa de entrada abstracta: el juego pregunta por acciones, no por teclas. Teclado/ratón y mando a la vez.
+// Capa de entrada abstracta: el juego pregunta por acciones, no por teclas. Teclado/ratón, mando y táctil a la vez.
+import { TouchControls } from "./touch";
 
 export interface Frame {
   moveX: number; moveZ: number;          // -1..1 (Z positivo = adelante)
@@ -25,6 +26,10 @@ export class Input {
   padSensitivity = 3.2;
   /** Factor de asistencia de apuntado (lo pone el juego cuando la mira pasa por un objetivo). */
   assist = 1;
+  /** Controles táctiles (se activan al primer toque). */
+  readonly touch = new TouchControls();
+  /** Radianes por píxel arrastrado en la pantalla táctil (se multiplica por la sensibilidad del ajuste). */
+  touchSensitivity = 0.0052;
 
   constructor(private canvas: HTMLCanvasElement) {
     addEventListener("keydown", (e) => {
@@ -43,7 +48,7 @@ export class Input {
   }
 
   /** Olvida las teclas pulsadas (al volver de un menú, para que Esc o E no actúen dos veces). */
-  flush() { this.pressed.clear(); this.mouse.wheel = 0; }
+  flush() { this.pressed.clear(); this.mouse.wheel = 0; this.touch.release(); }
   get locked() { return document.pointerLockElement === this.canvas; }
   /** Si el juego quiere el ratón capturado. Una captura que llega tarde (ya en un menú) se suelta enseguida. */
   private wantLock = false;
@@ -83,6 +88,16 @@ export class Input {
       // Mando: Ⓐ saltar, Ⓑ interactuar, Ⓧ recargar, Ⓨ cambiar arma, View inventario, Start pausa
       f.interact ||= !!edges[1];
       f.inspect ||= !!edges[13]; // cruceta abajo
+    }
+    const t = this.touch;
+    if (t.active) {
+      const tk = this.touchSensitivity * (this.sensitivity / 0.0022);
+      f.moveX += t.moveX; f.moveZ += t.moveZ; f.lookX += t.lookDX * tk; f.lookY += t.lookDY * tk; t.lookDX = t.lookDY = 0;
+      f.fire ||= t.fire; f.aim ||= t.aim; f.sprint ||= t.sprint; f.crouch ||= t.crouch;
+      const tp = (b: string) => t.pressed.has(b);
+      f.jump ||= tp("jump"); f.reload ||= tp("reload"); f.interact ||= tp("use"); f.swap ||= tp("swap");
+      f.inventory ||= tp("inv"); f.pause ||= tp("pause"); f.inspect ||= tp("inspect");
+      t.pressed.clear();
     }
     const len = Math.hypot(f.moveX, f.moveZ); if (len > 1) { f.moveX /= len; f.moveZ /= len; }
     return f;
