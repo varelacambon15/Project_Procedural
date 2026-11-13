@@ -105,6 +105,18 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Balanceo del arma con la velocidad de giro filtrada (anim.ts); retícula que se abre al disparar (`crossKick`,
   solo visual). Shaders de armas nuevas compilados en segundo plano (`prewarm`).
 
+## Ronda 14 (pulido de armas, versión 0.7.0)
+
+- Regla del usuario: no hace falta aprovechar todas las piezas; solo las que encajan de forma natural. Cada arma su
+  propia cosa, reconocible pero no idéntica, y sobre todo pulida y natural. Cañones largos o cortos sí valen (variedad).
+- Bases retiradas del sorteo (`RETIRED` en generator.ts): v-ppsh-drum, w-f2000, p-machine-gun-2. Kit: guardamanos
+  liso k-handguard-556-01 (`KIT_RETIRED` en kit.ts; sigue siendo la referencia de serie).
+- Modelos del usuario u-*: no prestan piezas; normales con pliegue. Pendiente: versión limpia de TAR-21 y ARX.
+- `BASE_SIZE`: escala propia de compactos (MP5K, MP7…). `INTEGRAL_STOCK`: culatas integradas (P90…) con estirado suave.
+- Pistolas: culatas solo macizas (carabina y madera corta con curvas), sin tubo en la boca. Escopetas sin supresor.
+- Asa: patas hasta el cajón, baja. Carrillera: cuña biselada. Banda ventilada con alma. Cargadores de alto parecido.
+- Arma en mano: empuñadura a distancia fija por clase (`gripZ` en anim.json). Armas apiladas: arreglado (`equipSeq`).
+
 ## Pendiente (prompt 06)
 
 - Miras que no funcionan: falta auditarlas (comparar sightY con el centro de la óptica en muchas armas).

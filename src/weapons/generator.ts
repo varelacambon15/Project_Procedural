@@ -750,7 +750,7 @@ export class WeaponGenerator {
     if (layout === "modular-long") {
       ops.push({ id: "front", run: () => (tw.front = away(0.7, 1.45)) });
       ops.push({ id: "stock", run: () => (tw.stock = away(0.72, 1.32)) });
-      ops.push({ id: "stockH", run: () => (tw.stockH = away(0.84, 1.2, 0.08)) });
+      ops.push({ id: "stockH", run: () => (tw.stockH = away(0.88, 1.12, 0.06)) });
       ops.push({ id: "grip", run: () => { tw.grip = away(0.9, 1.14, 0.06); tw.gripAngle = (r() < 0.5 ? -1 : 1) * (0.05 + r() * 0.06); } });
       // Sin culata solo en armas cortas (subfusiles y escopetas de menos de ~75 cm): en una larga se ve raro
       const len = base ? base.bounds.max[0] - base.bounds.min[0] : 1;
