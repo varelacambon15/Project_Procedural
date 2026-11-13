@@ -64,7 +64,7 @@ composer.addPass(bloom); composer.addPass(new OutputPass());
 const fill = new THREE.DirectionalLight(0xe040a0, 0); fill.position.set(-0.6, -0.8, -0.4); camera.add(fill); camera.add(fill.target); fill.target.position.set(0, 0, -1);
 const applyLook = () => { world.setNight(settings.night); rim.intensity = settings.night ? 0.8 : 0.4; rim.color.set(settings.night ? 0xc8b0ff : 0xbfd8ff); fill.intensity = settings.night ? 0.5 : 0; bloom.enabled = settings.bloom; bloom.strength = settings.night ? 0.85 : 0.3; renderer.toneMappingExposure = settings.night ? 1.1 : 1.0; };
 applyLook(); onSettings(applyLook);
-startMusic("./music/ambient-01.ogg");
+startMusic("./music/ambient-02.ogg");
 const draw = () => (settings.bloom ? composer.render() : renderer.render(scene, camera));
 function resize() { renderer.setSize(innerWidth, innerHeight); composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
