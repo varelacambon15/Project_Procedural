@@ -688,7 +688,7 @@ export class WeaponGenerator {
     let amp = 1;
     // Cambios llamativos solo en una parte de las armas (si no, el generador los usaría siempre para alejarse de la base)
     const rare = { nostock: r() < 0.3, hgStock: r() < 0.4, front: r() < 0.4 };
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 60; i++) {
       // Si la mejor tirada hasta ahora se aleja demasiado de la base, las siguientes cambian con menos amplitud
       if (best && best.sim < lo && i % 6 === 5) amp = Math.max(0.35, amp * 0.7);
       if (best && best.sim > hi && i % 4 === 3) amp = Math.min(1.9, amp * 1.2);
@@ -774,13 +774,17 @@ export class WeaponGenerator {
           if (t == null || b == null) return;
           const y = b + (t - b) * 0.35;
           // Tipos de culata (prompt 05-A): esqueleto, tubo, plegable, brace de polímero, de carabina; madera en las clásicas
-          const kinds: StockKind[] = era === "classic" ? ["wood", "folding"] : era === "rustic" ? ["wood", "tube", "skeleton", "folding"] : ["skeleton", "tube", "folding", "polymer", "carbine"];
+          // Pistolas y revólveres: solo macizas (las de varilla quedaban finas y mal unidas en un arma corta)
+          const short = type === "pistol" || type === "revolver";
+          const kinds: StockKind[] = short ? (era === "classic" ? ["wood"] : era === "rustic" ? ["wood", "polymer"] : ["polymer", "carbine"])
+            : era === "classic" ? ["wood", "folding"] : era === "rustic" ? ["wood", "tube", "skeleton", "folding"] : ["skeleton", "tube", "folding", "polymer", "carbine"];
           tw.pstock = { kind: kinds[Math.floor(r() * kinds.length)], at: [prof.x0 + L * 0.04, y], h: 0.032, w: 0.024, len: 0.15 + r() * 0.07, drop: 0.012 + r() * 0.02 };
         } });
       }
       // Conjunto carabina (armas cortas y bullpups): cañón largo con guardamanos montado en la boca, sin cortar el cuerpo
       const mz = base?.sockets.muzzle;
-      if (mz && prof && ((rare.front ?? true) && (!long || type === "smg") || type === "bullpup") && !sawed) {
+      // (pistolas y revólveres no: el conjunto en la boca les doblaba el largo y parecían un tubo pegado)
+      if (mz && prof && ((rare.front ?? true) && (!long || type === "smg") || type === "bullpup") && !sawed && type !== "pistol" && type !== "revolver") {
         ops.push({ id: "pfront", run: () => {
           const k = Math.min(prof.top.length - 1, Math.floor(prof.top.length * 0.93)); const t = prof.top[k], b = prof.bot[k];
           const hBody = t != null && b != null ? t - b : 0.03;
@@ -805,7 +809,7 @@ export class WeaponGenerator {
       ops.push({ id: "barrel", run: () => { const k = kitLengths(r, type, parts); bl = k.barrelLength; tw.front = k.front; } });
       if (type !== "pistol") ops.push({ id: "stock", run: () => (tw.stock = away(0.8, 1.2, 0.08)) });
       if (type === "shotgun" || type === "rifle") if (rare.nostock) ops.push({ id: "nostock", run: () => (tw.nostock = true) });
-      if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = 1.2 + r() * 0.3) });
+      if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = type === "pistol" ? 1.12 + r() * 0.12 : 1.2 + r() * 0.3) });
       // Culata y guardamanos por código sobre los sockets de la plataforma (el cañón real del kit se conserva)
       const plat = this.kit.byId.get(parts[0].from);
       const sStock = plat?.sockets.Stock?.[0], sHand = plat?.sockets.Handguard?.[0];
@@ -820,7 +824,7 @@ export class WeaponGenerator {
       if (type === "revolver") { wantAdd("rib"); wantAdd("lug"); }
       if (type === "pistol") wantAdd("lug");
       if (type === "shotgun") { if (!sawedGun) wantAdd("shield"); wantAdd("rib"); }
-      if (type === "smg") wantAdd("shield"); // camisa perforada del cañón, clásica en subfusiles
+      // (sin cubrecañón en subfusiles: los que lo llevan ya lo traen de serie; añadido quedaba como una caja pegada)
       if (type === "rifle" || type === "sniper") wantAdd("ladder");
       if (type === "bullpup") wantAdd("bipod");
       if (type === "lmg" || type === "sniper") wantAdd("bipod");
@@ -1032,7 +1036,8 @@ export class WeaponGenerator {
 /** Culata de pistola o revólver: modernas en la trasera del armazón; clásicas y rústicas en el talón de la empuñadura. */
 function pistolStock(r: Rng, d: PistolDesign): import("./procparts").ProcStock {
   const heel = d.era === "classic" || d.era === "rustic" || d.family === "frontmag" || d.family === "revolver";
-  const kinds: StockKind[] = d.era === "classic" ? ["wood", "folding"] : d.era === "rustic" ? ["wood", "tube", "skeleton", "folding"] : d.era === "scifi" ? ["polymer", "skeleton", "carbine"] : ["skeleton", "tube", "folding", "polymer", "carbine"];
+  // Solo culatas macizas: las de varilla (tubo, esqueleto, plegable) quedaban finas y mal unidas en un arma corta
+  const kinds: StockKind[] = d.era === "classic" ? ["wood"] : d.era === "rustic" ? ["wood", "polymer"] : ["polymer", "carbine"];
   const kind = kinds[Math.floor(r() * kinds.length)];
   const len = (d.family === "carbine" ? 0.17 : 0.14) + r() * 0.045;
   if (heel) { const g = gripCorners(d); return { kind, at: [g.BB[0] + 0.004, g.BB[1] + 0.022], h: 0.034, w: 0.022, len, drop: -(0.03 + r() * 0.02) }; }

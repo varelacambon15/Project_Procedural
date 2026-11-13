@@ -89,8 +89,26 @@ export function buildStock(s: ProcStock): THREE.Group {
     const botY = (t: number) => ay - s.drop * t - s.h * (k === "carbine" ? (t < 0.3 ? 0.32 : 0.32 + 0.75 * (t - 0.3)) : k === "polymer" ? 0.3 + 0.12 * t : 0.4 + 0.4 * t);
     // El brace de polímero va sobre un tubo: el cuerpo empieza a un tercio del largo
     const t0 = k === "polymer" ? 0.32 : 0;
-    sh.moveTo(ax - s.len * t0, topY(t0)); for (const t of [0.3, 0.7, 1].filter((t) => t > t0)) sh.lineTo(ax - s.len * t, topY(t));
-    for (const t of [1, 0.6, 0.25, 0].filter((t) => t >= t0)) sh.lineTo(ax - s.len * t, botY(t)); if (t0) sh.lineTo(ax - s.len * t0, botY(t0)); sh.closePath();
+    if (k === "carbine" || (k === "wood" && s.len < 0.24)) {
+      // Carabina con forma: lomo con leve carrillera, talón redondeado, panza curva hasta la muñeca estrecha y un
+      // vaciado ovalado detrás (antes era una placa plana de bordes rectos)
+      const X = (t: number) => ax - s.len * t;
+      sh.moveTo(ax, topY(0));
+      sh.quadraticCurveTo(X(0.45), topY(0.45) + s.h * 0.06, X(0.93), topY(0.93));
+      sh.quadraticCurveTo(X(1), topY(1), X(1), topY(1) - s.h * 0.12);
+      sh.lineTo(X(1), botY(1) + s.h * 0.1);
+      sh.quadraticCurveTo(X(1), botY(1), X(0.92), botY(0.95));
+      sh.quadraticCurveTo(X(0.55), botY(0.55) + s.h * 0.08, X(0.3), botY(0.3));
+      sh.quadraticCurveTo(X(0.12), botY(0.12) + s.h * 0.1, ax, botY(0));
+      sh.closePath();
+      if (k === "carbine") {
+        const hx = X(0.66), hy = (topY(0.66) + botY(0.66)) / 2, hw = s.len * 0.16, hh = (topY(0.66) - botY(0.66)) * 0.2;
+        const hole = new THREE.Path(); hole.absellipse(hx, hy, hw, hh, 0, Math.PI * 2, false, 0); sh.holes.push(hole);
+      }
+    } else {
+      sh.moveTo(ax - s.len * t0, topY(t0)); for (const t of [0.3, 0.7, 1].filter((t) => t > t0)) sh.lineTo(ax - s.len * t, topY(t));
+      for (const t of [1, 0.6, 0.25, 0].filter((t) => t >= t0)) sh.lineTo(ax - s.len * t, botY(t)); if (t0) sh.lineTo(ax - s.len * t0, botY(t0)); sh.closePath();
+    }
     if (k === "polymer") {
       g.add(rod(new THREE.Vector3(ax, ay + s.h * 0.02, 0), new THREE.Vector3(ax - s.len * (t0 + 0.08), ay - s.drop * (t0 + 0.08) + s.h * 0.02, 0), Math.max(0.0075, s.h * 0.17), 12));
       // Nervios laterales del brace
@@ -98,7 +116,7 @@ export function buildStock(s: ProcStock): THREE.Group {
     }
     if (k === "polymer") { const hx = ax - s.len * 0.48, hy = ay - s.drop * 0.48, sw = s.len * 0.26, shh = s.h * 0.17; const sl = new THREE.Path(); sl.moveTo(hx - sw, hy - shh); sl.lineTo(hx + sw, hy - shh); sl.lineTo(hx + sw, hy + shh); sl.lineTo(hx - sw, hy + shh); sl.closePath(); sh.holes.push(sl); }
     const depth = s.w * (k === "polymer" ? 0.72 : 0.85);
-    const geo = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.0025, bevelSegments: 2, curveSegments: 6 });
+    const geo = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelThickness: k === "carbine" ? 0.004 : 0.003, bevelSize: k === "carbine" ? 0.0035 : 0.0025, bevelSegments: 2, curveSegments: 8 });
     geo.translate(0, 0, -depth / 2);
     g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ name: k === "wood" ? "Wood" : k === "polymer" ? "proctape" : "proc" })));
     // Unión a la junta (adaptador de metal)
