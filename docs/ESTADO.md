@@ -35,8 +35,19 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpups con más variedad: guardamanos de ranuras, y no se aplican siempre todos los cambios.
 - Economía: morada hacia los 30 min, caja común con papel (ver `docs/ECONOMIA.md`).
 
+## Ronda 08
+
+- Campo de tiro de noche con neón (rejilla en el suelo, tubos, pórticos de 10/25/50 m, rótulo) y resplandor;
+  Ajustes → "Campo de tiro de noche" y "Resplandor del neón". Código en `src/game/world.ts` (`setNight`) y `main.ts`.
+- Brazos V1 (`src/game/arms.ts`): guantes con dedos articulados, manga con puño, reloj. Agarres de cada mano en
+  `GRIPS` al final de `src/game/gun.ts` (empuñadura, bajo el guardamanos, envolviendo, vertical, coger).
+- Culata esqueleto de pletina; varillas de la plegable más gruesas.
+- Tests: si el contenedor va justo de memoria, `npx vitest run --minWorkers=1 --maxWorkers=2`.
+
 ## Pendiente
 
 - Integrar packs nuevos (revólveres PSX, Semi Realistic convertidos a glb; aún no integrados).
 - Seguir puliendo el realismo de las pistolas (detalle, biseles, texturas).
+- Revólveres clásicos: el compensador de accesorio sigue pudiendo salir (quitarlo cambia los tests de accesorios).
+- Probar en juego las poses de mano en todas las armas (las capturas por software no permiten ver la recarga fluida).
 - Probar en juego la economía nueva y ajustar `shop.json`.

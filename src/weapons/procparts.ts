@@ -70,7 +70,7 @@ export function buildStock(s: ProcStock): THREE.Group {
     g.add(box(0.02, s.h * 0.8, s.w * 0.8, ax - 0.01, ay - s.h * 0.02, "procmetal"));
   } else if (s.kind === "folding") {
     // Plegable de alambre: varilla superior, diagonal desde abajo de la junta y bisagra
-    const rr = Math.max(0.0035, s.h * 0.11);
+    const rr = Math.max(0.0048, s.h * 0.13);
     for (const z of [-1, 1]) {
       const zz = z * s.w * 0.3;
       g.add(rod(new THREE.Vector3(ax, ay + s.h * 0.25, zz), new THREE.Vector3(bx + 0.006, by + s.h * 0.25, zz), rr, 6));
