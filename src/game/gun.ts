@@ -113,6 +113,8 @@ export class Gun {
   private trigT = 0;
   /** Esprint suavizado (0..1): las manos se aflojan y el índice sale del gatillo. */
   private sprintT = 0;
+  /** Dedo dentro del gatillo un rato tras disparar (si no, va estirado sobre el armazón). */
+  private onTrigT = 0;
   private reloadPhase: Phase | null = null;
   private sprayIndex = 0; private sprayT = 0;
   private casings: { mesh: THREE.Object3D; vel: THREE.Vector3; spin: THREE.Vector3; t: number }[] = [];
@@ -326,6 +328,8 @@ export class Gun {
     // Manos obligatorias (05-E): siempre que se ve el arma
     this.arms.visible = this.viewmodel.visible && !!this.model;
     this.trigT = Math.max(0, this.trigT - dt * 9);
+    this.onTrigT = Math.max(0, this.onTrigT - dt);
+    if (c.fire) this.onTrigT = 1.2;
     if (this.model) this.updateHands(dt);
 
     // Efectos
@@ -481,7 +485,8 @@ export class Gun {
     const kind: HandKind = ph ? (style === "shells" ? (ph.id === "rack" ? "under" : "grab") : ph.id === "rack" || ph.id === "settle" ? "grab" : "grab")
       : this.cycleT > 0 && this.spec?.fireMode === "bolt" ? "grab" : supportKind(left && base && left.equals(base) ? (k > 0.5 ? hold?.ads : hold?.hip) : undefined, this.spec?.type);
     const pose = (at: THREE.Vector3, g: HandGrip, curl: Curl): HandPose => ({ pos: toCam(at).add(g.off.clone().applyQuaternion(hq)), orient: hq.clone().multiply(g.q), curl });
-    const R = GRIPS.right, sp = this.sprintT, trig = 0.32 + 0.38 * this.trigT - 0.18 * sp;
+    const R = GRIPS.right, sp = this.sprintT, ready = Math.max(this.aimT, Math.min(1, this.onTrigT * 3)) * (1 - sp);
+    const trig = 0.06 + 0.28 * ready + 0.38 * this.trigT;
     const right = pose(h.grip, R, { fingers: [trig, 0.86 - 0.1 * sp, 0.9 - 0.1 * sp, 0.93 - 0.1 * sp], thumb: 0.4 - 0.15 * sp });
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };

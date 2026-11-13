@@ -108,13 +108,13 @@ class Hand {
     }
     // Dedos: índice (junto al pulgar) … meñique; 3 falanges con pivote en cada nudillo
     const lens = [[0.04, 0.025, 0.02], [0.044, 0.027, 0.021], [0.041, 0.025, 0.02], [0.032, 0.021, 0.018]];
-    const xs = [-0.028, -0.0095, 0.0095, 0.027], ws = [0.0185, 0.019, 0.018, 0.016];
+    const xs = [-0.027, -0.009, 0.009, 0.026], ws = [0.0165, 0.017, 0.016, 0.0145];
     for (let f = 0; f < 4; f++) {
       const chain: THREE.Group[] = []; let parentG: THREE.Object3D = this.g;
       for (let k = 0; k < 3; k++) {
         const piv = new THREE.Group(); piv.position.set(k === 0 ? xs[f] * s : 0, k === 0 ? -0.002 : 0, k === 0 ? -0.04 : -lens[f][k - 1]);
         const w = ws[f] * (1 - k * 0.08);
-        const ph = new THREE.Mesh(new RoundedBoxGeometry(w, w * 0.95, lens[f][k] + 0.004, 1, w * 0.3), glove); ph.position.z = -lens[f][k] / 2; piv.add(ph);
+        const ph = new THREE.Mesh(new RoundedBoxGeometry(w, w * 0.88, lens[f][k] + 0.003, 2, w * 0.38), glove); ph.position.z = -lens[f][k] / 2; piv.add(ph);
         if (k === 0) { const pad = new THREE.Mesh(new THREE.BoxGeometry(w * 0.9, 0.003, lens[f][0] * 0.6), gloveArmor); pad.position.set(0, w * 0.5, -lens[f][0] * 0.5); piv.add(pad); }
         parentG.add(piv); chain.push(piv); parentG = piv;
       }
