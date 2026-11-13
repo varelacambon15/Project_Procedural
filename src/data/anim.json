@@ -23,10 +23,10 @@
       "horizontal": 0.006
     },
     "sway": {
-      "gain": 2.2,
-      "maxX": 0.08,
-      "maxY": 0.06,
-      "lag": 10,
+      "gain": 0.9,
+      "maxX": 0.035,
+      "maxY": 0.025,
+      "lag": 16,
       "adsKeep": 0.25
     },
     "bob": {
