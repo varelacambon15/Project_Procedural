@@ -5,7 +5,7 @@ S="$1"; O="$2"
 ffmpeg -y -loglevel error -i "$S/sub.wav" -i "$S/pad.wav" -i "$S/glide.wav" -i "$S/steps.wav" -i "$S/mech.wav" -i "$S/sweep.wav" -i "$S/heart.wav" -filter_complex "\
 [0]lowpass=f=320,highpass=f=24,volume=0.8[a];\
 [1]lowpass=f=1400,highpass=f=90,aecho=0.8:0.88:180|340|610:0.5|0.38|0.26,volume=0.5[b];\
-[2]lowpass=f=1900,highpass=f=140,aecho=0.8:0.9:290|520|900:0.5|0.35|0.25,volume=0.36[c];\
+[2]volume=0[c];\
 [3]lowpass=f=5200,highpass=f=350,aecho=0.8:0.85:240|470:0.4|0.28,volume=0.22[d];\
 [4]lowpass=f=6000,highpass=f=120,aecho=0.8:0.8:150|330:0.35|0.2,volume=0.38[e];\
 [5]lowpass=f=7000,highpass=f=200,volume=0.3[f];\
