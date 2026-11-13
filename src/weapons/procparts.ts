@@ -85,11 +85,19 @@ export function buildStock(s: ProcStock): THREE.Group {
     const sh = new THREE.Shape(), k = s.kind;
     const topY = (t: number) => ay - s.drop * t + s.h * (k === "carbine" ? 0.42 + 0.12 * Math.min(1, t * 2) : k === "polymer" ? 0.3 : 0.4);
     // (el brace de polímero se estrecha hacia la cantonera y lleva una ranura grande para la correa del antebrazo)
-    const botY = (t: number) => ay - s.drop * t - s.h * (k === "carbine" ? 0.5 + 0.35 * t : k === "polymer" ? 0.3 + 0.12 * t : 0.4 + 0.4 * t);
-    sh.moveTo(ax, topY(0)); for (const t of [0.3, 0.7, 1]) sh.lineTo(ax - s.len * t, topY(t));
-    for (const t of [1, 0.6, 0.25, 0]) sh.lineTo(ax - s.len * t, botY(t)); sh.closePath();
+    // (la de carabina: muñeca estrecha junto a la junta y talón que baja hacia la cantonera)
+    const botY = (t: number) => ay - s.drop * t - s.h * (k === "carbine" ? (t < 0.3 ? 0.32 : 0.32 + 0.75 * (t - 0.3)) : k === "polymer" ? 0.3 + 0.12 * t : 0.4 + 0.4 * t);
+    // El brace de polímero va sobre un tubo: el cuerpo empieza a un tercio del largo
+    const t0 = k === "polymer" ? 0.32 : 0;
+    sh.moveTo(ax - s.len * t0, topY(t0)); for (const t of [0.3, 0.7, 1].filter((t) => t > t0)) sh.lineTo(ax - s.len * t, topY(t));
+    for (const t of [1, 0.6, 0.25, 0].filter((t) => t >= t0)) sh.lineTo(ax - s.len * t, botY(t)); if (t0) sh.lineTo(ax - s.len * t0, botY(t0)); sh.closePath();
+    if (k === "polymer") {
+      g.add(rod(new THREE.Vector3(ax, ay + s.h * 0.02, 0), new THREE.Vector3(ax - s.len * (t0 + 0.08), ay - s.drop * (t0 + 0.08) + s.h * 0.02, 0), Math.max(0.0075, s.h * 0.17), 12));
+      // Nervios laterales del brace
+      for (const t of [0.5, 0.78]) for (const z of [-1, 1]) { const rib = box(0.004, s.h * 0.45, 0.002, ax - s.len * t, ay - s.drop * t, "procmetal"); rib.position.z = z * s.w * 0.36; g.add(rib); }
+    }
     if (k === "polymer") { const hx = ax - s.len * 0.48, hy = ay - s.drop * 0.48, sw = s.len * 0.26, shh = s.h * 0.17; const sl = new THREE.Path(); sl.moveTo(hx - sw, hy - shh); sl.lineTo(hx + sw, hy - shh); sl.lineTo(hx + sw, hy + shh); sl.lineTo(hx - sw, hy + shh); sl.closePath(); sh.holes.push(sl); }
-    const depth = s.w * (k === "polymer" ? 0.6 : 0.85);
+    const depth = s.w * (k === "polymer" ? 0.72 : 0.85);
     const geo = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.0025, bevelSegments: 2, curveSegments: 6 });
     geo.translate(0, 0, -depth / 2);
     g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ name: k === "wood" ? "Wood" : k === "polymer" ? "proctape" : "proc" })));

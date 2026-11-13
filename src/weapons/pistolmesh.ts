@@ -230,7 +230,10 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
       case "handguard": {
         // Guardamanos de carbina con ventilación y raíl inferior
         const x0 = p.poly[0][0], x1 = p.poly[1][0];
-        const hg = G("front"); hg.add(lofted(p.poly, d.era === "rustic" ? "procmetal" : "proctape", { half: () => p.depth / 2, rTop: 0.55, rBot: 0.45, segs: 2, n: 12 }));
+        // (en la clásica, guardamanos de madera con estrías para los dedos y sin raíles)
+        const classic = d.era === "classic";
+        const hg = G("front"); hg.add(lofted(p.poly, classic ? "proccheck" : d.era === "rustic" ? "procmetal" : "proctape", { half: () => p.depth / 2, rTop: 0.55, rBot: 0.45, segs: 2, n: 12 }));
+        if (classic) { for (let x = x0 + 0.014; x < x1 - 0.012; x += 0.012) for (const z of [-1, 1]) hg.add(box(0.004, (h * 0.3 + fh * 0.2) * 0.6, 0.0012, x, -fh * 0.25, z * (p.depth / 2 + 0.0001), "procpad")); break; }
         for (let x = x0 + 0.012; x < x1 - 0.014; x += 0.018) for (const z of [-1, 1]) hg.add(box(0.01, (h * 0.45 + fh * 0.2) * 0.9, 0.0012, x + 0.005, (h * 0.45 - fh * 0.2) / 2, z * (p.depth / 2 + 0.0001), "procpad"));
         for (let x = x0 + 0.006; x < x1 - 0.004; x += 0.008) hg.add(box(0.004, 0.003, p.depth * 0.5, x, -fh * 0.8 - 0.002, 0, "procmetal"));
         break;

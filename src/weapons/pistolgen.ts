@@ -333,7 +333,7 @@ export function designPolys(d: PistolDesign): PartPoly[] {
     // Petaca curva que se dobla hacia delante
     const n = 6, len = d.mag.len, fr: Pt[] = [], bk: Pt[] = [];
     for (let i = 0; i <= n; i++) {
-      const t = i / n, ang = a - 0.6 * t * t, p: Pt = [mf.top[0] - Math.sin(a) * len * t + 0.03 * t * t, mf.top[1] + 0.004 - Math.cos(a) * len * t];
+      const t = i / n, a0 = a * 0.45, ang = a0 - 0.5 * t * t, p: Pt = [mf.top[0] - Math.sin(a0) * len * t + 0.03 * t * t, mf.top[1] + 0.004 - Math.cos(a) * len * t];
       const ox = (mw / 2) * Math.cos(ang), oy = -(mw / 2) * Math.sin(ang); fr.push([p[0] + ox, p[1] + oy]); bk.push([p[0] - ox, p[1] - oy]);
     }
     out.push({ role: "mag", depth: w * 0.62, poly: [...fr, ...bk.reverse()] });
