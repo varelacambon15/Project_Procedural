@@ -111,6 +111,8 @@ export class Gun {
   private arms: Arms;
   /** Dedo del gatillo: 1 justo al disparar, vuelve solo. */
   private trigT = 0;
+  /** Esprint suavizado (0..1): las manos se aflojan y el índice sale del gatillo. */
+  private sprintT = 0;
   private reloadPhase: Phase | null = null;
   private sprayIndex = 0; private sprayT = 0;
   private casings: { mesh: THREE.Mesh; vel: THREE.Vector3; spin: THREE.Vector3; t: number }[] = [];
@@ -248,6 +250,7 @@ export class Gun {
     this.cooldown -= dt; this.equipT = Math.max(0, this.equipT - dt); this.cycleT = Math.max(0, this.cycleT - dt);
     if (this.holsterT > 0) { this.holsterT -= dt; if (this.holsterT <= 0 && this.pending) { const pnd = this.pending; this.pending = null; this.holsterT = 0; void this.doEquip(pnd.item, pnd.rebuild); } }
     this.fx?.tick(dt, { aiming: this.aimT > 0.6, firing: c.fire, sprinting: c.sprinting });
+    this.sprintT += ((c.sprinting ? 1 : 0) - this.sprintT) * Math.min(1, dt * 8);
     this.hitmarker = Math.max(0, this.hitmarker - dt); this.critmarker = Math.max(0, this.critmarker - dt); this.killmarker = Math.max(0, this.killmarker - dt);
     if (this.reloadT > 0) { this.reloadT -= dt; if (this.reloadT <= 0 && it && s) { it.ammo = s.stats.cargador; this.sfx("cycle"); this.fx?.reloadEnd(); } }
     if (c.inspect && s && this.reloadT <= 0 && this.aimT < 0.2) this.inspectT = 2.6;
@@ -426,10 +429,11 @@ export class Gun {
     const kind: HandKind = ph ? (style === "shells" ? (ph.id === "rack" ? "under" : "grab") : ph.id === "rack" || ph.id === "settle" ? "grab" : "grab")
       : this.cycleT > 0 && this.spec?.fireMode === "bolt" ? "grab" : supportKind(left && base && left.equals(base) ? (k > 0.5 ? hold?.ads : hold?.hip) : undefined, this.spec?.type);
     const pose = (at: THREE.Vector3, g: HandGrip, curl: Curl): HandPose => ({ pos: toCam(at).add(g.off.clone().applyQuaternion(hq)), orient: hq.clone().multiply(g.q), curl });
-    const R = GRIPS.right, trig = 0.32 + 0.38 * this.trigT;
-    const right = pose(h.grip, R, { fingers: [trig, 0.86, 0.9, 0.93], thumb: 0.4 });
-    const L = GRIPS[kind];
-    this.arms.update({ right, left: left ? pose(left, L, L.curl) : null, dt });
+    const R = GRIPS.right, sp = this.sprintT, trig = 0.32 + 0.38 * this.trigT - 0.18 * sp;
+    const right = pose(h.grip, R, { fingers: [trig, 0.86 - 0.1 * sp, 0.9 - 0.1 * sp, 0.93 - 0.1 * sp], thumb: 0.4 - 0.15 * sp });
+    const L = GRIPS[kind], lc = L.curl;
+    const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
+    this.arms.update({ right, left: left ? pose(left, L, loose) : null, dt });
   }
 
   private fire(moving: number, echo = false) {

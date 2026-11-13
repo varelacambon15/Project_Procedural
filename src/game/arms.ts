@@ -158,9 +158,16 @@ class Arm {
     this.hand = new Hand(parent, side, side < 0);
     for (const g of [this.upper.g, this.fore.g, this.elbowM]) g.traverse((m) => { (m as THREE.Mesh).renderOrder = 9; (m as THREE.Mesh).castShadow = false; });
   }
+  private cur = new THREE.Vector3();
   set(shoulder: THREE.Vector3, p: HandPose, pole: THREE.Vector3, dt: number) {
-    const k = this.first ? 1 : Math.min(1, dt * 16); this.first = false;
-    this.hand.set(p, k);
+    const k = this.first ? 1 : Math.min(1, dt * 16);
+    // Posición: sigue al objetivo exacta (las curvas ya son suaves) salvo en saltos grandes (ir a la cartuchera,
+    // cambiar de agarre), donde la mano viaja en vez de teletransportarse
+    const d = this.cur.distanceTo(p.pos);
+    if (this.first || d < 0.03) this.cur.copy(p.pos); else this.cur.lerp(p.pos, Math.min(1, dt * 14));
+    this.first = false;
+    this.hand.set({ ...p, pos: this.cur.clone() }, k);
+    p = { ...p, pos: this.cur.clone() };
     // La muñeca está detrás de la palma (en +Z de la mano); el IK llega a la muñeca
     const wrist = p.pos.clone().add(new THREE.Vector3(0, 0.004, 0.072).applyQuaternion(this.hand.g.quaternion));
     const elbow = solveTwoBone(shoulder, wrist, ARM_DATA.upper, ARM_DATA.fore, pole);
