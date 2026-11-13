@@ -115,7 +115,10 @@ export class Gun {
   private sprintT = 0;
   private reloadPhase: Phase | null = null;
   private sprayIndex = 0; private sprayT = 0;
-  private casings: { mesh: THREE.Mesh; vel: THREE.Vector3; spin: THREE.Vector3; t: number }[] = [];
+  private casings: { mesh: THREE.Object3D; vel: THREE.Vector3; spin: THREE.Vector3; t: number }[] = [];
+  /** Lo que la mano izquierda lleva durante la recarga: cargador rápido (revólver) y cartucho (escopeta). */
+  private inHand: { loader: THREE.Group; shell: THREE.Mesh } | null = null;
+  private lastPhaseId = "";
 
   constructor(private camera: THREE.PerspectiveCamera, private scene: THREE.Scene, private asm: WeaponAssembler, private world: THREE.Object3D[], private hooks: ShotHooks) {
     camera.add(this.viewmodel);
@@ -351,6 +354,42 @@ export class Gun {
     }
   }
 
+  /** El cargador vacío cae al suelo (copia del real, con física simple como los casquillos). */
+  private dropMag() {
+    const src = this.mag!.object; src.updateMatrixWorld(true);
+    const c = src.clone(true); src.matrixWorld.decompose(c.position, c.quaternion, c.scale);
+    c.traverse((o) => { o.renderOrder = 0; });
+    this.scene.add(c);
+    const camQ = this.camera.getWorldQuaternion(new THREE.Quaternion());
+    this.casings.push({ mesh: c, vel: new THREE.Vector3(-0.2, -0.6, 0.15).applyQuaternion(camQ), spin: new THREE.Vector3(2 + Math.random() * 3, Math.random(), 3 + Math.random() * 3), t: 4 });
+  }
+  /** Cargador rápido del revólver y cartucho de escopeta en la mano izquierda, en las fases en que se llevan. */
+  private updateInHand(m: AssembledWeapon, ph: Phase | null, style: string) {
+    if (!this.inHand) {
+      const loader = new THREE.Group();
+      const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.008, 0.016, 8), new THREE.MeshStandardMaterial({ color: 0x1b1c1e, roughness: 0.5 })); knob.position.y = -0.012; loader.add(knob);
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.006, 12), new THREE.MeshStandardMaterial({ color: 0x2a2b2e, metalness: 0.5, roughness: 0.4 })); loader.add(disc);
+      for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; const rd = new THREE.Mesh(casingGeo.small, brassMat); rd.position.set(Math.cos(a) * 0.011, 0.012, Math.sin(a) * 0.011); loader.add(rd); }
+      loader.rotation.z = -Math.PI / 2; // las balas apuntan hacia la boca (+X del arma)
+      const shell = new THREE.Mesh(casingGeo.shell, shellMat); shell.rotation.z = -Math.PI / 2;
+      this.inHand = { loader, shell };
+    }
+    const { loader, shell } = this.inHand;
+    if (loader.parent !== m.group) { m.group.add(loader, shell); }
+    loader.visible = shell.visible = false;
+    if (!ph) return;
+    const h = m.handles;
+    if (style === "cylinder" && ph.id === "load" && ph.t > 0.45) {
+      const cyl = this.mag ? this.mag.object.position.clone().sub(this.mag.base) : new THREE.Vector3();
+      const atCyl = h.magwell.clone().add(cyl), pouch = h.magwell.clone().add(new THREE.Vector3(-0.02, -0.25, 0.04));
+      loader.position.copy(pouch.lerp(atCyl, ease(Math.min(1, (ph.t - 0.45) / 0.4)))).add(new THREE.Vector3(-0.012, 0, -0.03));
+      loader.visible = true;
+    } else if (style === "shells" && ph.id === "shell" && ph.t < 0.6) {
+      const pouch = h.magwell.clone().add(new THREE.Vector3(-0.02, -0.25, 0.04));
+      shell.position.copy(pouch.lerp(h.magwell, ease(Math.min(1, ph.t / 0.5)))).add(new THREE.Vector3(0.012, 0.004, -0.028));
+      shell.visible = true;
+    }
+  }
   /** Casquillo expulsado por la ventana del cajón, con física simple. */
   private ejectCasing() {
     const s = this.spec!; const m = this.model; if (!m || s.type === "revolver") return;
@@ -393,6 +432,10 @@ export class Gun {
     const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
     let left: THREE.Vector3 | null = base;
     const ph = this.reloadPhase, style = this.anim.p.reload.style;
+    const phId = ph ? `${ph.index}:${ph.id}` : "";
+    if (phId !== this.lastPhaseId && ph?.id === "pouch" && style === "mag" && this.mag) this.dropMag();
+    this.lastPhaseId = phId;
+    this.updateInHand(m, ph, style);
     const pouch = h.magwell.clone().add(new THREE.Vector3(-0.02, -0.25, 0.04));
     const pumpOff = new THREE.Vector3(-(this.moving.pump ? this.moving.pump.base.x - this.moving.pump.object.position.x : 0), 0, 0);
     if (ph && style === "shells") {
@@ -415,7 +458,16 @@ export class Gun {
       const atMag = h.magwell.clone().add(mag);
       if (ph.id === "grab") left = sup.clone().lerp(atMag, ease(ph.t));
       else if (ph.id === "out") left = atMag;
-      else if (ph.id === "pouch") left = ph.t < 0.5 ? atMag.add(new THREE.Vector3(0, -0.25 * ph.t, 0)) : null;
+      else if (ph.id === "pouch") {
+        // Ida a la cartuchera con la mano vacía (el cargador viejo cae al suelo) y vuelta con el nuevo en la mano
+        // La cartuchera está abajo a la izquierda de la vista (en espacio de cámara; el arma va girada al recargar)
+        const away = m.group.worldToLocal(this.camera.localToWorld(new THREE.Vector3(-0.16, -0.5, -0.22)));
+        if (ph.t < 0.5) left = atMag.clone().lerp(away, ease(ph.t * 2));
+        else {
+          left = away.clone().lerp(atMag, ease((ph.t - 0.5) * 2));
+          if (this.mag) { this.mag.object.visible = true; this.mag.object.position.copy(this.mag.base).add(left.clone().sub(h.magwell)); }
+        }
+      }
       else if (ph.id === "in") left = atMag;
       else if (ph.id === "rack") left = h.charge.clone().add(new THREE.Vector3(-0.05 * tri(ph.t, 0, 1), 0.01, 0.03));
       else if (ph.id === "settle") left = h.charge.clone().lerp(sup, ease(ph.t));
