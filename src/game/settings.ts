@@ -6,12 +6,13 @@ export interface Settings {
   screenShake: boolean;
   impactFx: boolean;     // marcas y chispas de impacto
   volume: number;        // 0..1
+  music: number;         // 0..1, sobre el volumen general
   arms: boolean;         // brazos low-poly en primera persona
   night: boolean;        // campo de tiro de noche con neón (si no, de día)
   bloom: boolean;        // resplandor del neón y de los fogonazos (postproceso)
 }
 const KEY = "pp.settings";
-const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, arms: true, night: true, bloom: true };
+const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: true, bloom: true };
 const listeners = new Set<(s: Settings) => void>();
 
 function load(): Settings {

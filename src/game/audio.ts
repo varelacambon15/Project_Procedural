@@ -35,3 +35,18 @@ export function lootChime(level: number) {
     }
   } catch { /* sin audio */ }
 }
+
+/**
+ * Música de ambiente (pista pregrabada en bucle, assets/music). Arranca con el primer gesto del jugador (los
+ * navegadores no dejan reproducir sonido antes) y sigue el volumen general × el de la música.
+ */
+let music: HTMLAudioElement | null = null;
+export function startMusic(url: string) {
+  if (music || typeof Audio === "undefined") return;
+  music = new Audio(url); music.loop = true; music.preload = "auto";
+  const vol = () => { if (music) music.volume = Math.max(0, Math.min(1, settings.volume * settings.music)); };
+  vol(); onSettings(vol);
+  const go = () => { void music?.play().catch(() => { /* aún sin permiso: se reintenta en el siguiente gesto */ }); };
+  for (const ev of ["pointerdown", "keydown", "gamepadconnected"]) addEventListener(ev, go);
+  go();
+}
