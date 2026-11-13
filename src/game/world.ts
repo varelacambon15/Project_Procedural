@@ -6,6 +6,7 @@
 import * as THREE from "three";
 import { t } from "../i18n";
 import { buildNightCity } from "./nightcity";
+import { mergeStatic } from "./merge";
 
 export interface Interactable { id: "chest" | "workbench" | "waves" | "inspect"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
 export interface RangeData { dps: number; ttk: number | null; accuracy: number | null; distance: number | null; message: string }
@@ -218,6 +219,12 @@ export function buildRange(scene: THREE.Scene): World {
     const bg = on ? 0x1a1430 : 0x2c333b; (scene.background as THREE.Color).set(bg);
     scene.fog = new THREE.Fog(on ? 0x2a1f40 : bg, on ? 18 : 45, on ? 85 : 120);
   };
+  // Rendimiento: lo estático se fusiona por material (cientos de mallas → unas decenas de llamadas de dibujo). Quedan
+  // fuera lo que cambia de visibilidad (noche/día, lámparas) y lo animado (la bandeja del terminal); la ciudad se
+  // fusiona dentro de su propio grupo, que se enciende y apaga entero
+  const camObj = scene.children.find((o) => (o as THREE.Camera).isCamera);
+  mergeStatic(scene, new Set<THREE.Object3D>([city.group, lidPivot, ...dayOnly, ...lamps.map((l) => l.mesh), ...(camObj ? [camObj] : [])]));
+  mergeStatic(city.group);
   setNight(true);
 
   let lastMsg = "";

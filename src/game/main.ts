@@ -45,8 +45,8 @@ setLang(getLang());
 // ---------- Render ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.localClippingEnabled = true; // escaneo de los muñecos de la simulación
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
 $("game").appendChild(renderer.domElement);
 const scene = new THREE.Scene();
@@ -547,7 +547,7 @@ async function boot() {
   openStart();
   frame();
   (window as unknown as Record<string, unknown>).__game = {
-    debug, gen, inv, gun, pickups, pickUp, player, setSetting, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
+    debug, gen, inv, gun, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
     loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };

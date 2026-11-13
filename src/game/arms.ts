@@ -135,7 +135,7 @@ class Hand {
   }
   set(p: HandPose, k: number) {
     this.g.position.copy(p.pos);
-    this.g.quaternion.slerp(p.orient, k);
+    this.g.quaternion.copy(p.orient);
     for (let f = 0; f < 4; f++) this.cur.fingers[f] += (p.curl.fingers[f] - this.cur.fingers[f]) * k;
     this.cur.thumb += (p.curl.thumb - this.cur.thumb) * k;
     // Cerrar = girar cada falange hacia la palma (-Y); la distal algo menos
@@ -165,8 +165,9 @@ class Arm {
     const k = this.first ? 1 : Math.min(1, dt * 16);
     // Posición: sigue al objetivo exacta (las curvas ya son suaves) salvo en saltos grandes (ir a la cartuchera,
     // cambiar de agarre), donde la mano viaja en vez de teletransportarse
-    const d = this.cur.distanceTo(p.pos);
-    if (this.first || d < 0.03) this.cur.copy(p.pos); else this.cur.lerp(p.pos, Math.min(1, dt * 14));
+    // Posición exacta (el suavizado de los saltos de agarre se hace en coordenadas del arma, en gun.ts): si se suavizara
+    // aquí, al moverse deprisa la mano se quedaba atrás del arma y "se volvía loca"
+    this.cur.copy(p.pos);
     this.first = false;
     this.hand.set({ ...p, pos: this.cur.clone() }, k);
     p = { ...p, pos: this.cur.clone() };

@@ -10,6 +10,7 @@ import { EffectRunner, type FxAction } from "../weapons/effects";
 import { accessory } from "../weapons/accessories";
 import type { Item } from "./inventory";
 import type { Dummy, Element, Zone } from "./dummies";
+import { mergeStatic } from "./merge";
 import { Arms, handBasis, type Curl, type HandPose } from "./arms";
 import { audio, out, out as masterOut } from "./audio";
 import { settings } from "./settings";
@@ -118,6 +119,7 @@ export class Gun {
   /** Dedo dentro del gatillo un rato tras disparar (si no, va estirado sobre el armazón). */
   private onTrigT = 0;
   private holdAvg: THREE.Vector3 | null = null;
+  private leftLocal: THREE.Vector3 | null = null;
   // ---------- Puños (sin arma equipada) ----------
   /** Progreso del golpe en curso (0 = ninguno), mano que golpea, golpe fuerte (al esprintar), golpe ya resuelto. */
   private punchT = 0; private punchDur = 0.34; private punchSide: 1 | -1 = -1; private punchHeavy = false; private punchDone = false;
@@ -192,6 +194,8 @@ export class Gun {
     this.moving = {};
     for (const role of ["slide", "pump", "charging"] as MovingPart[]) { const part = m.parts.find((p) => p.role === role); if (part) this.moving[role] = part; }
     this.model = m;
+    // Rendimiento: dentro de cada pieza (que se anima entera) se fusionan sus mallas por material
+    if (!m.group.userData.merged) { for (const p of m.parts) mergeStatic(p.object); m.group.userData.merged = true; }
     this.holder.add(m.group);
     this.flash.position.set(0, m.muzzle.y, -m.muzzle.x);
     this.flashLight.position.copy(this.flash.position);
@@ -579,7 +583,10 @@ export class Gun {
     const hc = this.camera.worldToLocal(this.holder.getWorldPosition(new THREE.Vector3()));
     if (!this.holdAvg) this.holdAvg = hc.clone(); else this.holdAvg.lerp(hc, Math.min(1, dt * 2.5));
     const shoulder = hc.clone().sub(this.holdAvg).multiplyScalar(0.5).clampLength(0, 0.08);
-    this.arms.update({ right, left: left ? pose(left, L, loose) : null, dt, shoulder });
+    // La mano de apoyo viaja (en coordenadas del arma) solo en los saltos de agarre reales: cartuchera, cambio de soporte
+    if (left) { if (!this.leftLocal || this.leftLocal.distanceTo(left) < 0.02) this.leftLocal = left.clone(); else this.leftLocal.lerp(left, Math.min(1, dt * 14)); }
+    else this.leftLocal = null;
+    this.arms.update({ right, left: left && this.leftLocal ? pose(this.leftLocal, L, loose) : null, dt, shoulder });
   }
 
   private fire(moving: number, echo = false) {
