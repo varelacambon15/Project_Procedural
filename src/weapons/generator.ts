@@ -440,9 +440,9 @@ export class WeaponGenerator {
    */
   private mixLong(r: Rng, base: AssetEntry, type: BaseType, tweaks: Tweaks): { stock: AssetEntry; front: AssetEntry; grip: AssetEntry } | null {
         // Una base y poco más: 1-2 piezas de la misma familia (se adaptan a la junta: pieceScale)
-        // (los modelos del usuario, u-…, no prestan piezas: su superficie no casa con la del resto y el guardamanos
-        // en cuña quedaba como un pico pegado en otros fusiles; sí reciben piezas de otros)
-        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && !w.excluded && !RETIRED.has(w.id) && !w.id.startsWith("u-") && w.pack === base.pack && w.id !== base.id && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)) && !w.quarantine);
+        // (los modelos del usuario, u-…, prestan culata, empuñadura y cargador, pero no el guardamanos: en cuña quedaba
+        // como un pico pegado en otros fusiles; sí reciben piezas de otros)
+        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && !w.excluded && !RETIRED.has(w.id) && (!w.id.startsWith("u-") || role !== "front") && w.pack === base.pack && w.id !== base.id && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)) && !w.quarantine);
         const cls = (t: WeaponType) => (t === "smg" ? "compact" : "long");
         const fit = (joint: "rear" | "front" | "grip", lo: number, hi: number) => (w: AssetEntry) => within(jointScale(base, w, joint), lo, hi);
         const stocks = donors("stock", (w) => cls(w.type) === cls(type)).filter(fit("rear", 0.7, 1.4));
