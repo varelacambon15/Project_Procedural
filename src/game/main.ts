@@ -63,7 +63,14 @@ const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.
 composer.addPass(bloom); composer.addPass(new OutputPass());
 // Relleno de la vista en primera persona: de noche el arma y los brazos recogen el rebote del neón (cian arriba, magenta abajo)
 const fill = new THREE.DirectionalLight(0xe040a0, 0); fill.position.set(-0.6, -0.8, -0.4); camera.add(fill); camera.add(fill.target); fill.target.position.set(0, 0, -1);
-const applyLook = () => { world.setNight(settings.night); rim.intensity = settings.night ? 0.8 : 0.4; rim.color.set(settings.night ? 0xc8b0ff : 0xbfd8ff); fill.intensity = settings.night ? 0.5 : 0; bloom.enabled = settings.bloom; bloom.strength = settings.night ? 0.85 : 0.3; renderer.toneMappingExposure = settings.night ? 1.1 : 1.0; };
+// Contorno extra para armas oscuras: según la luminancia del color principal del acabado (negro → más contorno)
+let darkBoost = 0;
+const weaponDarkness = (spec: WeaponSpec | null | undefined) => {
+  const c = spec?.paint?.color; if (!c) return 0.5;
+  const lum = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  return Math.max(0, Math.min(1, (0.35 - lum) / 0.3));
+};
+const applyLook = () => { world.setNight(settings.night); rim.intensity = (settings.night ? 0.8 : 0.4) + darkBoost * 1.1; rim.color.set(settings.night ? 0xc8b0ff : 0xbfd8ff); fill.intensity = settings.night ? 0.5 : 0; bloom.enabled = settings.bloom; bloom.strength = settings.night ? 0.85 : 0.3; renderer.toneMappingExposure = settings.night ? 1.1 : 1.0; };
 applyLook(); onSettings(applyLook);
 startMusic("./music/ambient-02.ogg");
 const draw = () => (settings.bloom ? composer.render() : renderer.render(scene, camera));
@@ -135,7 +142,7 @@ async function boot() {
   });
   gun.env = weaponEnv;
   const pickups = new Pickups(scene, asm, world.colliders);
-  inv.onChange(() => { if (gun.item !== inv.current) void gun.equip(inv.current); renderSlots(); });
+  inv.onChange(() => { if (gun.item !== inv.current) void gun.equip(inv.current); darkBoost = weaponDarkness(inv.current?.spec); applyLook(); renderSlots(); });
 
   // Arma de muestra para la pantalla de título (antes de empezar): una legendaria girando sobre la rejilla
   // Storm Caller: la legendaria de referencia de calidad, congelada (su ficha no depende de cambios del generador)

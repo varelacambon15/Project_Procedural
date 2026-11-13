@@ -10,6 +10,17 @@ import type { PEra } from "../weapons/pistolgen";
 type WeaponType = BaseType;
 setLang(getLang());
 
+/** Luz de estudio de las hojas: fondo gris medio, relleno, luz principal y contorno fuerte por detrás (las armas negras
+ * se recortan del fondo en vez de perderse). */
+function studioLights(sc: THREE.Scene, r: THREE.WebGLRenderer, bg = 0x4a4e55) {
+  sc.background = new THREE.Color(bg);
+  sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+  sc.add(new THREE.HemisphereLight(0xffffff, 0x666666, 1.5));
+  const dl = new THREE.DirectionalLight(0xffffff, 1.9); dl.position.set(1, 2, 3); sc.add(dl);
+  const rim = new THREE.DirectionalLight(0xdff0ff, 2.6); rim.position.set(-1.5, 1.5, -3); sc.add(rim);
+  const top = new THREE.DirectionalLight(0xffffff, 0.9); top.position.set(0, 4, 0.5); sc.add(top);
+}
+
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const ASSETS = "./weapons/";
 
@@ -174,9 +185,7 @@ async function boot() {
   const sheet = async (n: number, start = 1, types: string[] = ["rifle", "smg", "shotgun", "sniper", "lmg"], layout = "modular-long", pack = "") => {
     const CW = 220, CH = 110, cols = 3, rows = n;
     const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(CW, CH); r.toneMapping = THREE.ACESFilmicToneMapping;
-    const sc = new THREE.Scene(); sc.background = new THREE.Color(0xcfc9bd);
-    sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
-    sc.add(new THREE.HemisphereLight(0xffffff, 0x777777, 1.2)); const dl = new THREE.DirectionalLight(0xffffff, 1.5); dl.position.set(1, 2, 3); sc.add(dl);
+    const sc = new THREE.Scene(); studioLights(sc, r, 0x4a4e55);
     const out = document.createElement("canvas"); out.width = CW * cols; out.height = CH * rows; const g = out.getContext("2d")!;
     const names: string[] = [];
     let seed = start, i = 0;
@@ -205,10 +214,7 @@ async function boot() {
   const showcase = async (picks: { type: string; layout?: string; cross?: boolean; start: number; need?: string }[]) => {
     const CW = 640, CH = 300;
     const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(CW, CH); r.toneMapping = THREE.ACESFilmicToneMapping;
-    const sc = new THREE.Scene(); sc.background = new THREE.Color(0x2b2d31);
-    sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
-    sc.add(new THREE.HemisphereLight(0xffffff, 0x555555, 1.3)); const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(1, 2, 3); sc.add(dl);
-    const rim = new THREE.DirectionalLight(0xbfd8ff, 1.2); rim.position.set(-2, 1, -3); sc.add(rim); // luz de borde
+    const sc = new THREE.Scene(); studioLights(sc, r, 0x4a4e55);
     const out = document.createElement("canvas"); out.width = CW * 2; out.height = CH * Math.ceil(picks.length / 2); const g = out.getContext("2d")!;
     for (const [i, pk] of picks.entries()) {
       let spec = gen.generate(pk.start, pk.type as never);
@@ -246,10 +252,7 @@ async function boot() {
     }
     if (sort === "era") specs.sort((a, b) => String(a.era).localeCompare(String(b.era)));
     const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(VW, VH); r.toneMapping = THREE.ACESFilmicToneMapping;
-    const sc = new THREE.Scene(); sc.background = new THREE.Color(0x3a3d42);
-    sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
-    sc.add(new THREE.HemisphereLight(0xffffff, 0x555555, 1.3)); const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(1, 2, 3); sc.add(dl);
-    const rim = new THREE.DirectionalLight(0xbfd8ff, 1.2); rim.position.set(-2, 1, -3); sc.add(rim);
+    const sc = new THREE.Scene(); studioLights(sc, r, 0x4a4e55);
     const CW = VW * 3 + 12, CH = VH + HEAD;
     const out = document.createElement("canvas"); out.width = CW * per; out.height = CH * Math.ceil(specs.length / per); const g = out.getContext("2d")!;
     g.fillStyle = "#15171a"; g.fillRect(0, 0, out.width, out.height);
@@ -287,12 +290,9 @@ async function boot() {
   };
   // ---------- Hojas del prompt 06 ----------
   /** Escena de estudio para las hojas (fondo gris, luz suave, borde frío). */
-  const studio = (VW: number, VH: number, bg = 0x3a3d42) => {
+  const studio = (VW: number, VH: number, bg = 0x4a4e55) => {
     const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(VW, VH); r.toneMapping = THREE.ACESFilmicToneMapping;
-    const sc = new THREE.Scene(); sc.background = new THREE.Color(bg);
-    sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
-    sc.add(new THREE.HemisphereLight(0xffffff, 0x555555, 1.3)); const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(1, 2, 3); sc.add(dl);
-    const rim = new THREE.DirectionalLight(0xbfd8ff, 1.2); rim.position.set(-2, 1, -3); sc.add(rim);
+    const sc = new THREE.Scene(); studioLights(sc, r, bg);
     return { r, sc };
   };
   /** Cámara ortográfica centrada en el arma; `half` fija la escala (misma escala en toda la hoja). */
@@ -442,10 +442,7 @@ async function boot() {
       }
     }
     const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(VW, VH); r.toneMapping = THREE.ACESFilmicToneMapping;
-    const sc = new THREE.Scene(); sc.background = new THREE.Color(0x3a3d42);
-    sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
-    sc.add(new THREE.HemisphereLight(0xffffff, 0x555555, 1.3)); const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(1, 2, 3); sc.add(dl);
-    const rim = new THREE.DirectionalLight(0xbfd8ff, 1.2); rim.position.set(-2, 1, -3); sc.add(rim);
+    const sc = new THREE.Scene(); studioLights(sc, r, 0x4a4e55);
     const out = document.createElement("canvas"); out.width = VW * cols; out.height = (VH + HEAD) * picks.length; const g = out.getContext("2d")!;
     const wrap = (text: string, x: number, y: number, w: number, lh: number) => { let line = ""; for (const word of text.split(" ")) { const t = line ? line + " " + word : word; if (g.measureText(t).width > w && line) { g.fillText(line, x, y); y += lh; line = word; } else line = t; } g.fillText(line, x, y); return y + lh; };
     for (const [i, { spec, target }] of picks.entries()) {

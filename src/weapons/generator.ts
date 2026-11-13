@@ -1189,11 +1189,19 @@ function applyBudget(s: Stats, spec: WeaponSpec) {
   if (leftover > 0) s.dano *= 1 + leftover / (POWER_WEIGHTS.dano * (s.dano / base.dano));
 }
 
-/** Palabras para los nombres de modelo (posapocalíptico, en inglés como las legendarias). */
-const NAME_WORDS = ["Jackal", "Hornet", "Drifter", "Scrapper", "Vulture", "Coyote", "Badger", "Marauder", "Nomad", "Warden", "Harrier", "Mongrel",
-  "Bulldog", "Ferret", "Viper", "Kestrel", "Raven", "Ironside", "Outrider", "Rustback", "Dustrunner", "Hellcat", "Magpie", "Wolverine",
-  "Prowler", "Longhorn", "Sidewinder", "Gravedigger", "Tinker", "Brigand", "Lynx", "Mule", "Hound", "Scorpion", "Tumbleweed", "Ember",
-  "Bastion", "Sparrow", "Rattler", "Bandit", "Grizzly", "Wraith", "Pike", "Hammerhead", "Junker", "Sawtooth", "Gunsmoke", "Patriot"];
+/** Palabras para los nombres de modelo, una lista propia por tipo (ningún nombre se repite entre tipos). */
+const NAME_WORDS: Record<string, string[]> = {
+  pistol: ["Hornet", "Ferret", "Magpie", "Sparrow", "Wasp", "Stinger", "Kestrel", "Needle", "Ratchet", "Weasel", "Finch", "Pipit"],
+  revolver: ["Gravedigger", "Rattler", "Sidewinder", "Gunsmoke", "Outlaw", "Deadeye", "Tombstone", "Drover", "Sheriff", "Mesquite", "Bushwhack", "Sundown"],
+  smg: ["Mongrel", "Hellcat", "Hound", "Jackal", "Ripsaw", "Buzzer", "Gnat", "Chatter", "Skitter", "Weevil", "Locust", "Mite"],
+  rifle: ["Marauder", "Warden", "Nomad", "Outrider", "Patriot", "Ironside", "Vanguard", "Ranger", "Sentry", "Halberd", "Trooper", "Partisan"],
+  bullpup: ["Lynx", "Scorpion", "Viper", "Wraith", "Mantis", "Cobra", "Shrike", "Adder", "Krait", "Gecko", "Asp", "Basilisk"],
+  shotgun: ["Bulldog", "Grizzly", "Junker", "Scrapper", "Brigand", "Mule", "Boar", "Bruiser", "Thresher", "Rustback", "Hogleg", "Ironjaw"],
+  sniper: ["Raven", "Vulture", "Harrier", "Longshot", "Kite", "Condor", "Osprey", "Heron", "Spindle", "Farsight", "Lark", "Albatross"],
+  lmg: ["Longhorn", "Bastion", "Rhino", "Juggernaut", "Mastodon", "Behemoth", "Bison", "Ox", "Rampart", "Sawtooth", "Thunderhide", "Bulwark"],
+  launcher: ["Ember", "Tinker", "Hammerhead", "Bandit", "Pike", "Dustrunner"],
+  flamethrower: ["Coyote", "Badger", "Wolverine", "Prowler", "Tumbleweed", "Drifter"],
+};
 
 /**
  * Designación de las armas no legendarias. Varios estilos (código de serie, nombre de modelo, modelo con número…)
@@ -1218,7 +1226,8 @@ export function technicalName(spec: WeaponSpec): string {
   const letters = (n: number) => Array.from({ length: n }, () => LET[Math.floor(q() * LET.length)]).join("");
   const digits = (n: number) => String(Math.floor(q() * 9) + 1) + Array.from({ length: n - 1 }, () => Math.floor(q() * 10)).join("");
   const nL = () => 1 + Math.floor(q() * 4), nD = () => 1 + Math.floor(q() * 4);
-  const word = NAME_WORDS[Math.floor(q() * NAME_WORDS.length)];
+  const pool = NAME_WORDS[spec.type] ?? NAME_WORDS.rifle;
+  const word = pool[Math.floor(q() * pool.length)];
   const sfx = (tags ? (q() < 0.5 ? "-" : "") + tags : "") + extra + mark;
   const styles = [
     () => `${series}-${cal}${tags}${extra}${mark}`,                          // AR-556B3 SD
