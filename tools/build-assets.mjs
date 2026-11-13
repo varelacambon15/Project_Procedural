@@ -48,7 +48,7 @@ if (args[0] === "--tree") {
   for (const job of JOBS) {
     if (only && !job.id.includes(only) && job.pack !== only) continue;
     const j = { ...job };
-    for (const k of ["obj", "mtl", "fbx"]) if (j[k]) j[k] = "/" + j[k];
+    for (const k of ["obj", "mtl", "fbx", "glb"]) if (j[k]) j[k] = "/" + j[k];
     const out = await page.evaluate((jj) => window.convertJob(jj), j);
     if (job.kind === "kitpart") {
       const dir = path.join(ROOT, "assets/weapons/kit"); await mkdir(dir, { recursive: true });

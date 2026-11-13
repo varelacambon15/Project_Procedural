@@ -1,0 +1,130 @@
+{
+ "arma": "bullpup_B",
+ "orientacion": "+X = boca del cañón, +Y = arriba, Z = grosor",
+ "triangulos_total": 3478,
+ "textura": "128x128, 16 colores, filtro NEAREST",
+ "piezas": {
+  "cuerpo_culata": {
+   "triangulos": 1495,
+   "min": [
+    -0.5967,
+    0.0475,
+    -0.0545
+   ],
+   "max": [
+    0.19,
+    0.3813,
+    0.0556
+   ],
+   "centro": [
+    -0.2034,
+    0.2144,
+    0.0005
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 944,
+   "min": [
+    0.19,
+    0.1724,
+    -0.0541
+   ],
+   "max": [
+    0.5954,
+    0.3741,
+    0.0552
+   ],
+   "centro": [
+    0.3927,
+    0.2732,
+    0.0005
+   ]
+  },
+  "cargador": {
+   "triangulos": 241,
+   "min": [
+    -0.34,
+    -0.0021,
+    -0.0343
+   ],
+   "max": [
+    -0.1664,
+    0.215,
+    0.0331
+   ],
+   "centro": [
+    -0.2532,
+    0.1065,
+    -0.0006
+   ]
+  },
+  "mira": {
+   "triangulos": 277,
+   "min": [
+    -0.15,
+    0.365,
+    -0.041
+   ],
+   "max": [
+    0.19,
+    0.4893,
+    0.0414
+   ],
+   "centro": [
+    0.02,
+    0.4271,
+    0.0002
+   ]
+  },
+  "empunadura": {
+   "triangulos": 521,
+   "min": [
+    -0.08,
+    0.0049,
+    -0.042
+   ],
+   "max": [
+    0.3,
+    0.215,
+    0.0431
+   ],
+   "centro": [
+    0.11,
+    0.11,
+    0.0005
+   ]
+  }
+ },
+ "puntos_de_union": {
+  "cuerpo_culata__guardamanos_canon": [
+   0.19,
+   0.2933,
+   -0.007
+  ],
+  "cuerpo_culata__cargador": [
+   -0.2926,
+   0.1949,
+   -0.0022
+  ],
+  "cuerpo_culata__mira": [
+   -0.0084,
+   0.3653,
+   0.0043
+  ],
+  "cuerpo_culata__empunadura": [
+   0.0291,
+   0.1739,
+   0.0003
+  ],
+  "guardamanos_canon__mira": [
+   0.19,
+   0.3697,
+   -0.0049
+  ],
+  "guardamanos_canon__empunadura": [
+   0.2614,
+   0.2081,
+   -0.0031
+  ]
+ }
+}

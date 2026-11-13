@@ -202,6 +202,11 @@ const PROC_LONG_SHARE: Partial<Record<WeaponType, number>> = { bullpup: 0.82, lm
 /** Arquetipo de arma larga a partir del id: pl-<arquetipo>-<era>[-<huella>]. */
 export const plArchId = (id: string) => id.split("-").slice(0, 2).join("-");
 const plBaseDesign = (id: string) => { const [, a, e] = id.split("-"); return longArchDesign(a, e as LEra); };
+/** Ancho del cargador respecto a su pozo (1 = recto; más = inclinado o curvo). */
+function magSpread(w: AssetEntry) {
+  const pb = w.partBounds?.magazine, sz = w.sockets.magazine?.size?.[0];
+  return pb && sz ? (pb.max[0] - pb.min[0]) / sz : 1;
+}
 /** Peso de cada pack al elegir el cuerpo: los modelos más realistas salen más a menudo. */
 const PACK_WEIGHT: Record<string, number> = { modern: 4, asimov: 2.5, misc: 2.5, wp2: 2.5, zsky: 2, quaternius: 1.5, cosmo: 1 };
 
@@ -323,7 +328,8 @@ export class WeaponGenerator {
       if (base.sockets.magazine) {
         // Cargador de otra arma de la familia solo si aún no se han cambiado 2 piezas
         const swapped = parts.slice(1).filter((p) => p.from !== base.id).length;
-        const mags = pool.filter((w) => w.pack === base.pack && w.id !== base.id && w.parts.some((p) => p.role === "magazine"));
+        // Solo cargadores de forma parecida (curvatura e inclinación): uno curvo en un pozo recto queda torcido
+        const mags = pool.filter((w) => w.pack === base.pack && w.id !== base.id && w.parts.some((p) => p.role === "magazine") && Math.abs(magSpread(w) - magSpread(base)) < 0.25);
         parts.push({ role: "magazine", from: (swapped < 2 && mags.length && r() < 0.35 ? pick(r, mags) : base).id });
       }
     }
@@ -831,7 +837,10 @@ export class WeaponGenerator {
     }
     // Cargador alargado o de tambor solo donde el cargador va por debajo (no en armas con cargador superior, como el P90)
     const magBelow = !!base?.sockets.magazine && base.sockets.magazine.pos[1] < (base.bounds.min[1] + base.bounds.max[1]) / 2;
-    if (magBelow && type !== "shotgun") ops.push({ id: "mag", run: () => { if (["smg", "rifle", "lmg", "bullpup"].includes(type) && r() < 0.35) tw.drum = true; else tw.magLen = 1.22 + r() * 0.28; } });
+    // (alargar solo los cargadores casi rectos: estirar en vertical uno inclinado o curvo lo deforma en diagonal)
+    const magOf = base && base.sockets.magazine ? this.byId.get(parts.find((p) => p.role === "magazine")?.from ?? base.id) ?? base : null;
+    const straight = !magOf || magSpread(magOf) < 1.35;
+    if (magBelow && type !== "shotgun") ops.push({ id: "mag", run: () => { if (["smg", "rifle", "lmg", "bullpup"].includes(type) && (r() < 0.35 || !straight)) tw.drum = true; else tw.magLen = 1.22 + r() * 0.28; } });
     if (layout !== "kit") { ops.push({ id: "rail", run: () => (tw.rail = [0, 0, 0]) }); ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) }); }
     // Escopetas del kit: linterna o láser bajo el cañón
     else if (type === "shotgun") ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) });
@@ -843,7 +852,8 @@ export class WeaponGenerator {
     // Con amplitud alta (el arma se parecía demasiado a su base) se aplican todos los cambios posibles
     // (pero se omiten 0-2 al azar: si no, todas las de una base muy reconocible salían con el mismo conjunto)
     const n = amp > 1.2 ? Math.max(3, ops.length - Math.floor(r() * 3)) : Math.min(ops.length, Math.max(2, 3 - swaps) + (r() < 0.5 ? 1 : 0) + (amp > 1 ? 1 : 0));
-    for (const op of ops.slice(0, n)) op.run();
+    // Tope de cambios (06-B): con pocos cambios las armas salen más coherentes; como mucho 5 contando las piezas cambiadas
+    for (const op of ops.slice(0, Math.min(n, Math.max(4, 6 - swaps)))) op.run();
     if (era === "classic") {
       // Piezas por código de estilo clásico: culata maciza (madera) y camisa ventilada; nunca raíles
       if (tw.pstock && !["solid", "wood", "folding"].includes(tw.pstock.kind)) tw.pstock = { ...tw.pstock, kind: "wood" };

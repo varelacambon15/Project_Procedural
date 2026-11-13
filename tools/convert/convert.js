@@ -9,6 +9,7 @@
 //     así que montar el arma original es poner todas las piezas en el origen.
 import * as THREE from "three";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 
 const TARGET_LENGTH = { lmg: 1.15, pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, launcher: 1.1, flamethrower: 0.95, accessory: null };
@@ -592,7 +593,57 @@ async function convertKitPart(job) {
   return { id: job.id, slot: job.slot, caliber: job.caliber, sockets, profile: profileOf(parts.map((p) => p.mesh), 16), bounds: { min: box.min.toArray().map((v) => +v.toFixed(4)), max: box.max.toArray().map((v) => +v.toFixed(4)) }, triangles: Math.round(tris), glb };
 }
 
-window.convertJob = async (job) => (job.kind === "kitpart" ? convertKitPart(job) : job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
+
+// ---------- GLB por piezas (armas ya despiezadas a mano: cuerpo_culata, guardamanos_canon, cargador, empunadura, mira) ----------
+/** Corta una geometría sin índices por el plano eje = valor, interpolando posición, normal y UV (conserva la textura). */
+function clipGeo(geo, axis, value) {
+  const g = geo.index ? geo.toNonIndexed() : geo, P = g.attributes.position.array, U = g.attributes.uv?.array, Nn = g.attributes.normal?.array;
+  const out = [{ p: [], u: [], n: [] }, { p: [], u: [], n: [] }];
+  const vert = (i) => ({ p: [P[i * 3], P[i * 3 + 1], P[i * 3 + 2]], u: U ? [U[i * 2], U[i * 2 + 1]] : [0, 0], n: Nn ? [Nn[i * 3], Nn[i * 3 + 1], Nn[i * 3 + 2]] : [0, 0, 1] });
+  const mix = (a, b, t) => ({ p: a.p.map((v, k) => v + (b.p[k] - v) * t), u: a.u.map((v, k) => v + (b.u[k] - v) * t), n: a.n.map((v, k) => v + (b.n[k] - v) * t) });
+  const emit = (poly, o) => { for (let i = 1; i < poly.length - 1; i++) for (const v of [poly[0], poly[i], poly[i + 1]]) { o.p.push(...v.p); o.u.push(...v.u); o.n.push(...v.n); } };
+  for (let t = 0; t < P.length / 9; t++) {
+    const v = [vert(t * 3), vert(t * 3 + 1), vert(t * 3 + 2)], d = v.map((x) => x.p[axis] - value);
+    if (d.every((x) => x <= 0)) { emit(v, out[0]); continue; }
+    if (d.every((x) => x >= 0)) { emit(v, out[1]); continue; }
+    const pn = [], pp = [];
+    for (let k = 0; k < 3; k++) {
+      const a = v[k], b = v[(k + 1) % 3], da = d[k], db = d[(k + 1) % 3];
+      if (da <= 0) pn.push(a); if (da >= 0) pp.push(a);
+      if ((da < 0 && db > 0) || (da > 0 && db < 0)) { const m = mix(a, b, da / (da - db)); pn.push(m); pp.push(m); }
+    }
+    if (pn.length >= 3) emit(pn, out[0]); if (pp.length >= 3) emit(pp, out[1]);
+  }
+  return out.map((o) => { const n = new THREE.BufferGeometry(); n.setAttribute("position", new THREE.Float32BufferAttribute(o.p, 3)); n.setAttribute("normal", new THREE.Float32BufferAttribute(o.n, 3)); if (U) n.setAttribute("uv", new THREE.Float32BufferAttribute(o.u, 2)); return n; });
+}
+async function convertGLBParts(job) {
+  const gltf = await new GLTFLoader().parseAsync(await fetchBuf(job.glb), job.glb.slice(0, job.glb.lastIndexOf("/") + 1));
+  gltf.scene.updateMatrixWorld(true);
+  const byName = new Map();
+  gltf.scene.traverse((o) => { if (o.isMesh) { const g = o.geometry.clone().applyMatrix4(o.matrixWorld); byName.set(o.name || o.parent?.name, { geo: g.index ? g.toNonIndexed() : g, mat: o.material }); } });
+  const get = (n) => { const x = byName.get(n); if (!x) throw new Error(`${job.id}: falta la pieza ${n}`); return x; };
+  const mk = (geo, mat, role, name) => { for (const k of Object.keys(geo.attributes)) if (!["position", "normal", "uv"].includes(k)) geo.deleteAttribute(k); const m = new THREE.Mesh(geo, mat.clone()); m.name = name; fixTextured(m); return { role, source: job.id, mesh: m }; };
+  // Escala al largo del tipo y centrado (el archivo ya viene con +X boca, +Y arriba)
+  const all = [...byName.values()].map((x) => new THREE.Mesh(x.geo));
+  const box = boxOf(all), L = box.max.x - box.min.x, k = TARGET_LENGTH[job.type] / L, c = box.getCenter(new THREE.Vector3());
+  const T = new THREE.Matrix4().makeScale(k, k, k).multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z));
+  for (const x of byName.values()) { x.geo.applyMatrix4(T); x.geo.computeBoundingBox(); }
+  const body = get("cuerpo_culata"), front = get("guardamanos_canon"), mag = get("cargador"), grip = get("empunadura"), sight = get("mira");
+  if (!job.modular) {
+    const parts = [mk(body.geo, body.mat, "body", "body"), mk(front.geo, front.mat, "body", "body_front"), mk(grip.geo, grip.mat, "body", "body_grip"), mk(mag.geo, mag.mat, "magazine", "magazine"), mk(sight.geo, sight.mat, "scope", "scope")];
+    return finish(job.id, job.type, parts, { pack: job.pack });
+  }
+  // Culata | cajón: un poco por detrás de la empuñadura; cajón | guardamanos: donde empieza la pieza del guardamanos
+  const gb = grip.geo.boundingBox, a = gb.min.x - (TARGET_LENGTH[job.type] * 0.025), b = front.geo.boundingBox.min.x;
+  const [stockGeo, recvGeo] = clipGeo(body.geo, 0, a);
+  const parts = [mk(recvGeo, body.mat, "receiver", "receiver"), mk(stockGeo, body.mat, "stock", "stock"), mk(front.geo, front.mat, "front", "front"), mk(grip.geo, grip.mat, "grip", "grip"), mk(mag.geo, mag.mat, "magazine", "magazine"), mk(sight.geo, sight.mat, "scope", "scope")];
+  const R = Array.from(recvGeo.attributes.position.array), eps = TARGET_LENGTH[job.type] * 0.006;
+  const yb = gb.max.y - 0.002;
+  const joints = { rear: face(R, 0, a, eps), front: face(R, 0, b, eps * 2) ?? { pos: [b, (front.geo.boundingBox.min.y + front.geo.boundingBox.max.y) / 2, 0], size: [front.geo.boundingBox.max.y - front.geo.boundingBox.min.y, 0] }, grip: { pos: [(gb.min.x + gb.max.x) / 2, yb, 0], size: [gb.max.x - gb.min.x, 0] } };
+  joints.stockFace = joints.rear; joints.frontFace = joints.front; joints.gripFace = joints.grip;
+  return finish(job.id, job.type, parts, { pack: job.pack, joints: roundSockets({ joints }).joints, modular: true });
+}
+window.convertJob = async (job) => (job.kind === "glbparts" ? convertGLBParts(job) : job.kind === "kitpart" ? convertKitPart(job) : job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
 window.treeFBX = async (url) => { const root = await loadFBX(url); const out = []; root.traverse((o) => out.push({ n: o.name, t: o.type, p: o.position.toArray().map((v) => +v.toFixed(2)), r: o.rotation.toArray().slice(0, 3).map((v) => +v.toFixed(2)), s: +o.scale.x.toFixed(3), mat: o.isMesh ? [].concat(o.material).map((m) => m.name + (m.map ? "*" : "")) : undefined })); return out; };
 window.listFBX = async (url) => { const root = await loadFBX(url); const out = []; root.updateMatrixWorld(true); root.traverse((o) => { if (o.isMesh) { const b = new THREE.Box3().setFromObject(o); out.push({ name: o.name, min: b.min.toArray().map((v) => +v.toFixed(1)), max: b.max.toArray().map((v) => +v.toFixed(1)) }); } }); return out; };
 window.ready = true;

@@ -193,4 +193,11 @@ const attJobs = Object.entries(ATT).flatMap(([name, slot]) => ["East", "West"].m
   kind: "kitpart", pack: "kit", id: `k-att-${name.toLowerCase()}-${v.toLowerCase()}`, fbx: `${FA}/${name}_${v}.fbx`, negZ: true, slot, caliber: "any",
 })));
 
+// --- Armas pulidas por el usuario (piezas separadas a mano, textura pixelada de 16 colores) ---
+const AP = "raw/armas-pulidas";
+ALL.push(
+  { kind: "glbparts", pack: "modern", id: "u-fusil-a", label: "Fusil A", type: "rifle", glb: `${AP}/fusil_A/fusil_A_piezas_ensambladas.glb`, modular: true },
+  { kind: "glbparts", pack: "pulidas", id: "u-bullpup-b", label: "Bullpup B", type: "bullpup", glb: `${AP}/bullpup_B/bullpup_B_piezas_ensambladas.glb`, modular: false },
+);
+
 export const JOBS = ALL.map((j) => (BODY_ONLY[j.id] ? { ...j, pick: [{ match: BODY_ONLY[j.id], role: "body" }] } : j)).concat(kitJobs, attJobs);
