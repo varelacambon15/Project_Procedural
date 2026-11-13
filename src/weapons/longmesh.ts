@@ -55,6 +55,14 @@ export function buildLong(d: LongDesign, look: { legendary?: boolean } = {}): Bu
         if (era === "rustic") { g.add(box(f.x1 * 0.22, (f.top - f.bot) * 0.45, 0.0016, f.x1 * 0.3, -0.004, -(w / 2 + 0.0008), "procrust")); for (let k = 0; k < 4; k++) g.add(disc(0.0018, 0.002, f.x1 * (0.2 + k * 0.06), f.bot + 0.008, w / 2 + 0.001, "procmetal", 6)); }
         if (era === "classic" || era === "modern") for (const x of [f.x1 * 0.12, f.x1 * 0.88]) screws(g, x, f.bot + 0.012, w / 2);
         if (era !== "scifi") g.add(box(f.x1 * 0.28, 0.01, 0.0006, f.x1 * 0.3, f.top - 0.016, -(w / 2 + 0.0003), "procengrave"));
+        // Rasgos grandes que se leen de lejos (de cerca ya hay juntas y tornillos): cajón inferior de otro tono, muñón
+        // delante del cajón donde entra el cañón y tapa trasera escalonada
+        if (d.family !== "bullpup" && !(d.barrel.profile === "sbs" || d.barrel.profile === "ou")) {
+          const H = f.top - f.bot;
+          g.add(box(f.x1 * 0.9, H * 0.36, w * 1.035, f.x1 * 0.52, f.bot + H * 0.18, 0, era === "classic" || era === "rustic" ? "procmetal" : "proctape"));
+          g.add(box(0.026, H * 0.62, w * 0.86, f.x1 + 0.011, (f.top + f.bot) / 2 + H * 0.06, 0, "procmetal"));
+          g.add(box(0.012, H * 0.78, w * 0.92, 0.006, (f.top + f.bot) / 2 + H * 0.04, 0, "procmetal"));
+        }
         // Tapa de alimentación de la ametralladora (cinta): bisagra y pestillo
         if (d.family === "lmg" && d.feed.kind === "belt") { { const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, w * 0.9, 8), mat("procmetal")); hinge.position.set(f.x1 * 0.2, f.top, 0); addRot(g, hinge, Math.PI / 2, 0, 0); } g.add(box(0.02, 0.006, w * 0.7, f.x1 * 0.62, f.top + 0.003, 0, "procmetal")); }
         // Palanca de carga: a la derecha en ametralladoras y escopetas semiautomáticas, arriba en bullpups

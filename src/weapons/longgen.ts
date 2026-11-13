@@ -154,6 +154,7 @@ export function longFrame(d: LongDesign) {
   return { top, bot, x1, bx, muzzleX, gx, gy, twin };
 }
 
+const MIN_BARREL_D: Record<LFamily, number> = { lmg: 0.025, shotgun: 0.022, bullpup: 0.017 };
 export function longPolys(d: LongDesign): LPoly[] {
   const out: LPoly[] = [];
   const R = d.recv, f = longFrame(d), w = R.w;
@@ -219,7 +220,8 @@ export function longPolys(d: LongDesign): LPoly[] {
   }
 
   // Cañón(es)
-  const B = d.barrel, bx = f.bx, br = B.d / 2 * (B.profile === "heavy" ? 1.25 : 1);
+  // Grosor mínimo por familia: con cajones grandes, los cañones finos parecían agujas
+  const B = { ...d.barrel, d: Math.max(d.barrel.d, MIN_BARREL_D[d.family]) }, bx = f.bx, br = B.d / 2 * (B.profile === "heavy" ? 1.25 : 1);
   if (f.twin && B.profile === "ou") {
     out.push({ role: "barrel", depth: B.d, poly: rect(bx - 0.01, BORE + 0.002, bx + B.len, BORE + 0.002 + B.d) });
     out.push({ role: "barrel2", depth: B.d, poly: rect(bx - 0.01, BORE - B.d - 0.002, bx + B.len, BORE - 0.002) });
@@ -255,13 +257,15 @@ export function longPolys(d: LongDesign): LPoly[] {
     if (A.kind === "curved") {
       const n = 6, fr: Pt[] = [], bk: Pt[] = [];
       for (let i = 0; i <= n; i++) {
-        const t = i / n, ang = a + 0.5 * t, p: Pt = [p0[0] + A.len * (0.12 * t + 0.25 * t * t), p0[1] - A.len * t];
-        const ox = (A.w * 1.3 / 2) * Math.cos(ang), oy = -(A.w * 1.3 / 2) * Math.sin(ang); fr.push([p[0] + ox, p[1] + oy]); bk.push([p[0] - ox, p[1] - oy]);
+        // (curva suave, como un cargador real; muy curvado se leía como un gancho)
+        const t = i / n, ang = a + 0.22 * t, p: Pt = [p0[0] + A.len * (0.06 * t + 0.1 * t * t), p0[1] - A.len * t];
+        // (ancho de delante a atrás de un cargador real, ~5 cm; antes salía del grosor y parecía un gancho fino)
+        const hw = 0.025, ox = hw * Math.cos(ang), oy = -hw * Math.sin(ang); fr.push([p[0] + ox, p[1] + oy]); bk.push([p[0] - ox, p[1] - oy]);
       }
       out.push({ role: "mag", depth: A.w, poly: [...fr, ...bk.reverse()] });
     } else {
       const p1: Pt = [p0[0] - Math.sin(-a * 0.3) * A.len, p0[1] - A.len];
-      out.push({ role: "mag", depth: A.w * (d.family === "shotgun" ? 0.8 : 1), poly: quadAlong(p0, p1, d.family === "shotgun" ? 0.07 : 0.042, 0) });
+      out.push({ role: "mag", depth: A.w * (d.family === "shotgun" ? 0.8 : 1), poly: quadAlong(p0, p1, d.family === "shotgun" ? 0.07 : 0.05, 0) });
     }
   } else if (A.kind === "topbox") {
     const p0: Pt = [A.x, top - 0.004];
