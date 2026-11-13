@@ -232,15 +232,15 @@ export function buildRange(scene: THREE.Scene): World {
   let night = false;
   const setNight = (on: boolean) => {
     night = on;
-    hemi.color.set(on ? 0x3c4c7c : 0x8a9aa8); hemi.groundColor.set(on ? 0x120a18 : 0x2a241c); hemi.intensity = on ? 0.95 : 1.25;
-    key.color.set(on ? 0x6a7cb0 : 0xe2e8ee); key.intensity = on ? 0.55 : 1.8;
+    hemi.color.set(on ? 0x3c4c7c : 0xb4c4d2); hemi.groundColor.set(on ? 0x120a18 : 0x3a3428); hemi.intensity = on ? 0.95 : 1.7;
+    key.color.set(on ? 0x6a7cb0 : 0xfff2e0); key.intensity = on ? 0.55 : 2.4;
     lamps.forEach((l, i) => {
       const c = on ? NIGHT_LAMP[i % 2] : WARM; l.light.color.set(c); l.base = on ? 16 : 34;
       const mm = l.mesh.material as THREE.MeshStandardMaterial; mm.color.set(on ? 0x050505 : WARM); mm.emissive.set(c);
     });
     for (const n of neonMats) n.m.emissiveIntensity = n.base * (on ? 1 : 0.35);
     gridMat.opacity = on ? 0.32 : 0.06; signMat.opacity = on ? 1 : 0.35;
-    const bg = on ? 0x05070c : 0x1a2026; (scene.background as THREE.Color).set(bg);
+    const bg = on ? 0x05070c : 0x2c333b; (scene.background as THREE.Color).set(bg);
     scene.fog = new THREE.Fog(bg, on ? 30 : 45, on ? 95 : 120);
   };
   setNight(true);
