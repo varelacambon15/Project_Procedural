@@ -463,6 +463,12 @@ export class WeaponAssembler {
 
     // Centrar y guardar posiciones base para el despiece.
     const box = new THREE.Box3().setFromObject(group);
+    // Mira integrada en el modelo (asa-mira, visor de fábrica) sin óptica añadida: la línea de mira pasa por el centro de
+    // esa mira; si no, el arma apuntaba por encima de todo el modelo y la mira "no funcionaba"
+    if (sight === null) {
+      const own = parts.filter((p) => p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser");
+      if (own.length) { const ob = new THREE.Box3(); for (const p of own) ob.expandByObject(p.object); if (!ob.isEmpty()) { sight = ob.min.y + (ob.max.y - ob.min.y) * 0.62; zoom = Math.max(zoom, 1.6); } }
+    }
     const center = box.getCenter(new THREE.Vector3());
     center.z = 0; // el eje del arma (cañón, mira) está en z = 0: así al apuntar la mira queda centrada
     const length = box.max.x - box.min.x;
