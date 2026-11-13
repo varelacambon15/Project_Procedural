@@ -5,6 +5,7 @@
 // Coordenadas: la línea de tiro está en z = 0, hacia -z queda la sala de tiro; detrás (z > 0) la zona de equipo.
 import * as THREE from "three";
 import { t } from "../i18n";
+import { buildNightCity } from "./nightcity";
 
 export interface Interactable { id: "chest" | "workbench" | "waves" | "inspect"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
 export interface RangeData { dps: number; ttk: number | null; accuracy: number | null; distance: number | null; message: string }
@@ -66,9 +67,11 @@ export function buildRange(scene: THREE.Scene): World {
   box(W + 2, H, 1, 0, H / 2, FRONT - 0.5, wall);
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W + 2, BACK - FRONT + 2), dark); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, H, (BACK + FRONT) / 2); scene.add(ceil);
   // Vigas del techo y zócalos de neón (acento pequeño, cian a un lado y ámbar al otro)
-  for (let z = BACK - 4; z > FRONT; z -= 8) box(W, 0.5, 0.4, 0, H - 0.25, z, steel, false, false);
-  box(0.05, 0.06, BACK - FRONT, -W / 2 + 0.03, 0.35, (BACK + FRONT) / 2, neonC, false, false);
-  box(0.05, 0.06, BACK - FRONT, W / 2 - 0.03, 0.35, (BACK + FRONT) / 2, neonA, false, false);
+  // (techo, vigas y zócalos solo de día: de noche la sala queda al aire libre, entre edificios)
+  const dayOnly: THREE.Object3D[] = [ceil];
+  for (let z = BACK - 4; z > FRONT; z -= 8) dayOnly.push(box(W, 0.5, 0.4, 0, H - 0.25, z, steel, false, false));
+  dayOnly.push(box(0.05, 0.06, BACK - FRONT, -W / 2 + 0.03, 0.35, (BACK + FRONT) / 2, neonC, false, false));
+  dayOnly.push(box(0.05, 0.06, BACK - FRONT, W / 2 - 0.03, 0.35, (BACK + FRONT) / 2, neonA, false, false));
 
   // Líneas de distancia en el suelo (finas y claras) con su rótulo de terminal en las paredes
   const lineMat = new THREE.MeshBasicMaterial({ color: 0x9fb4b8, transparent: true, opacity: 0.55 });
@@ -187,89 +190,33 @@ export function buildRange(scene: THREE.Scene): World {
   scene.background = new THREE.Color(0x12171b);
   scene.fog = new THREE.Fog(0x12171b, 40, 110);
 
-  // ---------- Neón (modo noche): rejilla en el suelo, tubos en paredes y techo, pórticos de distancia ----------
-  // Paleta propia: cian, magenta y ámbar. De día el neón queda tenue; de noche manda (con resplandor en postproceso).
-  const NEON_MAG = 0xe040a0;
-  const neonMats: { m: THREE.MeshStandardMaterial; base: number }[] = [{ m: neonC, base: 1.6 }, { m: neonA, base: 1.4 }];
-  const neonMat = (c: number, k = 2.4) => { const m = new THREE.MeshStandardMaterial({ color: 0x050505, emissive: c, emissiveIntensity: k, roughness: 0.4 }); neonMats.push({ m, base: k }); return m; };
-  const nC = neonMat(NEON_CYAN), nM = neonMat(NEON_MAG), nA = neonMat(NEON_AMBER, 2.2), nCdim = neonMat(NEON_CYAN, 0.9);
-  const tube = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) => { const t2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); t2.position.set(x, y, z); scene.add(t2); return t2; };
-  // Rejilla del suelo (aditiva, sin escribir profundidad): celdas de 2 m con una línea más marcada cada 10 m
-  const gridTex = pixelTexture(64, 64, (g) => { g.fillStyle = "#000"; g.fillRect(0, 0, 64, 64); g.fillStyle = "#fff"; g.fillRect(0, 0, 64, 2); g.fillRect(0, 0, 2, 64); g.fillStyle = "#777"; g.fillRect(31, 0, 1, 64); g.fillRect(0, 31, 64, 1); }, [W / 4, (BACK - FRONT) / 4]);
-  const gridMat = new THREE.MeshBasicMaterial({ map: gridTex, color: NEON_CYAN, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false });
-  const grid = new THREE.Mesh(new THREE.PlaneGeometry(W, BACK - FRONT), gridMat); grid.rotation.x = -Math.PI / 2; grid.position.set(0, 0.009, (BACK + FRONT) / 2); scene.add(grid);
-  // Separadores de calle en el suelo (desde la línea de tiro hasta el fondo)
-  for (const x of [-15, -10, -5, 0, 5, 10, 15]) tube(0.05, 0.02, -FRONT - 1.5, x, 0.012, FRONT / 2 - 0.5, x === 0 ? nM : nCdim);
-  // Paredes: dos bandas horizontales y tubos verticales a cada viga (cian a la izquierda, magenta a la derecha)
-  for (const [x, m] of [[-W / 2 + 0.04, nC], [W / 2 - 0.04, nM]] as [number, THREE.Material][]) {
-    tube(0.04, 0.05, BACK - FRONT, x, 1.6, (BACK + FRONT) / 2, m);
-    tube(0.04, 0.05, BACK - FRONT, x, H - 1.2, (BACK + FRONT) / 2, m);
-    for (let z = BACK - 4; z > FRONT; z -= 8) tube(0.04, H - 2.8, 0.05, x, H / 2 - 0.2, z, m);
-  }
-  // Techo: tira de neón bajo cada viga, alternando colores
-  { const cC = neonMat(NEON_CYAN, 1.2), cM = neonMat(NEON_MAG, 1.2); let k = 0; for (let z = BACK - 4; z > FRONT; z -= 8) tube(W - 1, 0.03, 0.04, 0, H - 0.52, z, k++ % 2 ? cC : cM); }
-  // Pórticos de distancia (10, 25 y 50 m): marco luminoso de pared a pared, con su cifra holográfica
-  for (const d of [10, 25, 50]) {
-    const m = d === 25 ? nA : nC;
-    tube(W - 0.2, 0.06, 0.06, 0, H - 1.0, -d, m);
-    for (const x of [-W / 2 + 0.15, W / 2 - 0.15]) tube(0.06, H - 1.0, 0.06, x, (H - 1.0) / 2, -d, m);
-    const tx = pixelTexture(64, 24, (g) => { g.clearRect(0, 0, 64, 24); g.fillStyle = "#fff"; g.font = "bold 18px monospace"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(`${d}`, 32, 13); });
-    const lbl = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.6), new THREE.MeshBasicMaterial({ map: tx, color: d === 25 ? NEON_AMBER : NEON_CYAN, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
-    lbl.position.set(0, H - 0.6, -d + 0.05); scene.add(lbl);
-  }
-  // Fondo: rótulo holográfico de la simulación y marco de rejilla
-  const signTex = pixelTexture(128, 32, (g) => { g.clearRect(0, 0, 128, 32); g.fillStyle = "#fff"; g.font = "bold 13px monospace"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("PROVING GROUNDS", 64, 12); g.fillRect(8, 24, 112, 1); g.font = "8px monospace"; g.fillText("SIMULATION // LIVE FIRE", 64, 28); });
-  const signMat = new THREE.MeshBasicMaterial({ map: signTex, color: NEON_MAG, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5), signMat); sign.position.set(0, 3.3, FRONT + 0.06); scene.add(sign);
-  tube(W - 1, 0.05, 0.05, 0, 0.3, FRONT + 0.08, nC); tube(W - 1, 0.05, 0.05, 0, H - 0.3, FRONT + 0.08, nC);
-  // Número de calle en el suelo, delante de cada puesto (holograma aditivo)
-  const laneMats: THREE.MeshBasicMaterial[] = [];
-  lanes.forEach((x, i) => {
-    const tx = pixelTexture(32, 16, (g) => { g.clearRect(0, 0, 32, 16); g.fillStyle = "#fff"; g.font = "bold 12px monospace"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(i + 1).padStart(2, "0"), 16, 9); g.fillRect(2, 15, 28, 1); });
-    const lm = new THREE.MeshBasicMaterial({ map: tx, color: i % 2 ? NEON_MAG : NEON_CYAN, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }); laneMats.push(lm);
-    const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.7), lm); pl.rotation.x = -Math.PI / 2; pl.position.set(x, 0.015, -5.5); pl.scale.setScalar(1.6); scene.add(pl);
-  });
-  // Pared de la zona de equipo (detrás del jugador): bandas, marcos de panel y rótulo
-  tube(W - 1, 0.05, 0.05, 0, 0.3, BACK - 0.06, nM); tube(W - 1, 0.05, 0.05, 0, H - 0.4, BACK - 0.06, nC);
-  for (let x = -W / 2 + 4; x < W / 2 - 2; x += 6) { tube(0.05, H - 1.2, 0.05, x, H / 2 - 0.05, BACK - 0.06, x % 12 === 0 ? nM : nCdim); }
-  const zoneTex = pixelTexture(128, 32, (g) => { g.clearRect(0, 0, 128, 32); g.fillStyle = "#fff"; g.font = "bold 12px monospace"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("EQUIPMENT ZONE", 64, 12); g.fillRect(14, 23, 100, 1); g.font = "7px monospace"; g.fillText("TERMINAL · BENCH · WAVES", 64, 28); });
-  const zoneMat = new THREE.MeshBasicMaterial({ map: zoneTex, color: NEON_CYAN, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-  const zone = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.5), zoneMat); zone.position.set(0, 4.4, BACK - 0.08); zone.rotation.y = Math.PI; scene.add(zone);
-  // Línea de tiro: canto luminoso de cada mostrador y piloto en el suelo de cada puesto
-  { const nAdim = neonMat(NEON_AMBER, 0.7); for (const x of lanes) { tube(4.1, 0.02, 0.02, x, 1.045, 0.66, nCdim); tube(4.1, 0.015, 0.015, x, 0.012, 0.8, nAdim); } }
-  // Zona de equipo: marco del terminal y del banco
-  tube(1.6, 0.03, 0.03, -12, 1.72, 13.42, nA); tube(2.8, 0.03, 0.03, 12, 2.44, 12.45, nC);
-
-  // ---------- Aristas luminosas (estilo sala de simulación): los volúmenes pequeños se perfilan en cian ----------
-  const edgeMat = new THREE.LineBasicMaterial({ color: NEON_CYAN, transparent: true, opacity: 0.85 });
-  const edgeMatA = new THREE.LineBasicMaterial({ color: NEON_AMBER, transparent: true, opacity: 0.85 });
-  const isNeon = (m: THREE.Material | THREE.Material[]) => !Array.isArray(m) && (m as THREE.MeshStandardMaterial).emissiveIntensity > 0.01 && (m as THREE.MeshStandardMaterial).emissive?.getHex() !== 0;
-  scene.traverse((o) => {
-    const mesh = o as THREE.Mesh;
-    if (!mesh.isMesh || !(mesh.geometry instanceof THREE.BoxGeometry) || isNeon(mesh.material)) return;
-    const { width, height, depth } = mesh.geometry.parameters;
-    if (Math.max(width, height, depth) > 5 || Math.min(width, height, depth) < 0.03) return; // ni paredes ni piezas finas
-    const ln = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), mesh.position.z > 5 ? edgeMatA : edgeMat);
-    ln.scale.setScalar(1.002); mesh.add(ln);
-  });
+  // ---------- Noche: callejón urbano (ver nightcity.ts) ----------
+  const city = buildNightCity(scene, { W, FRONT, BACK, H });
+  const wallDay = wall.map, floorDay = floor.map;
 
   // ---------- Día y noche ----------
   const hemi = scene.children.find((o) => o instanceof THREE.HemisphereLight) as THREE.HemisphereLight;
-  const NIGHT_LAMP = [NEON_CYAN, NEON_MAG];
+  const lampHome = lamps.map((l) => l.light.position.clone());
   let night = false;
   const setNight = (on: boolean) => {
     night = on;
-    hemi.color.set(on ? 0x3c4c7c : 0xb4c4d2); hemi.groundColor.set(on ? 0x120a18 : 0x3a3428); hemi.intensity = on ? 0.95 : 1.7;
-    key.color.set(on ? 0x6a7cb0 : 0xfff2e0); key.intensity = on ? 0.55 : 2.4;
+    city.group.visible = on; for (const o of dayOnly) o.visible = !on;
+    wall.map = on ? city.wallMap : wallDay; floor.map = on ? city.floorMap : floorDay;
+    // Suelo mojado de noche: más liso (recoge los brillos del neón)
+    floor.roughness = on ? 0.55 : 0.8; floor.metalness = on ? 0.3 : 0.35; wall.needsUpdate = floor.needsUpdate = true;
+    // Ambiente: luna fría y neblina violeta de noche; luz de día clara
+    hemi.color.set(on ? 0x5a4a8a : 0xb4c4d2); hemi.groundColor.set(on ? 0x1a1020 : 0x3a3428); hemi.intensity = on ? 0.75 : 1.7;
+    key.color.set(on ? 0x8a8ad0 : 0xfff2e0); key.intensity = on ? 0.45 : 2.4;
+    key.position.set(on ? 20 : -10, on ? 40 : 20, on ? -60 : 12);
+    // Las lámparas de la sala pasan a ser la luz de los rótulos y farolas (mismo número de luces: sin coste extra)
     lamps.forEach((l, i) => {
-      const c = on ? NIGHT_LAMP[i % 2] : WARM; l.light.color.set(c); l.base = on ? 16 : 34;
-      const mm = l.mesh.material as THREE.MeshStandardMaterial; mm.color.set(on ? 0x050505 : WARM); mm.emissive.set(c);
+      const sp = city.spots[i % city.spots.length];
+      l.mesh.visible = !on;
+      if (on && sp) { l.light.position.copy(sp.pos); l.light.color.set(sp.color); l.base = sp.power; l.light.distance = 14; l.light.decay = 1.6; }
+      else { l.light.position.copy(lampHome[i]); l.light.color.set(WARM); l.base = 34; l.light.distance = 24; l.light.decay = 1.4; }
     });
-    for (const n of neonMats) n.m.emissiveIntensity = n.base * (on ? 1 : 0.35);
-    gridMat.opacity = on ? 0.32 : 0.06; signMat.opacity = on ? 1 : 0.35; zoneMat.opacity = on ? 1 : 0.35; for (const lm of laneMats) lm.opacity = on ? 0.9 : 0.25;
-    edgeMat.opacity = edgeMatA.opacity = on ? 0.85 : 0; edgeMat.visible = edgeMatA.visible = on;
-    const bg = on ? 0x05070c : 0x2c333b; (scene.background as THREE.Color).set(bg);
-    scene.fog = new THREE.Fog(bg, on ? 30 : 45, on ? 95 : 120);
+    const bg = on ? 0x1a1430 : 0x2c333b; (scene.background as THREE.Color).set(bg);
+    scene.fog = new THREE.Fog(on ? 0x2a1f40 : bg, on ? 18 : 45, on ? 85 : 120);
   };
   setNight(true);
 
@@ -288,13 +235,9 @@ export function buildRange(scene: THREE.Scene): World {
       for (const l of lamps) {
         l.phase += dt;
         const flick = Math.sin(l.phase * 0.7) > 0.985 ? (Math.random() < 0.5 ? 0.25 : 1) : 1;
-        l.light.intensity = l.base * flick; (l.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = (night ? 2.4 : 1.6) * flick;
+        l.light.intensity = l.base * flick; (l.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.6 * flick;
       }
-      // Neón vivo: la rejilla del suelo respira despacio y el rótulo del fondo titila de vez en cuando
-      if (night) {
-        gridMat.opacity = 0.28 + 0.06 * Math.sin(blink * 0.9);
-        signMat.opacity = Math.sin(blink * 0.37) > 0.992 ? 0.35 + Math.random() * 0.4 : 1;
-      }
+      if (night) city.update(dt);
       dataT -= dt; blink += dt;
       if (dataT <= 0) { dataT = 0.25; drawData(data); }
       const on = Math.floor(blink * 2) % 2 === 0;
