@@ -25,7 +25,9 @@ export function buildAddon(a: Addon, thick: number): THREE.Group {
   switch (a.kind) {
     case "rib": {
       // Banda ventilada: tira superior sobre postes
-      g.add(box(L, a.h * 0.45, t * 0.42, cx, a.y + a.h * 0.78));
+      // (alma continua bajo la tira: con postes sueltos, de lejos la banda parecía flotar sobre el cañón)
+      g.add(box(L, a.h * 0.4, t * 0.42, cx, a.y + a.h * 0.8));
+      g.add(box(L, a.h * 0.7, t * 0.12, cx, a.y + a.h * 0.35));
       for (let x = a.x0 + 0.006; x < a.x1 - 0.004; x += 0.018) g.add(box(0.005, a.h * 0.6, t * 0.3, x, a.y + a.h * 0.32));
       break;
     }

@@ -265,7 +265,8 @@ export class WeaponGenerator {
     if (type === "launcher" || type === "flamethrower" || (bodyId && INTEGRATED_MUZZLE.has(bodyId))) return [];
     // Revólveres: solo compensador (frenos y apagallamas de fusil quedaban desproporcionados en un cañón corto)
     if (type === "revolver") return ["acc:compensator"];
-    return [...ACCESSORIES.filter((a) => a.kind === "muzzle" && (!a.quiet || type === "pistol")).map((a) => a.id), ...realSuppressors(this.kit, type)];
+    // (escopetas sin supresor: un tubo largo en la boca de una escopeta no quedaba natural)
+    return [...ACCESSORIES.filter((a) => a.kind === "muzzle" && (!a.quiet || type === "pistol")).map((a) => a.id), ...(type === "shotgun" ? [] : realSuppressors(this.kit, type))];
   }
 
   generate(seed: number, wanted?: BaseType, forceRarity?: RarityId): WeaponSpec {
