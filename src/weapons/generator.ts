@@ -906,7 +906,16 @@ export class WeaponGenerator {
     const mag = base?.sockets.magazine ? { x: base.sockets.magazine.pos[0], y: base.sockets.magazine.pos[1], h: Math.min(0.12, base.sockets.magazine.size?.[1] ?? 0.1) } : kitPlat?.sockets.Magazine?.[0] ? { x: kitPlat.sockets.Magazine[0][0], y: kitPlat.sockets.Magazine[0][1], h: 0.09 } : null;
     const magBelow = !!mag && !!base && mag.y < (base.bounds.min[1] + base.bounds.max[1]) / 2 || !!kitPlat;
     const long = type !== "pistol" && type !== "revolver";
-    const addCover = () => { const s = sect(front, 0.12, 0.7); if (s && s.h < 0.1 && s.x1 - s.x0 > 0.05) { out.cover = [s.x0, s.x1, s.y, s.h * 1.12, thick * 1.2]; out.adapters!.push([s.x0 - 0.008, s.y, thick], [s.x1 + 0.008, s.y, thick]); any = true; } };
+    // La cubierta solo envuelve un tramo regular (sin alza, punto de mira ni escalones): si el canto superior o el
+    // inferior varían mucho en el tramo, quedaba como una caja suelta encima del arma
+    const regular = (sp: [number, number, number][], t0: number, t1: number) => {
+      const xs = sp.map((p) => p[0]); const a = Math.min(...xs), b = Math.max(...xs);
+      const sel = sp.filter((p) => p[0] >= a + (b - a) * t0 && p[0] <= a + (b - a) * t1);
+      if (!sel.length) return false;
+      const spread = (v: number[]) => Math.max(...v) - Math.min(...v);
+      return spread(sel.map((p) => p[2])) < 0.018 && spread(sel.map((p) => p[1])) < 0.025;
+    };
+    const addCover = () => { const s = sect(front, 0.12, 0.7); if (s && s.h < 0.1 && s.x1 - s.x0 > 0.05 && regular(front, 0.12, 0.7)) { out.cover = [s.x0, s.x1, s.y, s.h * 1.12, thick * 1.2]; out.adapters!.push([s.x0 - 0.008, s.y, thick]); any = true; } }; // (adaptador solo detrás: el delantero quedaba colgando)
     const addCell = () => { if (mag && magBelow && !tw.drum && long) { out.cell = [mag.x, mag.y, mag.h * 0.85, Math.min(0.04, thick)]; any = true; } };
     const addDisplay = () => { const s = sect(recv, 0.45, 0.6); if (s) { out.display = [s.x0, s.y + s.h * 0.15, thick * 0.55 + 0.003]; any = true; } };
     if (era === "scifi") { if (r() < 0.7) addCover(); if (r() < 0.4) addCell(); if (r() < 0.6) addDisplay(); }
