@@ -249,6 +249,8 @@ export class WeaponGenerator {
     const type = spec.type, bodyId = spec.parts[0]?.from;
     if (isKit(bodyId)) return kitMuzzleOptions(this.kit, spec);
     if (type === "launcher" || type === "flamethrower" || (bodyId && INTEGRATED_MUZZLE.has(bodyId))) return [];
+    // Revólveres: solo compensador (frenos y apagallamas de fusil quedaban desproporcionados en un cañón corto)
+    if (type === "revolver") return ["acc:compensator"];
     return [...ACCESSORIES.filter((a) => a.kind === "muzzle" && (!a.quiet || type === "pistol")).map((a) => a.id), ...realSuppressors(this.kit, type)];
   }
 

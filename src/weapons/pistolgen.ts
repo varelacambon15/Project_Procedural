@@ -153,8 +153,9 @@ export const PISTOL_MUTATIONS: Mutation[] = [
   // --- De medida o detalle ---
   { id: "slide-len", structural: false, run: (d, r, a) => (d.slide.len = Math.min(0.27, Math.max(0.13, d.slide.len * away(r, 1 - 0.2 * a, 1 + 0.3 * a, 0.1)))) },
   { id: "slide-h", structural: false, run: (d, r, a) => (d.slide.h = Math.min(0.045, Math.max(0.025, d.slide.h * away(r, 1 - 0.12 * a, 1 + 0.2 * a, 0.07)))) },
-  { id: "barrel-ext", structural: false, run: (d, r, a) => (d.barrel.ext = d.family === "revolver" ? Math.min(0.22, Math.max(0.04, d.barrel.ext * away(r, Math.max(0.3, 1 - 0.45 * a), 1 + 0.6 * a, 0.25))) : d.barrel.ext > 0.012 ? 0 : 0.015 + r() * 0.04 * a) },
-  { id: "comp", structural: false, run: (d, r) => (d.barrel.comp = d.barrel.comp === "none" ? (r() < 0.5 ? "block" : "ported") : "none") },
+  { id: "barrel-ext", structural: false, run: (d, r, a) => (d.barrel.ext = d.family === "revolver" ? Math.min(0.17, Math.max(0.04, d.barrel.ext * away(r, Math.max(0.3, 1 - 0.45 * a), 1 + 0.6 * a, 0.25))) : d.barrel.ext > 0.012 ? 0 : 0.015 + r() * 0.04 * a) },
+  // Compensador: pieza moderna (en las clásicas solo se quita si lo traía)
+  { id: "comp", structural: false, run: (d, r) => (d.barrel.comp = d.barrel.comp === "none" && d.era !== "classic" ? (r() < 0.5 ? "block" : "ported") : "none") },
   { id: "dust", structural: false, run: (d, r) => (d.frame.dust = d.frame.dust > 0.8 ? 0.62 + r() * 0.1 : 0.86 + r() * 0.1) },
   { id: "grip-angle", structural: false, run: (d, r) => (d.grip.angle = Math.min(0.55, Math.max(0.14, d.grip.angle + (r() < 0.5 ? -1 : 1) * (0.06 + r() * 0.06)))) },
   { id: "grip-len", structural: false, run: (d, r) => (d.grip.len = Math.min(0.13, Math.max(0.068, d.grip.len * away(r, 0.8, 1.22, 0.1)))) },
