@@ -781,7 +781,7 @@ const C = (f: number, t: number): Curl => ({ fingers: [f, f + 0.04, f + 0.06, f 
 /** Orientación (dedos, dorso), desplazamiento de la palma respecto al anclaje y cierre de cada agarre. */
 const GRIPS: Record<HandKind | "right", HandGrip> = {
   // Empuñadura: dorso a la derecha, dedos rodeando el frente; la palma sigue la inclinación de la empuñadura
-  right: { q: rx(-0.3).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.026, 0.0, 0.032), curl: C(0.85, 0.4) },
+  right: { q: rx(-0.3).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.02, 0.014, 0.016), curl: C(0.85, 0.4) },
   // Bajo el guardamanos: palma arriba, dedos hacia la derecha envolviéndolo
   under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.014, -0.03, 0.004), curl: C(0.72, 0.45) },
   // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
