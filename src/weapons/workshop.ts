@@ -112,7 +112,7 @@ export const paints = (): Paint[] => PAINTS;
 export function scrap(w: WeaponSpec): { parts: PartItem[]; scrap: number } {
   const parts: PartItem[] = [];
   // El diseño de una pistola procedural es el arma entera (como un cuerpo): no es una pieza suelta reutilizable
-  for (const p of w.parts) if (p.role !== "body" && p.role !== "receiver" && !p.from.startsWith("pp-")) parts.push(newPart(p.role, p.from, p.role === "barrel" ? w.barrelLength : undefined));
+  for (const p of w.parts) if (p.role !== "body" && p.role !== "receiver" && !p.from.startsWith("pp-") && !p.from.startsWith("pl-")) parts.push(newPart(p.role, p.from, p.role === "barrel" ? w.barrelLength : undefined));
   if (w.optic && w.optic !== w.parts[0].from) parts.push(newPart("scope", w.optic));
   if (w.muzzle) parts.push(newPart("muzzle", w.muzzle));
   const scrapValue = { comun: 5, poco: 10, rara: 20, epica: 40, legendaria: 80 }[w.rarity.id];

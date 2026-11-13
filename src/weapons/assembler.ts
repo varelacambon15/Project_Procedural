@@ -352,7 +352,7 @@ export class WeaponAssembler {
         add(opt, "scope", { id: kp.id, label: kitLabel(kp.id), pack: "kit" } as AssetEntry, [0, 1.4, 0]);
         sight = opticTarget.y + riser + lensY; zoom = accessory(spec.optic)?.zoom ?? 1;
       }
-    } else if (spec.optic?.startsWith("pp-")) {
+    } else if (spec.optic?.startsWith("pp-") || spec.optic?.startsWith("pl-")) {
       // Óptica integrada de una pistola generada: ya es parte de su malla (corredera)
       zoom = 2.5;
     } else if (spec.optic && opticTarget && !isKit(spec.optic)) {
