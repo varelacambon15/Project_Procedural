@@ -30,6 +30,8 @@ export interface ShotHooks {
   dummies(): Dummy[];
   /** Daño al jugador (contrapartida de autodaño de algunos efectos). */
   hurt?(dmg: number): void;
+  /** Embestida corta hacia el objetivo del cuerpo a cuerpo. */
+  lunge?(dir: THREE.Vector3, dist: number): void;
 }
 export interface Control { fire: boolean; aim: boolean; moving: number; sprinting: boolean; lookX: number; lookY: number; vy: number; grounded: boolean; inspect: boolean }
 
@@ -116,6 +118,10 @@ export class Gun {
   /** Dedo dentro del gatillo un rato tras disparar (si no, va estirado sobre el armazón). */
   private onTrigT = 0;
   private holdAvg: THREE.Vector3 | null = null;
+  // ---------- Puños (sin arma equipada) ----------
+  /** Progreso del golpe en curso (0 = ninguno), mano que golpea, golpe fuerte (al esprintar), golpe ya resuelto. */
+  private punchT = 0; private punchDur = 0.34; private punchSide: 1 | -1 = -1; private punchHeavy = false; private punchDone = false;
+  private fistCd = 0; private fistTime = 0;
   private reloadPhase: Phase | null = null;
   private sprayIndex = 0; private sprayT = 0;
   private casings: { mesh: THREE.Object3D; vel: THREE.Vector3; spin: THREE.Vector3; t: number }[] = [];
@@ -287,6 +293,7 @@ export class Gun {
         } else if (pressed) { this.sfx("empty"); this.startReload(); }
       }
     }
+    if (!it && !this.pending) this.fistsInput(dt, c);
     this.triggerHeld = c.fire;
     this.sprayT += dt; if (this.sprayT > 0.35) this.sprayIndex = 0;
     this.updateCasings(dt);
@@ -327,11 +334,12 @@ export class Gun {
     // Con visor de aumento, al apuntar del todo se ve a través del visor (el arma se oculta)
     this.viewmodel.visible = !this.hidden && !(this.sight === "scope" && this.aimT > 0.9);
     // Manos obligatorias (05-E): siempre que se ve el arma
-    this.arms.visible = this.viewmodel.visible && !!this.model;
+    const fists = !this.item && !this.pending;
+    this.arms.visible = !this.hidden && (fists || (this.viewmodel.visible && !!this.model));
     this.trigT = Math.max(0, this.trigT - dt * 9);
     this.onTrigT = Math.max(0, this.onTrigT - dt);
     if (c.fire) this.onTrigT = 1.2;
-    if (this.model) this.updateHands(dt);
+    if (this.model) this.updateHands(dt); else if (fists) this.updateFists(dt);
 
     // Efectos
     const fm = this.flash.material as THREE.MeshBasicMaterial;
@@ -359,6 +367,78 @@ export class Gun {
     }
   }
 
+  /**
+   * Puños: golpes alternos (izquierda, derecha) con un pequeño "imán" que acerca al jugador al blanco si está a pocos
+   * metros, como el cuerpo a cuerpo de los shooters rápidos; al esprintar, golpe fuerte con más alcance y empuje.
+   */
+  private fistsInput(dt: number, c: Control) {
+    this.fistCd -= dt;
+    if (this.punchT > 0) { this.punchT += dt; if (this.punchT >= this.punchDur) this.punchT = 0; }
+    const pressed = c.fire && !this.triggerHeld;
+    if (pressed && this.fistCd <= 0 && this.equipT <= 0) {
+      this.punchHeavy = c.sprinting; this.punchSide = this.punchHeavy ? 1 : (-this.punchSide as 1 | -1);
+      this.punchDur = this.punchHeavy ? 0.5 : 0.34; this.punchT = 1e-4; this.punchDone = false;
+      this.fistCd = this.punchHeavy ? 0.75 : 0.36;
+      this.hooks.onShot?.();
+      // Imán: si hay un blanco delante a menos de 4 m, embestida corta hacia él
+      const eye = this.camera.getWorldPosition(new THREE.Vector3());
+      const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.getWorldQuaternion(new THREE.Quaternion())).setY(0).normalize();
+      let best: { d: number; dir: THREE.Vector3 } | null = null;
+      for (const d of this.hooks.dummies()) {
+        if (!d.alive) continue;
+        const to = d.center.clone().sub(eye).setY(0); const dist = to.length(); to.normalize();
+        if (dist < 4.2 && to.dot(fwd) > 0.82 && (!best || dist < best.d)) best = { d: dist, dir: to };
+      }
+      if (best && best.d > 1.3) this.hooks.lunge?.(best.dir, Math.min(best.d - 1.1, this.punchHeavy ? 3 : 2.2));
+    }
+    // El golpe se resuelve cuando el puño llega al final del recorrido
+    if (this.punchT > 0 && !this.punchDone && this.punchT >= this.punchDur * 0.28) { this.punchDone = true; this.punchResolve(); }
+  }
+  private punchResolve() {
+    const eye = this.camera.getWorldPosition(new THREE.Vector3()), q = this.camera.getWorldQuaternion(new THREE.Quaternion());
+    const targets = this.hooks.dummies().filter((d) => d.alive).flatMap((d) => d.hitboxes);
+    const reach = this.punchHeavy ? 2.6 : 2.2;
+    for (const [ox, oy] of [[0, 0], [0.08, 0], [-0.08, 0], [0, 0.08], [0, -0.08]]) {
+      const dir = new THREE.Vector3(ox, oy, -1).normalize().applyQuaternion(q);
+      this.ray.set(eye, dir); this.ray.far = reach;
+      const hit = this.ray.intersectObjects(targets, false)[0]; if (!hit) continue;
+      const d = hit.object.userData.dummy as Dummy, zone = hit.object.userData.zone as Zone, crit = zone === "head";
+      const dmg = (this.punchHeavy ? 95 : 48) * (crit ? 1.5 : 1);
+      const alive = d.alive;
+      this.hooks.onHit(d, zone, hit.point, dmg, null, crit);
+      d.push(dir.clone().setY(0).normalize(), this.punchHeavy ? 1.4 : 0.5);
+      this.spark(hit.point, dir.clone().negate(), this.punchHeavy ? 10 : 5, crit ? 0xffe08a : 0xcff6f8);
+      if (crit) this.critmarker = 0.15; else this.hitmarker = 0.12;
+      if (alive && !d.alive) { this.killmarker = 0.35; this.sfx("kill"); this.hooks.onKill?.(d); } else this.sfx(crit ? "crit" : "hit");
+      this.recoil += this.punchHeavy ? 0.03 : 0.014; this.recoilYaw += (Math.random() - 0.5) * 0.01; // sacudida de impacto
+      return;
+    }
+    this.sfx("cycle"); // golpe al aire
+  }
+  /** Pose de los puños en guardia (espacio de la cámara) y animación del golpe, del esprint y de sacarlos. */
+  private updateFists(dt: number) {
+    this.fistTime += dt;
+    const tm = this.fistTime, sp = this.sprintT;
+    const raise = this.equipDur > 0 ? ease(1 - this.equipT / this.equipDur) : 1;
+    const breathe = Math.sin(tm * 1.7) * 0.006;
+    const k = this.punchT > 0 ? this.punchT / this.punchDur : 0;
+    const ext = k <= 0 ? 0 : k < 0.28 ? ease(k / 0.28) : 1 - ease((k - 0.28) / 0.72);
+    const fist = (side: 1 | -1): HandPose => {
+      // Guardia: puños a la altura del pecho, algo hacia dentro; al esprintar bajan y se balancean alternos
+      const base = new THREE.Vector3(side * 0.15, -0.15 + breathe - 0.3 * (1 - raise), side > 0 ? -0.38 : -0.42);
+      base.y -= 0.06 * sp; base.z += Math.sin(tm * 9 + (side > 0 ? 0 : Math.PI)) * 0.07 * sp;
+      const hitting = this.punchT > 0 && side === this.punchSide;
+      let pos = base, back = new THREE.Vector3(side * 0.8, 0.6, 0.15); // dorso hacia fuera, como en guardia de boxeo
+      if (hitting) {
+        // Recto al centro de la pantalla con giro de muñeca; el fuerte, más largo
+        const target = new THREE.Vector3(side * 0.03, this.punchHeavy ? -0.06 : -0.1, this.punchHeavy ? -0.72 : -0.64);
+        pos = base.clone().lerp(target, ext);
+        back = back.lerp(new THREE.Vector3(side * 0.15, 1, 0), ext * 0.8); // al golpear, la muñeca gira y el dorso queda arriba
+      } else if (this.punchT > 0) pos = base.clone().add(new THREE.Vector3(0, 0.01 * ext, 0.05 * ext)); // la otra se recoge
+      return { pos, orient: handBasis(new THREE.Vector3(-side * 0.12, 0.05, -1), back), curl: { fingers: [1, 1, 1, 1], thumb: 0.85 } };
+    };
+    this.arms.update({ right: fist(1), left: fist(-1), dt, shoulder: new THREE.Vector3(0, 0, -0.06 * ext) });
+  }
   /** El cargador vacío cae al suelo (copia del real, con física simple como los casquillos). */
   private dropMag() {
     const src = this.mag!.object; src.updateMatrixWorld(true);

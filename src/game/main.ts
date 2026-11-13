@@ -107,6 +107,7 @@ async function boot() {
   let shake = 0;
   const gun = new Gun(camera, scene, asm, world.shootables, {
     dummies: () => dummies,
+    lunge: (dir, dist) => player.lunge(dir, dist),
     onHit(d, _zone, point, dmg, element, crit) {
       const dealt = d.damage(dmg, element, crit, point);
       const now = performance.now() / 1000;
@@ -325,7 +326,7 @@ async function boot() {
   const ch = $("crosshair");
   function hud() {
     const it = gun.item, s = it?.spec;
-    $("wname").textContent = s ? displayName(s) : t("ui.noWeapon"); $("wname").style.color = s?.rarity.color ?? "";
+    $("wname").textContent = s ? displayName(s) : t("ui.fists"); $("wname").style.color = s?.rarity.color ?? "";
     $("wtype").textContent = s ? `${rarityName(s)} · ${typeName(s.type)} · ${archName(s)}` : "";
     const ammo = $("ammo");
     ammo.innerHTML = it && s ? (gun.reloading ? `<small>${t("ui.reloading")}</small>` : `${it.ammo}<small> / ${s.stats.cargador}</small>`) : "";
@@ -336,7 +337,7 @@ async function boot() {
     const spread = gun.spread(moving);
     const radius = 6 + Math.tan(THREE.MathUtils.degToRad(spread)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * innerHeight / 2;
     ch.style.setProperty("--r", `${Math.max(10, radius).toFixed(1)}px`);
-    ch.dataset.type = s?.type ?? "";
+    ch.dataset.type = s?.type ?? "fists";
     ch.style.opacity = state !== "play" || player.sprinting ? "0" : String(1 - gun.aimT * (gun.sight === "iron" ? 0.85 : 1));
     ch.classList.toggle("hit", gun.hitmarker > 0); ch.classList.toggle("crit", gun.critmarker > 0); ch.classList.toggle("kill", gun.killmarker > 0);
     document.body.classList.toggle("in-menu", state !== "play");

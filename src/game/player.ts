@@ -11,6 +11,9 @@ export class Player {
   readonly eye = 1.65;
   sprinting = false;
   bob = 0;
+  /** Embestida corta del cuerpo a cuerpo: velocidad extra durante unas décimas (respeta las colisiones). */
+  private lungeV = new THREE.Vector3(); private lungeT = 0;
+  lunge(dir: THREE.Vector3, dist: number, time = 0.12) { this.lungeV.copy(dir).setY(0).normalize().multiplyScalar(dist / time); this.lungeT = time; }
 
   constructor(private colliders: THREE.Box3[]) {}
 
@@ -28,6 +31,7 @@ export class Player {
     if (f.jump && this.onGround) { this.vel.y = 5.2; this.onGround = false; }
     this.vel.y -= 16 * dt;
     this.move(this.vel.x * dt, 0); this.move(0, this.vel.z * dt);
+    if (this.lungeT > 0) { const k = Math.min(dt, this.lungeT); this.lungeT -= dt; this.move(this.lungeV.x * k, 0); this.move(0, this.lungeV.z * k); }
     this.pos.y += this.vel.y * dt;
     if (this.pos.y <= 0) { this.pos.y = 0; this.vel.y = 0; this.onGround = true; }
     const hs = Math.hypot(this.vel.x, this.vel.z);
