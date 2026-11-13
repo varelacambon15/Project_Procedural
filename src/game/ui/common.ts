@@ -133,6 +133,9 @@ export class ModelView {
   private token = 0; private host: HTMLElement | null = null;
   yaw = -0.2; pitch = 0.18; private spinT = 0; zoom = 1; private dist = 1; private dragging = false; private last = [0, 0];
   autoSpin = true;
+  /** Portada: balanceo suave en vez de giro amplio, y en las legendarias brillo naranja de borde y chispas eléctricas. */
+  showcase = false;
+  private legRim: THREE.DirectionalLight | null = null; private sparks: THREE.Points | null = null; private sparkT = 0; private box = new THREE.Box3();
   /** Volver al encuadre de 3/4 en el próximo modelo (al elegir otra arma). */
   resetYaw = false;
   constructor(private asm: WeaponAssembler) {}
@@ -144,6 +147,11 @@ export class ModelView {
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 0.4));
     const k = new THREE.DirectionalLight(0xfff0dd, 1.6); k.position.set(2, 3, 3); this.scene.add(k);
     const rim = new THREE.DirectionalLight(0x9fe8ee, 0.8); rim.position.set(-3, 1, -2); this.scene.add(rim);
+    // Borde naranja de las legendarias (luz a contraluz) y chispas: cuadraditos que saltan cerca del arma
+    this.legRim = new THREE.DirectionalLight(0xff9a3a, 0); this.legRim.position.set(0.5, 1.2, -3); this.scene.add(this.legRim);
+    const sg = new THREE.BufferGeometry(); sg.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(24 * 3), 3));
+    this.sparks = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0x9fe0ff, size: 3, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    this.scene.add(this.sparks);
     const c = r.domElement;
     c.addEventListener("pointerdown", (e) => { this.dragging = true; this.last = [e.clientX, e.clientY]; c.setPointerCapture(e.pointerId); });
     c.addEventListener("pointermove", (e) => { if (!this.dragging) return; this.rotate((e.clientX - this.last[0]) * 0.01, (e.clientY - this.last[1]) * 0.006); this.last = [e.clientX, e.clientY]; });
@@ -161,6 +169,8 @@ export class ModelView {
     if (my !== this.token) return;
     if (this.model) this.scene.remove(this.model);
     this.model = built.group; this.scene.add(built.group); this.dist = built.length * 1.7 + 0.08;
+    this.box.setFromObject(built.group);
+    if (this.legRim) this.legRim.intensity = spec.rarity.id === "legendaria" ? 2.2 : 0;
     if (this.resetYaw) { this.yaw = -0.2; this.spinT = 0; this.resetYaw = false; }
   }
   update(dt: number) {
@@ -171,7 +181,21 @@ export class ModelView {
     this.camera.aspect = r.width / r.height; this.camera.updateProjectionMatrix();
     // Giro automático: vaivén alrededor de la vista de 3/4 (nunca de punta, que la haría parecer diminuta)
     if (!this.dragging && this.autoSpin) this.spinT += dt;
-    const yaw = this.yaw + Math.sin(this.spinT * 0.45) * 0.8;
+    const yaw = this.yaw + (this.showcase ? Math.sin(this.spinT * 0.35) * 0.28 : Math.sin(this.spinT * 0.45) * 0.8);
+    if (this.model && this.showcase) { this.model.position.y = Math.sin(this.spinT * 0.9) * 0.006; this.model.rotation.z = Math.sin(this.spinT * 0.6) * 0.025; }
+    // Chispas eléctricas ocasionales (solo portada y legendarias): una ráfaga corta cada pocos segundos
+    if (this.sparks) {
+      const on = this.showcase && (this.legRim?.intensity ?? 0) > 0; this.sparkT -= dt;
+      const m = this.sparks.material as THREE.PointsMaterial;
+      if (on && this.sparkT <= 0) {
+        this.sparkT = 1.8 + Math.random() * 2.5;
+        const p = this.sparks.geometry.attributes.position as THREE.BufferAttribute, b = this.box, c = b.getCenter(new THREE.Vector3());
+        const at = new THREE.Vector3(b.min.x + Math.random() * (b.max.x - b.min.x), c.y + (Math.random() - 0.3) * (b.max.y - b.min.y) * 0.5, c.z);
+        for (let i = 0; i < p.count; i++) p.setXYZ(i, at.x + (Math.random() - 0.5) * 0.06, at.y + (Math.random() - 0.5) * 0.04, at.z + (Math.random() - 0.5) * 0.05);
+        p.needsUpdate = true; m.opacity = 1;
+      }
+      m.opacity = on ? Math.max(0, m.opacity - dt * 5) * (Math.random() < 0.7 ? 1 : 0.3) : 0;
+    }
     const d = this.dist * this.zoom;
     this.camera.position.set(Math.sin(yaw) * Math.cos(this.pitch) * d, Math.sin(this.pitch) * d, Math.cos(yaw) * Math.cos(this.pitch) * d); this.camera.lookAt(0, 0, 0);
     this.renderer.render(this.scene, this.camera);
@@ -188,8 +212,8 @@ export class MenuCursor {
   x = innerWidth / 2; y = innerHeight / 2;
   private last: Element | null = null;
   constructor() {
-    this.place();
-    addEventListener("mousemove", (e) => { this.x = e.clientX; this.y = e.clientY; this.place(); this.track(false); });
+    this.place(); this.el.classList.add("idle"); // invisible hasta que se mueva (no se queda en el centro tapando el arma)
+    addEventListener("mousemove", (e) => { this.el.classList.remove("idle"); this.x = e.clientX; this.y = e.clientY; this.place(); this.track(false); });
     addEventListener("mousedown", () => this.el.classList.add("press"));
     addEventListener("mouseup", () => this.el.classList.remove("press"));
   }
@@ -208,6 +232,7 @@ export class MenuCursor {
   moveTo(el: HTMLElement) { const r = el.getBoundingClientRect(); this.x = r.left + r.width / 2; this.y = r.top + r.height / 2; this.place(); this.track(true); }
   update(dt: number, ax: number, ay: number) {
     const dz = 0.2, over = this.el.classList.contains("over");
+    if (Math.abs(ax) > dz || Math.abs(ay) > dz) this.el.classList.remove("idle");
     const sp = (over ? 520 : 1000) * dt;
     if (Math.abs(ax) > dz) this.x += Math.sign(ax) * Math.pow(Math.abs(ax), 1.7) * sp;
     if (Math.abs(ay) > dz) this.y += Math.sign(ay) * Math.pow(Math.abs(ay), 1.7) * sp;

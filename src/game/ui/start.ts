@@ -49,7 +49,7 @@ export class StartScreen {
     if (this.panel === "show") {
       const w = this.hooks.current();
       sub.innerHTML = `<div class="showcase"><div class="viewport" id="start-view"></div><div class="showcap">${w ? `<span class="rar" style="color:${w.rarity.color}">${t(`rarity.${w.rarity.id}`)}</span><b style="color:${w.rarity.color}">${esc(w.customName || w.name)}</b>` : ""}<p>${t(pause ? "ui.pauseIntro" : "ui.intro")}</p></div></div>`;
-      this.view.attach($("start-view")); this.view.autoSpin = true; this.view.zoom = 1.35; void this.view.show(w);
+      this.view.attach($("start-view")); this.view.autoSpin = true; this.view.showcase = true; this.view.zoom = 1.35; void this.view.show(w);
     } else if (this.panel === "settings") sub.innerHTML = this.settingsHTML();
     else if (this.panel === "controls") sub.innerHTML = this.controlsHTML();
     else sub.innerHTML = this.savesHTML(pause);

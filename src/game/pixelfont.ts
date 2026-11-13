@@ -88,7 +88,7 @@ class Buf {
 }
 const checksum = (b: number[]) => { let s = 0; for (let i = 0; i < b.length; i += 4) s = (s + ((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]) >>> 0) >>> 0; return s; };
 
-interface Glyph { code: number; rects: [number, number, number, number][] }
+interface Glyph { code: number; rects: [number, number, number, number][]; adv: number }
 function glyphs(): Glyph[] {
   const chars = [...new Set([...Object.keys(G), ...COMBOS.map((c) => c[0])])].filter((c) => c !== "ı");
   return chars.map((ch) => {
@@ -102,7 +102,12 @@ function glyphs(): Glyph[] {
         x = e;
       }
     });
-    return { code: ch.codePointAt(0)!, rects };
+    // Proporcional: cada letra avanza lo que mide (+1 píxel de separación); así la "I" o la "l" no dejan huecos
+    // ("PROVI NG"). Las cifras siguen monoespaciadas para que los contadores (munición, créditos) no bailen.
+    if (/[0-9]/.test(ch)) return { code: ch.codePointAt(0)!, rects, adv: ADV };
+    if (!rects.length) return { code: ch.codePointAt(0)!, rects, adv: ch === " " ? 4 * PX : ADV };
+    const x0 = Math.min(...rects.map((r) => r[0])), x1 = Math.max(...rects.map((r) => r[2]));
+    return { code: ch.codePointAt(0)!, rects: rects.map(([a, b, c, d]) => [a - x0, b, c - x0, d] as [number, number, number, number]), adv: x1 - x0 + PX };
   }).sort((a, b) => a.code - b.code);
 }
 
@@ -135,7 +140,7 @@ export function buildPixelFont(family = "SimPixel"): ArrayBuffer {
   const hhea = new Buf().u32(0x00010000).i16(ASC).i16(-DESC).i16(0).u16(ADV).i16(0).i16(0).i16(500).i16(1).i16(0).i16(0)
     .i16(0).i16(0).i16(0).i16(0).i16(0).u16(n);
   const maxp = new Buf().u32(0x00010000).u16(n).u16(maxPts).u16(maxCont).u16(0).u16(0).u16(2).u16(0).u16(0).u16(0).u16(0).u16(0).u16(0).u16(0).u16(0);
-  const hmtx = new Buf(); for (let i = 0; i < n; i++) hmtx.u16(ADV).i16(0);
+  const hmtx = new Buf(); hmtx.u16(ADV).i16(0); for (const g of gl) hmtx.u16(g.adv).i16(0);
   const os2 = new Buf().u16(4).i16(ADV).u16(400).u16(5).u16(0)
     .i16(650).i16(600).i16(0).i16(75).i16(650).i16(600).i16(0).i16(350).i16(50).i16(300)
     .i16(0); for (let i = 0; i < 10; i++) os2.u8(0);
@@ -156,7 +161,7 @@ export function buildPixelFont(family = "SimPixel"): ArrayBuffer {
   const name = new Buf().u16(0).u16(names.length).u16(6 + names.length * 12);
   let off = 0; names.forEach(([id], i) => { name.u16(3).u16(1).u16(0x409).u16(id).u16(strs[i].length).u16(off); off += strs[i].length; });
   for (const s of strs) name.b.push(...s);
-  const post = new Buf().u32(0x00030000).u32(0).i16(-100).i16(50).u32(1).u32(0).u32(0).u32(0).u32(0);
+  const post = new Buf().u32(0x00030000).u32(0).i16(-100).i16(50).u32(0).u32(0).u32(0).u32(0).u32(0);
 
   const tables: [string, number[]][] = [["OS/2", os2.b], ["cmap", cmap.b], ["glyf", glyf.b], ["head", head.b], ["hhea", hhea.b], ["hmtx", hmtx.b], ["loca", locaB.b], ["maxp", maxp.b], ["name", name.b], ["post", post.b]];
   const out = new Buf(), nt = tables.length, srT = 16 * 2 ** Math.floor(Math.log2(nt));

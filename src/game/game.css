@@ -86,6 +86,7 @@ body.menu-cursor, body.menu-cursor * { cursor: none !important; }
 #vcursor { position: fixed; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px; z-index: 50; pointer-events: none; border-radius: 50%; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 0 0 1px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,.25); transition: width .12s, height .12s, margin .12s, background .12s; }
 #vcursor::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #fff; }
 #vcursor.over { width: 34px; height: 34px; margin: -17px 0 0 -17px; background: rgba(242,165,65,.18); border-color: var(--amber); }
+#vcursor.idle { opacity: 0; }
 #vcursor.press { width: 20px; height: 20px; margin: -10px 0 0 -10px; }
 /* Arma del suelo: ficha a la derecha de la mira */
 #pickcard { left: calc(50% + 70px); top: 50%; transform: translateY(-50%); }
@@ -117,4 +118,4 @@ body.menu-cursor, body.menu-cursor * { cursor: none !important; }
 
 /* Créditos en el HUD y HUD oculto en menús */
 #crhud { font-family: var(--display); font-size: 20px; color: var(--amber); }
-body.in-menu #weaponhud, body.in-menu #hint, body.in-menu #bossbar, body.in-menu #bars, body.in-menu #numbers, body.in-menu #phealth { visibility: hidden; }
+body.in-menu #crosshair, body.in-menu #weaponhud, body.in-menu #hint, body.in-menu #bossbar, body.in-menu #bars, body.in-menu #numbers, body.in-menu #phealth { visibility: hidden; }

@@ -162,7 +162,7 @@ button { font: inherit; color: inherit; }
 .showcap { position: absolute; left: 16px; bottom: 14px; right: 16px; display: grid; gap: 4px; pointer-events: none; }
 .showcap .rar { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
 .showcap b { font-family: var(--display); font-weight: 400; font-size: 30px; }
-.showcap p { max-width: 62ch; color: var(--t-dim); margin: 6px 0 0; line-height: 1.5; }
+.showcap p { max-width: 62ch; color: #c9d6d8; margin: 6px 0 0; line-height: 1.5; text-shadow: 0 1px 2px rgba(0,0,0,.8); }
 .settings { display: grid; gap: 4px; max-width: 760px; }
 .settings .row { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(180px, 2fr) 7ch; align-items: center; gap: 12px; padding: 6px 4px; border-bottom: 1px dashed var(--t-line); }
 .settings .row > span { color: var(--t-ink); }

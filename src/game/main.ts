@@ -5,6 +5,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import * as THREE from "three";
 import { startMusic } from "./audio";
+import showcaseWeapon from "../data/showcase-weapon.json";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RARITIES, WeaponGenerator } from "../weapons/generator";
 import { WeaponAssembler } from "../weapons/assembler";
@@ -137,7 +138,8 @@ async function boot() {
   inv.onChange(() => { if (gun.item !== inv.current) void gun.equip(inv.current); renderSlots(); });
 
   // Arma de muestra para la pantalla de título (antes de empezar): una legendaria girando sobre la rejilla
-  const showcase = gen.generate(7 + Math.floor(Math.random() * 50) * 97, undefined, "legendaria");
+  // Storm Caller: la legendaria de referencia de calidad, congelada (su ficha no depende de cambios del generador)
+  const showcase = structuredClone(showcaseWeapon) as unknown as WeaponSpec;
 
   // ---------- Menús ----------
   const thumbs = new Thumbnails(asm);
