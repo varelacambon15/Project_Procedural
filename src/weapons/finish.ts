@@ -109,6 +109,8 @@ export function applyFinish(obj: THREE.Object3D, role: PartRole | "sight", f: Pa
     if (/procsteel/.test(m.name)) return material(f, "metal", undefined, 2.2);
     // Cachas de madera en rejilla: siempre madera (nogal si el acabado no la trae), es la seña de las clásicas
     if (/proccheck/.test(m.name)) return f.wood ? material(f, "wood", "checker") : material({ ...f, id: `${f.id}+walnut`, secondary: hex(0x553b2a), wood: true }, "wood", "checker");
+    // Madera lisa de las armas largas por código (culatas, guardamanos, correderas de escopeta): siempre madera
+    if (/procwood/.test(m.name)) return f.wood ? material(f, "wood") : material({ ...f, id: `${f.id}+walnut`, secondary: hex(0x5a3e2a), wood: true }, "wood");
     if (/procengrave/.test(m.name)) return material(f, slot === "metal" ? "metal" : "primary", "engrave");
     if (/procrust/.test(m.name)) return material(f, "metal", "rust");
     // Pantallas y marca de simulación: apagadas (acento) salvo en legendarias, que llevan el detalle de color

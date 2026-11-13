@@ -464,6 +464,27 @@ async function boot() {
     }
     return out.toDataURL("image/png");
   };
-  (window as unknown as Record<string, unknown>).__bench = { inspect, decisionSheet, varietySheet, closeups, lotSheet, simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+  /** Armas largas por código: por cada arquetipo y era, la base (sin cambios) y una variante, en lateral y 3/4. */
+  const longSheet = async (picks: { arch: string; era: string; target?: number; rarity?: string }[], seed = 7) => {
+    const VW = 420, VH = 200, HEAD = 34, cols = 4;
+    const out = document.createElement("canvas"); out.width = VW * cols; out.height = (VH + HEAD) * picks.length; const g = out.getContext("2d")!;
+    g.fillStyle = "#15171a"; g.fillRect(0, 0, out.width, out.height);
+    const st = studio(VW, VH);
+    for (const [i, pk] of picks.entries()) {
+      const base = gen.generateLongAt(seed + i * 13, pk.arch, pk.era as never, 1, (pk.rarity || "rara") as RarityId);
+      const v = gen.generateLongAt(seed + i * 13 + 5, pk.arch, pk.era as never, pk.target ?? null, (pk.rarity || "rara") as RarityId);
+      const y0 = i * (VH + HEAD);
+      g.fillStyle = "#c8c8c8"; g.font = "bold 16px sans-serif"; g.fillText(`${pk.arch} · ${pk.era} · base`, 8, y0 + 22);
+      g.fillStyle = v.rarity.color; g.fillText(`${v.name} · ${v.type} · ${v.fireMode} · parecido ${Math.round((v.lineage?.similarity ?? 1) * 100)} % · ${(v.lineage?.changes ?? []).join(", ")}`.slice(0, 120), VW * 2 + 8, y0 + 22);
+      let col = 0;
+      for (const w of [base, v]) {
+        const built = await asm.assemble(w); st.sc.add(built.group);
+        for (const [yaw, pitch] of [[0, 0], [-0.6, 0.25]] as [number, number][]) { g.drawImage(shoot(st, built.group, VW, VH, yaw, pitch), col * VW, y0 + HEAD); col++; }
+        st.sc.remove(built.group);
+      }
+    }
+    return out.toDataURL("image/png");
+  };
+  (window as unknown as Record<string, unknown>).__bench = { longSheet, inspect, decisionSheet, varietySheet, closeups, lotSheet, simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
 }
 boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });

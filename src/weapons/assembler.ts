@@ -10,6 +10,7 @@ import { applyFinish } from "./finish";
 import { contactAO } from "./ao";
 import { ADDON_ROLE, buildAddon } from "./addons";
 import { buildPistol } from "./pistolmesh";
+import { buildLong } from "./longmesh";
 import type { Support } from "./grip";
 /** Despiece de las pistolas generadas por código. */
 const PP_EXPLODE: Record<string, [number, number, number]> = { slide: [0, 1.2, 0], barrel: [1.4, 0.6, 0], frame: [0, 0, 0], grip: [-0.3, -0.8, 0], magazine: [0, -1.6, 0], trigger: [-0.8, 0.4, 0] };
@@ -137,6 +138,15 @@ export class WeaponAssembler {
       if (kd && spec.tweaks?.device) { const dev = await this.kitNode(kd); dev.scale.setScalar(DEVICE_SCALE(spec.type)); dev.position.set(spec.tweaks.device.at[0], spec.tweaks.device.at[1] + 0.002, 0); add(dev, "device", { id: kd.id, label: kitLabel(kd.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
       if (mz) { muzzle = v3(mz); muzzleDiameter = spec.type === "shotgun" ? 0.026 : spec.type === "pistol" ? 0.014 : 0.018; }
       if (opticAt && spec.optic && !isKit(spec.optic)) { opticTarget = v3(opticAt); opticLength = spec.type === "pistol" ? 0.05 : 0.1; }
+    } else if (spec.layout === "proc-long" && spec.tweaks?.long) {
+      // Arma larga generada por código: malla del diseño, pieza a pieza con su rol (cajón, culata, cargador, corredera…)
+      this.gen.ensureDesign(spec);
+      const built = buildLong(spec.tweaks.long, { legendary: spec.rarity.id === "legendaria" });
+      const EXP: Partial<Record<PartRole, [number, number, number]>> = { receiver: [0, 0, 0], stock: [-1.2, 0, 0], barrel: [1.5, 0, 0], front: [1, 0.25, 0], pump: [1, -0.4, 0], magazine: [0, -1.2, 0], grip: [-0.2, -1, 0], muzzle: [2, 0.3, 0], trigger: [-0.3, -0.6, 0], charging: [0.2, 0.8, 0], device: [0.6, -1, 0] };
+      for (const p of built.parts) add(p.object, p.role, { id: `pl-${p.role}`, label: p.role, pack: "proc" } as AssetEntry, EXP[p.role] ?? [0, 0, 0]);
+      muzzle = built.muzzle.clone(); muzzleDiameter = spec.tweaks.long.barrel.d;
+      if (built.railAt) { opticTarget = built.railAt.clone(); opticLength = built.railLength; }
+      sightKit = built.sightY;
     } else if (spec.layout === "modular-pistol" && spec.tweaks?.pistol) {
       // Pistola modular generada por código: la malla sale del diseño (pistolmesh), pieza a pieza con su rol
       this.gen.ensureDesign(spec); // (partidas antiguas: diseño al formato actual)

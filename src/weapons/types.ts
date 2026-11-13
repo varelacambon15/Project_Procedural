@@ -66,7 +66,7 @@ export interface WeaponSpec {
   modeShift: FireMode | null;
   /** Disparos por ráfaga (solo en modo ráfaga). */
   burst: number;
-  layout: "modular-pistol" | "modular-long" | "body" | "kit";
+  layout: "modular-pistol" | "modular-long" | "body" | "kit" | "proc-long";
   parts: PartPick[];
   barrelLength: number;
   muzzle: string | null;
@@ -115,6 +115,8 @@ export interface Tweaks {
   /** Culata y guardamanos hechos por código (sustituyen a los del modelo). */
   pstock?: import("./procparts").ProcStock | null;
   pfront?: import("./procparts").ProcFront | null;
+  /** Arma larga generada por código (bullpup, ametralladora, escopeta): su diseño completo. */
+  long?: import("./longgen").LongDesign;
   /** Armas enteras: cortes del cuerpo (x local) donde empiezan la culata o el guardamanos por código. */
   cutRear?: number | null;
   cutFront?: number | null;

@@ -7,6 +7,7 @@ import { EFFECTS_A, EFFECTS_B, EFFECTS_L, legalWith } from "./effects";
 import { eraFinishes, rollEra, rollModernization, type Era } from "./eras";
 import { clipProfile, frontProfile, stockProfile, type FrontKind, type StockKind } from "./procparts";
 import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zoneLen, type Box2, type Placed, type Stretch } from "./variation";
+import { LONG_ARCHES, LONG_HINTS, LONG_MUTATIONS, LONG_STRUCTURAL, longArchDesign, longArchesFor, longEntry, longKey, longMutationAllowed, longPolys, longSpans, type LEra, type LFamily, type LongDesign } from "./longgen";
 import { CAL_EFFECT, PISTOL_ARCHES, PISTOL_MUTATIONS, STRUCTURAL, archDesign, archesFor, designEntry, designKey, designPolys, designSpans, gripCorners, mutationAllowed, upgradeDesign, type PEra, type PistolDesign } from "./pistolgen";
 import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
 import { ensureGrip } from "./grip";
@@ -195,6 +196,12 @@ const PP_HINTS: Record<string, { arch?: string; strict?: boolean }> = {
 };
 /** Diseño base (arquetipo en su era) a partir del id de la pieza: pp-<arquetipo>-<era>[-<huella>]. */
 const ppBaseDesign = (id: string) => { const [, a, e] = id.split("-"); return archDesign(a, e as PEra); };
+/** Armas largas generadas por código (06-G): parte de bullpups, ametralladoras y escopetas (las bases de modelo de esos
+ * tipos son muy pocas y se repetían). El resto sale de modelos y del kit. */
+const PROC_LONG_SHARE: Partial<Record<WeaponType, number>> = { bullpup: 0.82, lmg: 0.85, shotgun: 0.6 };
+/** Arquetipo de arma larga a partir del id: pl-<arquetipo>-<era>[-<huella>]. */
+export const plArchId = (id: string) => id.split("-").slice(0, 2).join("-");
+const plBaseDesign = (id: string) => { const [, a, e] = id.split("-"); return longArchDesign(a, e as LEra); };
 /** Peso de cada pack al elegir el cuerpo: los modelos más realistas salen más a menudo. */
 const PACK_WEIGHT: Record<string, number> = { modern: 4, asimov: 2.5, misc: 2.5, wp2: 2.5, zsky: 2, quaternius: 1.5, cosmo: 1 };
 
@@ -222,10 +229,12 @@ export class WeaponGenerator {
     this.scopes = manifest.weapons.filter((w) => !w.excluded && w.type !== "accessory" && w.parts.some((p) => p.role === "scope"));
     // Pistolas modulares generadas por código: cada arquetipo en cada era es una "base" (recurso virtual)
     for (const a of PISTOL_ARCHES) for (const era of a.eras) { const id = `pp-${a.id}-${era}`; this.byId.set(id, designEntry(id, archDesign(a.id, era))); }
+    for (const a of LONG_ARCHES) for (const era of a.eras) { const id = `pl-${a.id}-${era}`; this.byId.set(id, longEntry(id, longArchDesign(a.id, era))); }
   }
 
   /** Recurso virtual del diseño de un arma generada por código (se registra al generarla y al cargar una partida). */
   ensureDesign(spec: Pick<WeaponSpec, "tweaks" | "parts">) {
+    if (spec.tweaks?.long) { const id = longKey(spec.tweaks.long); if (!this.byId.has(id)) this.byId.set(id, longEntry(id, spec.tweaks.long)); return; }
     if (!spec.tweaks?.pistol) return;
     const d = (spec.tweaks.pistol = upgradeDesign(spec.tweaks.pistol)); // partidas guardadas con el diseño antiguo
     const id = designKey(d); if (!this.byId.has(id)) this.byId.set(id, designEntry(id, d));
@@ -267,7 +276,17 @@ export class WeaponGenerator {
     let layout: WeaponSpec["layout"] = "body";
     let kitBarrel = 1;
     let ppEra: PEra | null = null;
-    if (!this.ppForce && this.kit.types().includes(type) && r() < KIT_SHARE[type]!) {
+    const longShare = PROC_LONG_SHARE[type] ?? 0;
+    if (this.plForce || (!this.ppForce && longShare > 0 && r() < longShare)) {
+      // Arma larga generada por código: arquetipo de su familia en una era (la variación viene después, en varyLong)
+      const fam = type as LFamily;
+      const opts = longArchesFor(fam).flatMap((a) => a.eras.map((e) => ({ a, e })));
+      const f = this.plForce;
+      // Peso por arquetipo repartido entre sus eras: ningún arquetipo domina el lote
+      const o = f ? { a: LONG_ARCHES.find((a) => a.id === f.arch)!, e: f.era } : weighted(r, opts, (x) => ERA_W[x.e] / x.a.eras.reduce((t, e) => t + ERA_W[e], 0));
+      layout = "proc-long"; ppEra = o.e as PEra;
+      parts.push({ role: "receiver", from: `pl-${o.a.id}-${o.e}` });
+    } else if (!this.ppForce && this.kit.types().includes(type) && r() < KIT_SHARE[type]!) {
       // Arma del kit modular: plataforma y piezas por sockets
       layout = "kit";
       const k = rollKit(this.kit, r, type);
@@ -314,8 +333,11 @@ export class WeaponGenerator {
     const era = ppEra ?? rollEra(r, parts[0].from);
     // 1b. Cambios obligatorios sobre piezas reales (estirados por zonas, detalles añadidos), medidos con la silueta:
     // "reconocible pero nuevo" = parecido con la base dentro de SIMILARITY_RANGE.
-    const varied = layout === "modular-pistol" ? this.varyPistol(r, type, parts, era as PEra, this.ppForce?.target) : this.vary(r, type, layout, parts, tweaks, barrelLength, era);
+    const varied = layout === "modular-pistol" ? this.varyPistol(r, type, parts, era as PEra, this.ppForce?.target)
+      : layout === "proc-long" ? this.varyLong(r, parts, this.plForce?.target)
+      : this.vary(r, type, layout, parts, tweaks, barrelLength, era);
     tweaks = varied.tweaks; barrelLength = varied.barrelLength;
+    if (tweaks.long) { parts[0] = { role: "receiver", from: longKey(tweaks.long) }; this.ensureDesign({ tweaks, parts }); }
     if (tweaks.pistol) {
       // La pieza principal pasa a ser el diseño concreto (recurso propio: miras, accesorios, montajes); la base del
       // linaje sigue siendo el arquetipo
@@ -327,7 +349,7 @@ export class WeaponGenerator {
     // 2. Variante: la propia del modelo (70%) o cualquiera del tipo
     // Revólveres generados: la variante sale del calibre (ligero → rápida, medio → estándar, pesado/mágnum → pesada)
     const cal = tweaks.pistol?.cyl?.cal;
-    const hint = MODEL_HINTS[body.id] ?? (layout === "modular-pistol" ? (cal ? { arch: CAL_EFFECT[cal].arch, strict: true } : PP_HINTS[parts[0].from.split("-")[1]]) : undefined);
+    const hint = MODEL_HINTS[body.id] ?? (layout === "proc-long" ? LONG_HINTS[tweaks.long?.arch ?? ""] : layout === "modular-pistol" ? (cal ? { arch: CAL_EFFECT[cal].arch, strict: true } : PP_HINTS[parts[0].from.split("-")[1]]) : undefined);
     const regular = info.archetypes.filter((a) => a.w > 0);
     const arch = hint?.arch && (r() < 0.7 || hint.strict) ? info.archetypes.find((a) => a.id === hint.arch) ?? regular[0] : weighted(r, regular, (a) => a.w);
     // Rareza (antes que el modo: los modos raros son exclusivos de moradas y legendarias)
@@ -393,7 +415,7 @@ export class WeaponGenerator {
     const name = sig?.name ?? "";
     const statSeed = Math.floor(r() * 2 ** 31);
     // Añadidos de era y de modernización (con adaptadores); el parecido se mide de nuevo con ellos
-    tweaks.eraAdds = layout === "modular-pistol" ? null : this.eraAddons(r, era, modLevel, type, layout, parts, tweaks, barrelLength);
+    tweaks.eraAdds = layout === "modular-pistol" || layout === "proc-long" ? null : this.eraAddons(r, era, modLevel, type, layout, parts, tweaks, barrelLength);
     const changes = [...varied.changes, ...eraChanges(tweaks.eraAdds)];
     const simNow = tweaks.eraAdds ? similarity(this.baseSilhouette(layout, parts), this.silhouette(layout, parts, tweaks, barrelLength)) : varied.similarity;
     const lineage = { base: layout === "modular-pistol" ? ppArchId(parts[0].from) : parts[0].from, swaps: this.swapsOf(layout, parts), changes, ops: tweaks, similarity: +simNow.toFixed(3), era, modLevel };
@@ -439,6 +461,7 @@ export class WeaponGenerator {
   placedParts(layout: WeaponSpec["layout"], parts: PartPick[], tw: Tweaks, barrelLength: number): { placed: Placed[]; boxes: Box2[]; byRole: Map<string, Placed> } {
     const placed: Placed[] = [], boxes: Box2[] = [], byRole = new Map<string, Placed>();
     const put = (role: string, p: Placed) => { placed.push(p); byRole.set(role, p); };
+    if (layout === "proc-long") { put("body", { profile: longEntry("tmp", tw.long ?? plBaseDesign(parts[0].from)).profiles!.body!, isBody: true }); return { placed, boxes, byRole }; }
     if (layout === "modular-pistol") {
       // Sin diseño (sin cambios) = el arquetipo del que sale. (La silueta usa los tramos por pieza del diseño.)
       put("body", { profile: designEntry("tmp", tw.pistol ?? ppBaseDesign(parts[0].from)).profiles!.body!, isBody: true });
@@ -509,12 +532,14 @@ export class WeaponGenerator {
     const { placed, boxes } = this.placedParts(layout, parts, tw, barrelLength);
     // Pistolas generadas: tramos por pieza (cuentan los huecos del guardamonte y entre cargador y empuñadura)
     if (layout === "modular-pistol") return [...designSpans(tw.pistol ?? ppBaseDesign(parts[0].from)), ...spans(placed.filter((p) => !p.isBody), boxes)];
+    if (layout === "proc-long") return longSpans(tw.long ?? plBaseDesign(parts[0].from));
     return spans(placed, boxes);
   }
   /** Silueta de la base, tal cual viene (o la configuración de serie del kit). */
   baseSilhouette(layout: WeaponSpec["layout"], parts: PartPick[]) {
     if (layout === "kit") return this.silhouette("kit", this.kitDefault(parts), NO_TWEAKS, 1);
     if (layout === "modular-pistol") return designSpans(ppBaseDesign(parts[0].from));
+    if (layout === "proc-long") return longSpans(plBaseDesign(parts[0].from));
     const base = this.byId.get(parts[0].from)!;
     return spans(Object.values(base.profiles ?? {}).filter(Boolean).map((profile) => ({ profile: profile! })));
   }
@@ -593,6 +618,45 @@ export class WeaponGenerator {
     return { tweaks: best.tw, similarity: best.sim, barrelLength: Math.min(1.5, Math.max(0.75, L1 / L0)), changes: best.ch };
   }
 
+  /**
+   * Variación de un arma larga generada: 3-5 cambios (al menos 2 estructurales: alimentación, culata, guardamanos,
+   * parte superior, cajón, bípode o asa), medidos con la silueta frente al arquetipo hasta caer en la banda de parecido.
+   */
+  private varyLong(r: Rng, parts: PartPick[], target?: number | null): { tweaks: Tweaks; similarity: number; barrelLength: number; changes: string[] } {
+    const d0 = plBaseDesign(parts[0].from), ref = longSpans(d0);
+    if (target === 1) return { tweaks: { ...NO_TWEAKS, long: d0 }, similarity: 1, barrelLength: 1, changes: [] };
+    const [lo, hi] = target ? [target - 0.02, target + 0.02] : SIMILARITY_RANGE;
+    const structural = LONG_MUTATIONS.filter((m) => m.structural), detail = LONG_MUTATIONS.filter((m) => !m.structural);
+    const shuffle = <T,>(a: T[]) => { const o = [...a]; for (let k = o.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [o[k], o[j]] = [o[j], o[k]]; } return o; };
+    type C = { tw: Tweaks; sim: number; dd: number; ch: string[] };
+    let best: C | null = null; const cands: C[] = [];
+    let amp = 1, nS = 2;
+    const seen = (x: LongDesign) => JSON.stringify(longPolys(x).map((p) => p.poly.map(([a, b]) => [+a.toFixed(3), +b.toFixed(3)])));
+    for (let i = 0; i < (target ? 120 : 70); i++) {
+      if (best && best.sim > hi && i % 2 === 1) { nS = Math.min(4, nS + 1); amp = Math.min(target ? 2.6 : 2, amp * 1.25); }
+      if (best && best.sim < lo && i % 4 === 3) { nS = Math.max(2, nS - 1); amp = Math.max(0.4, amp * 0.8); }
+      const d: LongDesign = structuredClone(d0), ch: string[] = [];
+      const ops = [...shuffle(structural).slice(0, nS), ...shuffle(detail).slice(0, 1 + Math.floor(r() * 2))];
+      for (const m of ops) { if (ch.length >= 5 || !longMutationAllowed(m.id, d)) continue; const before = seen(d); m.run(d, r, amp); if (seen(d) !== before) ch.push(m.id); }
+      const tw: Tweaks = { ...NO_TWEAKS, long: d };
+      const sim = similarity(ref, longSpans(d));
+      const nStruct = ch.filter((c) => LONG_STRUCTURAL.has(c)).length;
+      const dd = (ch.length < 3 ? 1 : 0) + (nStruct < 2 ? 1 : 0) + (sim < lo ? lo - sim : sim > hi ? sim - hi : 0);
+      const c = { tw, sim, dd, ch }; cands.push(c);
+      if (!best || dd < best.dd) best = c;
+      if (cands.filter((x) => x.dd === 0).length >= (target ? 1 : 3)) break;
+    }
+    const good = best!.dd === 0 ? cands.filter((c) => c.dd === 0) : cands.filter((c) => c.dd <= best!.dd + 0.01); best = good[Math.floor(r() * good.length)];
+    const d = best.tw.long!, L0 = d0.recv.len + d0.barrel.len, L1 = d.recv.len + d.barrel.len;
+    return { tweaks: best.tw, similarity: best.sim, barrelLength: Math.min(1.5, Math.max(0.75, L1 / L0)), changes: best.ch };
+  }
+  private plForce: { arch: string; era: LEra; target: number | null } | null = null;
+  /** Arma larga generada de un arquetipo y era concretos, a un parecido objetivo (hoja de decisión). */
+  generateLongAt(seed: number, arch: string, era: LEra, target: number | null, rarity?: RarityId): WeaponSpec {
+    const a = LONG_ARCHES.find((x) => x.id === arch); if (!a) throw new Error(`No long archetype ${arch}`);
+    this.plForce = { arch, era, target };
+    try { return this.generate(seed, a.family, rarity); } finally { this.plForce = null; }
+  }
   /** Fuerza el arquetipo, la era y el parecido objetivo de la próxima pistola generada (hoja de decisión del banco). */
   private ppForce: { arch: string; era: PEra; target: number | null } | null = null;
   /** Pistola o revólver de un arquetipo y era concretos, a un parecido objetivo (1 = el arquetipo tal cual). */
