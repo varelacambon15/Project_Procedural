@@ -170,13 +170,18 @@ export class Gun {
     this.pending = null; this.holsterT = 0;
     return this.doEquip(item, rebuild);
   }
+  /** Número de la última carga de modelo: solo la más reciente puede poner su modelo en la mano. */
+  private equipSeq = 0;
   private async doEquip(item: Item | null, rebuild: boolean) {
+    const seq = ++this.equipSeq;
     this.item = item; this.reloadT = 0; this.burstLeft = 0; this.inspectT = 0;
     this.fx = item ? new EffectRunner<Dummy, THREE.Vector3>(item.spec) : null;
     if (item && this.fx) { const now = performance.now() / 1000; this.fx.equip([...this.lastDealt].some(([uid, t]) => uid !== item.uid && now - t < 4)); }
     this.equipDur = item && this.fx?.equipFast() ? 0.22 : 0.3 + (1 - (item?.spec.stats.manejo ?? 60) / 100) * 0.35;
     this.equipT = this.equipDur;
-    if (this.model) { this.holder.remove(this.model.group); this.model = null; this.mag = null; this.moving = {}; }
+    // Vaciar la mano del todo (no solo el modelo conocido): si dos cargas se cruzaban, quedaban dos armas apiladas
+    for (const c of [...this.holder.children]) if (c !== this.flash && c !== this.flashLight) this.holder.remove(c);
+    this.model = null; this.mag = null; this.moving = {};
     if (!item) return;
     this.anim.setClass(item.spec.type, item.spec.hold?.stance);
     // Tipo de mira y aumentos (solo dependen del arma: se fijan ya, antes de cargar el modelo)
@@ -186,7 +191,7 @@ export class Gun {
     else if (item.spec.type === "sniper") { this.sight = "scope"; this.zoom = 4.5; }  // francotirador con visor integrado
     else { this.sight = "iron"; this.zoom = 1; }
     const m = await this.modelFor(item, rebuild);
-    if (this.item !== item) return;
+    if (this.item !== item || seq !== this.equipSeq) return;
     m.group.traverse((o) => {
       const mesh = o as THREE.Mesh; if (!mesh.isMesh) return;
       mesh.castShadow = false; mesh.renderOrder = 10;
@@ -198,10 +203,11 @@ export class Gun {
     this.moving = {};
     for (const role of ["slide", "pump", "charging"] as MovingPart[]) { const part = m.parts.find((p) => p.role === role); if (part) this.moving[role] = part; }
     // Shaders del arma compilados en segundo plano mientras se saca (sin tirón al aparecer)
-    if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item) return; }
+    if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item || seq !== this.equipSeq) return; }
     this.model = m;
     // Rendimiento: dentro de cada pieza (que se anima entera) se fusionan sus mallas por material
     if (!m.group.userData.merged) { for (const p of m.parts) mergeStatic(p.object); m.group.userData.merged = true; }
+    for (const c of [...this.holder.children]) if (c !== this.flash && c !== this.flashLight) this.holder.remove(c);
     this.holder.add(m.group);
     this.flash.position.set(0, m.muzzle.y, -m.muzzle.x);
     this.flashLight.position.copy(this.flash.position);
