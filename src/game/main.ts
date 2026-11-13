@@ -335,7 +335,7 @@ async function boot() {
     const moving = Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5);
     const spread = gun.spread(moving);
     const radius = 6 + Math.tan(THREE.MathUtils.degToRad(spread)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * innerHeight / 2;
-    ch.style.setProperty("--r", `${radius.toFixed(1)}px`);
+    ch.style.setProperty("--r", `${Math.max(10, radius).toFixed(1)}px`);
     ch.dataset.type = s?.type ?? "";
     ch.style.opacity = state !== "play" || player.sprinting ? "0" : String(1 - gun.aimT * (gun.sight === "iron" ? 0.85 : 1));
     ch.classList.toggle("hit", gun.hitmarker > 0); ch.classList.toggle("crit", gun.critmarker > 0); ch.classList.toggle("kill", gun.killmarker > 0);
