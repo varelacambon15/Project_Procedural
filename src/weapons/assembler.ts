@@ -203,11 +203,15 @@ export class WeaponAssembler {
             // La empuñadura gira un poco sobre su junta (la propia no se desplaza; la ajena se alinea por su cara)
             const pivot = new THREE.Group(); pivot.position.copy(anchor); pivot.rotation.z = tw.gripAngle;
             node.position.copy(own ? anchor.clone().multiply(new THREE.Vector3(sv.x, sv.y, 1)).negate() : v3(donor.joints![face].pos).multiply(sv).negate());
+            const gb = donor.partBounds?.grip; if (!own && gb) node.position.z = -((gb.min[2] + gb.max[2]) / 2) * sv.z;
             pivot.add(node); add(pivot, role, donor, explode);
             return { donor, k, node: pivot, sv, zone };
           }
           const fp = v3(donor.joints![face].pos);
           node.position.copy(own ? new THREE.Vector3(fp.x * (1 - sv.x), anchor.y * (1 - sv.y), 0) : anchor.sub(fp.multiply(sv)));
+          // Pieza ajena descentrada de lado en su modelo de origen (p. ej. el guardamanos del M60): se lleva al eje del arma
+          const pb = donor.partBounds?.[role];
+          if (!own && pb) node.position.z = -((pb.min[2] + pb.max[2]) / 2) * sv.z;
           add(node, role, donor, explode);
           return { donor, k, node, sv, zone };
         };
