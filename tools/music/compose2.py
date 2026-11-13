@@ -97,6 +97,29 @@ while t < LEN - 5:
     t += 5 + rng.random() * 9
 write("mech", mech)
 
+# ---------- Vaivenes de dos notas (medio tono / tercera menor), irregulares, con leves deslizamientos ----------
+# Motivo obsesivo en la zona media: aparece, alterna unas cuantas veces y se desvanece; cambia de altura con la raíz.
+PAIRS = [(7, 8), (3, 6), (12, 11), (10, 7), (8, 7), (6, 3)]   # intervalos sobre la raíz (semitonos)
+osc2 = np.zeros((N, 2))
+t = 12.0; k = 0
+while t < LEN - 14:
+    r = root_at(t) + 12 if root_at(t) < 45 else root_at(t)
+    lo, hi = PAIRS[k % len(PAIRS)]; k += 1
+    dur = 9 + rng.random() * 8
+    # puntos de la línea: alterna cada 0,7-1,4 s; a veces se desliza (0,15-0,4 s), si no, cambia limpio
+    pts_t, pts_f, tt0, cur = [0.0], [hz(r + 12 + lo)], 0.0, 0
+    while tt0 < dur:
+        hold = 0.45 + rng.random() * 0.6; slide = 0.12 + rng.random() * 0.25 if rng.random() < 0.5 else 0.02
+        tt0 += hold; pts_t.append(tt0); pts_f.append(pts_f[-1])
+        cur ^= 1; tt0 += slide; pts_t.append(tt0); pts_f.append(hz(r + 12 + (hi if cur else lo)))
+    n = int(dur * SR); tt = np.arange(n) / SR
+    fr = np.interp(tt, pts_t, pts_f) * (1 + 0.003 * np.sin(2 * np.pi * 0.7 * tt))   # leve inestabilidad
+    sig = osc(fr, 8, 1.5) * adsr(n, 2.5, 3.5)
+    put(osc2, t, sig, 0.45, (rng.random() - 0.5) * 0.8)
+    t += dur + 3 + rng.random() * 9
+osc2 = osc2 + np.roll(osc2[:, ::-1], int(0.47 * SR), 0) * 0.3
+write("osc2", osc2)
+
 # ---------- Latido lento (~55 BPM): golpe doble grave y apagado, a ratos, con alguna ausencia ----------
 heart = np.zeros((N, 2)); P = 60 / 55
 def thump(n, f0):
