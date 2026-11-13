@@ -1,4 +1,8 @@
 // Proving Grounds / Campo de Pruebas: demo jugable de la Fase 1.
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RARITIES, WeaponGenerator } from "../weapons/generator";
@@ -50,7 +54,15 @@ scene.add(camera);
 // Luz de borde ligada a la cámara: perfila el arma en primera persona para que las oscuras no se pierdan en la sala
 const rim = new THREE.DirectionalLight(0xbfd8ff, 0.4); rim.position.set(0.8, 0.6, -1.2); camera.add(rim); camera.add(rim.target); rim.target.position.set(0, -0.2, 0.5);
 const world = buildRange(scene);
-function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+// Postproceso: resplandor (bloom) sobre lo que brilla de verdad (neón, fogonazos); fuerte de noche, suave de día
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.8, 0.5, 0.82);
+composer.addPass(bloom); composer.addPass(new OutputPass());
+const applyLook = () => { world.setNight(settings.night); bloom.enabled = settings.bloom; bloom.strength = settings.night ? 0.85 : 0.3; renderer.toneMappingExposure = settings.night ? 1.1 : 1.0; };
+applyLook(); onSettings(applyLook);
+const draw = () => (settings.bloom ? composer.render() : renderer.render(scene, camera));
+function resize() { renderer.setSize(innerWidth, innerHeight); composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
 
 // ---------- Estado ----------
@@ -508,7 +520,7 @@ async function boot() {
     // Detrás del inventario, el taller y la máquina la sala apenas se ve: se redibuja 1 de cada 4 fotogramas
     // (el inicio y la pausa la mantienen viva). Así abrir un menú no cuesta más que jugar.
     frameNo++;
-    if (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0) renderer.render(scene, camera);
+    if (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0) draw();
     requestAnimationFrame(frame);
   }
   player.applyCamera(camera, 0);
@@ -516,7 +528,7 @@ async function boot() {
   openStart();
   frame();
   (window as unknown as Record<string, unknown>).__game = {
-    debug, gen, inv, gun, pickups, pickUp, player, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
+    debug, gen, inv, gun, pickups, pickUp, player, setSetting, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
     loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };

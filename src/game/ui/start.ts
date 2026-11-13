@@ -67,7 +67,7 @@ export class StartScreen {
       ${range("fov", 60, 100, 1, (v) => `${v}°`)}
       <div class="row"><span>${t("set.pixel")}</span><div class="seg">${PIXEL_LEVELS.map((p) => `<button type="button" class="chip ${p === pixelLevel() ? "on" : ""}" data-px="${p}">${p}</button>`).join("")}</div></div>
       ${range("volume", 0, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}
-      ${toggle("damageNumbers")}${toggle("impactFx")}${toggle("screenShake")}${toggle("arms")}
+      ${toggle("damageNumbers")}${toggle("impactFx")}${toggle("screenShake")}${toggle("arms")}${toggle("night")}${toggle("bloom")}
       <div class="row"><span>${t("ui.language")}</span><div class="seg">${LANGS.map((l) => `<button type="button" class="chip ${l.id === getLang() ? "on" : ""}" data-lang="${l.id}">${l.name}</button>`).join("")}</div></div>
       <p class="note">${t("set.saved")}</p></div>`;
   }
