@@ -785,6 +785,8 @@ export class WeaponGenerator {
           const kinds: StockKind[] = short ? (era === "classic" ? ["wood"] : era === "rustic" ? ["wood", "polymer"] : ["polymer", "carbine"])
             : era === "classic" ? ["wood", "folding"] : era === "rustic" ? ["wood", "tube", "skeleton", "folding"] : ["skeleton", "tube", "folding", "polymer", "carbine"];
           tw.pstock = { kind: kinds[Math.floor(r() * kinds.length)], at: [prof.x0 + L * 0.04, y], h: 0.032, w: 0.024, len: 0.15 + r() * 0.07, drop: 0.012 + r() * 0.02 };
+          // Revólver: la culata solo como kit de carabina, con el cañón alargado (regla del usuario)
+          if (type === "revolver") tw.body = Math.max(tw.body ?? 1, 1.3 + r() * 0.15);
         } });
       }
       // Conjunto carabina (armas cortas y bullpups): cañón largo con guardamanos montado en la boca, sin cortar el cuerpo
