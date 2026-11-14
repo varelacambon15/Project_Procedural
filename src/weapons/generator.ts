@@ -254,8 +254,9 @@ export class WeaponGenerator {
     // Las miras reales (Flat Gun Attachments) sustituyen a las hechas por código; se conservan solo las de aumento sin equivalente
     if (isKit(spec.parts[0].from)) return kitOpticOptions(this.kit, spec, spec.type === "pistol" ? ["acc:reddot"] : procedural());
     const body = this.byId.get(spec.parts[0].from);
+    // Mira de modelo (p. ej. el kit del usuario): se cambia por la de otro modelo del mismo pack, como al generar
+    if (body?.parts.some((p) => p.role === "scope")) return this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id && !RETIRED.has(x.id)).map((x) => x.id);
     if (!body?.sockets.rail || spec.type === "sniper" || spec.type === "launcher" || spec.type === "flamethrower") return [];
-    if (body.parts.some((p) => p.role === "scope")) return [];
     // Miras reales (preferidas al generar) y las hechas por código como alternativa
     return [...realOptics(this.kit, spec.type), ...procedural()];
   }
@@ -383,7 +384,7 @@ export class WeaponGenerator {
     let optic: string | null = null, muzzle: string | null = null;
     const ownScope = body.parts.some((p) => p.role === "scope");
     if (ownScope) optic = parts[0].from; // (en las pistolas procedurales, el diseño concreto, no el arquetipo)
-    let opticOpts = ownScope ? this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id).map((x) => x.id) : this.opticOptions({ type, parts });
+    let opticOpts = ownScope ? this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id && !RETIRED.has(x.id)).map((x) => x.id) : this.opticOptions({ type, parts });
     // Una clásica solo lleva visores de época (de aumento sencillos); nada de puntos rojos ni holográficas
     if (era === "classic") opticOpts = opticOpts.filter((o) => /scope/.test(o));
     const muzzleOpts = this.muzzleOptions({ type, parts });
@@ -1152,6 +1153,7 @@ const INTEGRAL_STOCK = new Set(["w-p90", "z-submachinegun-03", "u-bullpup-b"]);
 const RETIRED = new Set<string>([
   "v-ppsh-drum", // el tambor viene girado 90° dentro de la misma malla del cuerpo (se ve de canto); quedan w-ppsh y v-ppsh
   "p-machine-gun-2", // como fusil quedaba un cajón de ametralladora tosco con culata de caja
+  "u-fusil-a", "u-bullpup-b", // ARX y TAR-21 antiguos: sustituidos por las versiones limpias del kit (x-arx-160, x-tar-21)
   "w-f2000", // demasiado parecidas entre sí (decisión del usuario); los bullpups por código y u-bullpup-b cubren el tipo
 ]);
 export const TYPE_LENGTH: Partial<Record<WeaponType, number>> = { pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, lmg: 1.15, launcher: 1.1, flamethrower: 0.95 };
