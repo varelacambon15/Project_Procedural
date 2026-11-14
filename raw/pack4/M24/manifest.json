@@ -1,0 +1,196 @@
+{
+ "nombre": "M24",
+ "tipo_juego": "sniper",
+ "chasis": "convencional",
+ "accion": "cerrojo",
+ "era_sugerida": "moderna",
+ "base_real": "Remington M24 SWS",
+ "largo_m": 1.092,
+ "alto_m": 0.204,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 3042,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.3008,
+    0.0746,
+    -0.0336
+   ],
+   "bbox_local_max": [
+    0.026,
+    0.204,
+    0.0416
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 1087,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.2409,
+    0.1308,
+    -0.0004
+   ],
+   "bbox_local_min": [
+    -0.0599,
+    -0.1105,
+    -0.0246
+   ],
+   "bbox_local_max": [
+    0.0599,
+    0.0,
+    0.0245
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "culata": {
+   "triangulos": 771,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.3008,
+    0.0793,
+    -0.0005
+   ],
+   "bbox_local_min": [
+    -0.2452,
+    -0.0793,
+    -0.041
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0835,
+    0.0401
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 753,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.026,
+    0.1589,
+    0.0001
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0419,
+    -0.0341
+   ],
+   "bbox_local_max": [
+    0.52,
+    0.0419,
+    0.0352
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cargador": {
+   "triangulos": 28,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0769,
+    0.1255,
+    -0.0001
+   ],
+   "bbox_local_min": [
+    -0.0357,
+    -0.0726,
+    -0.0144
+   ],
+   "bbox_local_max": [
+    0.036,
+    0.0,
+    0.0142
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.5374,
+   0.1698,
+   0.0011
+  ],
+  "cara_guardamanos": [
+   0.026,
+   0.1589,
+   0.0001
+  ],
+  "cara_culata": [
+   -0.3008,
+   0.0793,
+   -0.0005
+  ],
+  "cara_empunadura": [
+   -0.2409,
+   0.1308,
+   -0.0004
+  ],
+  "pozo_cargador": [
+   -0.0769,
+   0.1255,
+   -0.0001
+  ],
+  "raíl_superior": [
+   -0.151,
+   0.204,
+   -0.0
+  ],
+  "linea_mira": [
+   -0.151,
+   0.204,
+   -0.0
+  ],
+  "raíl_inferior": [
+   0.3072,
+   0.1175,
+   -0.0
+  ]
+ },
+ "triangulos_total": 5681,
+ "piezas_ausentes": [
+  "mira"
+ ],
+ "boca_diametro_m": 0.0275,
+ "mira_integrada": null,
+ "accesorios_de_serie": [
+  {
+   "id": "sup_m24",
+   "categoria": "bocachas",
+   "ancla": "boca"
+  }
+ ]
+}

@@ -1,0 +1,215 @@
+{
+ "nombre": "EVO3",
+ "tipo_juego": "smg",
+ "chasis": "convencional",
+ "accion": "automatica",
+ "era_sugerida": "moderna",
+ "base_real": "CZ Scorpion EVO 3",
+ "largo_m": 0.67,
+ "alto_m": 0.2891,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 2272,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.13,
+    0.2178,
+    0.0055
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0486,
+    -0.0311
+   ],
+   "bbox_local_max": [
+    0.205,
+    0.0694,
+    0.0223
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 2282,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.106,
+    0.1256,
+    -0.0206
+   ],
+   "bbox_local_max": [
+    0.1365,
+    0.288,
+    0.0276
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "culata": {
+   "triangulos": 379,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.1001,
+    0.2206,
+    0.0029
+   ],
+   "bbox_local_min": [
+    -0.2349,
+    -0.1298,
+    -0.0325
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0314,
+    0.0267
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "mira": {
+   "triangulos": 211,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.0575,
+    0.263,
+    -0.0
+   ],
+   "bbox_local_min": [
+    -0.0299,
+    0.0,
+    -0.015
+   ],
+   "bbox_local_max": [
+    0.0299,
+    0.0261,
+    0.015
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "empunadura": {
+   "triangulos": 258,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0028,
+    0.1942,
+    -0.0137
+   ],
+   "bbox_local_min": [
+    -0.1112,
+    -0.1435,
+    -0.003
+   ],
+   "bbox_local_max": [
+    0.0073,
+    0.0,
+    0.0357
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "cargador": {
+   "triangulos": 277,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    0.0873,
+    0.1963,
+    0.0049
+   ],
+   "bbox_local_min": [
+    -0.0111,
+    -0.1963,
+    -0.0157
+   ],
+   "bbox_local_max": [
+    0.0655,
+    0.0,
+    0.0168
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.335,
+   0.2083,
+   0.0076
+  ],
+  "cara_guardamanos": [
+   0.13,
+   0.2178,
+   0.0055
+  ],
+  "cara_culata": [
+   -0.1001,
+   0.2206,
+   0.0029
+  ],
+  "cara_empunadura": [
+   -0.0028,
+   0.1942,
+   -0.0137
+  ],
+  "pozo_cargador": [
+   0.0873,
+   0.1963,
+   0.0049
+  ],
+  "raíl_superior": [
+   -0.0575,
+   0.263,
+   -0.0
+  ],
+  "linea_mira": [
+   -0.0575,
+   0.2891,
+   -0.0
+  ],
+  "raíl_inferior": [
+   0.1494,
+   0.1749,
+   -0.0
+  ]
+ },
+ "triangulos_total": 5679,
+ "piezas_ausentes": [],
+ "boca_diametro_m": 0.0228,
+ "mira_integrada": "alza",
+ "accesorios_de_serie": []
+}

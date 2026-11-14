@@ -1,0 +1,221 @@
+{
+ "nombre": "M82",
+ "tipo_juego": "sniper",
+ "chasis": "convencional",
+ "accion": "semiautomatica",
+ "era_sugerida": "moderna",
+ "base_real": "Barrett M82A1",
+ "largo_m": 1.45,
+ "alto_m": 0.2171,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 2664,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    -0.02,
+    0.1715,
+    -0.0135
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0345,
+    -0.0315
+   ],
+   "bbox_local_max": [
+    0.745,
+    0.0455,
+    0.0283
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 1883,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.6956,
+    0.0597,
+    -0.0368
+   ],
+   "bbox_local_max": [
+    -0.02,
+    0.2061,
+    0.045
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 262,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.38,
+    0.11,
+    -0.0145
+   ],
+   "bbox_local_min": [
+    -0.0808,
+    -0.1042,
+    -0.0155
+   ],
+   "bbox_local_max": [
+    0.0343,
+    0.0,
+    0.017
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "mira": {
+   "triangulos": 94,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.2204,
+    0.1998,
+    -0.0136
+   ],
+   "bbox_local_min": [
+    -0.1698,
+    -0.0038,
+    -0.0087
+   ],
+   "bbox_local_max": [
+    -0.1505,
+    0.0173,
+    0.0104
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "cargador": {
+   "triangulos": 266,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.2231,
+    0.1473,
+    -0.0129
+   ],
+   "bbox_local_min": [
+    -0.0761,
+    -0.1473,
+    -0.0201
+   ],
+   "bbox_local_max": [
+    0.0842,
+    0.0,
+    0.0195
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  },
+  "culata": {
+   "triangulos": 525,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.5282,
+    0.138,
+    -0.0124
+   ],
+   "bbox_local_min": [
+    -0.1968,
+    -0.0851,
+    -0.0244
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0573,
+    0.0252
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.725,
+   0.1702,
+   -0.0152
+  ],
+  "cara_guardamanos": [
+   -0.02,
+   0.1715,
+   -0.0135
+  ],
+  "cara_culata": [
+   -0.5282,
+   0.138,
+   -0.0124
+  ],
+  "cara_empunadura": [
+   -0.38,
+   0.11,
+   -0.0145
+  ],
+  "pozo_cargador": [
+   -0.2231,
+   0.1473,
+   -0.0129
+  ],
+  "raíl_superior": [
+   -0.2204,
+   0.1998,
+   -0.0136
+  ],
+  "linea_mira": [
+   -0.2204,
+   0.2468,
+   -0.0127
+  ],
+  "raíl_inferior": [
+   0.1006,
+   0.137,
+   0.0
+  ]
+ },
+ "triangulos_total": 5694,
+ "piezas_ausentes": [],
+ "boca_diametro_m": 0.0237,
+ "mira_integrada": "alza",
+ "accesorios_de_serie": [
+  {
+   "id": "te_m82",
+   "categoria": "miras",
+   "ancla": "raíl_superior"
+  }
+ ]
+}

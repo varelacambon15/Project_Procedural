@@ -1,0 +1,187 @@
+{
+ "nombre": "MOSIN",
+ "tipo_juego": "sniper",
+ "chasis": "convencional",
+ "accion": "cerrojo",
+ "era_sugerida": "clásica",
+ "base_real": "Mosin-Nagant 91/30",
+ "largo_m": 1.232,
+ "alto_m": 0.1941,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 1961,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.28,
+    0.0597,
+    -0.0271
+   ],
+   "bbox_local_max": [
+    0.088,
+    0.1941,
+    0.03
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "culata": {
+   "triangulos": 1206,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.28,
+    0.1079,
+    -0.0001
+   ],
+   "bbox_local_min": [
+    -0.336,
+    -0.1079,
+    -0.0272
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0464,
+    0.0269
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 1953,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.088,
+    0.1549,
+    0.0001
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0224,
+    -0.027
+   ],
+   "bbox_local_max": [
+    0.528,
+    0.0224,
+    0.0271
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "mira": {
+   "triangulos": 266,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    0.0113,
+    0.1652,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0403,
+    0.0,
+    -0.0085
+   ],
+   "bbox_local_max": [
+    0.0403,
+    0.0251,
+    0.0085
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "cargador": {
+   "triangulos": 298,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.1041,
+    0.1501,
+    -0.0
+   ],
+   "bbox_local_min": [
+    -0.1646,
+    -0.0747,
+    -0.03
+   ],
+   "bbox_local_max": [
+    0.0053,
+    0.0,
+    0.03
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.616,
+   0.1657,
+   -0.0001
+  ],
+  "cara_guardamanos": [
+   0.088,
+   0.1549,
+   0.0001
+  ],
+  "cara_culata": [
+   -0.28,
+   0.1079,
+   -0.0001
+  ],
+  "pozo_cargador": [
+   -0.1041,
+   0.1501,
+   -0.0
+  ],
+  "raíl_superior": [
+   0.0113,
+   0.1652,
+   0.0
+  ],
+  "linea_mira": [
+   0.0113,
+   0.1904,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.5027,
+   0.134,
+   0.0
+  ]
+ },
+ "triangulos_total": 5684,
+ "piezas_ausentes": [
+  "empunadura"
+ ],
+ "boca_diametro_m": 0.0142,
+ "mira_integrada": "alza",
+ "accesorios_de_serie": []
+}

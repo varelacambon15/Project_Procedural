@@ -1,0 +1,11 @@
+Model Information:
+* title:	Weapon Pack of 10/100 Part 6
+* source:	https://sketchfab.com/3d-models/weapon-pack-of-10100-part-6-3f265650cebc42ddb2fc4f17964bba02
+* author:	OBUR Games (https://sketchfab.com/OburGames)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Weapon Pack of 10/100 Part 6" (https://sketchfab.com/3d-models/weapon-pack-of-10100-part-6-3f265650cebc42ddb2fc4f17964bba02) by OBUR Games (https://sketchfab.com/OburGames) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

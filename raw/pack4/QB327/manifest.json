@@ -1,0 +1,177 @@
+{
+ "nombre": "QB327",
+ "tipo_juego": "shotgun",
+ "chasis": "sin_culata",
+ "accion": "semiautomatica",
+ "era_sugerida": "moderna",
+ "base_real": "Mossferg QB327 (escopeta semiautomática de cargador)",
+ "largo_m": 0.8749,
+ "alto_m": 0.4005,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 2907,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.0675,
+    0.3305,
+    -0.0132
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0584,
+    -0.0334
+   ],
+   "bbox_local_max": [
+    0.3699,
+    0.0584,
+    0.0334
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 1265,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.4375,
+    0.1405,
+    -0.047
+   ],
+   "bbox_local_max": [
+    0.0687,
+    0.4005,
+    0.047
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "cargador": {
+   "triangulos": 1028,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0744,
+    0.2278,
+    -0.0132
+   ],
+   "bbox_local_min": [
+    -0.0537,
+    -0.2278,
+    -0.0228
+   ],
+   "bbox_local_max": [
+    0.1203,
+    0.0,
+    0.0228
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  },
+  "empunadura": {
+   "triangulos": 344,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.4353,
+    0.2981,
+    -0.0178
+   ],
+   "bbox_local_min": [
+    -0.0022,
+    -0.208,
+    -0.0268
+   ],
+   "bbox_local_max": [
+    0.3036,
+    0.0,
+    0.036
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.4284,
+   0.3605,
+   -0.0132
+  ],
+  "cara_guardamanos": [
+   0.0675,
+   0.3305,
+   -0.0132
+  ],
+  "cara_empunadura": [
+   -0.4353,
+   0.2981,
+   -0.0178
+  ],
+  "pozo_cargador": [
+   -0.0744,
+   0.2278,
+   -0.0132
+  ],
+  "raíl_superior": [
+   0.0143,
+   0.3908,
+   -0.0132
+  ],
+  "linea_mira": [
+   0.034,
+   0.4225,
+   -0.013
+  ],
+  "cara_culata": [
+   -0.4375,
+   0.3046,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.2139,
+   0.272,
+   0.0
+  ]
+ },
+ "triangulos_total": 5544,
+ "piezas_ausentes": [
+  "culata",
+  "mira"
+ ],
+ "boca_diametro_m": 0.0316,
+ "mira_integrada": null,
+ "accesorios_de_serie": [
+  {
+   "id": "pr_mini_qb",
+   "categoria": "miras",
+   "ancla": "raíl_superior"
+  },
+  {
+   "id": "bo_freno_escopeta",
+   "categoria": "bocachas",
+   "ancla": "boca"
+  }
+ ]
+}

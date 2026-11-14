@@ -1,0 +1,420 @@
+[
+ {
+  "nombre": "MK23",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "HK Mk 23",
+  "largo_m": 0.245,
+  "triangulos_total": 2854,
+  "boca_diametro_m": 0.0192,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "HK45",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "HK45",
+  "largo_m": 0.204,
+  "triangulos_total": 2114,
+  "boca_diametro_m": 0.0167,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "CZ75",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "semiautomatica",
+  "era_sugerida": "clásica",
+  "base_real": "CZ 75",
+  "largo_m": 0.206,
+  "triangulos_total": 3078,
+  "boca_diametro_m": 0.0206,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "M9",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "semiautomatica",
+  "era_sugerida": "clásica",
+  "base_real": "Beretta M9",
+  "largo_m": 0.217,
+  "triangulos_total": 4907,
+  "boca_diametro_m": 0.0132,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "CP33",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "Kel-Tec CP33",
+  "largo_m": 0.28,
+  "triangulos_total": 4439,
+  "boca_diametro_m": 0.0156,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "APB",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "automatica",
+  "era_sugerida": "clásica",
+  "base_real": "Stechkin APB con culata de alambre",
+  "largo_m": 0.5568,
+  "triangulos_total": 2708,
+  "boca_diametro_m": 0.0169,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "accesorios_de_serie": [
+   {
+    "id": "sup_apb",
+    "categoria": "bocachas",
+    "ancla": "boca"
+   }
+  ]
+ },
+ {
+  "nombre": "WELROD",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "cerrojo",
+  "era_sugerida": "clásica",
+  "base_real": "Welrod Mk I (supresor integrado)",
+  "largo_m": 0.36,
+  "triangulos_total": 4023,
+  "boca_diametro_m": 0.0301,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "NAGANT",
+  "tipo_juego": "revolver",
+  "chasis": "revolver",
+  "accion": "revolver_doble",
+  "era_sugerida": "clásica",
+  "base_real": "Nagant M1895",
+  "largo_m": 0.235,
+  "triangulos_total": 5680,
+  "boca_diametro_m": 0.0135,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "culata",
+   "mira"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "QB327",
+  "tipo_juego": "shotgun",
+  "chasis": "sin_culata",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "Mossferg QB327 (escopeta semiautomática de cargador)",
+  "largo_m": 0.8749,
+  "triangulos_total": 5544,
+  "boca_diametro_m": 0.0316,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "culata",
+   "mira"
+  ],
+  "accesorios_de_serie": [
+   {
+    "id": "pr_mini_qb",
+    "categoria": "miras",
+    "ancla": "raíl_superior"
+   },
+   {
+    "id": "bo_freno_escopeta",
+    "categoria": "bocachas",
+    "ancla": "boca"
+   }
+  ]
+ },
+ {
+  "nombre": "SMG-S",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "moderna",
+  "base_real": "Subfusil compacto con supresor (modelo genérico)",
+  "largo_m": 0.5814,
+  "triangulos_total": 1569,
+  "boca_diametro_m": 0.018,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": [
+   {
+    "id": "sup_smg_s",
+    "categoria": "bocachas",
+    "ancla": "boca"
+   },
+   {
+    "id": "pr_caja_smg",
+    "categoria": "miras",
+    "ancla": "raíl_superior"
+   },
+   {
+    "id": "ag_vertical_smg",
+    "categoria": "agarres",
+    "ancla": "raíl_inferior"
+   }
+  ]
+ },
+ {
+  "nombre": "M249",
+  "tipo_juego": "lmg",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "moderna",
+  "base_real": "FN M249 SAW",
+  "largo_m": 1.04,
+  "triangulos_total": 5683,
+  "boca_diametro_m": 0.0276,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": [
+   {
+    "id": "bp_m249",
+    "categoria": "bipodes",
+    "ancla": "raíl_inferior"
+   }
+  ]
+ },
+ {
+  "nombre": "LVOA-C",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "moderna",
+  "base_real": "War Sport LVOA-C",
+  "largo_m": 0.86,
+  "triangulos_total": 5679,
+  "boca_diametro_m": 0.0494,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "MOSIN",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "accion": "cerrojo",
+  "era_sugerida": "clásica",
+  "base_real": "Mosin-Nagant 91/30",
+  "largo_m": 1.232,
+  "triangulos_total": 5684,
+  "boca_diametro_m": 0.0142,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "empunadura"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "SSG69",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "accion": "cerrojo",
+  "era_sugerida": "clásica",
+  "base_real": "Steyr SSG 69",
+  "largo_m": 1.14,
+  "triangulos_total": 5633,
+  "boca_diametro_m": 0.0236,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "cargador",
+   "mira"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "SR25",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "KAC SR-25 (fusil de tirador)",
+  "largo_m": 1.12,
+  "triangulos_total": 5690,
+  "boca_diametro_m": 0.0189,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "M200",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "accion": "cerrojo",
+  "era_sugerida": "moderna",
+  "base_real": "CheyTac M200 Intervention",
+  "largo_m": 1.42,
+  "triangulos_total": 4660,
+  "boca_diametro_m": 0.0263,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": [
+   {
+    "id": "bp_m200",
+    "categoria": "bipodes",
+    "ancla": "raíl_inferior"
+   }
+  ]
+ },
+ {
+  "nombre": "M24",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "accion": "cerrojo",
+  "era_sugerida": "moderna",
+  "base_real": "Remington M24 SWS",
+  "largo_m": 1.092,
+  "triangulos_total": 5681,
+  "boca_diametro_m": 0.0275,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": [
+   {
+    "id": "sup_m24",
+    "categoria": "bocachas",
+    "ancla": "boca"
+   }
+  ]
+ },
+ {
+  "nombre": "VECTOR",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "moderna",
+  "base_real": "KRISS Vector",
+  "largo_m": 0.6198,
+  "triangulos_total": 5685,
+  "boca_diametro_m": 0.0186,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "JNG90",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "accion": "cerrojo",
+  "era_sugerida": "moderna",
+  "base_real": "Unique Alpine JNG-90",
+  "largo_m": 1.18,
+  "triangulos_total": 5680,
+  "boca_diametro_m": 0.0283,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "G36C",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "moderna",
+  "base_real": "HK G36C",
+  "largo_m": 0.72,
+  "triangulos_total": 5684,
+  "boca_diametro_m": 0.0186,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "EVO3",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "moderna",
+  "base_real": "CZ Scorpion EVO 3",
+  "largo_m": 0.67,
+  "triangulos_total": 5679,
+  "boca_diametro_m": 0.0228,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "M2",
+  "tipo_juego": "shotgun",
+  "chasis": "convencional",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "Benelli M2",
+  "largo_m": 1.0,
+  "triangulos_total": 4198,
+  "boca_diametro_m": 0.021,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "M82",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "Barrett M82A1",
+  "largo_m": 1.45,
+  "triangulos_total": 5694,
+  "boca_diametro_m": 0.0237,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "accesorios_de_serie": [
+   {
+    "id": "te_m82",
+    "categoria": "miras",
+    "ancla": "raíl_superior"
+   }
+  ]
+ }
+]

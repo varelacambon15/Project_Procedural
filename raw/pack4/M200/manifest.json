@@ -1,0 +1,196 @@
+{
+ "nombre": "M200",
+ "tipo_juego": "sniper",
+ "chasis": "convencional",
+ "accion": "cerrojo",
+ "era_sugerida": "moderna",
+ "base_real": "CheyTac M200 Intervention",
+ "largo_m": 1.42,
+ "alto_m": 0.2319,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 1845,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    -0.105,
+    0.1456,
+    -0.0285
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0775,
+    -0.0427
+   ],
+   "bbox_local_max": [
+    0.815,
+    0.0775,
+    0.0427
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 1627,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.52,
+    0.0681,
+    -0.0793
+   ],
+   "bbox_local_max": [
+    -0.105,
+    0.2247,
+    0.081
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "culata": {
+   "triangulos": 466,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.52,
+    0.1746,
+    -0.0264
+   ],
+   "bbox_local_min": [
+    -0.19,
+    -0.1115,
+    -0.0546
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0573,
+    0.0498
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "empunadura": {
+   "triangulos": 486,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.3661,
+    0.1369,
+    -0.0295
+   ],
+   "bbox_local_min": [
+    -0.1338,
+    -0.1369,
+    -0.0393
+   ],
+   "bbox_local_max": [
+    0.0122,
+    0.0,
+    0.0389
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "cargador": {
+   "triangulos": 236,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.2184,
+    0.1381,
+    -0.029
+   ],
+   "bbox_local_min": [
+    -0.0559,
+    -0.1196,
+    -0.0239
+   ],
+   "bbox_local_max": [
+    0.0564,
+    0.0,
+    0.0239
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.71,
+   0.1855,
+   -0.0254
+  ],
+  "cara_guardamanos": [
+   -0.105,
+   0.1456,
+   -0.0285
+  ],
+  "cara_culata": [
+   -0.52,
+   0.1746,
+   -0.0264
+  ],
+  "cara_empunadura": [
+   -0.3661,
+   0.1369,
+   -0.0295
+  ],
+  "pozo_cargador": [
+   -0.2184,
+   0.1381,
+   -0.029
+  ],
+  "raíl_superior": [
+   -0.3239,
+   0.2226,
+   -0.0274
+  ],
+  "linea_mira": [
+   -0.3239,
+   0.2226,
+   -0.0274
+  ],
+  "raíl_inferior": [
+   0.1675,
+   0.2073,
+   -0.0274
+  ]
+ },
+ "triangulos_total": 4660,
+ "piezas_ausentes": [
+  "mira"
+ ],
+ "boca_diametro_m": 0.0263,
+ "mira_integrada": null,
+ "accesorios_de_serie": [
+  {
+   "id": "bp_m200",
+   "categoria": "bipodes",
+   "ancla": "raíl_inferior"
+  }
+ ]
+}

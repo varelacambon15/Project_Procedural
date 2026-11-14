@@ -1,0 +1,161 @@
+{
+ "nombre": "SSG69",
+ "tipo_juego": "sniper",
+ "chasis": "convencional",
+ "accion": "cerrojo",
+ "era_sugerida": "clásica",
+ "base_real": "Steyr SSG 69",
+ "largo_m": 1.14,
+ "alto_m": 0.1949,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 1891,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.28,
+    0.0746,
+    -0.0327
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.1811,
+    0.0222
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 695,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.245,
+    0.115,
+    -0.0076
+   ],
+   "bbox_local_min": [
+    -0.035,
+    -0.0747,
+    -0.0251
+   ],
+   "bbox_local_max": [
+    0.035,
+    0.0,
+    0.0251
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "culata": {
+   "triangulos": 2083,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.28,
+    0.1065,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.29,
+    -0.1065,
+    -0.0327
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0662,
+    0.0327
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 964,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    -0.0,
+    0.1467,
+    -0.0076
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0337,
+    -0.023
+   ],
+   "bbox_local_max": [
+    0.57,
+    0.0482,
+    0.023
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.57,
+   0.1644,
+   -0.0075
+  ],
+  "cara_guardamanos": [
+   -0.0,
+   0.1467,
+   -0.0076
+  ],
+  "cara_culata": [
+   -0.28,
+   0.1065,
+   0.0
+  ],
+  "cara_empunadura": [
+   -0.245,
+   0.115,
+   -0.0076
+  ],
+  "raíl_superior": [
+   -0.18,
+   0.1811,
+   0.0
+  ],
+  "linea_mira": [
+   -0.18,
+   0.1811,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.1778,
+   0.1189,
+   0.0
+  ]
+ },
+ "triangulos_total": 5633,
+ "piezas_ausentes": [
+  "cargador",
+  "mira"
+ ],
+ "boca_diametro_m": 0.0236,
+ "mira_integrada": null,
+ "accesorios_de_serie": []
+}

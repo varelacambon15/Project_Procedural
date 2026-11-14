@@ -1,0 +1,192 @@
+{
+ "nombre": "WELROD",
+ "tipo_juego": "pistol",
+ "chasis": "pistola",
+ "accion": "cerrojo",
+ "era_sugerida": "clásica",
+ "base_real": "Welrod Mk I (supresor integrado)",
+ "largo_m": 0.36,
+ "alto_m": 0.1467,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "empunadura": {
+   "triangulos": 504,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.105,
+    0.0894,
+    -0.001
+   ],
+   "bbox_local_min": [
+    -0.0362,
+    -0.0774,
+    -0.0112
+   ],
+   "bbox_local_max": [
+    0.0282,
+    0.0,
+    0.0131
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "cargador": {
+   "triangulos": 212,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.1165,
+    0.012,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0252,
+    -0.012,
+    -0.0122
+   ],
+   "bbox_local_max": [
+    0.0252,
+    0.0,
+    0.0122
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 522,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.035,
+    0.1229,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0167,
+    -0.0168
+   ],
+   "bbox_local_max": [
+    0.145,
+    0.0167,
+    0.0168
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 2749,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.18,
+    0.0734,
+    -0.0179
+   ],
+   "bbox_local_max": [
+    0.035,
+    0.145,
+    0.0179
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "mira": {
+   "triangulos": 36,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.1572,
+    0.1383,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0052,
+    0.0,
+    -0.0043
+   ],
+   "bbox_local_max": [
+    0.0052,
+    0.0084,
+    0.0044
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.18,
+   0.1229,
+   0.0
+  ],
+  "cara_guardamanos": [
+   0.035,
+   0.1229,
+   0.0
+  ],
+  "cara_empunadura": [
+   -0.105,
+   0.0894,
+   -0.001
+  ],
+  "pozo_cargador": [
+   -0.1165,
+   0.012,
+   0.0
+  ],
+  "raíl_superior": [
+   -0.1572,
+   0.1383,
+   0.0
+  ],
+  "linea_mira": [
+   -0.1572,
+   0.1467,
+   0.0
+  ],
+  "cara_culata": [
+   -0.18,
+   0.1229,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.1149,
+   0.1105,
+   0.0
+  ]
+ },
+ "triangulos_total": 4023,
+ "piezas_ausentes": [
+  "culata"
+ ],
+ "boca_diametro_m": 0.0301,
+ "mira_integrada": "alza",
+ "accesorios_de_serie": []
+}

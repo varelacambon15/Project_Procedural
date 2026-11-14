@@ -1,0 +1,190 @@
+{
+ "nombre": "LVOA-C",
+ "tipo_juego": "rifle",
+ "chasis": "convencional",
+ "accion": "automatica",
+ "era_sugerida": "moderna",
+ "base_real": "War Sport LVOA-C",
+ "largo_m": 0.86,
+ "alto_m": 0.2301,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 3740,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.017,
+    0.1993,
+    -0.003
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0301,
+    -0.0251
+   ],
+   "bbox_local_max": [
+    0.413,
+    0.0301,
+    0.026
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 984,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.2,
+    0.1052,
+    -0.0293
+   ],
+   "bbox_local_max": [
+    0.017,
+    0.2301,
+    0.0338
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "culata": {
+   "triangulos": 556,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.2,
+    0.1961,
+    -0.0033
+   ],
+   "bbox_local_min": [
+    -0.23,
+    -0.1156,
+    -0.0305
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0137,
+    0.0289
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "empunadura": {
+   "triangulos": 277,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.1799,
+    0.1585,
+    -0.0034
+   ],
+   "bbox_local_min": [
+    -0.0321,
+    -0.1269,
+    -0.0078
+   ],
+   "bbox_local_max": [
+    0.0734,
+    0.0,
+    0.0079
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "cargador": {
+   "triangulos": 122,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0283,
+    0.1182,
+    -0.0031
+   ],
+   "bbox_local_min": [
+    -0.0292,
+    -0.1182,
+    -0.0119
+   ],
+   "bbox_local_max": [
+    0.0526,
+    0.0,
+    0.0119
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.43,
+   0.1992,
+   0.003
+  ],
+  "cara_guardamanos": [
+   0.017,
+   0.1993,
+   -0.003
+  ],
+  "cara_culata": [
+   -0.2,
+   0.1961,
+   -0.0033
+  ],
+  "cara_empunadura": [
+   -0.1799,
+   0.1585,
+   -0.0034
+  ],
+  "pozo_cargador": [
+   -0.0283,
+   0.1182,
+   -0.0031
+  ],
+  "raíl_superior": [
+   -0.0764,
+   0.2291,
+   -0.0006
+  ],
+  "linea_mira": [
+   -0.0764,
+   0.2291,
+   -0.0006
+  ],
+  "raíl_inferior": [
+   0.2202,
+   0.1692,
+   -0.0006
+  ]
+ },
+ "triangulos_total": 5679,
+ "piezas_ausentes": [
+  "mira"
+ ],
+ "boca_diametro_m": 0.0494,
+ "mira_integrada": null,
+ "accesorios_de_serie": []
+}

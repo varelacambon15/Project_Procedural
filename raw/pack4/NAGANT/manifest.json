@@ -1,0 +1,161 @@
+{
+ "nombre": "NAGANT",
+ "tipo_juego": "revolver",
+ "chasis": "revolver",
+ "accion": "revolver_doble",
+ "era_sugerida": "clásica",
+ "base_real": "Nagant M1895",
+ "largo_m": 0.235,
+ "alto_m": 0.1402,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 2642,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0888,
+    0.0417,
+    -0.012
+   ],
+   "bbox_local_max": [
+    0.0284,
+    0.1342,
+    0.0207
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 1509,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0642,
+    0.085,
+    -0.0007
+   ],
+   "bbox_local_min": [
+    -0.0533,
+    -0.085,
+    -0.0179
+   ],
+   "bbox_local_max": [
+    0.0258,
+    0.0,
+    0.0177
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 483,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.025,
+    0.117,
+    -0.0003
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0124,
+    -0.0078
+   ],
+   "bbox_local_max": [
+    0.0925,
+    0.0232,
+    0.0079
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "tambor": {
+   "triangulos": 1046,
+   "origen_local": "eje_tambor",
+   "posicion_en_arma": [
+    -0.0336,
+    0.1088,
+    -0.0005
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0205,
+    -0.0202
+   ],
+   "bbox_local_max": [
+    0.0458,
+    0.0205,
+    0.0202
+   ],
+   "material": "mat_tambor",
+   "color": [
+    0.1,
+    0.1,
+    0.11
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.1175,
+   0.122,
+   0.0
+  ],
+  "cara_guardamanos": [
+   0.025,
+   0.117,
+   -0.0003
+  ],
+  "cara_empunadura": [
+   -0.0642,
+   0.085,
+   -0.0007
+  ],
+  "eje_tambor": [
+   -0.0336,
+   0.1088,
+   -0.0005
+  ],
+  "raíl_superior": [
+   -0.0084,
+   0.1342,
+   0.0
+  ],
+  "linea_mira": [
+   -0.0084,
+   0.1342,
+   0.0
+  ],
+  "cara_culata": [
+   -0.0888,
+   0.0876,
+   0.0
+  ]
+ },
+ "triangulos_total": 5680,
+ "piezas_ausentes": [
+  "culata",
+  "mira"
+ ],
+ "boca_diametro_m": 0.0135,
+ "mira_integrada": null,
+ "accesorios_de_serie": []
+}

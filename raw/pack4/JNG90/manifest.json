@@ -1,0 +1,190 @@
+{
+ "nombre": "JNG90",
+ "tipo_juego": "sniper",
+ "chasis": "convencional",
+ "accion": "cerrojo",
+ "era_sugerida": "moderna",
+ "base_real": "Unique Alpine JNG-90",
+ "largo_m": 1.18,
+ "alto_m": 0.2026,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 1650,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.02,
+    0.1616,
+    -0.0048
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.041,
+    -0.0255
+   ],
+   "bbox_local_max": [
+    0.57,
+    0.041,
+    0.0278
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 1981,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.275,
+    0.0598,
+    -0.0303
+   ],
+   "bbox_local_max": [
+    0.02,
+    0.2026,
+    0.0422
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 798,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.2272,
+    0.1156,
+    0.0112
+   ],
+   "bbox_local_min": [
+    -0.0517,
+    -0.1068,
+    -0.0446
+   ],
+   "bbox_local_max": [
+    0.0462,
+    0.0,
+    0.0073
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "culata": {
+   "triangulos": 994,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.275,
+    0.1236,
+    -0.0079
+   ],
+   "bbox_local_min": [
+    -0.315,
+    -0.1236,
+    -0.0343
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0588,
+    0.0278
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "cargador": {
+   "triangulos": 257,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0711,
+    0.1369,
+    -0.0056
+   ],
+   "bbox_local_min": [
+    -0.046,
+    -0.0824,
+    -0.0189
+   ],
+   "bbox_local_max": [
+    0.0478,
+    0.0,
+    0.0183
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.59,
+   0.1841,
+   0.0012
+  ],
+  "cara_guardamanos": [
+   0.02,
+   0.1616,
+   -0.0048
+  ],
+  "cara_culata": [
+   -0.275,
+   0.1236,
+   -0.0079
+  ],
+  "cara_empunadura": [
+   -0.2272,
+   0.1156,
+   0.0112
+  ],
+  "pozo_cargador": [
+   -0.0711,
+   0.1369,
+   -0.0056
+  ],
+  "raíl_superior": [
+   -0.151,
+   0.2026,
+   0.0
+  ],
+  "linea_mira": [
+   -0.151,
+   0.2026,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.1139,
+   0.1206,
+   0.0
+  ]
+ },
+ "triangulos_total": 5680,
+ "piezas_ausentes": [
+  "mira"
+ ],
+ "boca_diametro_m": 0.0283,
+ "mira_integrada": null,
+ "accesorios_de_serie": []
+}

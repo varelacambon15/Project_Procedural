@@ -1,0 +1,215 @@
+{
+ "nombre": "VECTOR",
+ "tipo_juego": "smg",
+ "chasis": "convencional",
+ "accion": "automatica",
+ "era_sugerida": "moderna",
+ "base_real": "KRISS Vector",
+ "largo_m": 0.6198,
+ "alto_m": 0.3369,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 2860,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0746,
+    0.0178,
+    -0.0219
+   ],
+   "bbox_local_max": [
+    0.17,
+    0.3116,
+    0.0219
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "cargador": {
+   "triangulos": 353,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    0.0764,
+    0.148,
+    0.0003
+   ],
+   "bbox_local_min": [
+    -0.0534,
+    -0.148,
+    -0.0155
+   ],
+   "bbox_local_max": [
+    0.051,
+    0.0,
+    0.0155
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 1181,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.1699,
+    0.2617,
+    -0.0011
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0405,
+    -0.0295
+   ],
+   "bbox_local_max": [
+    0.14,
+    0.0738,
+    0.0187
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "culata": {
+   "triangulos": 689,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.0549,
+    0.2767,
+    0.0186
+   ],
+   "bbox_local_min": [
+    -0.255,
+    -0.1527,
+    -0.0367
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0251,
+    0.012
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "empunadura": {
+   "triangulos": 209,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0424,
+    0.2598,
+    -0.0003
+   ],
+   "bbox_local_min": [
+    -0.0414,
+    -0.1164,
+    -0.0148
+   ],
+   "bbox_local_max": [
+    0.0298,
+    0.0,
+    0.0147
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "mira": {
+   "triangulos": 393,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.0121,
+    0.2986,
+    -0.0
+   ],
+   "bbox_local_min": [
+    -0.0106,
+    0.0,
+    -0.0155
+   ],
+   "bbox_local_max": [
+    0.0106,
+    0.0383,
+    0.0135
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.3099,
+   0.2474,
+   0.0017
+  ],
+  "cara_guardamanos": [
+   0.1699,
+   0.2617,
+   -0.0011
+  ],
+  "cara_culata": [
+   -0.0549,
+   0.2767,
+   0.0186
+  ],
+  "cara_empunadura": [
+   -0.0424,
+   0.2598,
+   -0.0003
+  ],
+  "pozo_cargador": [
+   0.0764,
+   0.148,
+   0.0003
+  ],
+  "raíl_superior": [
+   -0.0121,
+   0.2986,
+   -0.0
+  ],
+  "linea_mira": [
+   -0.0121,
+   0.3369,
+   -0.0
+  ],
+  "raíl_inferior": [
+   0.2185,
+   0.2235,
+   -0.0
+  ]
+ },
+ "triangulos_total": 5685,
+ "piezas_ausentes": [],
+ "boca_diametro_m": 0.0186,
+ "mira_integrada": "alza",
+ "accesorios_de_serie": []
+}

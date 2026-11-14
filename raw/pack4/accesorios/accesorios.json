@@ -1,0 +1,418 @@
+[
+ {
+  "id": "sup_apb",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "supresor",
+  "diametro_encaje_m": 0.015,
+  "archivo": "accesorios/bocachas/sup_apb.glb",
+  "triangulos": 108,
+  "largo_m": 0.2432,
+  "alto_m": 0.0412,
+  "bbox_min": [
+   0.0,
+   -0.0281,
+   -0.0205
+  ],
+  "bbox_max": [
+   0.2432,
+   0.0131,
+   0.0206
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.2432,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha",
+  "origen": "APB"
+ },
+ {
+  "id": "pr_mini_qb",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "tipo_mira": "punto_rojo",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "archivo": "accesorios/miras/pr_mini_qb.glb",
+  "triangulos": 82,
+  "largo_m": 0.0464,
+  "alto_m": 0.0477,
+  "bbox_min": [
+   -0.0232,
+   0.0,
+   -0.0196
+  ],
+  "bbox_max": [
+   0.0232,
+   0.0477,
+   0.0196
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.0197,
+    0.0317,
+    0.0002
+   ]
+  },
+  "material": "mat_mira",
+  "origen": "QB327",
+  "centro_lente_local": [
+   0.0197,
+   0.0317,
+   0.0002
+  ]
+ },
+ {
+  "id": "bo_freno_escopeta",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "freno",
+  "diametro_encaje_m": 0.0389,
+  "archivo": "accesorios/bocachas/bo_freno_escopeta.glb",
+  "triangulos": 683,
+  "largo_m": 0.1541,
+  "alto_m": 0.0545,
+  "bbox_min": [
+   0.0,
+   -0.0273,
+   -0.0273
+  ],
+  "bbox_max": [
+   0.1541,
+   0.0273,
+   0.0273
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.1541,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha",
+  "origen": "QB327"
+ },
+ {
+  "id": "sup_smg_s",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "supresor",
+  "diametro_encaje_m": 0.044,
+  "archivo": "accesorios/bocachas/sup_smg_s.glb",
+  "triangulos": 974,
+  "largo_m": 0.2186,
+  "alto_m": 0.044,
+  "bbox_min": [
+   0.0,
+   -0.022,
+   -0.022
+  ],
+  "bbox_max": [
+   0.2186,
+   0.022,
+   0.022
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.2186,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha",
+  "origen": "SMG-S"
+ },
+ {
+  "id": "pr_caja_smg",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "tipo_mira": "punto_rojo",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "archivo": "accesorios/miras/pr_caja_smg.glb",
+  "triangulos": 288,
+  "largo_m": 0.0926,
+  "alto_m": 0.054,
+  "bbox_min": [
+   -0.0463,
+   0.0,
+   -0.0209
+  ],
+  "bbox_max": [
+   0.0463,
+   0.054,
+   0.0209
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.0,
+    0.0335,
+    0.0
+   ]
+  },
+  "material": "mat_mira",
+  "origen": "SMG-S",
+  "centro_lente_local": [
+   0.0,
+   0.0335,
+   0.0
+  ]
+ },
+ {
+  "id": "ag_vertical_smg",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "vertical",
+  "archivo": "accesorios/agarres/ag_vertical_smg.glb",
+  "triangulos": 137,
+  "largo_m": 0.0488,
+  "alto_m": 0.0988,
+  "bbox_min": [
+   -0.0244,
+   -0.0988,
+   -0.0135
+  ],
+  "bbox_max": [
+   0.0244,
+   0.0,
+   0.0135
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre",
+  "origen": "SMG-S"
+ },
+ {
+  "id": "bp_m249",
+  "categoria": "bipodes",
+  "pieza": "bipode",
+  "ancla": "raíl_inferior",
+  "estado": "desplegado",
+  "archivo": "accesorios/bipodes/bp_m249.glb",
+  "triangulos": 556,
+  "largo_m": 0.0579,
+  "alto_m": 0.2826,
+  "bbox_min": [
+   -0.0289,
+   -0.2826,
+   -0.206
+  ],
+  "bbox_max": [
+   0.0289,
+   0.0,
+   0.206
+  ],
+  "anclas_locales": {},
+  "material": "mat_bipode",
+  "origen": "M249"
+ },
+ {
+  "id": "bp_m200",
+  "categoria": "bipodes",
+  "pieza": "bipode",
+  "ancla": "raíl_inferior",
+  "estado": "desplegado",
+  "archivo": "accesorios/bipodes/bp_m200.glb",
+  "triangulos": 232,
+  "largo_m": 0.0376,
+  "alto_m": 0.2696,
+  "bbox_min": [
+   -0.0188,
+   -0.2696,
+   -0.1759
+  ],
+  "bbox_max": [
+   0.0188,
+   0.0,
+   0.1759
+  ],
+  "anclas_locales": {},
+  "material": "mat_bipode",
+  "origen": "M200"
+ },
+ {
+  "id": "sup_m24",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "supresor",
+  "diametro_encaje_m": 0.0434,
+  "archivo": "accesorios/bocachas/sup_m24.glb",
+  "triangulos": 1184,
+  "largo_m": 0.2786,
+  "alto_m": 0.0503,
+  "bbox_min": [
+   0.0,
+   -0.0252,
+   -0.0248
+  ],
+  "bbox_max": [
+   0.2786,
+   0.0252,
+   0.0253
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.2786,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha",
+  "origen": "M24"
+ },
+ {
+  "id": "te_m82",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "tipo_mira": "telescopica",
+  "aumento": 10,
+  "ve_a_traves": true,
+  "archivo": "accesorios/miras/te_m82.glb",
+  "triangulos": 3244,
+  "largo_m": 0.4047,
+  "alto_m": 0.0739,
+  "bbox_min": [
+   -0.2024,
+   0.0,
+   -0.0279
+  ],
+  "bbox_max": [
+   0.2024,
+   0.0739,
+   0.0279
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.0,
+    0.047,
+    0.0008
+   ]
+  },
+  "material": "mat_mira",
+  "origen": "M82",
+  "centro_lente_local": [
+   0.0,
+   0.047,
+   0.0008
+  ]
+ },
+ {
+  "id": "ag_rvg",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "vertical",
+  "archivo": "accesorios/agarres/ag_rvg.glb",
+  "triangulos": 534,
+  "largo_m": 0.0282,
+  "alto_m": 0.0684,
+  "bbox_min": [
+   -0.0141,
+   -0.0684,
+   -0.0181
+  ],
+  "bbox_max": [
+   0.0141,
+   0.0,
+   0.0181
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre",
+  "origen": null
+ },
+ {
+  "id": "ag_afg_a",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "angulado",
+  "archivo": "accesorios/agarres/ag_afg_a.glb",
+  "triangulos": 762,
+  "largo_m": 0.11,
+  "alto_m": 0.0565,
+  "bbox_min": [
+   -0.055,
+   -0.0565,
+   -0.0177
+  ],
+  "bbox_max": [
+   0.055,
+   0.0,
+   0.0177
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre",
+  "origen": null
+ },
+ {
+  "id": "ag_afg_b",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "angulado",
+  "archivo": "accesorios/agarres/ag_afg_b.glb",
+  "triangulos": 648,
+  "largo_m": 0.11,
+  "alto_m": 0.0511,
+  "bbox_min": [
+   -0.055,
+   -0.0511,
+   -0.0143
+  ],
+  "bbox_max": [
+   0.055,
+   0.0,
+   0.0143
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre",
+  "origen": null
+ },
+ {
+  "id": "mg_g33",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "tipo_mira": "magnificador",
+  "aumento": 3,
+  "ve_a_traves": true,
+  "archivo": "accesorios/miras/mg_g33.glb",
+  "triangulos": 2258,
+  "largo_m": 0.0858,
+  "alto_m": 0.0711,
+  "bbox_min": [
+   -0.0429,
+   0.0,
+   -0.0244
+  ],
+  "bbox_max": [
+   0.0429,
+   0.0711,
+   0.0244
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.0,
+    0.0441,
+    -0.0019
+   ]
+  },
+  "material": "mat_mira",
+  "origen": null,
+  "centro_lente_local": [
+   0.0,
+   0.0441,
+   -0.0019
+  ]
+ }
+]

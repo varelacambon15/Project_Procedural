@@ -1,0 +1,433 @@
+[
+ {
+  "nombre": "GL-18S",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "era_sugerida": "moderna",
+  "base_real": "Pistola tipo Glock con culata de varilla (generada con TRELLIS.2 y adaptada)",
+  "largo_m": 0.3308,
+  "triangulos_total": 5480,
+  "boca_diametro_m": 0.0121,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 3332
+   },
+   "mira": {
+    "triangulos": 149,
+    "seccion_union_m": {
+     "largo": 0.014,
+     "ancho": 0.0172
+    }
+   },
+   "empunadura": {
+    "triangulos": 693,
+    "seccion_union_m": {
+     "largo": 0.0645,
+     "ancho": 0.0263
+    }
+   },
+   "cargador": {
+    "triangulos": 233,
+    "seccion_union_m": {
+     "largo": 0.0346,
+     "ancho": 0.0209
+    }
+   },
+   "culata": {
+    "triangulos": 482,
+    "seccion_union_m": {
+     "alto": 0.0234,
+     "ancho": 0.0181
+    }
+   },
+   "guardamanos_canon": {
+    "triangulos": 591,
+    "seccion_union_m": {
+     "alto": 0.0311,
+     "ancho": 0.0322
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.1654,
+    0.1017,
+    -0.0004
+   ],
+   "cara_culata": [
+    -0.026,
+    0.0925,
+    -0.0002
+   ],
+   "cara_guardamanos": [
+    0.13,
+    0.0995,
+    -0.0001
+   ],
+   "cara_empunadura": [
+    0.0098,
+    0.078,
+    0.0028
+   ],
+   "pozo_cargador": [
+    0.0032,
+    0.018,
+    -0.0003
+   ],
+   "raíl_superior": [
+    -0.005,
+    0.112,
+    -0.0003
+   ],
+   "linea_mira": [
+    -0.004,
+    0.121,
+    -0.0001
+   ],
+   "raíl_inferior": [
+    0.105,
+    0.0482,
+    -0.0001
+   ]
+  }
+ },
+ {
+  "nombre": "M4A4",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "era_sugerida": "moderna",
+  "base_real": "Colt M4A1 (M4A4 de CS)",
+  "largo_m": 0.84,
+  "triangulos_total": 5887,
+  "boca_diametro_m": 0.0212,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 1934
+   },
+   "guardamanos_canon": {
+    "triangulos": 2783,
+    "seccion_union_m": {
+     "alto": 0.0708,
+     "ancho": 0.0453
+    }
+   },
+   "culata": {
+    "triangulos": 189,
+    "seccion_union_m": {
+     "alto": 0.0366,
+     "ancho": 0.0366
+    }
+   },
+   "empunadura": {
+    "triangulos": 109,
+    "seccion_union_m": {
+     "largo": 0.0378,
+     "ancho": 0.0275
+    }
+   },
+   "cargador": {
+    "triangulos": 336,
+    "seccion_union_m": {
+     "largo": 0.0399,
+     "ancho": 0.0148
+    }
+   },
+   "mira": {
+    "triangulos": 536,
+    "seccion_union_m": {
+     "largo": 0.0074,
+     "ancho": 0.0251
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.42,
+    0.2058,
+    -0.0023
+   ],
+   "cara_guardamanos": [
+    0.021,
+    0.219,
+    -0.0023
+   ],
+   "cara_culata": [
+    -0.1988,
+    0.205,
+    -0.0023
+   ],
+   "cara_empunadura": [
+    -0.157,
+    0.1526,
+    -0.0023
+   ],
+   "pozo_cargador": [
+    -0.048,
+    0.2,
+    -0.0023
+   ],
+   "raíl_superior": [
+    -0.1573,
+    0.2422,
+    -0.0001
+   ],
+   "linea_mira": [
+    -0.1573,
+    0.2867,
+    -0.0001
+   ],
+   "raíl_inferior": [
+    0.125,
+    0.1633,
+    -0.0001
+   ]
+  }
+ },
+ {
+  "nombre": "TOZ-106",
+  "tipo_juego": "shotgun",
+  "chasis": "convencional",
+  "era_sugerida": "rústica",
+  "base_real": "TOZ-106",
+  "largo_m": 0.89,
+  "triangulos_total": 5103,
+  "boca_diametro_m": 0.0221,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 2830
+   },
+   "culata": {
+    "triangulos": 645,
+    "seccion_union_m": {
+     "alto": 0.038,
+     "ancho": 0.0388
+    }
+   },
+   "guardamanos_canon": {
+    "triangulos": 770,
+    "seccion_union_m": {
+     "alto": 0.0614,
+     "ancho": 0.0494
+    }
+   },
+   "empunadura": {
+    "triangulos": 174,
+    "seccion_union_m": {
+     "largo": 0.0722,
+     "ancho": 0.0283
+    }
+   },
+   "cargador": {
+    "triangulos": 684,
+    "seccion_union_m": {
+     "largo": 0.067,
+     "ancho": 0.025
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.445,
+    0.1627,
+    -0.0057
+   ],
+   "cara_guardamanos": [
+    0.13,
+    0.1507,
+    -0.0057
+   ],
+   "cara_culata": [
+    -0.115,
+    0.1259,
+    -0.0057
+   ],
+   "cara_empunadura": [
+    -0.0812,
+    0.1135,
+    -0.0057
+   ],
+   "pozo_cargador": [
+    0.0615,
+    0.112,
+    -0.0057
+   ],
+   "raíl_inferior": [
+    0.22,
+    0.1213,
+    0.0
+   ],
+   "raíl_superior": [
+    0.005,
+    0.1814,
+    0.0
+   ],
+   "linea_mira": [
+    0.433,
+    0.1832,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "REV-45LC",
+  "tipo_juego": "revolver",
+  "chasis": "revolver",
+  "era_sugerida": "clásica",
+  "base_real": "Revólver .45 Long Colt de acción simple",
+  "largo_m": 0.29,
+  "triangulos_total": 5130,
+  "boca_diametro_m": 0.0578,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata",
+   "mira"
+  ],
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 1800,
+    "origen_local": "origen del arma",
+    "posicion_en_arma": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "bbox_local_min": [
+     -0.1041,
+     0.0529,
+     -0.0152
+    ],
+    "bbox_local_max": [
+     0.003,
+     0.1288,
+     0.0152
+    ],
+    "material": "mat_cuerpo",
+    "color": [
+     0.28,
+     0.28,
+     0.3
+    ]
+   },
+   "empunadura": {
+    "triangulos": 520,
+    "origen_local": "cara_empunadura",
+    "posicion_en_arma": [
+     -0.0995,
+     0.086,
+     0.0
+    ],
+    "bbox_local_min": [
+     -0.0455,
+     -0.086,
+     -0.008
+    ],
+    "bbox_local_max": [
+     0.0387,
+     0.0,
+     0.008
+    ],
+    "material": "mat_empunadura",
+    "color": [
+     0.14,
+     0.14,
+     0.15
+    ]
+   },
+   "tambor": {
+    "triangulos": 1619,
+    "origen_local": "eje_tambor",
+    "posicion_en_arma": [
+     -0.0569,
+     0.1037,
+     0.0
+    ],
+    "bbox_local_min": [
+     0.0,
+     -0.0152,
+     -0.0154
+    ],
+    "bbox_local_max": [
+     0.0507,
+     0.0152,
+     0.0154
+    ],
+    "material": "mat_tambor",
+    "color": [
+     0.1,
+     0.1,
+     0.11
+    ]
+   },
+   "guardamanos_canon": {
+    "triangulos": 1191,
+    "origen_local": "cara_guardamanos",
+    "posicion_en_arma": [
+     0.003,
+     0.1002,
+     -0.0
+    ],
+    "bbox_local_min": [
+     0.0,
+     -0.0285,
+     -0.0093
+    ],
+    "bbox_local_max": [
+     0.142,
+     0.0285,
+     0.0093
+    ],
+    "material": "mat_guardamanos_canon",
+    "color": [
+     0.16,
+     0.16,
+     0.17
+    ]
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.145,
+    0.1057,
+    -0.0
+   ],
+   "cara_guardamanos": [
+    0.003,
+    0.1002,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.0995,
+    0.086,
+    0.0
+   ],
+   "eje_tambor": [
+    -0.0569,
+    0.1037,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.05,
+    0.1285,
+    -0.0
+   ],
+   "linea_mira": [
+    -0.05,
+    0.1285,
+    -0.0
+   ],
+   "cara_culata": [
+    -0.145,
+    0.06,
+    -0.0
+   ]
+  }
+ }
+]

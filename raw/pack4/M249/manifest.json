@@ -1,0 +1,196 @@
+{
+ "nombre": "M249",
+ "tipo_juego": "lmg",
+ "chasis": "convencional",
+ "accion": "automatica",
+ "era_sugerida": "moderna",
+ "base_real": "FN M249 SAW",
+ "largo_m": 1.04,
+ "alto_m": 0.277,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 1921,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.03,
+    0.2026,
+    -0.0067
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0706,
+    -0.0521
+   ],
+   "bbox_local_max": [
+    0.49,
+    0.0657,
+    0.0422
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 3062,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.2657,
+    0.1251,
+    -0.0777
+   ],
+   "bbox_local_max": [
+    0.03,
+    0.277,
+    0.0549
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 275,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.1736,
+    0.1789,
+    0.0028
+   ],
+   "bbox_local_min": [
+    -0.0884,
+    -0.1271,
+    -0.0289
+   ],
+   "bbox_local_max": [
+    0.0885,
+    0.0,
+    0.0289
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "culata": {
+   "triangulos": 235,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.2636,
+    0.2122,
+    0.0051
+   ],
+   "bbox_local_min": [
+    -0.2564,
+    -0.1152,
+    -0.0357
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.042,
+    0.0357
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "cargador": {
+   "triangulos": 190,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0357,
+    0.2278,
+    -0.0029
+   ],
+   "bbox_local_min": [
+    -0.0517,
+    -0.2278,
+    -0.1085
+   ],
+   "bbox_local_max": [
+    0.0459,
+    0.0,
+    0.1142
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.52,
+   0.2288,
+   -0.025
+  ],
+  "cara_guardamanos": [
+   0.03,
+   0.2026,
+   -0.0067
+  ],
+  "cara_culata": [
+   -0.2636,
+   0.2122,
+   0.0051
+  ],
+  "cara_empunadura": [
+   -0.1736,
+   0.1789,
+   0.0028
+  ],
+  "pozo_cargador": [
+   -0.0357,
+   0.2278,
+   -0.0029
+  ],
+  "raíl_superior": [
+   -0.0551,
+   0.2593,
+   -0.0261
+  ],
+  "linea_mira": [
+   -0.0551,
+   0.2593,
+   -0.0261
+  ],
+  "raíl_inferior": [
+   0.2674,
+   0.2136,
+   -0.0261
+  ]
+ },
+ "triangulos_total": 5683,
+ "piezas_ausentes": [
+  "mira"
+ ],
+ "boca_diametro_m": 0.0276,
+ "mira_integrada": null,
+ "accesorios_de_serie": [
+  {
+   "id": "bp_m249",
+   "categoria": "bipodes",
+   "ancla": "raíl_inferior"
+  }
+ ]
+}

@@ -1,0 +1,206 @@
+{
+ "nombre": "SMG-S",
+ "tipo_juego": "smg",
+ "chasis": "convencional",
+ "accion": "automatica",
+ "era_sugerida": "moderna",
+ "base_real": "Subfusil compacto con supresor (modelo genérico)",
+ "largo_m": 0.5814,
+ "alto_m": 0.3286,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 722,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.1407,
+    0.2144,
+    -0.0135
+   ],
+   "bbox_local_max": [
+    0.1093,
+    0.3286,
+    0.0328
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 74,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0054,
+    0.245,
+    0.0097
+   ],
+   "bbox_local_min": [
+    -0.0505,
+    -0.1029,
+    -0.0135
+   ],
+   "bbox_local_max": [
+    0.0315,
+    0.0,
+    0.0135
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 554,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.1093,
+    0.2894,
+    0.0097
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0573,
+    -0.0425
+   ],
+   "bbox_local_max": [
+    0.1814,
+    0.038,
+    0.0232
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "culata": {
+   "triangulos": 183,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.1407,
+    0.2854,
+    0.0097
+   ],
+   "bbox_local_min": [
+    -0.15,
+    -0.106,
+    -0.0212
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0355,
+    0.0212
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "cargador": {
+   "triangulos": 36,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0412,
+    0.1687,
+    0.0097
+   ],
+   "bbox_local_min": [
+    -0.0444,
+    -0.1687,
+    -0.0139
+   ],
+   "bbox_local_max": [
+    0.0348,
+    0.0,
+    0.0139
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.2907,
+   0.2797,
+   0.0097
+  ],
+  "cara_guardamanos": [
+   0.1093,
+   0.2894,
+   0.0097
+  ],
+  "cara_culata": [
+   -0.1407,
+   0.2854,
+   0.0097
+  ],
+  "cara_empunadura": [
+   -0.0054,
+   0.245,
+   0.0097
+  ],
+  "pozo_cargador": [
+   -0.0412,
+   0.1687,
+   0.0097
+  ],
+  "raíl_superior": [
+   0.0881,
+   0.3202,
+   0.0093
+  ],
+  "linea_mira": [
+   0.0881,
+   0.3537,
+   0.0093
+  ],
+  "raíl_inferior": [
+   0.1844,
+   0.2514,
+   0.0097
+  ]
+ },
+ "triangulos_total": 1569,
+ "piezas_ausentes": [
+  "mira"
+ ],
+ "boca_diametro_m": 0.018,
+ "mira_integrada": null,
+ "accesorios_de_serie": [
+  {
+   "id": "sup_smg_s",
+   "categoria": "bocachas",
+   "ancla": "boca"
+  },
+  {
+   "id": "pr_caja_smg",
+   "categoria": "miras",
+   "ancla": "raíl_superior"
+  },
+  {
+   "id": "ag_vertical_smg",
+   "categoria": "agarres",
+   "ancla": "raíl_inferior"
+  }
+ ]
+}

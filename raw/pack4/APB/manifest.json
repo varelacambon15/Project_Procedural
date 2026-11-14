@@ -1,0 +1,221 @@
+{
+ "nombre": "APB",
+ "tipo_juego": "pistol",
+ "chasis": "pistola",
+ "accion": "automatica",
+ "era_sugerida": "clásica",
+ "base_real": "Stechkin APB con culata de alambre",
+ "largo_m": 0.5568,
+ "alto_m": 0.1656,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 1533,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0268,
+    0.0499,
+    -0.0165
+   ],
+   "bbox_local_max": [
+    0.2216,
+    0.1642,
+    0.0165
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 352,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    0.0761,
+    0.115,
+    0.0009
+   ],
+   "bbox_local_min": [
+    -0.0332,
+    -0.1115,
+    -0.0157
+   ],
+   "bbox_local_max": [
+    0.0307,
+    0.0,
+    0.0157
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 373,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.2216,
+    0.1379,
+    0.0009
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0201,
+    -0.0127
+   ],
+   "bbox_local_max": [
+    0.0568,
+    0.0258,
+    0.0127
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "culata": {
+   "triangulos": 390,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    0.0528,
+    0.0415,
+    0.0009
+   ],
+   "bbox_local_min": [
+    -0.3312,
+    -0.0349,
+    -0.0152
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0577,
+    0.0152
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "cargador": {
+   "triangulos": 16,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    0.0864,
+    0.0035,
+    0.0009
+   ],
+   "bbox_local_min": [
+    -0.0236,
+    -0.0035,
+    -0.0127
+   ],
+   "bbox_local_max": [
+    0.0236,
+    0.0,
+    0.0127
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  },
+  "mira": {
+   "triangulos": 44,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    0.0637,
+    0.1508,
+    0.0009
+   ],
+   "bbox_local_min": [
+    -0.0041,
+    0.0,
+    -0.0053
+   ],
+   "bbox_local_max": [
+    0.0041,
+    0.0148,
+    0.0053
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.2784,
+   0.1459,
+   0.0008
+  ],
+  "cara_guardamanos": [
+   0.2216,
+   0.1379,
+   0.0009
+  ],
+  "cara_culata": [
+   0.0528,
+   0.0415,
+   0.0009
+  ],
+  "cara_empunadura": [
+   0.0761,
+   0.115,
+   0.0009
+  ],
+  "pozo_cargador": [
+   0.0864,
+   0.0035,
+   0.0009
+  ],
+  "raíl_superior": [
+   0.0637,
+   0.1508,
+   0.0009
+  ],
+  "linea_mira": [
+   0.0637,
+   0.1656,
+   0.0009
+  ],
+  "raíl_inferior": [
+   0.2397,
+   0.1272,
+   0.0009
+  ]
+ },
+ "triangulos_total": 2708,
+ "piezas_ausentes": [],
+ "boca_diametro_m": 0.0169,
+ "mira_integrada": "alza",
+ "accesorios_de_serie": [
+  {
+   "id": "sup_apb",
+   "categoria": "bocachas",
+   "ancla": "boca"
+  }
+ ]
+}

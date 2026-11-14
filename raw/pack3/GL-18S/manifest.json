@@ -1,0 +1,234 @@
+{
+ "nombre": "GL-18S",
+ "tipo_juego": "pistol",
+ "chasis": "pistola",
+ "era_sugerida": "moderna",
+ "base_real": "Pistola tipo Glock con culata de varilla (generada con TRELLIS.2 y adaptada)",
+ "largo_m": 0.3308,
+ "alto_m": 0.121,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 3332,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.026,
+    0.0461,
+    -0.0162
+   ],
+   "bbox_local_max": [
+    0.1566,
+    0.121,
+    0.016
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "mira": {
+   "triangulos": 149,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.005,
+    0.112,
+    -0.0003
+   ],
+   "bbox_local_min": [
+    -0.007,
+    0.0,
+    -0.0086
+   ],
+   "bbox_local_max": [
+    0.007,
+    0.009,
+    0.0087
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1,
+   "seccion_union_m": {
+    "largo": 0.014,
+    "ancho": 0.0172
+   }
+  },
+  "empunadura": {
+   "triangulos": 693,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    0.0098,
+    0.078,
+    0.0028
+   ],
+   "bbox_local_min": [
+    -0.0323,
+    -0.06,
+    -0.014
+   ],
+   "bbox_local_max": [
+    0.0323,
+    0.0,
+    0.0131
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.0645,
+    "ancho": 0.0263
+   }
+  },
+  "cargador": {
+   "triangulos": 233,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    0.0032,
+    0.018,
+    -0.0003
+   ],
+   "bbox_local_min": [
+    -0.0186,
+    -0.018,
+    -0.0105
+   ],
+   "bbox_local_max": [
+    0.0173,
+    0.0,
+    0.0105
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "seccion_union_m": {
+    "largo": 0.0346,
+    "ancho": 0.0209
+   }
+  },
+  "culata": {
+   "triangulos": 482,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.026,
+    0.0925,
+    -0.0002
+   ],
+   "bbox_local_min": [
+    -0.1395,
+    -0.0164,
+    -0.0095
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0133,
+    0.0092
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ],
+   "seccion_union_m": {
+    "alto": 0.0234,
+    "ancho": 0.0181
+   },
+   "nota": "culata de varilla engrosada a 10 mm, con refuerzos en las uniones"
+  },
+  "guardamanos_canon": {
+   "triangulos": 591,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.13,
+    0.0995,
+    -0.0001
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0155,
+    -0.0161
+   ],
+   "bbox_local_max": [
+    0.0354,
+    0.0209,
+    0.0163
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.0311,
+    "ancho": 0.0322
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.1654,
+   0.1017,
+   -0.0004
+  ],
+  "cara_culata": [
+   -0.026,
+   0.0925,
+   -0.0002
+  ],
+  "cara_guardamanos": [
+   0.13,
+   0.0995,
+   -0.0001
+  ],
+  "cara_empunadura": [
+   0.0098,
+   0.078,
+   0.0028
+  ],
+  "pozo_cargador": [
+   0.0032,
+   0.018,
+   -0.0003
+  ],
+  "raíl_superior": [
+   -0.005,
+   0.112,
+   -0.0003
+  ],
+  "linea_mira": [
+   -0.004,
+   0.121,
+   -0.0001
+  ],
+  "raíl_inferior": [
+   0.105,
+   0.0482,
+   -0.0001
+  ]
+ },
+ "triangulos_total": 5480,
+ "piezas_ausentes": [],
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0121
+}

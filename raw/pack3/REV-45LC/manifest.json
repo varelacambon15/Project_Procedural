@@ -1,0 +1,158 @@
+{
+ "nombre": "REV-45LC",
+ "tipo_juego": "revolver",
+ "chasis": "revolver",
+ "era_sugerida": "clásica",
+ "base_real": "Revólver .45 Long Colt de acción simple",
+ "largo_m": 0.29,
+ "alto_m": 0.1288,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 1800,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.1041,
+    0.0529,
+    -0.0152
+   ],
+   "bbox_local_max": [
+    0.003,
+    0.1288,
+    0.0152
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 520,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0995,
+    0.086,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0455,
+    -0.086,
+    -0.008
+   ],
+   "bbox_local_max": [
+    0.0387,
+    0.0,
+    0.008
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "tambor": {
+   "triangulos": 1619,
+   "origen_local": "eje_tambor",
+   "posicion_en_arma": [
+    -0.0569,
+    0.1037,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0152,
+    -0.0154
+   ],
+   "bbox_local_max": [
+    0.0507,
+    0.0152,
+    0.0154
+   ],
+   "material": "mat_tambor",
+   "color": [
+    0.1,
+    0.1,
+    0.11
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 1191,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.003,
+    0.1002,
+    -0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0285,
+    -0.0093
+   ],
+   "bbox_local_max": [
+    0.142,
+    0.0285,
+    0.0093
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.145,
+   0.1057,
+   -0.0
+  ],
+  "cara_guardamanos": [
+   0.003,
+   0.1002,
+   -0.0
+  ],
+  "cara_empunadura": [
+   -0.0995,
+   0.086,
+   0.0
+  ],
+  "eje_tambor": [
+   -0.0569,
+   0.1037,
+   0.0
+  ],
+  "raíl_superior": [
+   -0.05,
+   0.1285,
+   -0.0
+  ],
+  "linea_mira": [
+   -0.05,
+   0.1285,
+   -0.0
+  ],
+  "cara_culata": [
+   -0.145,
+   0.06,
+   -0.0
+  ]
+ },
+ "triangulos_total": 5130,
+ "piezas_ausentes": [
+  "culata",
+  "mira"
+ ],
+ "mira_integrada": "alza"
+}

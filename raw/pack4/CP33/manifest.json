@@ -1,0 +1,192 @@
+{
+ "nombre": "CP33",
+ "tipo_juego": "pistol",
+ "chasis": "pistola",
+ "accion": "semiautomatica",
+ "era_sugerida": "moderna",
+ "base_real": "Kel-Tec CP33",
+ "largo_m": 0.28,
+ "alto_m": 0.1541,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "mira": {
+   "triangulos": 41,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.0642,
+    0.139,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0141,
+    0.0,
+    -0.0076
+   ],
+   "bbox_local_max": [
+    0.0141,
+    0.0151,
+    0.0078
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "cuerpo": {
+   "triangulos": 2037,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.14,
+    0.012,
+    -0.0122
+   ],
+   "bbox_local_max": [
+    0.045,
+    0.1535,
+    0.0122
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 270,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0424,
+    0.09,
+    0.0002
+   ],
+   "bbox_local_min": [
+    -0.035,
+    -0.078,
+    -0.0083
+   ],
+   "bbox_local_max": [
+    0.0276,
+    0.0,
+    0.0083
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "cargador": {
+   "triangulos": 428,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0465,
+    0.012,
+    0.0001
+   ],
+   "bbox_local_min": [
+    -0.0325,
+    -0.012,
+    -0.0087
+   ],
+   "bbox_local_max": [
+    0.0426,
+    0.0,
+    0.0087
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 1663,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.045,
+    0.1211,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0171,
+    -0.0093
+   ],
+   "bbox_local_max": [
+    0.095,
+    0.0173,
+    0.0095
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.14,
+   0.1188,
+   0.0
+  ],
+  "cara_guardamanos": [
+   0.045,
+   0.1211,
+   0.0
+  ],
+  "cara_empunadura": [
+   -0.0424,
+   0.09,
+   0.0002
+  ],
+  "pozo_cargador": [
+   -0.0465,
+   0.012,
+   0.0001
+  ],
+  "raíl_superior": [
+   -0.0642,
+   0.139,
+   0.0
+  ],
+  "linea_mira": [
+   -0.0642,
+   0.1541,
+   0.0
+  ],
+  "cara_culata": [
+   -0.14,
+   0.1285,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.0881,
+   0.1047,
+   0.0
+  ]
+ },
+ "triangulos_total": 4439,
+ "piezas_ausentes": [
+  "culata"
+ ],
+ "boca_diametro_m": 0.0156,
+ "mira_integrada": "alza",
+ "accesorios_de_serie": []
+}

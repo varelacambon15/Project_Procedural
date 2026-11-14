@@ -1,0 +1,190 @@
+{
+ "nombre": "SR25",
+ "tipo_juego": "sniper",
+ "chasis": "convencional",
+ "accion": "semiautomatica",
+ "era_sugerida": "moderna",
+ "base_real": "KAC SR-25 (fusil de tirador)",
+ "largo_m": 1.12,
+ "alto_m": 0.2248,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 3558,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    -0.005,
+    0.1809,
+    -0.0002
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0368,
+    -0.0448
+   ],
+   "bbox_local_max": [
+    0.565,
+    0.0352,
+    0.0451
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 906,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.27,
+    0.0888,
+    -0.03
+   ],
+   "bbox_local_max": [
+    -0.005,
+    0.2248,
+    0.0382
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 800,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.1862,
+    0.1512,
+    -0.0001
+   ],
+   "bbox_local_min": [
+    -0.0842,
+    -0.1512,
+    -0.0289
+   ],
+   "bbox_local_max": [
+    0.0416,
+    0.0,
+    0.0289
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "culata": {
+   "triangulos": 240,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.27,
+    0.1751,
+    -0.0006
+   ],
+   "bbox_local_min": [
+    -0.29,
+    -0.1179,
+    -0.0339
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0321,
+    0.033
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "cargador": {
+   "triangulos": 186,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.107,
+    0.1105,
+    0.0002
+   ],
+   "bbox_local_min": [
+    -0.0066,
+    -0.1079,
+    -0.0244
+   ],
+   "bbox_local_max": [
+    0.081,
+    0.0,
+    0.0244
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.56,
+   0.1777,
+   0.0007
+  ],
+  "cara_guardamanos": [
+   -0.005,
+   0.1809,
+   -0.0002
+  ],
+  "cara_culata": [
+   -0.27,
+   0.1751,
+   -0.0006
+  ],
+  "cara_empunadura": [
+   -0.1862,
+   0.1512,
+   -0.0001
+  ],
+  "pozo_cargador": [
+   -0.107,
+   0.1105,
+   0.0002
+  ],
+  "raíl_superior": [
+   -0.1146,
+   0.216,
+   0.0
+  ],
+  "linea_mira": [
+   -0.1146,
+   0.216,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.0142,
+   0.1441,
+   0.0
+  ]
+ },
+ "triangulos_total": 5690,
+ "piezas_ausentes": [
+  "mira"
+ ],
+ "boca_diametro_m": 0.0189,
+ "mira_integrada": null,
+ "accesorios_de_serie": []
+}
