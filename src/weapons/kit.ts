@@ -80,7 +80,8 @@ export class KitIndex {
 }
 
 /** Piezas del kit que no se eligen al generar (siguen siendo la referencia "de serie" de la plataforma). */
-const KIT_RETIRED = new Set(["k-handguard-556-01"]); // guardamanos liso: parecía una cuña sin terminar
+// (el guardamanos liso k-handguard-556-01 ya no: se viste con raíl y ranuras al montarlo, ver assembler.ts)
+const KIT_RETIRED = new Set<string>([]);
 
 /** Pieza colocada: dónde va (metros, coordenadas del arma) y cuánto se estira a lo largo. */
 export interface Placement { part: KitPart; role: PartRole | "sight"; pos: V3; stretch: number }

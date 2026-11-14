@@ -485,7 +485,7 @@ export class WeaponGenerator {
     if (layout === "kit") {
       const { placements } = kitPlacements(this.kit, { parts, optic: null, muzzle: null, barrelLength, tweaks: tw });
       for (const pl of placements) if (pl.part.profile) put(pl.role, { profile: pl.part.profile, offset: pl.pos, scale: [pl.stretch, pl.role === "magazine" ? tw.magLen ?? 1 : 1, 1] });
-      if (tw.pstock && !tw.nostock) put("stock", { profile: stockProfile(tw.pstock) });
+      if (tw.pstock) put("stock", { profile: stockProfile(tw.pstock) }); // (en el kit, la culata por código sustituye a la suya)
       if (tw.pfront) put("front", { profile: frontProfile(tw.pfront) });
       const kdev = tw.device ? this.kit.byId.get(tw.device.id) : null;
       if (kdev && tw.device) boxes.push({ x0: tw.device.at[0] + kdev.bounds.min[0], x1: tw.device.at[0] + kdev.bounds.max[0], y0: tw.device.at[1] + kdev.bounds.min[1], y1: tw.device.at[1] + kdev.bounds.max[1] });
@@ -824,7 +824,15 @@ export class WeaponGenerator {
       // Culata y guardamanos por código sobre los sockets de la plataforma (el cañón real del kit se conserva)
       const plat = this.kit.byId.get(parts[0].from);
       const sStock = plat?.sockets.Stock?.[0], sHand = plat?.sockets.Handguard?.[0];
-      void sStock; void sHand; // el kit conserva solo sus piezas reales (sistema modular propio)
+      void sHand; // (el guardamanos del kit se conserva siempre)
+      // Fusiles: a veces culata por código en el socket de la culata (sustituye a la del kit; se marca nostock para que
+      // la del kit no se coloque)
+      if (type === "rifle" && sStock && era !== "classic") ops.push({ id: "pstock", run: () => {
+        const st = procStock(r, type, [sStock[0], sStock[1]], 0.05, 0.03);
+        const kinds = ["solid", "polymer", "carbine", "skeleton"] as const; // (sin tubo: nada de varillas finas)
+        const h = 0.045 + r() * 0.03;
+        tw.pstock = { ...st, kind: kinds[Math.floor(r() * kinds.length)], len: 0.17 + r() * 0.16, h, drop: h * (0.2 + r() * 0.9) }; tw.nostock = true;
+      } });
       if (type === "pistol" && !parts.some((p) => this.kit.byId.get(p.from)?.slot === "Device")) ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) });
     }
     // Añadidos estructurales clásicos (cambian la silueta con piezas, no deformándola): se colocan más abajo sobre la
@@ -1101,7 +1109,7 @@ export function changesOf(layout: WeaponSpec["layout"], t: Tweaks, barrelLength:
   if (t.rail) c.push("rail");
   if (t.drum) c.push("drum");
   if ((t.magLen ?? 1) > 1.05) c.push("mag-ext");
-  if (t.nostock) c.push("no-stock");
+  if (t.nostock && !t.pstock) c.push("no-stock");
   if (t.fold && !t.nostock && !t.pstock) c.push("stock-fold");
   if (t.pstock) c.push(`stock-${t.pstock.kind}`);
   if (t.pfront) c.push(`front-${t.pfront.kind}`);

@@ -17,6 +17,27 @@ import type { Support } from "./grip";
 const PP_EXPLODE: Record<string, [number, number, number]> = { slide: [0, 1.2, 0], barrel: [1.4, 0.6, 0], frame: [0, 0, 0], grip: [-0.3, -0.8, 0], magazine: [0, -1.6, 0], trigger: [-0.8, 0.4, 0] };
 import { buildAdapter, buildCell, buildCover, buildDisplay, buildFront, buildPatch, buildStock, buildTape, clipX } from "./procparts";
 
+/** Detalla el guardamanos liso del kit (se leía como una cuña sin terminar). Trabaja en coordenadas de la pieza. */
+function dressHandguard(node: THREE.Object3D) {
+  node.updateMatrixWorld(true);
+  const b = new THREE.Box3(); node.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { m.geometry.computeBoundingBox(); b.union(m.geometry.boundingBox!.clone().applyMatrix4(m.matrix)); } });
+  if (b.isEmpty()) return;
+  const L = b.max.x - b.min.x, H = b.max.y - b.min.y, W = b.max.z - b.min.z, cy = (b.min.y + b.max.y) / 2;
+  const box = (w: number, h: number, d: number, x: number, y: number, z: number, name: string) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ name })); m.position.set(x, y, z); m.castShadow = true; node.add(m); };
+  const x0 = b.min.x + L * 0.04, x1 = b.max.x - L * 0.06;
+  // Raíl superior con dientes
+  box(x1 - x0, 0.004, W * 0.42, (x0 + x1) / 2, b.max.y + 0.0015, 0, "rail");
+  for (let x = x0 + 0.004; x < x1 - 0.003; x += 0.011) box(0.005, 0.004, W * 0.5, x, b.max.y + 0.0045, 0, "rail");
+  // Ranuras alargadas a los lados (tipo M-LOK)
+  const n = Math.max(2, Math.floor((x1 - x0) / 0.045));
+  for (let i = 0; i < n; i++) {
+    const x = x0 + ((i + 0.5) / n) * (x1 - x0);
+    for (const z of [-1, 1]) box(Math.min(0.026, (x1 - x0) / n * 0.6), H * 0.16, 0.002, x, cy - H * 0.05, z * (W / 2 + 0.0004), "vent");
+  }
+  // Remate delantero (anillo de metal)
+  box(0.006, H * 0.86, W * 0.9, b.max.x - 0.003, cy, 0, "procmetal");
+}
+
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
 export interface AssembledWeapon {
   group: THREE.Group; parts: AssembledPart[]; length: number;
@@ -132,6 +153,8 @@ export class WeaponAssembler {
           const b = new THREE.Box3().setFromObject(lens); sightKit = (b.min.y + b.max.y) / 2;
         }
         if (pl.role === "sight" && /front/.test(pl.part.id)) { node.updateMatrixWorld(true); frontSightTop = new THREE.Box3().setFromObject(node).max.y; }
+        // Guardamanos liso del kit, adaptado en vez de descartado: raíl superior, ranuras laterales y remate delantero
+        if (pl.part.id === "k-handguard-556-01") dressHandguard(node);
       }
       if (!spec.optic) {
         // Alzas: la línea pasa por la punta del punto de mira (o por encima de la corredera, en pistola)
@@ -139,7 +162,7 @@ export class WeaponAssembler {
         sightKit = frontSightTop !== null ? frontSightTop - 0.002 : slide ? new THREE.Box3().setFromObject(slide.object).max.y + 0.002 : null;
       }
       // Culata y guardamanos por código sobre los sockets de la plataforma
-      if (spec.tweaks?.pstock && !spec.tweaks.nostock) add(buildStock(spec.tweaks.pstock), "stock", { id: `proc-stock-${spec.tweaks.pstock.kind}`, label: "Stock", pack: "proc" } as AssetEntry, [-1.2, 0, 0]);
+      if (spec.tweaks?.pstock) add(buildStock(spec.tweaks.pstock), "stock", { id: `proc-stock-${spec.tweaks.pstock.kind}`, label: "Stock", pack: "proc" } as AssetEntry, [-1.2, 0, 0]);
       if (spec.tweaks?.pfront) add(buildFront(spec.tweaks.pfront).group, "front", { id: `proc-front-${spec.tweaks.pfront.kind}`, label: "Handguard", pack: "proc" } as AssetEntry, [1.1, 0.2, 0]);
       const kd = spec.tweaks?.device ? this.gen.kit.byId.get(spec.tweaks.device.id) : null;
       if (kd && spec.tweaks?.device) { const dev = await this.kitNode(kd); dev.scale.setScalar(DEVICE_SCALE(spec.type)); dev.position.set(spec.tweaks.device.at[0], spec.tweaks.device.at[1] + 0.002, 0); add(dev, "device", { id: kd.id, label: kitLabel(kd.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }

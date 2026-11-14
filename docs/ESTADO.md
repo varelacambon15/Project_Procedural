@@ -117,6 +117,15 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Asa: patas hasta el cajón, baja. Carrillera: cuña biselada. Banda ventilada con alma. Cargadores de alto parecido.
 - Arma en mano: empuñadura a distancia fija por clase (`gripZ` en anim.json). Armas apiladas: arreglado (`equipSeq`).
 
+## Ronda 15 (versión 0.7.3)
+
+- Regla del usuario: mejor adaptar las piezas que descartarlas. El guardamanos liso del kit vuelve, vestido con raíl,
+  ranuras y remate (`dressHandguard` en assembler.ts). El ARX (u-fusil-a) presta culata, empuñadura y cargador.
+- Fusiles del kit: culata por código maciza (sólida, polímero, carabina o esqueleto ancho) en el socket de la culata.
+- Revólveres: culata solo como kit de carabina, con cañón alargado. Bullpups por código: cargadores curvos con forma real.
+- APK Android (Capacitor, en release.yml) con controles táctiles (`src/game/touch.ts`).
+- Pendiente de decisión del usuario: repositorio público o de versiones (comando SteamOS y botón de actualizar).
+
 ## Pendiente (prompt 06)
 
 - Miras que no funcionan: falta auditarlas (comparar sightY con el centro de la óptica en muchas armas).
