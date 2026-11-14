@@ -826,13 +826,13 @@ const C = (f: number, t: number): Curl => ({ fingers: [f, f + 0.04, f + 0.06, f 
 /** Orientación (dedos, dorso), desplazamiento de la palma respecto al anclaje y cierre de cada agarre. */
 const GRIPS: Record<HandKind | "right", HandGrip> = {
   // Empuñadura: dorso a la derecha, dedos rodeando el frente; la palma sigue la inclinación de la empuñadura
-  right: { q: rx(-0.3).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.02, 0.014, 0.016), curl: C(1.0, 0.6) },
+  right: { q: rx(-0.3).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.014, 0.012, 0.012), curl: C(1.05, 0.7) },
   // Bajo el guardamanos: palma arriba, dedos hacia la derecha envolviéndolo
-  under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.014, -0.03, 0.004), curl: C(0.92, 0.6) },
+  under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.012, -0.026, 0.004), curl: C(1.0, 0.65) },
   // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
-  wrap: { q: rx(-0.3).multiply(handBasis(V(0.32, -0.15, -1), V(-1, 0.12, 0))), off: V(-0.03, -0.014, 0.018), curl: C(0.98, 0.45) },
+  wrap: { q: rx(-0.3).multiply(handBasis(V(0.32, -0.15, -1), V(-1, 0.12, 0))), off: V(-0.024, -0.016, 0.014), curl: C(1.08, 0.55) },
   // Empuñadura vertical o cargador: mano cerrada alrededor, dorso a la izquierda
-  vgrip: { q: rx(-0.1).multiply(handBasis(V(0.35, -0.05, -1), V(-1, 0.2, 0))), off: V(-0.026, 0, 0.03), curl: C(1.0, 0.6) },
+  vgrip: { q: rx(-0.1).multiply(handBasis(V(0.35, -0.05, -1), V(-1, 0.2, 0))), off: V(-0.022, 0, 0.026), curl: C(1.1, 0.65) },
   // Coger el cargador o la palanca: mano semiabierta que llega desde la izquierda
   grab: { q: handBasis(V(0.45, -0.25, -0.85), V(-0.85, 0.3, 0.2)), off: V(-0.02, 0, 0), curl: C(0.55, 0.35) },
 };

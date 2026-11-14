@@ -100,15 +100,15 @@ class Hand {
     const knuckle = new THREE.Mesh(new RoundedBoxGeometry(0.072, 0.01, 0.026, 1, 0.003), gloveArmor); knuckle.position.set(0, 0.017, -0.032); this.g.add(knuckle);
     const back = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.004, 0.034), gloveArmor); back.position.set(0.004 * s, 0.016, 0.006); this.g.add(back);
     // Puño del guante con su cierre de velcro y la tira
-    const gauntlet = cyl(0.037, 0.041, glove, 10); gauntlet.rotation.x = Math.PI / 2; gauntlet.scale.y = 0.05; gauntlet.position.z = 0.066; gauntlet.scale.x = 1.08; this.g.add(gauntlet);
+    const gauntlet = cyl(0.029, 0.032, glove, 12); gauntlet.rotation.x = Math.PI / 2; gauntlet.scale.y = 0.05; gauntlet.position.z = 0.066; gauntlet.scale.x = 1.08; this.g.add(gauntlet);
     const tab = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.006, 0.022), strap); tab.position.set(0.012 * s, 0.038, 0.066); this.g.add(tab);
     if (withWatch) {
-      const band = cyl(0.039, 0.039, strap, 12); band.rotation.x = Math.PI / 2; band.scale.y = 0.016; band.position.z = 0.1; this.g.add(band);
+      const band = cyl(0.031, 0.031, strap, 12); band.rotation.x = Math.PI / 2; band.scale.y = 0.016; band.position.z = 0.1; this.g.add(band);
       const face = new THREE.Mesh(new RoundedBoxGeometry(0.026, 0.008, 0.026, 1, 0.003), watchFace); face.position.set(0, 0.04, 0.1); this.g.add(face);
     }
     // Dedos: índice (junto al pulgar) … meñique; 3 falanges con pivote en cada nudillo
     const lens = [[0.04, 0.025, 0.02], [0.044, 0.027, 0.021], [0.041, 0.025, 0.02], [0.032, 0.021, 0.018]];
-    const xs = [-0.027, -0.009, 0.009, 0.026], ws = [0.0165, 0.017, 0.016, 0.0145];
+    const xs = [-0.0255, -0.0085, 0.0085, 0.0245], ws = [0.0158, 0.0162, 0.0154, 0.0138];
     for (let f = 0; f < 4; f++) {
       const chain: THREE.Group[] = []; let parentG: THREE.Object3D = this.g;
       for (let k = 0; k < 3; k++) {
@@ -129,7 +129,7 @@ class Hand {
       par.add(piv); this.thumb.push(piv); par = piv;
     }
     // Mano algo más pequeña y fina que el primer modelo (se veía enorme en primera persona)
-    this.g.scale.set(0.8, 0.82, 0.86);
+    this.g.scale.set(0.76, 0.8, 0.84);
     for (const o of this.g.children) o.traverse((m) => { (m as THREE.Mesh).renderOrder = 9; });
     parent.add(this.g);
   }
@@ -139,8 +139,8 @@ class Hand {
     for (let f = 0; f < 4; f++) this.cur.fingers[f] += (p.curl.fingers[f] - this.cur.fingers[f]) * k;
     this.cur.thumb += (p.curl.thumb - this.cur.thumb) * k;
     // Cerrar = girar cada falange hacia la palma (-Y); la distal algo menos
-    for (let f = 0; f < 4; f++) { const c = this.cur.fingers[f]; this.fingers[f][0].rotation.x = -c * 1.25; this.fingers[f][1].rotation.x = -c * 1.45; this.fingers[f][2].rotation.x = -c * 0.95; }
-    this.thumb[0].rotation.x = -this.cur.thumb * 0.5; this.thumb[1].rotation.x = -this.cur.thumb * 0.9;
+    for (let f = 0; f < 4; f++) { const c = this.cur.fingers[f]; this.fingers[f][0].rotation.x = -c * 1.15; this.fingers[f][1].rotation.x = -c * 1.3; this.fingers[f][2].rotation.x = -c * 1.0; }
+    this.thumb[0].rotation.x = -this.cur.thumb * 0.6; this.thumb[1].rotation.x = -this.cur.thumb * 1.0;
   }
   snap(p: HandPose) { this.g.quaternion.copy(p.orient); this.set(p, 1); }
 }
@@ -149,14 +149,14 @@ class Arm {
   readonly upper: Segment; readonly fore: Segment; readonly hand: Hand; private elbowM: THREE.Mesh;
   private first = true;
   constructor(parent: THREE.Object3D, readonly side: 1 | -1) {
-    this.upper = new Segment(parent, 0.043, 0.036, sleeve);
-    this.fore = new Segment(parent, 0.035, 0.029, sleeve);
-    this.elbowM = new THREE.Mesh(new THREE.SphereGeometry(0.037, 10, 8), sleeve); parent.add(this.elbowM);
+    this.upper = new Segment(parent, 0.038, 0.032, sleeve);
+    this.fore = new Segment(parent, 0.031, 0.024, sleeve);
+    this.elbowM = new THREE.Mesh(new THREE.SphereGeometry(0.033, 12, 8), sleeve); parent.add(this.elbowM);
     // Parche en el hombro, pliegues en el antebrazo y puño de la chaqueta (más oscuro) que tapa el guante
     const patch = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.006), patchMat); patch.position.set(0.042 * side, 0, 0); patch.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2; this.upper.deco(patch, 0.09);
-    for (const at of [0.08, 0.15]) { const fold = new THREE.Mesh(new THREE.TorusGeometry(0.033, 0.004, 5, 12), sleeve); fold.rotation.x = Math.PI / 2; fold.scale.set(1, 1.1, 1); this.fore.deco(fold, at); }
-    const cuffM = cyl(0.034, 0.036, sleeveDark, 12); cuffM.scale.y = 0.04; this.fore.deco(cuffM, -0.02);
-    const hem = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.003, 4, 12), sleeveDark); hem.rotation.x = Math.PI / 2; this.fore.deco(hem, -0.002);
+    for (const at of [0.08, 0.15]) { const fold = new THREE.Mesh(new THREE.TorusGeometry(0.029, 0.003, 5, 12), sleeve); fold.rotation.x = Math.PI / 2; fold.scale.set(1, 1.1, 1); this.fore.deco(fold, at); }
+    const cuffM = cyl(0.028, 0.03, sleeveDark, 12); cuffM.scale.y = 0.04; this.fore.deco(cuffM, -0.02);
+    const hem = new THREE.Mesh(new THREE.TorusGeometry(0.029, 0.0025, 4, 12), sleeveDark); hem.rotation.x = Math.PI / 2; this.fore.deco(hem, -0.002);
     this.hand = new Hand(parent, side, side < 0);
     for (const g of [this.upper.g, this.fore.g, this.elbowM]) g.traverse((m) => { (m as THREE.Mesh).renderOrder = 9; (m as THREE.Mesh).castShadow = false; });
   }
