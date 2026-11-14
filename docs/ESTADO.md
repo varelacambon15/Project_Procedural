@@ -131,6 +131,33 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 17 (relevo)
+
+Hecho:
+- Packs 3 y 4 del usuario en `raw/pack3` y `raw/pack4`: 27 armas (ids `x-p3-*`, `x-p4-*`) en el pack del juego
+  `kit39`, así que comparten piezas con el kit. Pack 4 no trae secciones: se miden junto al ancla (`measured` en
+  `convertKit39`). Campo `accion` → `AssetEntry.action` → `actionHint` (francotirador de cerrojo/semi, escopeta
+  de bombeo/semi).
+- Piezas sueltas de `raw/kit39/piezas_sueltas`: culatas, guardamanos y empuñaduras como "donantes" (`x-lib-*`,
+  kind `kit39part`, `AssetEntry.donor`): no salen como arma; `mixLong` las usa un 30 % y solo con junta 0,82–1,22.
+  Bocachas (`k-att-<suppressor|brake|compensator|flashhider>-l…`, slot Muzzle) y agarres
+  (`k-device-foregrip-l…`, slot Device) de la biblioteca y del pool del pack 4; miras del pack 4 (`-lp4…`).
+- Animaciones (`anim.ts`: `boltCurve`, `pumpCurve`, `CYCLE_TIME`): cerrojo en cuatro tiempos (0,8 s; mano derecha a
+  la manilla, arriba, atrás, adelante, abajo), bombeo seco (0,55 s), golpe al asentar el cargador, recarga táctica
+  (`tactical`: quedaban balas) sin montar la palanca.
+- Parpadeo del mapa: `logarithmicDepthBuffer` (near 0,02 / far 300 no separaba marcas del suelo y carteles) y
+  `normalBias` en la sombra. Reloj del brazo sin verde.
+- `baseSilhouette` de las despiezadas: solo con las piezas que lleva (fallaba si se le quitaba la mira de serie).
+- Capturas: `window.__game` (juego) y `window.__bench.lotSheet(n, tipos, 1, "", "x-p4-")` (banco).
+
+Pendiente / abierto:
+- Bípodes del pack 4 sin integrar (no hay sistema de bípode como pieza; el "bipod" actual es por código).
+- Accesorios de serie del pack 4 (`accesorios_de_serie`) no se montan por defecto.
+- Algunas culatas macizas de la biblioteca quedan bastas en subfusiles; vigilar en juego.
+- Revisar la recarga en juego (las capturas por software no dejan ver la mano de apoyo en movimiento).
+- Acercar las armas que se ven lejanas (pedido del usuario), caso por caso.
+- La conversión de armas tarda ~1-2 min por arma: lanzarla en segundo plano por filtros (`x-p4-`, `x-lib-`…).
+
 ## Ronda 16 (versiones 0.7.4 – 0.8.2) y relevo
 
 Para retomar en otro chat: rama `ccr-9154dbc6-lqpjb5`. Antes de subir: `npm test` (si va justo de memoria,
