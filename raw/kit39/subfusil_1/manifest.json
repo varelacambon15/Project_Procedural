@@ -1,0 +1,219 @@
+{
+ "nombre": "subfusil_1",
+ "tipo_pack": "subfusil",
+ "tipo_juego": "smg",
+ "chasis": "convencional",
+ "escala_aplicada": 0.23091,
+ "largo_m": 0.5885,
+ "alto_m": 0.2743,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor (derecha +Z)",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "bisel": "1.0 mm, aristas > 30°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 858,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.0294,
+    0.1875,
+    -0.0003
+   ],
+   "bbox_local_min": [
+    -0.0,
+    -0.034,
+    -0.0283
+   ],
+   "bbox_local_max": [
+    0.2648,
+    0.0595,
+    0.0283
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.0626,
+    "ancho": 0.0565
+   }
+  },
+  "cuerpo": {
+   "triangulos": 700,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.1765,
+    0.1051,
+    -0.0368
+   ],
+   "bbox_local_max": [
+    0.0294,
+    0.2188,
+    0.0368
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "culata": {
+   "triangulos": 328,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.1765,
+    0.1915,
+    -0.0003
+   ],
+   "bbox_local_min": [
+    -0.1177,
+    -0.0661,
+    -0.0252
+   ],
+   "bbox_local_max": [
+    -0.0,
+    0.0183,
+    0.0252
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ],
+   "seccion_union_m": {
+    "alto": 0.0301,
+    "ancho": 0.0368
+   }
+  },
+  "empunadura": {
+   "triangulos": 337,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.1222,
+    0.1509,
+    0.0004
+   ],
+   "bbox_local_min": [
+    -0.0515,
+    -0.1001,
+    -0.0315
+   ],
+   "bbox_local_max": [
+    0.0398,
+    -0.0,
+    0.0315
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.0796,
+    "ancho": 0.063
+   }
+  },
+  "cargador": {
+   "triangulos": 162,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0348,
+    0.1756,
+    0.0002
+   ],
+   "bbox_local_min": [
+    -0.0308,
+    -0.175,
+    -0.0243
+   ],
+   "bbox_local_max": [
+    0.0677,
+    -0.0,
+    0.0243
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "seccion_union_m": {
+    "largo": 0.0506,
+    "ancho": 0.0486
+   }
+  },
+  "mira": {
+   "triangulos": 440,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.0591,
+    0.2071,
+    -0.0005
+   ],
+   "bbox_local_min": [
+    -0.0505,
+    0.0,
+    -0.0199
+   ],
+   "bbox_local_max": [
+    0.0502,
+    0.0672,
+    0.0199
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "seccion_union_m": {
+    "largo": 0.0531,
+    "ancho": 0.0397
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.2942,
+   0.1791,
+   -0.0003
+  ],
+  "pozo_cargador": [
+   -0.0348,
+   0.1756,
+   0.0002
+  ],
+  "raíl_superior": [
+   -0.0591,
+   0.2071,
+   -0.0005
+  ],
+  "cara_culata": [
+   -0.1765,
+   0.1915,
+   -0.0003
+  ],
+  "cara_guardamanos": [
+   0.0294,
+   0.1875,
+   -0.0003
+  ],
+  "cara_empunadura": [
+   -0.1222,
+   0.1509,
+   0.0004
+  ]
+ },
+ "triangulos_total": 2825
+}

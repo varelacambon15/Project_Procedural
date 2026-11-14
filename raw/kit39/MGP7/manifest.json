@@ -1,0 +1,191 @@
+{
+ "nombre": "MGP7",
+ "tipo_pack": "subfusil",
+ "tipo_juego": "smg",
+ "chasis": "convencional",
+ "escala_aplicada": 1.14269,
+ "largo_m": 0.6,
+ "alto_m": 0.3012,
+ "origen": "modelo low-poly reducido",
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor (derecha +Z)",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "bisel": "el del modelo original",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 1552,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.12,
+    0.221,
+    0.0032
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0503,
+    -0.0351
+   ],
+   "bbox_local_max": [
+    0.18,
+    0.0801,
+    0.025
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.0948,
+    "ancho": 0.05
+   }
+  },
+  "cuerpo": {
+   "triangulos": 3570,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.276,
+    0.0437,
+    -0.0301
+   ],
+   "bbox_local_max": [
+    0.12,
+    0.2884,
+    0.032
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 435,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.15,
+    0.1747,
+    0.0032
+   ],
+   "bbox_local_min": [
+    -0.048,
+    -0.15,
+    -0.0249
+   ],
+   "bbox_local_max": [
+    0.048,
+    0.0,
+    0.0249
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.096,
+    "ancho": 0.0498
+   }
+  },
+  "cargador": {
+   "triangulos": 238,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0035,
+    0.1998,
+    0.0032
+   ],
+   "bbox_local_min": [
+    -0.0189,
+    -0.1998,
+    -0.0147
+   ],
+   "bbox_local_max": [
+    0.0808,
+    0.0,
+    0.0147
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "seccion_union_m": {
+    "largo": 0.0061,
+    "ancho": 0.027
+   }
+  },
+  "culata": {
+   "triangulos": 156,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.0047,
+    0.2104,
+    0.0032
+   ],
+   "bbox_local_min": [
+    -0.2953,
+    -0.1117,
+    -0.028
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0293,
+    0.028
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ],
+   "seccion_union_m": {
+    "alto": 0.0125,
+    "ancho": 0.0408
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.3,
+   0.2167,
+   0.0032
+  ],
+  "pozo_cargador": [
+   -0.0035,
+   0.1998,
+   0.0032
+  ],
+  "raíl_superior": [
+   -0.078,
+   0.274,
+   0.0
+  ],
+  "cara_culata": [
+   -0.0047,
+   0.2104,
+   0.0032
+  ],
+  "cara_guardamanos": [
+   0.12,
+   0.221,
+   0.0032
+  ],
+  "cara_empunadura": [
+   -0.15,
+   0.1747,
+   0.0032
+  ]
+ },
+ "triangulos_total": 5951
+}

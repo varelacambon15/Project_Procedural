@@ -1,0 +1,162 @@
+{
+ "nombre": "ZC57",
+ "tipo_pack": "pistol",
+ "tipo_juego": "pistol",
+ "chasis": "pistola",
+ "escala_aplicada": 0.97964,
+ "largo_m": 0.21,
+ "alto_m": 0.1408,
+ "origen": "modelo low-poly reducido",
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor (derecha +Z)",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "bisel": "el del modelo original",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 531,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.084,
+    0.1142,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0227,
+    -0.0122
+   ],
+   "bbox_local_max": [
+    0.021,
+    0.0257,
+    0.0122
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.0459,
+    "ancho": 0.0245
+   }
+  },
+  "cuerpo": {
+   "triangulos": 2426,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.105,
+    0.0644,
+    -0.0149
+   ],
+   "bbox_local_max": [
+    0.084,
+    0.1408,
+    0.0149
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 530,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0491,
+    0.0873,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0531,
+    -0.0793,
+    -0.012
+   ],
+   "bbox_local_max": [
+    0.0281,
+    0.0,
+    0.012
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.056,
+    "ancho": 0.024
+   }
+  },
+  "cargador": {
+   "triangulos": 192,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.052,
+    0.0902,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0388,
+    -0.0902,
+    -0.012
+   ],
+   "bbox_local_max": [
+    0.0166,
+    0.0,
+    0.012
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "seccion_union_m": {
+    "largo": 0.0331,
+    "ancho": 0.0164
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.105,
+   0.1193,
+   0.0
+  ],
+  "pozo_cargador": [
+   -0.052,
+   0.0902,
+   0.0
+  ],
+  "raíl_superior": [
+   -0.0105,
+   0.1344,
+   0.0
+  ],
+  "cara_culata": [
+   -0.105,
+   0.103,
+   0.0
+  ],
+  "cara_guardamanos": [
+   0.084,
+   0.1142,
+   0.0
+  ],
+  "cara_empunadura": [
+   -0.0491,
+   0.0873,
+   0.0
+  ]
+ },
+ "triangulos_total": 3679
+}

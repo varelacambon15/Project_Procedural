@@ -1,0 +1,2914 @@
+[
+ {
+  "nombre": "AK12",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "largo_m": 0.94,
+  "triangulos_total": 4558,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1171,
+    "seccion_union_m": {
+     "alto": 0.0734,
+     "ancho": 0.0472
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1874
+   },
+   "culata": {
+    "triangulos": 652,
+    "seccion_union_m": {
+     "alto": 0.1707,
+     "ancho": 0.0415
+    }
+   },
+   "empunadura": {
+    "triangulos": 301,
+    "seccion_union_m": {
+     "largo": 0.0989,
+     "ancho": 0.0422
+    }
+   },
+   "cargador": {
+    "triangulos": 172,
+    "seccion_union_m": {
+     "largo": 0.0741,
+     "ancho": 0.0274
+    }
+   },
+   "mira": {
+    "triangulos": 388,
+    "seccion_union_m": {
+     "largo": 0.0232,
+     "ancho": 0.0167
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.47,
+    0.2103,
+    0.003
+   ],
+   "pozo_cargador": [
+    -0.1116,
+    0.1983,
+    0.003
+   ],
+   "raíl_superior": [
+    0.0361,
+    0.2151,
+    0.003
+   ],
+   "cara_culata": [
+    -0.282,
+    0.1517,
+    0.003
+   ],
+   "cara_guardamanos": [
+    0.047,
+    0.2166,
+    0.003
+   ],
+   "cara_empunadura": [
+    -0.195,
+    0.1704,
+    0.003
+   ]
+  }
+ },
+ {
+  "nombre": "AR70",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "largo_m": 0.9548,
+  "triangulos_total": 5425,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1234,
+    "seccion_union_m": {
+     "alto": 0.0569,
+     "ancho": 0.0377
+    }
+   },
+   "cuerpo": {
+    "triangulos": 2984
+   },
+   "cargador": {
+    "triangulos": 327,
+    "seccion_union_m": {
+     "largo": 0.0851,
+     "ancho": 0.0155
+    }
+   },
+   "culata": {
+    "triangulos": 341,
+    "seccion_union_m": {
+     "alto": 0.0508,
+     "ancho": 0.0282
+    }
+   },
+   "empunadura": {
+    "triangulos": 539,
+    "seccion_union_m": {
+     "largo": 0.0673,
+     "ancho": 0.0322
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.4774,
+    0.1914,
+    -0.0024
+   ],
+   "pozo_cargador": [
+    -0.0511,
+    0.132,
+    -0.0025
+   ],
+   "raíl_superior": [
+    -0.0859,
+    0.24,
+    0.0
+   ],
+   "cara_culata": [
+    -0.2482,
+    0.1688,
+    -0.0021
+   ],
+   "cara_guardamanos": [
+    0.0764,
+    0.1903,
+    -0.0022
+   ],
+   "cara_empunadura": [
+    -0.1558,
+    0.132,
+    -0.0028
+   ]
+  }
+ },
+ {
+  "nombre": "ARX-160",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "largo_m": 0.9102,
+  "triangulos_total": 1945,
+  "piezas": {
+   "culata": {
+    "triangulos": 184,
+    "seccion_union_m": {
+     "alto": 0.0809,
+     "ancho": 0.031
+    }
+   },
+   "cuerpo": {
+    "triangulos": 401
+   },
+   "guardamanos_canon": {
+    "triangulos": 852,
+    "seccion_union_m": {
+     "alto": 0.0969,
+     "ancho": 0.0446
+    }
+   },
+   "cargador": {
+    "triangulos": 156,
+    "seccion_union_m": {
+     "largo": 0.0955,
+     "ancho": 0.029
+    }
+   },
+   "empunadura": {
+    "triangulos": 272,
+    "seccion_union_m": {
+     "largo": 0.1457,
+     "ancho": 0.033
+    }
+   },
+   "mira": {
+    "triangulos": 80,
+    "seccion_union_m": {
+     "largo": 0.0768,
+     "ancho": 0.029
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.4569,
+    0.2189,
+    0.0
+   ],
+   "pozo_cargador": [
+    0.0576,
+    0.1574,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.0384,
+    0.2872,
+    0.0
+   ],
+   "cara_culata": [
+    -0.2381,
+    0.2227,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.1459,
+    0.2242,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.0652,
+    0.1728,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "LEV-12",
+  "tipo_juego": "shotgun",
+  "chasis": "palanca",
+  "largo_m": 1.001,
+  "triangulos_total": 1652,
+  "piezas": {
+   "culata": {
+    "triangulos": 312,
+    "seccion_union_m": {
+     "alto": 0.0483,
+     "ancho": 0.0363
+    }
+   },
+   "cuerpo": {
+    "triangulos": 348
+   },
+   "empunadura": {
+    "triangulos": 320,
+    "seccion_union_m": {
+     "largo": 0.0803,
+     "ancho": 0.011
+    }
+   },
+   "guardamanos_canon": {
+    "triangulos": 584,
+    "seccion_union_m": {
+     "alto": 0.0716,
+     "ancho": 0.0382
+    }
+   },
+   "mira": {
+    "triangulos": 88,
+    "seccion_union_m": {
+     "largo": 0.022,
+     "ancho": 0.012
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.5,
+    0.186,
+    0
+   ],
+   "raíl_superior": [
+    -0.115,
+    0.211,
+    0
+   ],
+   "cara_culata": [
+    -0.17,
+    0.14,
+    0
+   ],
+   "cara_guardamanos": [
+    -0.02,
+    0.16,
+    0
+   ],
+   "cara_empunadura": [
+    -0.125,
+    0.112,
+    0
+   ]
+  }
+ },
+ {
+  "nombre": "MGP7",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.6,
+  "triangulos_total": 5951,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1552,
+    "seccion_union_m": {
+     "alto": 0.0948,
+     "ancho": 0.05
+    }
+   },
+   "cuerpo": {
+    "triangulos": 3570
+   },
+   "empunadura": {
+    "triangulos": 435,
+    "seccion_union_m": {
+     "largo": 0.096,
+     "ancho": 0.0498
+    }
+   },
+   "cargador": {
+    "triangulos": 238,
+    "seccion_union_m": {
+     "largo": 0.0061,
+     "ancho": 0.027
+    }
+   },
+   "culata": {
+    "triangulos": 156,
+    "seccion_union_m": {
+     "alto": 0.0125,
+     "ancho": 0.0408
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.3,
+    0.2167,
+    0.0032
+   ],
+   "pozo_cargador": [
+    -0.0035,
+    0.1998,
+    0.0032
+   ],
+   "raíl_superior": [
+    -0.078,
+    0.274,
+    0.0
+   ],
+   "cara_culata": [
+    -0.0047,
+    0.2104,
+    0.0032
+   ],
+   "cara_guardamanos": [
+    0.12,
+    0.221,
+    0.0032
+   ],
+   "cara_empunadura": [
+    -0.15,
+    0.1747,
+    0.0032
+   ]
+  }
+ },
+ {
+  "nombre": "MP9",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.5201,
+  "triangulos_total": 5850,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1017,
+    "seccion_union_m": {
+     "alto": 0.051,
+     "ancho": 0.032
+    }
+   },
+   "cuerpo": {
+    "triangulos": 3229
+   },
+   "empunadura": {
+    "triangulos": 435,
+    "seccion_union_m": {
+     "largo": 0.0537,
+     "ancho": 0.0178
+    }
+   },
+   "cargador": {
+    "triangulos": 164,
+    "seccion_union_m": {
+     "largo": 0.0268,
+     "ancho": 0.012
+    }
+   },
+   "mira": {
+    "triangulos": 305,
+    "seccion_union_m": {
+     "largo": 0.0438,
+     "ancho": 0.0186
+    }
+   },
+   "culata": {
+    "triangulos": 540,
+    "seccion_union_m": {
+     "alto": 0.022,
+     "ancho": 0.0203
+    }
+   },
+   "agarre": {
+    "triangulos": 160,
+    "seccion_union_m": {
+     "largo": 0.023,
+     "ancho": 0.0202
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.26,
+    0.1558,
+    -0.0009
+   ],
+   "pozo_cargador": [
+    -0.0196,
+    0.1459,
+    -0.0009
+   ],
+   "raíl_superior": [
+    -0.0167,
+    0.1751,
+    -0.0003
+   ],
+   "cara_culata": [
+    -0.0885,
+    0.1496,
+    0.0042
+   ],
+   "cara_guardamanos": [
+    0.0624,
+    0.1524,
+    -0.0009
+   ],
+   "cara_empunadura": [
+    -0.009,
+    0.1281,
+    -0.0009
+   ],
+   "raíl_inferior": [
+    0.0833,
+    0.1302,
+    -0.0009
+   ]
+  }
+ },
+ {
+  "nombre": "REV-H",
+  "tipo_juego": "revolver",
+  "chasis": "revolver",
+  "largo_m": 0.308,
+  "triangulos_total": 1220,
+  "piezas": {
+   "empunadura": {
+    "triangulos": 164,
+    "seccion_union_m": {
+     "largo": 0.0466,
+     "ancho": 0.028
+    }
+   },
+   "cuerpo": {
+    "triangulos": 692
+   },
+   "tambor": {
+    "triangulos": 96
+   },
+   "guardamanos_canon": {
+    "triangulos": 224,
+    "seccion_union_m": {
+     "alto": 0.0595,
+     "ancho": 0.021
+    }
+   },
+   "mira": {
+    "triangulos": 44,
+    "seccion_union_m": {
+     "largo": 0.01,
+     "ancho": 0.009
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.158,
+    0.143,
+    0
+   ],
+   "eje_tambor": [
+    -0.0095,
+    0.128,
+    0
+   ],
+   "raíl_superior": [
+    -0.035,
+    0.159,
+    0
+   ],
+   "cara_culata": [
+    -0.058,
+    0.11,
+    0
+   ],
+   "cara_guardamanos": [
+    0.036,
+    0.13,
+    0
+   ],
+   "cara_empunadura": [
+    -0.07,
+    0.118,
+    0
+   ]
+  }
+ },
+ {
+  "nombre": "SMG-W",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.7,
+  "triangulos_total": 1676,
+  "piezas": {
+   "culata": {
+    "triangulos": 252,
+    "seccion_union_m": {
+     "alto": 0.0084,
+     "ancho": 0.0304
+    }
+   },
+   "cuerpo": {
+    "triangulos": 456
+   },
+   "guardamanos_canon": {
+    "triangulos": 432,
+    "seccion_union_m": {
+     "alto": 0.0879,
+     "ancho": 0.052
+    }
+   },
+   "empunadura": {
+    "triangulos": 308,
+    "seccion_union_m": {
+     "largo": 0.12,
+     "ancho": 0.033
+    }
+   },
+   "cargador": {
+    "triangulos": 116,
+    "seccion_union_m": {
+     "largo": 0.047,
+     "ancho": 0.024
+    }
+   },
+   "mira": {
+    "triangulos": 112,
+    "seccion_union_m": {
+     "largo": 0.1499,
+     "ancho": 0.018
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.35,
+    0.18,
+    0
+   ],
+   "pozo_cargador": [
+    0.1215,
+    0.128,
+    0
+   ],
+   "raíl_superior": [
+    0.045,
+    0.208,
+    0
+   ],
+   "cara_culata": [
+    -0.04,
+    0.168,
+    0
+   ],
+   "cara_guardamanos": [
+    0.13,
+    0.168,
+    0
+   ],
+   "cara_empunadura": [
+    0.014,
+    0.128,
+    0
+   ]
+  }
+ },
+ {
+  "nombre": "SMG45",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.6898,
+  "triangulos_total": 4828,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1713,
+    "seccion_union_m": {
+     "alto": 0.0854,
+     "ancho": 0.0344
+    }
+   },
+   "cuerpo": {
+    "triangulos": 2038
+   },
+   "empunadura": {
+    "triangulos": 118,
+    "seccion_union_m": {
+     "largo": 0.0477,
+     "ancho": 0.0216
+    }
+   },
+   "cargador": {
+    "triangulos": 228,
+    "seccion_union_m": {
+     "largo": 0.024,
+     "ancho": 0.0195
+    }
+   },
+   "mira": {
+    "triangulos": 322,
+    "seccion_union_m": {
+     "largo": 0.0196,
+     "ancho": 0.0231
+    }
+   },
+   "culata": {
+    "triangulos": 409,
+    "seccion_union_m": {
+     "alto": 0.0616,
+     "ancho": 0.0036
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.3449,
+    0.1954,
+    0.0087
+   ],
+   "pozo_cargador": [
+    0.074,
+    0.1939,
+    0.0087
+   ],
+   "raíl_superior": [
+    0.0795,
+    0.238,
+    0.0087
+   ],
+   "cara_culata": [
+    -0.1123,
+    0.2047,
+    0.0101
+   ],
+   "cara_guardamanos": [
+    0.1173,
+    0.2099,
+    0.0087
+   ],
+   "cara_empunadura": [
+    -0.0514,
+    0.145,
+    0.0087
+   ]
+  }
+ },
+ {
+  "nombre": "TAR-21",
+  "tipo_juego": "rifle",
+  "chasis": "bullpup",
+  "largo_m": 0.7167,
+  "triangulos_total": 1932,
+  "piezas": {
+   "cuerpo_culata": {
+    "triangulos": 540
+   },
+   "guardamanos_canon": {
+    "triangulos": 716,
+    "seccion_union_m": {
+     "alto": 0.0941,
+     "ancho": 0.0568
+    }
+   },
+   "cargador": {
+    "triangulos": 192,
+    "seccion_union_m": {
+     "largo": 0.1043,
+     "ancho": 0.027
+    }
+   },
+   "empunadura": {
+    "triangulos": 304,
+    "seccion_union_m": {
+     "largo": 0.2018,
+     "ancho": 0.033
+    }
+   },
+   "mira": {
+    "triangulos": 180,
+    "seccion_union_m": {
+     "largo": 0.1205,
+     "ancho": 0.0246
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.3585,
+    0.1747,
+    0.0
+   ],
+   "pozo_cargador": [
+    -0.1476,
+    0.1295,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.0422,
+    0.2362,
+    0.0
+   ],
+   "cara_culata": [
+    -0.3585,
+    0.1446,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.1145,
+    0.1747,
+    0.0
+   ],
+   "cara_empunadura": [
+    0.0799,
+    0.1295,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "ZC57",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "largo_m": 0.21,
+  "triangulos_total": 3679,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 531,
+    "seccion_union_m": {
+     "alto": 0.0459,
+     "ancho": 0.0245
+    }
+   },
+   "cuerpo": {
+    "triangulos": 2426
+   },
+   "empunadura": {
+    "triangulos": 530,
+    "seccion_union_m": {
+     "largo": 0.056,
+     "ancho": 0.024
+    }
+   },
+   "cargador": {
+    "triangulos": 192,
+    "seccion_union_m": {
+     "largo": 0.0331,
+     "ancho": 0.0164
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.105,
+    0.1193,
+    0.0
+   ],
+   "pozo_cargador": [
+    -0.052,
+    0.0902,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.0105,
+    0.1344,
+    0.0
+   ],
+   "cara_culata": [
+    -0.105,
+    0.103,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.084,
+    0.1142,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.0491,
+    0.0873,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "fusil_1",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "largo_m": 0.8715,
+  "triangulos_total": 5212,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1313,
+    "seccion_union_m": {
+     "alto": 0.123,
+     "ancho": 0.1338
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1825
+   },
+   "culata": {
+    "triangulos": 713,
+    "seccion_union_m": {
+     "alto": 0.051,
+     "ancho": 0.051
+    }
+   },
+   "empunadura": {
+    "triangulos": 937,
+    "seccion_union_m": {
+     "largo": 0.1737,
+     "ancho": 0.1248
+    }
+   },
+   "cargador": {
+    "triangulos": 188,
+    "seccion_union_m": {
+     "largo": 0.1263,
+     "ancho": 0.0925
+    }
+   },
+   "mira": {
+    "triangulos": 236,
+    "seccion_union_m": {
+     "largo": 0.1227,
+     "ancho": 0.0839
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.4358,
+    0.2978,
+    -0.0
+   ],
+   "pozo_cargador": [
+    0.035,
+    0.2239,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.1501,
+    0.325,
+    -0.0
+   ],
+   "cara_culata": [
+    -0.2789,
+    0.3007,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.122,
+    0.2915,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.174,
+    0.2464,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "fusil_2",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "largo_m": 0.8961,
+  "triangulos_total": 4283,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1202,
+    "seccion_union_m": {
+     "alto": 0.2664,
+     "ancho": 0.16
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1433
+   },
+   "culata": {
+    "triangulos": 532,
+    "seccion_union_m": {
+     "alto": 0.0528,
+     "ancho": 0.0538
+    }
+   },
+   "empunadura": {
+    "triangulos": 338,
+    "seccion_union_m": {
+     "largo": 0.0991,
+     "ancho": 0.1256
+    }
+   },
+   "cargador": {
+    "triangulos": 92,
+    "seccion_union_m": {
+     "largo": 0.1097,
+     "ancho": 0.0776
+    }
+   },
+   "mira": {
+    "triangulos": 412,
+    "seccion_union_m": {
+     "largo": 0.2318,
+     "ancho": 0.0703
+    }
+   },
+   "agarre": {
+    "triangulos": 274,
+    "seccion_union_m": {
+     "largo": 0.0675,
+     "ancho": 0.061
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.4481,
+    0.3025,
+    -0.0
+   ],
+   "pozo_cargador": [
+    0.0964,
+    0.1861,
+    -0.0
+   ],
+   "raíl_superior": [
+    0.0506,
+    0.3376,
+    -0.0
+   ],
+   "cara_culata": [
+    -0.2688,
+    0.2971,
+    -0.0
+   ],
+   "cara_guardamanos": [
+    0.1792,
+    0.2177,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.1212,
+    0.2282,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.3216,
+    0.2099,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "fusil_3",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "largo_m": 1.166,
+  "triangulos_total": 5794,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 2247,
+    "seccion_union_m": {
+     "alto": 0.1848,
+     "ancho": 0.1134
+    }
+   },
+   "cuerpo": {
+    "triangulos": 2110
+   },
+   "culata": {
+    "triangulos": 682,
+    "seccion_union_m": {
+     "alto": 0.1219,
+     "ancho": 0.0544
+    }
+   },
+   "empunadura": {
+    "triangulos": 467,
+    "seccion_union_m": {
+     "largo": 0.1857,
+     "ancho": 0.1038
+    }
+   },
+   "cargador": {
+    "triangulos": 288,
+    "seccion_union_m": {
+     "largo": 0.1094,
+     "ancho": 0.0519
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.583,
+    0.2551,
+    -0.0008
+   ],
+   "pozo_cargador": [
+    0.1128,
+    0.1245,
+    -0.0008
+   ],
+   "raíl_superior": [
+    0.0,
+    0.3287,
+    0.0
+   ],
+   "cara_culata": [
+    -0.2099,
+    0.2348,
+    -0.0008
+   ],
+   "cara_guardamanos": [
+    0.2099,
+    0.2346,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.1341,
+    0.1738,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "fusil_4",
+  "tipo_juego": "rifle",
+  "chasis": "sin_culata",
+  "largo_m": 0.8555,
+  "triangulos_total": 4357,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 742,
+    "seccion_union_m": {
+     "alto": 0.1592,
+     "ancho": 0.1185
+    }
+   },
+   "cuerpo": {
+    "triangulos": 2500
+   },
+   "empunadura": {
+    "triangulos": 305,
+    "seccion_union_m": {
+     "largo": 0.2257,
+     "ancho": 0.0634
+    }
+   },
+   "cargador": {
+    "triangulos": 524,
+    "seccion_union_m": {
+     "largo": 0.0783,
+     "ancho": 0.1279
+    }
+   },
+   "mira": {
+    "triangulos": 286,
+    "seccion_union_m": {
+     "largo": 0.2234,
+     "ancho": 0.0713
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.4277,
+    0.3179,
+    -0.0
+   ],
+   "pozo_cargador": [
+    0.1164,
+    0.2575,
+    -0.0
+   ],
+   "raíl_superior": [
+    0.0034,
+    0.3367,
+    -0.0
+   ],
+   "cara_culata": [
+    -0.4277,
+    0.2896,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.2566,
+    0.285,
+    0.0002
+   ],
+   "cara_empunadura": [
+    -0.2464,
+    0.2016,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "fusil_5",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "largo_m": 0.9,
+  "triangulos_total": 5934,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1195,
+    "seccion_union_m": {
+     "alto": 0.2078,
+     "ancho": 0.1076
+    }
+   },
+   "cuerpo": {
+    "triangulos": 2131
+   },
+   "culata": {
+    "triangulos": 911,
+    "seccion_union_m": {
+     "alto": 0.2758,
+     "ancho": 0.11
+    }
+   },
+   "empunadura": {
+    "triangulos": 597,
+    "seccion_union_m": {
+     "largo": 0.189,
+     "ancho": 0.0938
+    }
+   },
+   "cargador": {
+    "triangulos": 640,
+    "seccion_union_m": {
+     "largo": 0.0022,
+     "ancho": 0.0884
+    }
+   },
+   "mira": {
+    "triangulos": 460,
+    "seccion_union_m": {
+     "largo": 0.0221,
+     "ancho": 0.0459
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.45,
+    0.3337,
+    -0.0
+   ],
+   "pozo_cargador": [
+    0.0148,
+    0.2413,
+    -0.0002
+   ],
+   "raíl_superior": [
+    -0.269,
+    0.3891,
+    -0.0008
+   ],
+   "cara_culata": [
+    -0.315,
+    0.3374,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.108,
+    0.3085,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.2205,
+    0.2716,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "fusil_6",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "largo_m": 1.1244,
+  "triangulos_total": 4510,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1537,
+    "seccion_union_m": {
+     "alto": 0.0873,
+     "ancho": 0.0785
+    }
+   },
+   "cuerpo": {
+    "triangulos": 825
+   },
+   "culata": {
+    "triangulos": 457,
+    "seccion_union_m": {
+     "alto": 0.0871,
+     "ancho": 0.0901
+    }
+   },
+   "empunadura": {
+    "triangulos": 379,
+    "seccion_union_m": {
+     "largo": 0.1716,
+     "ancho": 0.053
+    }
+   },
+   "cargador": {
+    "triangulos": 564,
+    "seccion_union_m": {
+     "largo": 0.0114,
+     "ancho": 0.0315
+    }
+   },
+   "mira": {
+    "triangulos": 748,
+    "seccion_union_m": {
+     "largo": 0.2266,
+     "ancho": 0.0683
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.5622,
+    0.2483,
+    0.0018
+   ],
+   "pozo_cargador": [
+    -0.0317,
+    0.1888,
+    0.0017
+   ],
+   "raíl_superior": [
+    -0.1031,
+    0.2527,
+    0.0001
+   ],
+   "cara_culata": [
+    -0.3373,
+    0.2647,
+    0.001
+   ],
+   "cara_guardamanos": [
+    0.1124,
+    0.2555,
+    0.0012
+   ],
+   "cara_empunadura": [
+    -0.1757,
+    0.2062,
+    0.0004
+   ]
+  }
+ },
+ {
+  "nombre": "fusil_7",
+  "tipo_juego": "rifle",
+  "chasis": "bullpup",
+  "largo_m": 1.0344,
+  "triangulos_total": 4520,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1628,
+    "seccion_union_m": {
+     "alto": 0.1872,
+     "ancho": 0.1022
+    }
+   },
+   "cuerpo_culata": {
+    "triangulos": 1725
+   },
+   "empunadura": {
+    "triangulos": 271,
+    "seccion_union_m": {
+     "largo": 0.1049,
+     "ancho": 0.0815
+    }
+   },
+   "cargador": {
+    "triangulos": 620,
+    "seccion_union_m": {
+     "largo": 0.0008,
+     "ancho": 0.0468
+    }
+   },
+   "mira": {
+    "triangulos": 276,
+    "seccion_union_m": {
+     "largo": 0.0752,
+     "ancho": 0.0527
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.5172,
+    0.1913,
+    -0.0009
+   ],
+   "pozo_cargador": [
+    -0.3417,
+    0.1762,
+    0.0012
+   ],
+   "raíl_superior": [
+    -0.1222,
+    0.2366,
+    0.0023
+   ],
+   "cara_culata": [
+    -0.5172,
+    0.1914,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0621,
+    0.1811,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.1559,
+    0.1559,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "pistol_1",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "largo_m": 0.2221,
+  "triangulos_total": 2915,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 420,
+    "seccion_union_m": {
+     "alto": 0.0322,
+     "ancho": 0.0393
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1807
+   },
+   "empunadura": {
+    "triangulos": 644,
+    "seccion_union_m": {
+     "largo": 0.1015,
+     "ancho": 0.0374
+    }
+   },
+   "cargador": {
+    "triangulos": 44,
+    "seccion_union_m": {
+     "largo": 0.0372,
+     "ancho": 0.0223
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.1111,
+    0.1291,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.0678,
+    0.0851,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.0078,
+    0.1311,
+    0.0
+   ],
+   "cara_culata": [
+    -0.1111,
+    0.1083,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0955,
+    0.1316,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.0374,
+    0.0925,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "pistol_2",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "largo_m": 0.2179,
+  "triangulos_total": 3143,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 523,
+    "seccion_union_m": {
+     "alto": 0.0456,
+     "ancho": 0.0286
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1763
+   },
+   "empunadura": {
+    "triangulos": 717,
+    "seccion_union_m": {
+     "largo": 0.1001,
+     "ancho": 0.0315
+    }
+   },
+   "cargador": {
+    "triangulos": 140,
+    "seccion_union_m": {
+     "largo": 0.0449,
+     "ancho": 0.0217
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.1089,
+    0.1243,
+    0.0
+   ],
+   "pozo_cargador": [
+    -0.0602,
+    0.0802,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.007,
+    0.1327,
+    0.0
+   ],
+   "cara_culata": [
+    -0.1011,
+    0.099,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0872,
+    0.1197,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.0367,
+    0.0826,
+    -0.0004
+   ]
+  }
+ },
+ {
+  "nombre": "pistol_3",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "largo_m": 0.1922,
+  "triangulos_total": 2884,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 406,
+    "seccion_union_m": {
+     "alto": 0.0278,
+     "ancho": 0.034
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1793
+   },
+   "empunadura": {
+    "triangulos": 641,
+    "seccion_union_m": {
+     "largo": 0.088,
+     "ancho": 0.0324
+    }
+   },
+   "cargador": {
+    "triangulos": 44,
+    "seccion_union_m": {
+     "largo": 0.0329,
+     "ancho": 0.0197
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.0961,
+    0.1137,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.0597,
+    0.0752,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.0067,
+    0.1154,
+    0.0
+   ],
+   "cara_culata": [
+    -0.0961,
+    0.0957,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0826,
+    0.1158,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.0325,
+    0.0813,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "pistol_4",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "largo_m": 0.1978,
+  "triangulos_total": 4402,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1135,
+    "seccion_union_m": {
+     "alto": 0.0922,
+     "ancho": 0.0487
+    }
+   },
+   "cuerpo": {
+    "triangulos": 2444
+   },
+   "empunadura": {
+    "triangulos": 635,
+    "seccion_union_m": {
+     "largo": 0.0703,
+     "ancho": 0.038
+    }
+   },
+   "cargador": {
+    "triangulos": 188,
+    "seccion_union_m": {
+     "largo": 0.0332,
+     "ancho": 0.0319
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.0989,
+    0.1231,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.055,
+    0.0775,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.0119,
+    0.1257,
+    0.0
+   ],
+   "cara_culata": [
+    -0.0989,
+    0.1215,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0752,
+    0.1045,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.0438,
+    0.0828,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "pistol_5",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "largo_m": 0.295,
+  "triangulos_total": 4428,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 778,
+    "seccion_union_m": {
+     "alto": 0.0282,
+     "ancho": 0.0297
+    }
+   },
+   "cuerpo": {
+    "triangulos": 2000
+   },
+   "empunadura": {
+    "triangulos": 784,
+    "seccion_union_m": {
+     "largo": 0.1357,
+     "ancho": 0.0478
+    }
+   },
+   "cargador": {
+    "triangulos": 140,
+    "seccion_union_m": {
+     "largo": 0.0005,
+     "ancho": 0.0148
+    }
+   },
+   "mira": {
+    "triangulos": 726,
+    "seccion_union_m": {
+     "largo": 0.0407,
+     "ancho": 0.0243
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.1475,
+    0.1129,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.0684,
+    0.0836,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.0483,
+    0.1302,
+    0.0
+   ],
+   "cara_culata": [
+    -0.1475,
+    0.1074,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0295,
+    0.1144,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.0501,
+    0.0943,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "pistol_6",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "largo_m": 0.2317,
+  "triangulos_total": 2362,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 483,
+    "seccion_union_m": {
+     "alto": 0.0902,
+     "ancho": 0.0565
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1473
+   },
+   "empunadura": {
+    "triangulos": 338,
+    "seccion_union_m": {
+     "largo": 0.0756,
+     "ancho": 0.042
+    }
+   },
+   "cargador": {
+    "triangulos": 68,
+    "seccion_union_m": {
+     "largo": 0.0008,
+     "ancho": 0.0128
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.1158,
+    0.0997,
+    0.0003
+   ],
+   "pozo_cargador": [
+    0.0145,
+    0.0654,
+    0.0003
+   ],
+   "raíl_superior": [
+    -0.0116,
+    0.1228,
+    0.0
+   ],
+   "cara_culata": [
+    -0.1158,
+    0.1055,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0927,
+    0.0998,
+    0.0003
+   ],
+   "cara_empunadura": [
+    0.0363,
+    0.0724,
+    0.0003
+   ]
+  }
+ },
+ {
+  "nombre": "shotgun_1",
+  "tipo_juego": "shotgun",
+  "chasis": "convencional",
+  "largo_m": 0.9615,
+  "triangulos_total": 2217,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 544,
+    "seccion_union_m": {
+     "alto": 0.1079,
+     "ancho": 0.0993
+    }
+   },
+   "cuerpo": {
+    "triangulos": 369
+   },
+   "culata": {
+    "triangulos": 958,
+    "seccion_union_m": {
+     "alto": 0.175,
+     "ancho": 0.0993
+    }
+   },
+   "empunadura": {
+    "triangulos": 320,
+    "seccion_union_m": {
+     "largo": 0.0769,
+     "ancho": 0.0993
+    }
+   },
+   "cargador": {
+    "triangulos": 26,
+    "seccion_union_m": {
+     "largo": 0.1134,
+     "ancho": 0.0849
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.4808,
+    0.2096,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.0008,
+    0.1739,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.0,
+    0.233,
+    0.0
+   ],
+   "cara_culata": [
+    -0.0769,
+    0.1922,
+    -0.0
+   ],
+   "cara_guardamanos": [
+    0.0769,
+    0.1791,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.0385,
+    0.1514,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "shotgun_2",
+  "tipo_juego": "shotgun",
+  "chasis": "sin_culata",
+  "largo_m": 0.9985,
+  "triangulos_total": 2712,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 988,
+    "seccion_union_m": {
+     "alto": 0.1057,
+     "ancho": 0.0991
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1073
+   },
+   "empunadura": {
+    "triangulos": 651,
+    "seccion_union_m": {
+     "largo": 0.2583,
+     "ancho": 0.0905
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.4992,
+    0.2035,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.2989,
+    0.2351,
+    0.0
+   ],
+   "cara_culata": [
+    -0.4979,
+    0.1843,
+    0.0
+   ],
+   "cara_guardamanos": [
+    -0.0998,
+    0.1923,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.3688,
+    0.1621,
+    -0.0006
+   ]
+  }
+ },
+ {
+  "nombre": "sniper_0",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "largo_m": 1.2875,
+  "triangulos_total": 2912,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 831,
+    "seccion_union_m": {
+     "alto": 0.2462,
+     "ancho": 0.2043
+    }
+   },
+   "cuerpo": {
+    "triangulos": 990
+   },
+   "culata": {
+    "triangulos": 662,
+    "seccion_union_m": {
+     "alto": 0.0944,
+     "ancho": 0.2118
+    }
+   },
+   "empunadura": {
+    "triangulos": 287,
+    "seccion_union_m": {
+     "largo": 0.1379,
+     "ancho": 0.1025
+    }
+   },
+   "mira": {
+    "triangulos": 142,
+    "seccion_union_m": {
+     "largo": 0.2638,
+     "ancho": 0.0802
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.6437,
+    0.2666,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.2961,
+    0.2561,
+    -0.0007
+   ],
+   "cara_culata": [
+    -0.3605,
+    0.2247,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0,
+    0.1572,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.2621,
+    0.1532,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "sniper_1",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "largo_m": 1.1511,
+  "triangulos_total": 5488,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 708,
+    "seccion_union_m": {
+     "alto": 0.0914,
+     "ancho": 0.1229
+    }
+   },
+   "cuerpo": {
+    "triangulos": 2599
+   },
+   "culata": {
+    "triangulos": 880,
+    "seccion_union_m": {
+     "alto": 0.09,
+     "ancho": 0.0974
+    }
+   },
+   "empunadura": {
+    "triangulos": 705,
+    "seccion_union_m": {
+     "largo": 0.2878,
+     "ancho": 0.1102
+    }
+   },
+   "cargador": {
+    "triangulos": 188,
+    "seccion_union_m": {
+     "largo": 0.113,
+     "ancho": 0.0467
+    }
+   },
+   "mira": {
+    "triangulos": 408,
+    "seccion_union_m": {
+     "largo": 0.2199,
+     "ancho": 0.0338
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.5756,
+    0.2389,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.0111,
+    0.1467,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.1458,
+    0.2315,
+    -0.0
+   ],
+   "cara_culata": [
+    -0.4029,
+    0.2236,
+    -0.0
+   ],
+   "cara_guardamanos": [
+    0.1151,
+    0.2303,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.259,
+    0.18,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "sniper_2",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "largo_m": 1.18,
+  "triangulos_total": 3200,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 588,
+    "seccion_union_m": {
+     "alto": 0.0718,
+     "ancho": 0.0991
+    }
+   },
+   "cuerpo": {
+    "triangulos": 836
+   },
+   "culata": {
+    "triangulos": 308,
+    "seccion_union_m": {
+     "alto": 0.1273,
+     "ancho": 0.0991
+    }
+   },
+   "empunadura": {
+    "triangulos": 456,
+    "seccion_union_m": {
+     "largo": 0.2006,
+     "ancho": 0.0991
+    }
+   },
+   "cargador": {
+    "triangulos": 236,
+    "seccion_union_m": {
+     "largo": 0.0018,
+     "ancho": 0.0412
+    }
+   },
+   "mira": {
+    "triangulos": 776,
+    "seccion_union_m": {
+     "largo": 0.2228,
+     "ancho": 0.0537
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.59,
+    0.2206,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.0546,
+    0.1927,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.2733,
+    0.2388,
+    -0.0
+   ],
+   "cara_culata": [
+    -0.4484,
+    0.1937,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.1534,
+    0.2214,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.3363,
+    0.1728,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "subfusil_1",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.5885,
+  "triangulos_total": 2825,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 858,
+    "seccion_union_m": {
+     "alto": 0.0626,
+     "ancho": 0.0565
+    }
+   },
+   "cuerpo": {
+    "triangulos": 700
+   },
+   "culata": {
+    "triangulos": 328,
+    "seccion_union_m": {
+     "alto": 0.0301,
+     "ancho": 0.0368
+    }
+   },
+   "empunadura": {
+    "triangulos": 337,
+    "seccion_union_m": {
+     "largo": 0.0796,
+     "ancho": 0.063
+    }
+   },
+   "cargador": {
+    "triangulos": 162,
+    "seccion_union_m": {
+     "largo": 0.0506,
+     "ancho": 0.0486
+    }
+   },
+   "mira": {
+    "triangulos": 440,
+    "seccion_union_m": {
+     "largo": 0.0531,
+     "ancho": 0.0397
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.2942,
+    0.1791,
+    -0.0003
+   ],
+   "pozo_cargador": [
+    -0.0348,
+    0.1756,
+    0.0002
+   ],
+   "raíl_superior": [
+    -0.0591,
+    0.2071,
+    -0.0005
+   ],
+   "cara_culata": [
+    -0.1765,
+    0.1915,
+    -0.0003
+   ],
+   "cara_guardamanos": [
+    0.0294,
+    0.1875,
+    -0.0003
+   ],
+   "cara_empunadura": [
+    -0.1222,
+    0.1509,
+    0.0004
+   ]
+  }
+ },
+ {
+  "nombre": "subfusil_10",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.5246,
+  "triangulos_total": 3117,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 548,
+    "seccion_union_m": {
+     "alto": 0.0322,
+     "ancho": 0.0322
+    }
+   },
+   "cuerpo": {
+    "triangulos": 954
+   },
+   "culata": {
+    "triangulos": 444,
+    "seccion_union_m": {
+     "alto": 0.0663,
+     "ancho": 0.0608
+    }
+   },
+   "empunadura": {
+    "triangulos": 389,
+    "seccion_union_m": {
+     "largo": 0.0772,
+     "ancho": 0.0559
+    }
+   },
+   "cargador": {
+    "triangulos": 316,
+    "seccion_union_m": {
+     "largo": 0.0604,
+     "ancho": 0.0279
+    }
+   },
+   "mira": {
+    "triangulos": 466,
+    "seccion_union_m": {
+     "largo": 0.0636,
+     "ancho": 0.0064
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.2623,
+    0.18,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.018,
+    0.1375,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.041,
+    0.2017,
+    -0.0
+   ],
+   "cara_culata": [
+    -0.1679,
+    0.1798,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0262,
+    0.1814,
+    -0.001
+   ],
+   "cara_empunadura": [
+    -0.1279,
+    0.1454,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "subfusil_2",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.6221,
+  "triangulos_total": 3972,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 734,
+    "seccion_union_m": {
+     "alto": 0.0753,
+     "ancho": 0.0761
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1188
+   },
+   "culata": {
+    "triangulos": 716,
+    "seccion_union_m": {
+     "alto": 0.0713,
+     "ancho": 0.0694
+    }
+   },
+   "empunadura": {
+    "triangulos": 506,
+    "seccion_union_m": {
+     "largo": 0.0726,
+     "ancho": 0.037
+    }
+   },
+   "cargador": {
+    "triangulos": 432,
+    "seccion_union_m": {
+     "largo": 0.0558,
+     "ancho": 0.0313
+    }
+   },
+   "mira": {
+    "triangulos": 262,
+    "seccion_union_m": {
+     "largo": 0.0873,
+     "ancho": 0.0285
+    }
+   },
+   "agarre": {
+    "triangulos": 134,
+    "seccion_union_m": {
+     "largo": 0.0363,
+     "ancho": 0.0272
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.311,
+    0.213,
+    -0.0003
+   ],
+   "pozo_cargador": [
+    -0.0203,
+    0.1732,
+    -0.0005
+   ],
+   "raíl_superior": [
+    -0.1038,
+    0.228,
+    -0.0015
+   ],
+   "cara_culata": [
+    -0.1866,
+    0.2127,
+    -0.0003
+   ],
+   "cara_guardamanos": [
+    0.0498,
+    0.2126,
+    -0.0003
+   ],
+   "cara_empunadura": [
+    -0.1445,
+    0.1621,
+    -0.0009
+   ],
+   "raíl_inferior": [
+    0.1162,
+    0.1774,
+    -0.0012
+   ]
+  }
+ },
+ {
+  "nombre": "subfusil_3",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.555,
+  "triangulos_total": 3422,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 581,
+    "seccion_union_m": {
+     "alto": 0.0902,
+     "ancho": 0.0669
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1181
+   },
+   "culata": {
+    "triangulos": 539,
+    "seccion_union_m": {
+     "alto": 0.1789,
+     "ancho": 0.0622
+    }
+   },
+   "empunadura": {
+    "triangulos": 599,
+    "seccion_union_m": {
+     "largo": 0.0896,
+     "ancho": 0.0486
+    }
+   },
+   "cargador": {
+    "triangulos": 380,
+    "seccion_union_m": {
+     "largo": 0.0549,
+     "ancho": 0.0406
+    }
+   },
+   "agarre": {
+    "triangulos": 142,
+    "seccion_union_m": {
+     "largo": 0.0302,
+     "ancho": 0.0246
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.2775,
+    0.1808,
+    0.0021
+   ],
+   "pozo_cargador": [
+    0.0177,
+    0.1486,
+    0.0003
+   ],
+   "raíl_superior": [
+    -0.0444,
+    0.2333,
+    0.0
+   ],
+   "cara_culata": [
+    -0.1554,
+    0.1814,
+    0.0007
+   ],
+   "cara_guardamanos": [
+    0.0666,
+    0.1882,
+    0.0008
+   ],
+   "cara_empunadura": [
+    -0.0873,
+    0.1362,
+    0.0006
+   ],
+   "raíl_inferior": [
+    0.1304,
+    0.1483,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "subfusil_4",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.6081,
+  "triangulos_total": 2855,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 946,
+    "seccion_union_m": {
+     "alto": 0.0596,
+     "ancho": 0.0596
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1023
+   },
+   "culata": {
+    "triangulos": 370,
+    "seccion_union_m": {
+     "alto": 0.0619,
+     "ancho": 0.0619
+    }
+   },
+   "empunadura": {
+    "triangulos": 280,
+    "seccion_union_m": {
+     "largo": 0.0854,
+     "ancho": 0.056
+    }
+   },
+   "cargador": {
+    "triangulos": 236,
+    "seccion_union_m": {
+     "largo": 0.0495,
+     "ancho": 0.0333
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.3041,
+    0.1504,
+    -0.0012
+   ],
+   "pozo_cargador": [
+    -0.0463,
+    0.1068,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.1003,
+    0.2205,
+    0.0
+   ],
+   "cara_culata": [
+    -0.2007,
+    0.1517,
+    0.0002
+   ],
+   "cara_guardamanos": [
+    0.0,
+    0.147,
+    0.0002
+   ],
+   "cara_empunadura": [
+    -0.1339,
+    0.1103,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "subfusil_5",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.5783,
+  "triangulos_total": 4019,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 701,
+    "seccion_union_m": {
+     "alto": 0.0819,
+     "ancho": 0.0727
+    }
+   },
+   "cuerpo": {
+    "triangulos": 2071
+   },
+   "culata": {
+    "triangulos": 464,
+    "seccion_union_m": {
+     "alto": 0.0336,
+     "ancho": 0.0355
+    }
+   },
+   "empunadura": {
+    "triangulos": 235,
+    "seccion_union_m": {
+     "largo": 0.0706,
+     "ancho": 0.0343
+    }
+   },
+   "cargador": {
+    "triangulos": 86,
+    "seccion_union_m": {
+     "largo": 0.0003,
+     "ancho": 0.0402
+    }
+   },
+   "mira": {
+    "triangulos": 462,
+    "seccion_union_m": {
+     "largo": 0.2699,
+     "ancho": 0.0393
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.2892,
+    0.1887,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.0447,
+    0.1353,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.0179,
+    0.2048,
+    0.0
+   ],
+   "cara_culata": [
+    -0.2313,
+    0.1914,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.1157,
+    0.1734,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.1336,
+    0.1495,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "subfusil_6",
+  "tipo_juego": "smg",
+  "chasis": "sin_culata",
+  "largo_m": 0.5062,
+  "triangulos_total": 2848,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 448,
+    "seccion_union_m": {
+     "alto": 0.0624,
+     "ancho": 0.0727
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1113
+   },
+   "empunadura": {
+    "triangulos": 665,
+    "seccion_union_m": {
+     "largo": 0.1417,
+     "ancho": 0.0656
+    }
+   },
+   "cargador": {
+    "triangulos": 44,
+    "seccion_union_m": {
+     "largo": 0.0449,
+     "ancho": 0.0366
+    }
+   },
+   "mira": {
+    "triangulos": 288,
+    "seccion_union_m": {
+     "largo": 0.0444,
+     "ancho": 0.0274
+    }
+   },
+   "agarre": {
+    "triangulos": 290,
+    "seccion_union_m": {
+     "largo": 0.0433,
+     "ancho": 0.0335
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.2531,
+    0.1697,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.115,
+    0.1141,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.0903,
+    0.1913,
+    0.0
+   ],
+   "cara_culata": [
+    -0.2531,
+    0.1421,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0607,
+    0.1697,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.0911,
+    0.1341,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.0424,
+    0.1421,
+    -0.0
+   ]
+  }
+ },
+ {
+  "nombre": "subfusil_7",
+  "tipo_juego": "smg",
+  "chasis": "bullpup",
+  "largo_m": 0.5431,
+  "triangulos_total": 3253,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 976,
+    "seccion_union_m": {
+     "alto": 0.0903,
+     "ancho": 0.0479
+    }
+   },
+   "cuerpo_culata": {
+    "triangulos": 1230
+   },
+   "empunadura": {
+    "triangulos": 491,
+    "seccion_union_m": {
+     "largo": 0.0923,
+     "ancho": 0.0425
+    }
+   },
+   "cargador": {
+    "triangulos": 92,
+    "seccion_union_m": {
+     "largo": 0.0083,
+     "ancho": 0.0308
+    }
+   },
+   "mira": {
+    "triangulos": 464,
+    "seccion_union_m": {
+     "largo": 0.0884,
+     "ancho": 0.034
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.2715,
+    0.1514,
+    -0.0015
+   ],
+   "pozo_cargador": [
+    -0.1336,
+    0.1047,
+    -0.0003
+   ],
+   "raíl_superior": [
+    -0.0857,
+    0.1782,
+    -0.0006
+   ],
+   "cara_culata": [
+    -0.2715,
+    0.1451,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0543,
+    0.1298,
+    -0.0015
+   ],
+   "cara_empunadura": [
+    -0.0733,
+    0.1169,
+    -0.001
+   ]
+  }
+ },
+ {
+  "nombre": "subfusil_8",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.545,
+  "triangulos_total": 3005,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 665,
+    "seccion_union_m": {
+     "alto": 0.085,
+     "ancho": 0.0671
+    }
+   },
+   "cuerpo": {
+    "triangulos": 916
+   },
+   "culata": {
+    "triangulos": 362,
+    "seccion_union_m": {
+     "alto": 0.0729,
+     "ancho": 0.0541
+    }
+   },
+   "empunadura": {
+    "triangulos": 452,
+    "seccion_union_m": {
+     "largo": 0.0872,
+     "ancho": 0.0671
+    }
+   },
+   "cargador": {
+    "triangulos": 240,
+    "seccion_union_m": {
+     "largo": 0.0731,
+     "ancho": 0.0371
+    }
+   },
+   "mira": {
+    "triangulos": 370,
+    "seccion_union_m": {
+     "largo": 0.1084,
+     "ancho": 0.0244
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.2725,
+    0.1256,
+    -0.0
+   ],
+   "pozo_cargador": [
+    0.0116,
+    0.1323,
+    -0.0
+   ],
+   "raíl_superior": [
+    -0.0178,
+    0.1789,
+    0.0003
+   ],
+   "cara_culata": [
+    -0.1635,
+    0.1478,
+    -0.0001
+   ],
+   "cara_guardamanos": [
+    0.0545,
+    0.14,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.1199,
+    0.1202,
+    0.0
+   ]
+  }
+ },
+ {
+  "nombre": "subfusil_9",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "largo_m": 0.5221,
+  "triangulos_total": 5137,
+  "piezas": {
+   "guardamanos_canon": {
+    "triangulos": 1856,
+    "seccion_union_m": {
+     "alto": 0.1194,
+     "ancho": 0.0586
+    }
+   },
+   "cuerpo": {
+    "triangulos": 1557
+   },
+   "culata": {
+    "triangulos": 589,
+    "seccion_union_m": {
+     "alto": 0.1337,
+     "ancho": 0.0357
+    }
+   },
+   "empunadura": {
+    "triangulos": 587,
+    "seccion_union_m": {
+     "largo": 0.1253,
+     "ancho": 0.0586
+    }
+   },
+   "cargador": {
+    "triangulos": 188,
+    "seccion_union_m": {
+     "largo": 0.0614,
+     "ancho": 0.0562
+    }
+   },
+   "mira": {
+    "triangulos": 360,
+    "seccion_union_m": {
+     "largo": 0.0495,
+     "ancho": 0.028
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.2611,
+    0.1613,
+    -0.0
+   ],
+   "pozo_cargador": [
+    -0.021,
+    0.124,
+    -0.0014
+   ],
+   "raíl_superior": [
+    -0.0347,
+    0.2215,
+    0.0
+   ],
+   "cara_culata": [
+    -0.1984,
+    0.1597,
+    -0.0
+   ],
+   "cara_guardamanos": [
+    0.0261,
+    0.1552,
+    -0.0
+   ],
+   "cara_empunadura": [
+    -0.1358,
+    0.1383,
+    0.0
+   ]
+  }
+ }
+]

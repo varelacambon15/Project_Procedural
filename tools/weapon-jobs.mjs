@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 // Lista de conversiones: qué archivo de raw/ se convierte en qué arma y con qué piezas.
 const Q = "raw/quaternius-ultimate-gun-pack/OBJ";
 const C = "raw/cosmo-low-poly-guns";
@@ -192,6 +193,20 @@ const ATT = { RedDot: "Sights_Rear", Reflex: "Sights_Rear", Holographic: "Sights
 const attJobs = Object.entries(ATT).flatMap(([name, slot]) => ["East", "West"].map((v) => ({
   kind: "kitpart", pack: "kit", id: `k-att-${name.toLowerCase()}-${v.toLowerCase()}`, fbx: `${FA}/${name}_${v}.fbx`, negZ: true, slot, caliber: "any",
 })));
+
+// --- Kit de 39 armas del usuario (raw/kit39): piezas en anclas con nombre, escala real, normales con aristas vivas ---
+{
+  const KIT = "raw/kit39", cat = JSON.parse(readFileSync(new URL(`../${KIT}/catalogo.json`, import.meta.url), "utf8"));
+  const typeOf = (w) => (w.chasis === "bullpup" && w.tipo_juego === "rifle" ? "bullpup" : w.tipo_juego);
+  // Largo real relativo dentro del tipo (mediana = 1), acotado: variedad sin salirse de la escala del juego
+  const med = {}; for (const t of new Set(cat.map(typeOf))) { const ls = cat.filter((w) => typeOf(w) === t).map((w) => w.largo_m).sort((a, b) => a - b); med[t] = ls[Math.floor(ls.length / 2)]; }
+  for (const w of cat) {
+    const type = typeOf(w), modular = w.chasis === "convencional" && !!w.piezas.culata && ["rifle", "smg", "sniper", "shotgun"].includes(type);
+    ALL.push({ kind: "kit39", pack: "kit39", id: "x-" + w.nombre.toLowerCase().replace(/[^a-z0-9]+/g, "-"), label: w.nombre, type, modular,
+      glb: `${KIT}/${w.nombre}/${w.nombre}_ensamblada.glb`, sections: Object.fromEntries(Object.entries(w.piezas).map(([k, v]) => [k, v.seccion_union_m ?? {}])),
+      lengthMul: Math.min(1.15, Math.max(0.87, w.largo_m / med[type])) });
+  }
+}
 
 // --- Armas pulidas por el usuario (piezas separadas a mano, textura pixelada de 16 colores) ---
 const AP = "raw/armas-pulidas";

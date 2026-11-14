@@ -1,0 +1,161 @@
+{
+ "nombre": "pistol_4",
+ "tipo_pack": "pistol",
+ "tipo_juego": "pistol",
+ "chasis": "pistola",
+ "escala_aplicada": 0.16777,
+ "largo_m": 0.1978,
+ "alto_m": 0.1506,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor (derecha +Z)",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "bisel": "0.5 mm, aristas > 30°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 1135,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.0752,
+    0.1045,
+    -0.0
+   ],
+   "bbox_local_min": [
+    -0.0,
+    -0.0461,
+    -0.0243
+   ],
+   "bbox_local_max": [
+    0.0237,
+    0.0461,
+    0.0243
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.0922,
+    "ancho": 0.0487
+   }
+  },
+  "cuerpo": {
+   "triangulos": 2444,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0989,
+    0.0584,
+    -0.0248
+   ],
+   "bbox_local_max": [
+    0.0752,
+    0.1506,
+    0.0248
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 635,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0438,
+    0.0828,
+    -0.0
+   ],
+   "bbox_local_min": [
+    -0.0489,
+    -0.0729,
+    -0.0212
+   ],
+   "bbox_local_max": [
+    0.0537,
+    0.0,
+    0.0212
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.0703,
+    "ancho": 0.038
+   }
+  },
+  "cargador": {
+   "triangulos": 188,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.055,
+    0.0775,
+    -0.0
+   ],
+   "bbox_local_min": [
+    -0.029,
+    -0.0775,
+    -0.0176
+   ],
+   "bbox_local_max": [
+    0.0165,
+    0.0,
+    0.0176
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "seccion_union_m": {
+    "largo": 0.0332,
+    "ancho": 0.0319
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.0989,
+   0.1231,
+   -0.0
+  ],
+  "pozo_cargador": [
+   -0.055,
+   0.0775,
+   -0.0
+  ],
+  "raíl_superior": [
+   -0.0119,
+   0.1257,
+   0.0
+  ],
+  "cara_culata": [
+   -0.0989,
+   0.1215,
+   0.0
+  ],
+  "cara_guardamanos": [
+   0.0752,
+   0.1045,
+   -0.0
+  ],
+  "cara_empunadura": [
+   -0.0438,
+   0.0828,
+   -0.0
+  ]
+ },
+ "triangulos_total": 4402
+}

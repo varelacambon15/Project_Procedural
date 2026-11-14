@@ -1,0 +1,186 @@
+{
+ "nombre": "REV-H",
+ "tipo_pack": "hard-surface desde Hunyuan",
+ "tipo_juego": "revolver",
+ "chasis": "revolver",
+ "escala_aplicada": null,
+ "largo_m": 0.308,
+ "alto_m": 0.1698,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor (derecha +Z)",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "bisel": "1-2 mm (modelado)",
+ "piezas": {
+  "empunadura": {
+   "triangulos": 164,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.07,
+    0.118,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.08,
+    -0.118,
+    -0.014
+   ],
+   "bbox_local_max": [
+    0.012,
+    0.0,
+    0.014
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.0466,
+    "ancho": 0.028
+   }
+  },
+  "cuerpo": {
+   "triangulos": 692,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.082,
+    0.051,
+    -0.0125
+   ],
+   "bbox_local_max": [
+    0.036,
+    0.1698,
+    0.0125
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "tambor": {
+   "triangulos": 96,
+   "origen_local": "eje_tambor",
+   "posicion_en_arma": [
+    -0.0095,
+    0.128,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0375,
+    -0.0255,
+    -0.0255
+   ],
+   "bbox_local_max": [
+    0.0375,
+    0.0255,
+    0.0255
+   ],
+   "material": "mat_tambor",
+   "color": [
+    0.1,
+    0.1,
+    0.11
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 224,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.036,
+    0.13,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0,
+    -0.03,
+    -0.0105
+   ],
+   "bbox_local_max": [
+    0.122,
+    0.037,
+    0.0105
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.0595,
+    "ancho": 0.021
+   }
+  },
+  "mira": {
+   "triangulos": 44,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.035,
+    0.159,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.005,
+    -0.0,
+    -0.0045
+   ],
+   "bbox_local_max": [
+    0.005,
+    0.008,
+    0.0045
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "seccion_union_m": {
+    "largo": 0.01,
+    "ancho": 0.009
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.158,
+   0.143,
+   0
+  ],
+  "eje_tambor": [
+   -0.0095,
+   0.128,
+   0
+  ],
+  "raíl_superior": [
+   -0.035,
+   0.159,
+   0
+  ],
+  "cara_culata": [
+   -0.058,
+   0.11,
+   0
+  ],
+  "cara_guardamanos": [
+   0.036,
+   0.13,
+   0
+  ],
+  "cara_empunadura": [
+   -0.07,
+   0.118,
+   0
+  ]
+ },
+ "triangulos_total": 1220
+}

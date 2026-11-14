@@ -643,7 +643,51 @@ async function convertGLBParts(job) {
   joints.stockFace = joints.rear; joints.frontFace = joints.front; joints.gripFace = joints.grip;
   return finish(job.id, job.type, parts, { pack: job.pack, joints: roundSockets({ joints }).joints, modular: true });
 }
-window.convertJob = async (job) => (job.kind === "glbparts" ? convertGLBParts(job) : job.kind === "kitpart" ? convertKitPart(job) : job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
+/**
+ * Kit de 39 armas del usuario (raw/kit39): cada arma trae sus piezas colocadas en anclas con nombre (cara_culata,
+ * cara_guardamanos, cara_empunadura, pozo_cargador, raíl_superior, boca). Con culata separable entran como armas
+ * modulares (juntas = anclas; intercambian piezas dentro del pack); el resto (pistolas, bullpups, sin culata,
+ * revólver, palanca) entran enteras.
+ */
+async function convertKit39(job) {
+  const gltf = await new GLTFLoader().parseAsync(await fetchBuf(job.glb), job.glb.slice(0, job.glb.lastIndexOf("/") + 1));
+  gltf.scene.updateMatrixWorld(true);
+  const meshes = new Map(), anchors = new Map();
+  gltf.scene.traverse((o) => {
+    if (o.isMesh) { const g = o.geometry.clone().applyMatrix4(o.matrixWorld); const name = o.name || o.parent?.name; meshes.set(name, { geo: g.index ? g.toNonIndexed() : g, mat: o.material }); }
+    else if (o !== gltf.scene && !o.children.some((c) => c.isMesh)) anchors.set(o.name, o.getWorldPosition(new THREE.Vector3()));
+  });
+  // Escala: al largo del tipo del juego, conservando un poco la diferencia de largo real dentro del tipo
+  const all = [...meshes.values()].map((x) => new THREE.Mesh(x.geo));
+  const box = boxOf(all), L = box.max.x - box.min.x, c = box.getCenter(new THREE.Vector3());
+  const k = (TARGET_LENGTH[job.type] / L) * (job.lengthMul ?? 1);
+  const T = new THREE.Matrix4().makeScale(k, k, k).multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z));
+  for (const x of meshes.values()) { x.geo.applyMatrix4(T); x.geo.computeBoundingBox(); }
+  for (const v of anchors.values()) v.applyMatrix4(T);
+  const mk = (name, role) => {
+    const x = meshes.get(name); if (!x) return null;
+    for (const a of Object.keys(x.geo.attributes)) if (!["position", "normal", "uv"].includes(a)) x.geo.deleteAttribute(a);
+    const mat = x.mat.clone(); mat.name = name; // (el nombre del material = la pieza: el acabado se decide por rol)
+    const m = new THREE.Mesh(x.geo, mat); m.name = role === "body" ? `body_${name}` : role; return { role, source: job.id, mesh: m };
+  };
+  const body = meshes.has("cuerpo_culata") ? "cuerpo_culata" : "cuerpo";
+  if (!job.modular) {
+    const parts = [mk(body, "body"), mk("guardamanos_canon", "body"), mk("empunadura", "body"), mk("culata", "body"), mk("agarre", "body"),
+      mk("cargador", "magazine"), mk("tambor", "magazine"), mk("mira", "scope")].filter(Boolean);
+    return finish(job.id, job.type, parts, { pack: job.pack });
+  }
+  const parts = [mk(body, "receiver"), mk("culata", "stock"), mk("guardamanos_canon", "front"), mk("agarre", "front"), mk("empunadura", "grip"), mk("cargador", "magazine"), mk("mira", "scope")].filter(Boolean);
+  const sec = job.sections ?? {}, at = (n) => anchors.get(n)?.toArray().map((v, i) => (i === 2 ? 0 : v));
+  const fb = parts.find((p) => p.role === "front").mesh.geometry.boundingBox, gb = parts.find((p) => p.role === "grip").mesh.geometry.boundingBox;
+  const joints = {
+    rear: { pos: at("cara_culata"), size: [(sec.culata?.alto ?? 0.06) * k, 0] },
+    front: { pos: at("cara_guardamanos"), size: [Math.min(fb.max.y - fb.min.y, (sec.guardamanos_canon?.alto ?? 0.05) * k), 0] },
+    grip: { pos: [(gb.min.x + gb.max.x) / 2, at("cara_empunadura")[1], 0], size: [gb.max.x - gb.min.x, 0] },
+  };
+  joints.stockFace = joints.rear; joints.frontFace = joints.front; joints.gripFace = joints.grip;
+  return finish(job.id, job.type, parts, { pack: job.pack, joints: roundSockets({ joints }).joints, modular: true });
+}
+window.convertJob = async (job) => (job.kind === "kit39" ? convertKit39(job) : job.kind === "glbparts" ? convertGLBParts(job) : job.kind === "kitpart" ? convertKitPart(job) : job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
 window.treeFBX = async (url) => { const root = await loadFBX(url); const out = []; root.traverse((o) => out.push({ n: o.name, t: o.type, p: o.position.toArray().map((v) => +v.toFixed(2)), r: o.rotation.toArray().slice(0, 3).map((v) => +v.toFixed(2)), s: +o.scale.x.toFixed(3), mat: o.isMesh ? [].concat(o.material).map((m) => m.name + (m.map ? "*" : "")) : undefined })); return out; };
 window.listFBX = async (url) => { const root = await loadFBX(url); const out = []; root.updateMatrixWorld(true); root.traverse((o) => { if (o.isMesh) { const b = new THREE.Box3().setFromObject(o); out.push({ name: o.name, min: b.min.toArray().map((v) => +v.toFixed(1)), max: b.max.toArray().map((v) => +v.toFixed(1)) }); } }); return out; };
 window.ready = true;
