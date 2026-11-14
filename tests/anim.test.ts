@@ -61,3 +61,14 @@ describe("capa de animación procedural", () => {
     expect(Math.abs(b.update(idle({ ads: 1 })).pos[0])).toBeLessThan(0.01);
   });
 });
+
+describe("gestos manuales (cerrojo y bombeo)", () => {
+  it("empiezan y acaban en reposo, con el tirón completo a mitad", async () => {
+    const { boltCurve, pumpCurve } = await import("../src/game/anim");
+    for (const c of [boltCurve(0), boltCurve(1)]) { expect(c.reach).toBeCloseTo(0); expect(c.pull).toBeCloseTo(0); }
+    expect(boltCurve(0.5).pull).toBeGreaterThan(0.95);
+    expect(boltCurve(0.5).reach).toBe(1);
+    expect(pumpCurve(0).pull).toBeCloseTo(0); expect(pumpCurve(1).pull).toBeCloseTo(0);
+    expect(pumpCurve(0.38).pull).toBeGreaterThan(0.95);
+  });
+});

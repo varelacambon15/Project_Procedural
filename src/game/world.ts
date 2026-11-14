@@ -253,7 +253,7 @@ export function buildRange(scene: THREE.Scene): World {
   key.position.set(-10, 20, 12); key.target.position.set(0, 0, -20);
   key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
   Object.assign(key.shadow.camera, { left: -45, right: 45, top: 50, bottom: -50, near: 1, far: 140 });
-  key.shadow.bias = -0.0004;
+  key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03; // (sin acné de sombra que parpadee al moverse)
   scene.add(key, key.target);
   const lamps: { light: THREE.PointLight; mesh: THREE.Mesh; base: number; phase: number }[] = [];
   const lampMat = () => new THREE.MeshStandardMaterial({ color: WARM, emissive: WARM, emissiveIntensity: 1.6 });

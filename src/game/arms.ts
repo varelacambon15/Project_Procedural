@@ -66,7 +66,8 @@ const sleeveDark = new THREE.MeshStandardMaterial({ color: 0x262b33, roughness: 
 const glove = new THREE.MeshStandardMaterial({ map: gloveTex, roughness: 0.7, metalness: 0.05 });
 const gloveArmor = new THREE.MeshStandardMaterial({ color: 0x2c2f34, roughness: 0.5, metalness: 0.25 });
 const strap = new THREE.MeshStandardMaterial({ color: 0x1a1b1c, roughness: 0.6 });
-const watchFace = new THREE.MeshStandardMaterial({ color: 0x0c1410, emissive: 0x2a6a4a, emissiveIntensity: 0.25, roughness: 0.25, metalness: 0.4 });
+const watchFace = new THREE.MeshStandardMaterial({ color: 0x101214, emissive: 0x6a4a2a, // (esfera ámbar: nada de verde en los brazos)
+  emissiveIntensity: 0.25, roughness: 0.25, metalness: 0.4 });
 const patchMat = new THREE.MeshStandardMaterial({ map: pixTex(8, 8, (g) => { g.fillStyle = "#2b3038"; g.fillRect(0, 0, 8, 8); g.fillStyle = "#e07a2a"; g.fillRect(1, 1, 6, 1); g.fillRect(1, 3, 4, 1); g.fillRect(1, 5, 5, 1); g.strokeStyle = "#1a1d22"; g.strokeRect(0.5, 0.5, 7, 7); }), roughness: 0.9 });
 
 const Y = new THREE.Vector3(0, 1, 0);

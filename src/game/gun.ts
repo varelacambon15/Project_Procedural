@@ -14,7 +14,7 @@ import { mergeStatic } from "./merge";
 import { Arms, handBasis, type Curl, type HandPose } from "./arms";
 import { audio, out, out as masterOut } from "./audio";
 import { settings } from "./settings";
-import { ViewAnimator, animParams, ease, phaseAt, tri, type AnimInput, type MovingPart, type Phase } from "./anim";
+import { CYCLE_TIME, ViewAnimator, animParams, boltCurve, ease, phaseAt, pumpCurve, tri, type AnimInput, type MovingPart, type Phase } from "./anim";
 
 const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3, smg: 1.8, rifle: 2.2, bullpup: 2.4, shotgun: 2.6, sniper: 2.9, launcher: 3.2, lmg: 4.4, flamethrower: 2.8 };
 
@@ -91,7 +91,8 @@ export class Gun {
   aimT = 0;
   private shotCount = 0;
   private burstLeft = 0; private burstTimer = 0;
-  private cycleT = 0;
+  private cycleT = 0; private cycleDur = 0.45;
+  /** Recarga táctica (quedaban balas en el cargador): sin montar el arma. */ private tacReload = false;
   private inspectT = 0;
   /** Efectos de rareza del arma en mano (módulos de datos por eventos; ver weapons/effects.ts). */
   private fx: EffectRunner<Dummy, THREE.Vector3> | null = null;
@@ -279,6 +280,7 @@ export class Gun {
     let time = (RELOAD[s.type] ?? 2) * (1.35 - s.stats.manejo / 200);
     time *= this.fx?.reloadMult() ?? 1;
     this.reloadT = this.reloadDur = time; this.burstLeft = 0; this.inspectT = 0;
+    this.tacReload = this.item.ammo > 0;
     this.sfx("reload");
   }
 
@@ -337,7 +339,7 @@ export class Gun {
       draw: this.equipT > 0 ? this.equipT / this.equipDur : 0,
       holster: this.pending ? 1 - Math.max(0, this.holsterT) / Math.max(0.01, this.anim.p.holster) : 0,
       inspect: this.inspectT > 0 ? 1 - this.inspectT / 2.6 : null,
-      cycle: this.cycleT > 0 ? 1 - this.cycleT / 0.45 : null, empty: !!it && it.ammo <= 0,
+      cycle: this.cycleT > 0 ? 1 - this.cycleT / this.cycleDur : null, tactical: this.tacReload, cycleKind: this.spec?.fireMode === "bolt" ? "bolt" : this.spec?.fireMode === "pump" ? "pump" : undefined, empty: !!it && it.ammo <= 0,
       ...this.poseOverride,
     });
     this.reloadPhase = pose.phase;
@@ -594,15 +596,18 @@ export class Gun {
         }
       }
       else if (ph.id === "in") left = atMag;
-      else if (ph.id === "rack") left = h.charge.clone().add(new THREE.Vector3(-0.05 * tri(ph.t, 0, 1), 0.01, 0.03));
-      else if (ph.id === "settle") left = h.charge.clone().lerp(sup, ease(ph.t));
+      else if (ph.id === "rack" && !this.tacReload) left = h.charge.clone().add(new THREE.Vector3(-0.05 * tri(ph.t, 0, 1), 0.01, 0.03));
+      else if (ph.id === "rack") left = atMag.clone().lerp(sup, ease(ph.t)); // táctica: la mano vuelve directa al guardamanos
+      else if (ph.id === "settle") left = this.tacReload ? sup.clone() : h.charge.clone().lerp(sup, ease(ph.t));
     } else if (this.cycleT > 0 && this.spec?.fireMode === "pump") {
-      left = this.moving.pump ? sup.clone().add(pumpOff) : sup.clone().add(new THREE.Vector3(-0.07 * tri(1 - this.cycleT / 0.45, 0, 1), 0, 0));
+      left = this.moving.pump ? sup.clone().add(pumpOff) : sup.clone().add(new THREE.Vector3(-0.08 * pumpCurve(1 - this.cycleT / this.cycleDur).pull, 0, 0));
     }
     // Cerrojo: lo acciona la mano derecha (va a la manilla, a la derecha del cajón, tira atrás y vuelve); la izquierda sujeta
-    const boltK = this.cycleT > 0 && this.spec?.fireMode === "bolt" ? tri(1 - this.cycleT / 0.45, 0, 1) : 0;
-    const reach = Math.min(1, boltK * 1.8);
-    const rightAt = h.grip.clone().lerp(h.charge.clone().add(new THREE.Vector3(-0.02, -0.012, 0.045)), ease(reach)).add(new THREE.Vector3(-0.06 * boltK * reach, 0, 0));
+    // (cuatro tiempos: a la manilla, arriba, atrás, adelante, abajo y de vuelta a la empuñadura)
+    const bc = this.cycleT > 0 && this.spec?.fireMode === "bolt" ? boltCurve(1 - this.cycleT / this.cycleDur) : null;
+    const reach = bc?.reach ?? 0;
+    const rightAt = h.grip.clone().lerp(h.charge.clone().add(new THREE.Vector3(-0.02, -0.012, 0.045)), reach)
+      .add(new THREE.Vector3(-0.075 * (bc?.pull ?? 0), 0.018 * (bc?.lift ?? 0), 0.012 * (bc?.lift ?? 0)));
     // Agarre de cada mano (marco del arma en primera persona: -Z boca, +Y arriba, +X derecha)
     const hq = camQ.clone().multiply(this.holder.getWorldQuaternion(new THREE.Quaternion())); void orient;
     const kind: HandKind = ph ? (style === "shells" ? (ph.id === "rack" ? "under" : "grab") : ph.id === "rack" || ph.id === "settle" ? "grab" : "grab")
@@ -639,7 +644,7 @@ export class Gun {
     }
     this.shotCount++;
     if (!echo) this.hooks.onShot?.();
-    if (s.fireMode === "pump" || s.fireMode === "bolt") { this.cycleT = 0.45; setTimeout(() => { this.sfx("cycle"); if (this.item === it) this.ejectCasing(); }, 220); }
+    if (s.fireMode === "pump" || s.fireMode === "bolt") { this.cycleT = this.cycleDur = CYCLE_TIME[s.fireMode]; setTimeout(() => { this.sfx("cycle"); if (this.item === it) this.ejectCasing(); }, s.fireMode === "bolt" ? 380 : 170); }
     else if (!echo) this.ejectCasing();
     const quiet = !!accessory(s.muzzle)?.quiet;
     const sig = fx.sig;

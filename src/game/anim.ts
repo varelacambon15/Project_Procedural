@@ -44,6 +44,25 @@ export function phaseAt(phases: [string, number][], p: number): Phase {
 
 const clamp = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 export const ease = (x: number) => x * x * (3 - 2 * x);
+const seg = (x: number, a: number, b: number) => Math.min(1, Math.max(0, (x - a) / (b - a)));
+const outCubic = (x: number) => 1 - (1 - x) ** 3;
+/** Duración del gesto manual (s): cerrojo en cuatro tiempos y bombeo seco. */
+export const CYCLE_TIME = { bolt: 0.8, pump: 0.55 } as const;
+/**
+ * Cerrojo (0..1): la mano va a la manilla (reach), la levanta (lift), tira atrás y empuja (pull), la baja y vuelve.
+ * `slam` es el golpe al cerrar.
+ */
+export function boltCurve(t: number) {
+  const reach = ease(seg(t, 0, 0.16)) * (1 - ease(seg(t, 0.84, 1)));
+  const lift = ease(seg(t, 0.14, 0.26)) * (1 - ease(seg(t, 0.7, 0.82)));
+  const pull = outCubic(seg(t, 0.28, 0.46)) * (1 - ease(seg(t, 0.52, 0.66)));
+  return { reach, lift, pull, slam: tri(t, 0.64, 0.8) };
+}
+/** Bombeo (0..1): tirón atrás rápido, una pausa mínima y golpe adelante. */
+export function pumpCurve(t: number) {
+  const pull = outCubic(seg(t, 0.04, 0.32)) * (1 - ease(seg(t, 0.42, 0.66)));
+  return { pull, slam: tri(t, 0.6, 0.85) };
+}
 export const tri = (x: number, a: number, b: number) => (x <= a || x >= b ? 0 : Math.sin(((x - a) / (b - a)) * Math.PI));
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 
@@ -60,6 +79,8 @@ export interface AnimInput {
   draw: number; holster: number; inspect: number | null;
   /** Progreso del ciclo manual (corredera/bombeo/cerrojo) 0..1 o null; cargador vacío (corredera abierta). */
   cycle: number | null; empty: boolean;
+  /** Acción manual en curso (cerrojo o bombeo): elige la curva del gesto. */ cycleKind?: "bolt" | "pump";
+  /** Recarga táctica (quedaban balas): sin montar la palanca o la corredera. */ tactical?: boolean;
 }
 export interface Pose {
   pos: V3; rot: V3;
@@ -137,13 +158,22 @@ export class ViewAnimator {
     const parts: Record<MovingPart, number> = { slide: 0, pump: 0, charging: 0 };
     if (p.cycle.part) {
       // Automáticas/semiautomáticas: golpe atrás y vuelta en cycle.time; manuales (bombeo/cerrojo): recorrido largo
-      const manual = i.cycle !== null ? tri(i.cycle, 0.1, 0.9) : 0;
+      const manual = i.cycle !== null ? (i.cycleKind === "bolt" ? boltCurve(i.cycle).pull : i.cycleKind === "pump" ? pumpCurve(i.cycle).pull : tri(i.cycle, 0.1, 0.9)) : 0;
       const auto = p.cycle.time < 0.2 ? tri(this.shotT, 0, 1) : 0;
       parts[p.cycle.part] = p.cycle.travel * Math.max(manual, auto);
       if (p.cycle.lockEmpty && i.empty && i.reload === null) parts[p.cycle.part] = p.cycle.travel;
     }
     // Cerrojo/bombeo manual: el arma se gira un poco
-    if (i.cycle !== null) { const kc = tri(i.cycle, 0.1, 0.9); rot[2] += 0.25 * kc; rot[0] += 0.12 * kc; pos[1] -= 0.02 * kc; }
+    // Cerrojo: el arma se tumba hacia la mano, baja un poco y acompaña el tirón; al cerrar, un golpe seco
+    // Bombeo: la boca sube al tirar y el arma retrocede con la mano; al cerrar, sacudida adelante
+    if (i.cycle !== null && i.cycleKind === "bolt") {
+      const b = boltCurve(i.cycle);
+      rot[2] += 0.32 * b.reach + 0.06 * b.lift; rot[0] += 0.07 * b.reach - 0.03 * b.slam; rot[1] -= 0.08 * b.reach;
+      pos[1] -= 0.028 * b.reach; pos[0] -= 0.012 * b.reach; pos[2] += 0.018 * b.pull - 0.008 * b.slam;
+    } else if (i.cycle !== null && i.cycleKind === "pump") {
+      const q = pumpCurve(i.cycle);
+      rot[0] += 0.07 * q.pull - 0.03 * q.slam; rot[2] += 0.06 * q.pull; pos[2] += 0.028 * q.pull - 0.012 * q.slam; pos[1] -= 0.01 * q.pull;
+    } else if (i.cycle !== null) { const kc = tri(i.cycle, 0.1, 0.9); rot[2] += 0.25 * kc; rot[0] += 0.12 * kc; pos[1] -= 0.02 * kc; }
 
     // Recarga por fases (datos por clase)
     let phase: Phase | null = null;
@@ -159,6 +189,8 @@ export class ViewAnimator {
         const out = id === "out" ? ease(t) : id === "pouch" ? 1 : id === "in" ? 1 - ease(t) : 0;
         mag.offset = [r.mag[0] * out, r.mag[1] * out, r.mag[2] * out];
         mag.visible = id !== "pouch";
+        // Al encajar el cargador nuevo, un golpe seco hacia arriba (la palma lo asienta)
+        if (id === "in") { const sk = tri(t, 0.72, 1); pos[1] += 0.014 * sk; rot[0] += 0.05 * sk; }
       } else if (r.style === "shells" && id === "shell") {
         // Cada cartucho: empujón hacia arriba al meterlo
         const kk = tri(t, 0.55, 1); pos[1] += 0.01 * kk; rot[0] -= 0.03 * kk;
@@ -167,7 +199,8 @@ export class ViewAnimator {
         if (id === "eject") { const kk = tri(t, 0, 1); rot[0] += 0.5 * kk; pos[1] += 0.03 * kk; }
         if (id === "open" || id === "close") rot[2] += 0.12 * tri(t, 0, 1);
       }
-      if (id === "rack" && r.rackPart) {
+      // Recarga táctica (quedaban balas): no hace falta montar; solo en la vacía se tira de la palanca o la corredera
+      if (id === "rack" && r.rackPart && (!i.tactical || r.style !== "mag")) {
         const kk = tri(t, 0, 1); parts[r.rackPart] = Math.max(parts[r.rackPart], r.rackTravel * kk);
         pos[2] += 0.035 * kk; rot[0] -= 0.12 * kk;
       }
