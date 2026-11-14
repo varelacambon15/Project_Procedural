@@ -671,11 +671,13 @@ async function convertKit39(job) {
     const mat = x.mat.clone(); mat.name = name; // (el nombre del material = la pieza: el acabado se decide por rol)
     const m = new THREE.Mesh(x.geo, mat); m.name = role === "body" ? `body_${name}` : role; return { role, source: job.id, mesh: m };
   };
+  // Anclas con nombre del pack (ya escaladas), para colocar accesorios en su sitio real (raíl_inferior, raíl_frontal…)
+  const named = () => Object.fromEntries([...anchors].filter(([n]) => /^(raíl_|boca|linea_mira|pozo_cargador)/.test(n)).map(([n, v]) => [n, v.toArray().map((x) => +x.toFixed(4))]));
   const body = meshes.has("cuerpo_culata") ? "cuerpo_culata" : "cuerpo";
   if (!job.modular) {
     const parts = [mk(body, "body"), mk("guardamanos_canon", "body"), mk("empunadura", "body"), mk("culata", "body"), mk("agarre", "body"),
       mk("cargador", "magazine"), mk("tambor", "magazine"), mk("mira", "scope")].filter(Boolean);
-    return finish(job.id, job.type, parts, { pack: job.pack, action: job.action });
+    return finish(job.id, job.type, parts, { pack: job.pack, action: job.action, anchors: named() });
   }
   const parts = [mk(body, "receiver"), mk("culata", "stock"), mk("guardamanos_canon", "front"), mk("agarre", "front"), mk("empunadura", "grip"), mk("cargador", "magazine"), mk("mira", "scope")].filter(Boolean);
   const sec = job.sections ?? {}, at = (n) => anchors.get(n)?.toArray().map((v, i) => (i === 2 ? 0 : v));
@@ -691,7 +693,7 @@ async function convertKit39(job) {
     grip: { pos: [(gb.min.x + gb.max.x) / 2, at("cara_empunadura")[1], 0], size: [gb.max.x - gb.min.x, 0] },
   };
   joints.stockFace = joints.rear; joints.frontFace = joints.front; joints.gripFace = joints.grip;
-  return finish(job.id, job.type, parts, { pack: job.pack, action: job.action, joints: roundSockets({ joints }).joints, modular: true });
+  return finish(job.id, job.type, parts, { pack: job.pack, action: job.action, anchors: named(), joints: roundSockets({ joints }).joints, modular: true });
 }
 /**
  * Pieza suelta de la biblioteca del kit (culata, guardamanos o empuñadura): "donante" modular del pack kit39. La pieza

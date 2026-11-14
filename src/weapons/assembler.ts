@@ -532,8 +532,11 @@ export class WeaponAssembler {
     const box = new THREE.Box3().setFromObject(group);
     // Mira integrada en el modelo (asa-mira, visor de fábrica) sin óptica añadida: la línea de mira pasa por el centro de
     // esa mira; si no, el arma apuntaba por encima de todo el modelo y la mira "no funcionaba"
+    // Packs del usuario (kit39): su mira integrada (alza, asa del G36C…) es decorativa; con una mira montada se oculta
+    const decor = parts.filter((p) => p.role === "scope" && p.from.pack === "kit39");
+    if (spec.optic) for (const p of decor) p.object.visible = false;
     if (sight === null) {
-      const own = parts.filter((p) => p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser");
+      const own = parts.filter((p) => p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser" && p.from.pack !== "kit39");
       if (own.length) { const ob = new THREE.Box3(); for (const p of own) ob.expandByObject(p.object); if (!ob.isEmpty()) { sight = ob.min.y + (ob.max.y - ob.min.y) * 0.62; zoom = Math.max(zoom, 1.6); } }
     }
     const center = box.getCenter(new THREE.Vector3());

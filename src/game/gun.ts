@@ -206,7 +206,7 @@ export class Gun {
     this.sightY = m.sightY ?? new THREE.Box3().setFromObject(m.group).max.y;
     // Visor integrado en el modelo (sin óptica añadida): solo si de verdad hay una pieza de mira con aumentos
     // (solo francotiradores: en otras armas esa pieza suele ser un asa con alza, que apunta como mira de hierro)
-    if (!item.spec.optic && item.spec.type === "sniper" && m.parts.some((p) => p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser") && m.zoom > 1.5) {
+    if (!item.spec.optic && item.spec.type === "sniper" && m.parts.some((p) => p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser" && p.from.pack !== "kit39") && m.zoom > 1.5) {
       this.sight = "scope"; this.zoom = 4.5;
     }
     this.mag = m.parts.find((p) => p.role === "magazine") ?? null;

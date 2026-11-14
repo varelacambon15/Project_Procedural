@@ -4,6 +4,8 @@
 
 ---
 
+Antes de empezar: los assets nuevos están en la rama assets-miras-hierro (solo cambia raw/). Fusiónala en tu rama con "git fetch origin assets-miras-hierro && git merge origin/assets-miras-hierro" y vuelve a convertir los assets. raw/pack2 es nuevo: contiene solo las 7 armas seleccionadas.
+
 Vas a continuar durante un tiempo el desarrollo de mi juego. Otro chat lo ha llevado hasta ahora y lo retomará
 después, así que deja todo documentado y subido. Háblame siempre en **español de España, con tuteo**.
 

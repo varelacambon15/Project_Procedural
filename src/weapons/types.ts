@@ -39,6 +39,10 @@ export interface AssetEntry {
   action?: string;
   /** Era sugerida por el pack del usuario (classic, modern, rustic, scifi). */
   era?: import("./eras").Era;
+  /** Anclas con nombre del pack del usuario (raíl_inferior, raíl_superior, raíl_frontal, boca…), en metros del arma. */
+  anchors?: Record<string, [number, number, number]>;
+  /** Accesorios de serie del pack (id del pool, categoría y ancla). */
+  stockAcc?: { id: string; categoria: string; ancla: string }[];
 }
 export interface Manifest { convention: string; weapons: AssetEntry[]; kit?: import("./kit").KitPart[] }
 

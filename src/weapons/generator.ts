@@ -139,6 +139,23 @@ const MODEL_HINTS: Record<string, { arch?: string; mag?: number; strict?: boolea
  * Acción real del modelo (campo `accion` de los packs del usuario): elige la variante de modo que coincide (un
  * francotirador de cerrojo hace la animación del cerrojo; uno semiautomático, no).
  */
+/**
+ * Posición relativa (0..1) de un ancla del modelo a lo largo de su guardamanos, si el arma lleva el guardamanos propio
+ * (con uno ajeno, el ancla no vale). Sirve tras estirar el guardamanos: se reparte igual a lo largo.
+ */
+function railT(base: AssetEntry | null | undefined, parts: PartPick[], anchor: string): number | null {
+  const a = base?.anchors?.[anchor], fb = base?.partBounds?.front;
+  if (!a || !fb || parts.find((p) => p.role === "front")?.from !== base!.id) return null;
+  const t = (a[0] - fb.min[0]) / Math.max(1e-4, fb.max[0] - fb.min[0]);
+  return t > 0.02 && t < 0.98 ? t : null;
+}
+/** Pieza del kit convertida desde un accesorio del pool del pack 4 (id del pack → k-…-lp4<id>). */
+function stockPart(kit: KitIndex, id: string): string | null {
+  const slug = "-lp4" + id.replace(/[^a-z0-9]+/g, "");
+  return kit.parts.find((p) => p.id.endsWith(slug))?.id ?? null;
+}
+const serie = (kit: KitIndex, base: AssetEntry | null | undefined, cat: string) => (base?.stockAcc ?? []).filter((a) => a.categoria === cat).map((a) => stockPart(kit, a.id)).filter((x): x is string => !!x);
+
 function actionHint(body: AssetEntry): { arch: string; strict?: boolean } | undefined {
   const a = body.action; if (!a) return undefined;
   const A: Partial<Record<string, Record<string, string>>> = {
@@ -427,7 +444,8 @@ export class WeaponGenerator {
 
     // 3. Accesorios ya montados según la rareza (una mira de modelo integrada no cuenta como accesorio)
     let optic: string | null = null, muzzle: string | null = null;
-    const ownScope = body.parts.some((p) => p.role === "scope");
+    // (en los packs del usuario, kit39, la pieza "mira" del modelo es decorativa: se apunta solo con miras del pool)
+    const ownScope = body.pack !== "kit39" && body.parts.some((p) => p.role === "scope");
     if (ownScope) optic = parts[0].from; // (en las pistolas procedurales, el diseño concreto, no el arquetipo)
     let opticOpts = ownScope ? this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id && !RETIRED.has(x.id)).map((x) => x.id) : this.opticOptions({ type, parts });
     // Una clásica solo lleva visores de época (de aumento sencillos); nada de puntos rojos ni holográficas
@@ -440,6 +458,9 @@ export class WeaponGenerator {
     for (const slot of slots) {
       if (nAcc <= 0) break;
       if (slot === "optic") { const real = opticOpts.filter(isKit); optic = real.length && r() < 0.75 ? pick(r, real) : pick(r, opticOpts); } else muzzle = pick(r, muzzleOpts);
+      // Accesorio de serie del modelo (pack 4): en su hueco, más a menudo que uno cualquiera (el arma queda como el original)
+      const own = serie(this.kit, body, slot === "optic" ? "miras" : "bocachas");
+      if (own.length && r() < 0.6) { if (slot === "optic") optic = own[0]; else muzzle = own[0]; }
       nAcc--;
     }
 
@@ -977,19 +998,23 @@ export class WeaponGenerator {
           const t0 = 0.3 + r() * 0.25;
           // Solo bajo el tramo grueso del guardamanos (no bajo el cañón fino: el agarre quedaba colgando del cañón o
           // separado del arma), en su cara inferior
-          for (const t of [t0, t0 + 0.12, t0 - 0.1, t0 + 0.22, 0.25, 0.15]) {
+          // raíl_inferior del modelo (si el guardamanos es el suyo): su posición relativa a lo largo del guardamanos
+          const tRail = railT(base, parts, "raíl_inferior");
+          for (const t of [...(tRail !== null ? [tRail] : []), t0, t0 + 0.12, t0 - 0.1, t0 + 0.22, 0.25, 0.15]) {
             const x = z0 + (z1 - z0) * t; const col = at(x);
             if (!col.length || (layout === "modular-long" && !thick(x))) continue;
             const lo = Math.min(...col.map((p) => p[1])), hiY = Math.max(...col.map((p) => p[2]));
             if (hiY - lo > maxH) continue;
-            if (devs.length) tw.device = { id: pick(r, devs).id, at: [x, lo] };
+            const ownDev = serie(this.kit, base, "agarres");
+            if (devs.length) tw.device = { id: ownDev.length && r() < 0.7 ? ownDev[0] : pick(r, devs).id, at: [x, lo] };
             break;
           }
         }
         if (wantBipod) {
           // Bípode: hacia la punta del tramo grueso del guardamanos, en su cara inferior
-          const bps = this.kit.options("Bipod", "any");
-          for (const t of [0.9, 0.8, 0.7, 0.6]) {
+          const own = serie(this.kit, base, "bipodes"), bps = own.length ? own.map((id) => this.kit.byId.get(id)!) : this.kit.options("Bipod", "any");
+          const tRail = railT(base, parts, "raíl_inferior");
+          for (const t of [...(tRail !== null && tRail > 0.5 ? [tRail] : []), 0.9, 0.8, 0.7, 0.6]) {
             const x = z0 + (z1 - z0) * t, col = at(x);
             if (!col.length || !thick(x) || (tw.device && Math.abs(tw.device.at[0] - x) < 0.08)) continue;
             if (bps.length) tw.bipod = { id: pick(r, bps).id, at: [x, Math.min(...col.map((p) => p[1]))] };
