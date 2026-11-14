@@ -153,7 +153,7 @@ Pendiente:
   packs con raíl_frontal no llegaron). C (apuntado solo por miras del pool; mira del arma decorativa) va con D.
 - Pack 2 (RB-454, SG-226, VK-45, RD-556, DV-762, SR-1216, LS-556) y el kit de revólveres: no están en el repo.
 - Accesorios de serie del pack 4; acercar armas lejanas (con capturas antes).
-- `x-subfusil-4`, `-3` y `-8` también son de bloques: decidir si se retiran.
+- `x-subfusil-3`, `-4` y `-8` se quedan (decisión del usuario); solo se retira `x-subfusil-10`.
 
 ## Ronda 17 (relevo)
 
