@@ -11,8 +11,8 @@ export type TierId = string;
 export interface ShopTier { id: TierId; price: number; floor: RarityId; unlock: number }
 /** Compra del historial: `tier` = de dónde salió (nivel de la máquina antigua, "shop:<ranura>" o "crate:<caja>"). */
 export interface Purchase { tier: TierId; rarity: RarityId; name: string; price: number; at: number }
-export interface ShopState { spent: number; history: Purchase[]; showcase?: ShowcaseState; pity?: number }
-export const newShopState = (): ShopState => ({ spent: 0, history: [] });
+export interface ShopState { spent: number; history: Purchase[]; showcase?: ShowcaseState; pity?: number; /** Ya se usó la primera cápsula gratis. */ freeUsed?: boolean }
+export const newShopState = (): ShopState => ({ spent: 0, history: [], freeUsed: false });
 
 export const TIERS = data.tiers as ShopTier[];
 const ORDER = RARITIES.map((r) => r.id);
@@ -107,7 +107,10 @@ export type CrateOpen = { ok: true; rarity: RarityId; price: number; pity: boole
 /** Abre una caja: cobra, sortea la rareza y aplica la garantía de la avanzada (legendaria tras `pity` sin salir). */
 export function openCrate(st: ShopState & { pity?: number }, credits: number, id: CrateId, r: Rng): CrateOpen {
   const c = CRATES[id]; if (!c) return { ok: false, reason: "unknown" };
-  if (credits < c.price) return { ok: false, reason: "credits" };
+  // Primera cápsula común gratis (solo en partidas nuevas: las guardadas antes no tienen la marca)
+  const free = isFree(st, id);
+  if (!free && credits < c.price) return { ok: false, reason: "credits" };
+  if (free) st.freeUsed = true;
   const o = crateOdds(id); let x = r(), rarity: RarityId = "comun";
   for (const k of ORDER) { if (x < o[k]) { rarity = k; break; } x -= o[k]; rarity = k; }
   let pity = false;
@@ -116,7 +119,9 @@ export function openCrate(st: ShopState & { pity?: number }, credits: number, id
     if (rarity !== "legendaria" && since >= c.pity) { rarity = "legendaria"; pity = true; }
     st.pity = rarity === "legendaria" ? 0 : since;
   }
-  return { ok: true, rarity, price: c.price, pity };
+  return { ok: true, rarity, price: free ? 0 : c.price, pity };
 }
+/** La cápsula común es gratis la primera vez. */
+export const isFree = (st: ShopState, id: CrateId) => id === "common" && st.freeUsed === false;
 /** Cajas avanzadas que faltan, como mucho, para la legendaria garantizada. */
 export const pityLeft = (st: ShopState & { pity?: number }) => Math.max(1, (CRATES.advanced.pity ?? 0) - (st.pity ?? 0));

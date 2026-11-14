@@ -7,7 +7,7 @@ import type { WeaponSpec, RarityId } from "../../weapons/types";
 import { t } from "../../i18n";
 import { accessoriesOf } from "../../weapons/accbank";
 import { displayName } from "../../weapons/naming";
-import { CRATES, SHOP, SHOWCASE, sellPrice, buyShowcase, crateOdds, ensureShowcase, openCrate, pityLeft, record, showcasePrice, showcaseRarities, showcaseSeed, type CrateId, type ShopState } from "../shop";
+import { CRATES, SHOP, SHOWCASE, isFree, sellPrice, buyShowcase, crateOdds, ensureShowcase, openCrate, pityLeft, record, showcasePrice, showcaseRarities, showcaseSeed, type CrateId, type ShopState } from "../shop";
 import type { Inventory, Item } from "../inventory";
 import { $, esc, keyHint, weaponCard, type Thumbnails } from "./common";
 
@@ -72,7 +72,8 @@ export class ShopScreen {
     const crates = (["common", "advanced"] as CrateId[]).map((id) => {
       const c = CRATES[id], o = crateOdds(id);
       const bars = RARITIES.filter((r) => o[r.id] > 0).map((r) => `<div class="odd"><span style="color:${r.color}">${t(`rarity.${r.id}`)}</span><i style="--w:${(o[r.id] * 100).toFixed(1)}%;--c:${r.color}"></i><b>${(o[r.id] * 100).toFixed(o[r.id] < 0.1 ? 1 : 0)}%</b></div>`).join("");
-      const btn = cr < c.price ? `<button type="button" class="btn ghost" disabled>${t("shop.short", { c: c.price - cr })}</button>`
+      const btn = isFree(st, id) ? `<button type="button" class="btn" data-crate="${id}">${t("shop.openFree")}</button>`
+        : cr < c.price ? `<button type="button" class="btn ghost" disabled>${t("shop.short", { c: c.price - cr })}</button>`
         : `<button type="button" class="btn" data-crate="${id}" data-confirm="${t("shop.confirm", { c: c.price })}">${t("shop.open", { c: c.price })}</button>`;
       const top = id === "common" ? "poco" : "rara";
       return `<div class="tier crate" style="--c:${color(top)}">

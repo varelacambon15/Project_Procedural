@@ -1,8 +1,8 @@
 {
   "_doc": "[C] Economía de la tienda (05-D): escaparate de armas (5 ranuras, se renueva cada 'refreshMinutes' de tiempo de juego, cada arma se vende una vez; precio por rareza y nivel) y dos cajas (común con suelo verde y muy poca morada; avanzada con suelo azul, legendaria muy rara y garantía: una legendaria como mucho tras 'pity' cajas avanzadas). 'tiers' es la máquina con niveles anterior (sustituida; se conserva por compatibilidad de partidas). Ingresos: por baja y por fin de oleada; al desguazar, el valor de chatarra. 'simulation' = suposiciones de la simulación de una hora.",
   "startCredits": 150,
-  "_newGame": "Partida nueva: sin armas (solo puños) y con estos créditos. 'startCredits' queda para la simulación de economía.",
-  "newGameCredits": 200,
+  "_newGame": "Partida nueva: sin armas (solo puños), con estos créditos y la primera cápsula común gratis. 'startCredits' queda para la simulación de economía.",
+  "newGameCredits": 150,
   "_practice": "Muñecos de práctica (los que reaparecen): créditos por daño hecho, con tope por minuto de juego para no competir con las oleadas.",
   "practice": { "perDamage": 0.01, "capPerMinute": 20 },
   "tiers": [
