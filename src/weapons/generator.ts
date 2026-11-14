@@ -454,9 +454,11 @@ export class WeaponGenerator {
         const fronts = donors("front", (w) => w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front", 0.7, 1.4));
         const grips = donors("grip", () => true).filter(fit("grip", 0.72, 1.35));
         const choose = (list: AssetEntry[]) => (list.length ? pick(r, list) : base);
-        const max = 1 + (r() < 0.5 ? 1 : 0);
+        const max = base.pack === "kit39" ? 2 : 1 + (r() < 0.5 ? 1 : 0);
         for (let tries = 0; tries < 40; tries++) {
-          const c = { stock: r() < 0.5 ? choose(stocks) : base, front: r() < 0.5 ? choose(fronts) : base, grip: r() < 0.4 ? choose(grips) : base };
+          // (en el kit del usuario la variedad viene de sus piezas: se cambian más a menudo)
+          const kp = base.pack === "kit39" ? 0.75 : 0.5;
+          const c = { stock: r() < kp ? choose(stocks) : base, front: r() < kp ? choose(fronts) : base, grip: r() < kp - 0.1 ? choose(grips) : base };
           const foreign = [c.stock, c.front, c.grip].filter((x) => x !== base).length;
           if (foreign >= 1 && foreign <= max && longGunOk(base, c.stock, c.front, c.grip, type, tweaks)) return c;
         }
@@ -699,10 +701,10 @@ export class WeaponGenerator {
     let amp = 1;
     // Cambios llamativos solo en una parte de las armas (si no, el generador los usaría siempre para alejarse de la base)
     const rare = { nostock: r() < 0.3, hgStock: r() < 0.4, front: r() < 0.4 };
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 110; i++) {
       // Si la mejor tirada hasta ahora se aleja demasiado de la base, las siguientes cambian con menos amplitud
       if (best && best.sim < lo && i % 6 === 5) amp = Math.max(0.35, amp * 0.7);
-      if (best && best.sim > hi && i % 4 === 3) amp = Math.min(1.9, amp * 1.2);
+      if (best && best.sim > hi && i % 4 === 3) amp = Math.min(2.8, amp * 1.3);
       // Si con los cambios normales no entra en la banda (amplitud alta), se permiten también culata y conjunto carabina
       const gate = amp > 1.4 ? { nostock: rare.nostock, hgStock: true, front: true } : rare;
       const { tw, barrelLength: bl } = this.rollOps(r, type, layout, parts, tw0, barrelLength, swaps.length, amp, gate, era);
@@ -819,13 +821,13 @@ export class WeaponGenerator {
         if (type !== "sniper") ops.push({ id: "pstock", run: () => { const x = prof.x0 + L * (0.22 + r() * 0.08); const c = col(x); if (c && c.h < 0.09 && c.h > 0.015) { tw.cutRear = x; tw.stock = 1; tw.pstock = procStock(r, type, [x, c.y], c.h, thick); } } });
       }
       // (culata integrada en el cuerpo, como el P90: estirarla mucho dejaba un bloque trasero enorme; solo un poco)
-      if (long) ops.push({ id: "stock", run: () => (tw.stock = INTEGRAL_STOCK.has(parts[0].from) ? away(0.88, 1.12, 0.05) : away(0.75, 1.3)) });
+      if (long) ops.push({ id: "stock", run: () => (tw.stock = INTEGRAL_STOCK.has(parts[0].from) ? away(0.84, 1.16, 0.07) : away(0.75, 1.3)) });
     } else {
       ops.push({ id: "barrel", run: () => { const k = kitLengths(r, type, parts); bl = k.barrelLength; tw.front = k.front; } });
       if (type !== "pistol") ops.push({ id: "stock", run: () => (tw.stock = away(0.8, 1.2, 0.08)) });
       // (sin culata solo en escopetas: en los fusiles del kit quedaba un cajón suelto con un cañón larguísimo)
       if (type === "shotgun") if (rare.nostock) ops.push({ id: "nostock", run: () => (tw.nostock = true) });
-      if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = type === "pistol" ? 1.15 + r() * 0.15 : 1.2 + r() * 0.3) });
+      if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = type === "pistol" ? 1.18 + r() * 0.2 : 1.2 + r() * 0.3) });
       // Culata y guardamanos por código sobre los sockets de la plataforma (el cañón real del kit se conserva)
       const plat = this.kit.byId.get(parts[0].from);
       const sStock = plat?.sockets.Stock?.[0], sHand = plat?.sockets.Handguard?.[0];
@@ -924,7 +926,7 @@ export class WeaponGenerator {
     // (quedaban pegotes); la variedad viene de cambiar piezas entre armas, los largos, el cargador y raíl/accesorio
     if (this.byId.get(parts[0].from)?.pack === "kit39") {
       tw.pstock = null; tw.pfront = null; tw.cutFront = null; tw.cutRear = null; tw.nostock = false;
-      tw.adds = tw.adds?.filter((a) => a.kind === "bipod" || a.kind === "ladder") ?? null;
+      tw.adds = tw.adds?.filter((a) => a.kind !== "jacket" && a.kind !== "shield") ?? null; // (sin camisas ni cubrecañones)
     }
     return { tw, barrelLength: bl };
   }
