@@ -117,8 +117,10 @@ async function boot() {
   const gun = new Gun(camera, scene, asm, world.shootables, {
     dummies: () => dummies,
     lunge: (dir, dist) => player.lunge(dir, dist),
-    onHit(d, _zone, point, dmg, element, crit) {
+    onHit(d, zone, point, dmg, element, crit) {
       const dealt = d.damage(dmg, element, crit, point);
+      // Desmembramiento pixelado con impactos muy fuertes en cabeza o extremidades (francotirador, revólver, escopeta…)
+      if ((zone === "head" || zone === "limb") && settings.impactFx && (dmg >= 120 || (zone === "head" && crit && dmg >= 80) || (gun.spec?.type === "shotgun" && dmg * 8 >= 150 && point.distanceTo(camera.position) < 7))) d.dismember(zone, point);
       const now = performance.now() / 1000;
       sim.hits++; sim.log.push([now, dealt]); sim.distance = point.distanceTo(camera.position);
       if (!sim.firstHit.has(d)) sim.firstHit.set(d, now);

@@ -61,7 +61,33 @@ export class Dummy {
   readonly bar: HTMLDivElement;
   private clip!: THREE.Plane; private scan!: THREE.Mesh; private top = 2.4;
   /** Reacciones visibles: brasas (fuego), chispas azules (eléctrico) y empuje (explosivo). */
-  private fxBits: { m: THREE.Mesh; v: THREE.Vector3; t: number }[] = [];
+  private fxBits: { m: THREE.Mesh; v: THREE.Vector3; t: number; g?: boolean }[] = [];
+  /** Piezas arrancadas (se restauran al reaparecer). */
+  private severed: THREE.Mesh[] = [];
+  /**
+   * Desmembramiento pixelado: la pieza alcanzada (cabeza o extremidad) desaparece y estalla en cubitos de su color
+   * que caen al suelo. Para impactos de daño muy alto (francotirador, revólver, escopeta…).
+   */
+  dismember(zone: Zone, at: THREE.Vector3) {
+    const cands = this.hitboxes.filter((m) => m.userData.zone === zone && m.visible);
+    if (!cands.length || this.kind.boss) return;
+    const wp = new THREE.Vector3();
+    const hit = cands.reduce((a, b) => (a.getWorldPosition(wp).distanceTo(at) <= b.getWorldPosition(new THREE.Vector3()).distanceTo(at) ? a : b));
+    hit.visible = false; this.severed.push(hit);
+    // (y lo que lleva encima: casco o visor sobre la cabeza)
+    if (zone === "head") for (const m of this.body.children as THREE.Mesh[]) if (m.isMesh && m.visible && m !== hit && m.position.y > 2.05) { m.visible = false; this.severed.push(m); }
+    const color = ((hit.material as THREE.MeshStandardMaterial).color ?? new THREE.Color(0xd2702e)).getHex();
+    const c = this.group.worldToLocal(hit.getWorldPosition(new THREE.Vector3()));
+    const n = zone === "head" ? 34 : 24;
+    for (let i = 0; i < n; i++) {
+      const big = Math.random() < 0.35;
+      const m = new THREE.Mesh(BIT_GEO, new THREE.MeshBasicMaterial({ color: Math.random() < 0.75 ? color : i % 2 ? 0x2c3036 : 0x9fe8ee, transparent: true }));
+      if (big) m.scale.setScalar(1.8);
+      m.position.copy(c).add(new THREE.Vector3((Math.random() - 0.5) * 0.15, (Math.random() - 0.5) * 0.15, (Math.random() - 0.5) * 0.15));
+      this.group.add(m);
+      this.fxBits.push({ m, g: true, t: 1.4 + Math.random() * 0.8, v: new THREE.Vector3((Math.random() - 0.5) * 3, 1 + Math.random() * 3, (Math.random() - 0.5) * 3) });
+    }
+  }
   private emitT = 0; private pushV = new THREE.Vector3(); private pushOff = new THREE.Vector3();
   /** Empuje corto (onda de choque). */
   push(dir: THREE.Vector3, amount: number) { this.pushV.addScaledVector(dir, amount * 6); }
@@ -213,6 +239,7 @@ export class Dummy {
     }
     for (let i = this.fxBits.length - 1; i >= 0; i--) {
       const b = this.fxBits[i]; b.t -= dt; b.m.position.addScaledVector(b.v, dt); (b.m.material as THREE.MeshBasicMaterial).opacity = Math.min(1, b.t * 3);
+      if (b.g) { b.v.y -= 9.8 * dt; if (b.m.position.y < 0.02) { b.m.position.y = 0.02; b.v.y *= -0.3; b.v.x *= 0.6; b.v.z *= 0.6; } }
       if (b.t <= 0) { this.group.remove(b.m); this.fxBits.splice(i, 1); }
     }
     // Empuje: muelle amortiguado que devuelve el cuerpo a su sitio
@@ -229,7 +256,7 @@ export class Dummy {
       else if (this.deadT < 3.2) h = 0;
       else if (this.deadT < 4) h = this.top * ((this.deadT - 3.2) / 0.8);
       else if (!this.respawn) { this.gone = true; h = 0; }
-      else { this.alive = true; for (const l of this.layers) l.value = l.max; }
+      else { this.alive = true; for (const l of this.layers) l.value = l.max; for (const m of this.severed) m.visible = true; this.severed = []; }
       this.clip.constant = wy + h;
       this.scan.position.y = h; sm.opacity = h > 0.02 && h < this.top - 0.02 ? 0.9 : 0;
     } else { this.clip.constant = wy + this.top + 1; sm.opacity = 0; }
