@@ -3,6 +3,7 @@
 // charcos, rótulos de neón sueltos (cada uno con su luz y su reflejo en el suelo), cables, aparatos de aire,
 // tuberías, carteles pegados, bolsas de basura, bolardos y cuervos. Todo por código; solo se ve de noche.
 import * as THREE from "three";
+import { decal } from "./world";
 
 export interface NightCity {
   group: THREE.Group;
@@ -125,7 +126,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
     const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, fog: false });
     const sw = (cw / 32) * 0.55 * size, sh = (ch / 32) * 0.55 * size;
     const back = new THREE.Mesh(new THREE.BoxGeometry(sw + 0.1, sh + 0.1, 0.08), new THREE.MeshLambertMaterial({ color: 0x0b1114 }));
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(sw, sh), mat); plane.position.z = 0.05;
+    const plane = decal(new THREE.Mesh(new THREE.PlaneGeometry(sw, sh), mat)); plane.position.z = 0.05;
     const holder = new THREE.Group(); holder.add(back, plane); holder.position.copy(at); holder.rotation.y = facing; g.add(holder);
     flickers.push({ m: mat, base: 1, ph: r() * 10, rate: 0.2 + r() * 0.5 });
     // Luz y reflejo en el suelo mojado (mancha alargada del mismo color)
@@ -134,7 +135,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
     halo(at.clone().addScaledVector(normal, 0.03), color, Math.max(sw, sh) * 2.0, 0.2, 0, facing);            // resplandor en el muro
     const foot = at.clone().addScaledVector(normal, 1.6); foot.y = 0.025; halo(foot, color, 3 + sh * 1.5, 0.3, -Math.PI / 2); // charco de luz en el suelo
     const refl = canvasTex(16, 64, (c) => { const gr = c.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.5, "rgba(255,255,255,0.55)"); gr.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = gr; for (let y = 0; y < 64; y += 2) c.fillRect(4 + Math.floor(r() * 3), y, 8 - Math.floor(r() * 3), 1); }, undefined, true);
-    const rm = new THREE.Mesh(new THREE.PlaneGeometry(sw * 0.9, 2.2 + sh), new THREE.MeshBasicMaterial({ map: refl, color, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const rm = decal(new THREE.Mesh(new THREE.PlaneGeometry(sw * 0.9, 2.2 + sh), new THREE.MeshBasicMaterial({ map: refl, color, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })));
     rm.rotation.x = -Math.PI / 2; rm.rotation.z = facing; rm.position.copy(at).addScaledVector(normal, 1.2 + sh * 0.3); rm.position.y = 0.02; g.add(rm);
   };
   const L = -W / 2 + 0.12, R = W / 2 - 0.12;
@@ -184,7 +185,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   });
   for (let i = 0; i < 18; i++) {
     const side = i % 2 ? 1 : -1, z = BACK - 4 - r() * (BACK - FRONT - 8);
-    const pm = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1.05), new THREE.MeshLambertMaterial({ map: poster(), transparent: true }));
+    const pm = decal(new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1.05), new THREE.MeshLambertMaterial({ map: poster(), transparent: true })));
     pm.position.set(side * (W / 2 - 0.02), 1.4 + r() * 1.6, z); pm.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2; pm.rotation.z = (r() - 0.5) * 0.12; add(pm);
   }
   const tag = () => canvasTex(48, 24, (c) => {
@@ -194,7 +195,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   });
   for (let i = 0; i < 6; i++) {
     const side = i % 2 ? 1 : -1, z = BACK - 8 - r() * (BACK - FRONT - 14);
-    const tm = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), new THREE.MeshLambertMaterial({ map: tag(), transparent: true }));
+    const tm = decal(new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), new THREE.MeshLambertMaterial({ map: tag(), transparent: true })));
     tm.position.set(side * (W / 2 - 0.03), 0.9 + r() * 0.6, z); tm.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2; add(tm);
   }
   // Bolsas de basura y cajas junto a los muros
@@ -239,7 +240,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   // ---------- Más calle: persianas metálicas, valla al fondo, andamio, rejilla de desagüe, alcantarilla y foco ----------
   const shutterTex = canvasTex(16, 32, (c) => { c.fillStyle = "#4a3a3e"; c.fillRect(0, 0, 16, 32); for (let y = 0; y < 32; y += 2) { c.fillStyle = "#2c2226"; c.fillRect(0, y, 16, 1); } for (let i = 0; i < 40; i++) { c.fillStyle = `rgba(140,90,70,${r() * 0.4})`; c.fillRect(Math.floor(r() * 16), Math.floor(r() * 32), 1, 1); } });
   for (const [side, z] of [[-1, -6], [1, -18], [-1, -31], [1, -42], [-1, 14]] as [number, number][]) {
-    const sh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.8), new THREE.MeshLambertMaterial({ map: shutterTex }));
+    const sh = decal(new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.8), new THREE.MeshLambertMaterial({ map: shutterTex })));
     sh.position.set(side * (W / 2 - 0.03), 1.4, z); sh.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2; add(sh);
     const box2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.35, 2.8), metal); box2.position.set(side * (W / 2 - 0.12), 2.95, z); add(box2);
   }
@@ -259,7 +260,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   }
   // Rejilla de desagüe de lado a lado (detrás de la línea de tiro) y una tapa de alcantarilla
   const grate = canvasTex(4, 4, (c) => { c.fillStyle = "#7a4a2a"; c.fillRect(0, 0, 4, 4); c.fillStyle = "#1a0e08"; c.fillRect(1, 0, 1, 4); c.fillRect(3, 0, 1, 4); }, [W * 2.5, 1]);
-  const gr2 = new THREE.Mesh(new THREE.PlaneGeometry(W - 2, 0.35), new THREE.MeshStandardMaterial({ map: grate, metalness: 0.6, roughness: 0.5 })); gr2.rotation.x = -Math.PI / 2; gr2.position.set(0, 0.013, -3.2); add(gr2);
+  const gr2 = decal(new THREE.Mesh(new THREE.PlaneGeometry(W - 2, 0.35), new THREE.MeshStandardMaterial({ map: grate, metalness: 0.6, roughness: 0.5 }))); gr2.rotation.x = -Math.PI / 2; gr2.position.set(0, 0.013, -3.2); add(gr2);
   const manhole = new THREE.Mesh(new THREE.CircleGeometry(0.45, 14), new THREE.MeshStandardMaterial({ map: canvasTex(16, 16, (c) => { c.fillStyle = "#3a3236"; c.fillRect(0, 0, 16, 16); c.strokeStyle = "#1a1418"; for (let k = 2; k < 8; k += 2) { c.beginPath(); c.arc(8, 8, k, 0, Math.PI * 2); c.stroke(); } }), metalness: 0.7, roughness: 0.35 }));
   manhole.rotation.x = -Math.PI / 2; manhole.position.set(-8, 0.014, -16); add(manhole);
   // Foco de pared de luz blanca fría (contrapunto al neón) y contenedor de basura

@@ -242,12 +242,14 @@ async function boot() {
   };
   // Hoja de lote en tres vistas: n armas que cumplen el filtro, dos por fila, cada una en perfil, tres cuartos y desde
   // abajo, con etiqueta (base, parecido, era, añadidos). Para revisar lotes grandes (pistolas modulares, culatas…).
-  const lotSheet = async (n: number, types: string[], start = 1, layout = "", need = "", sort = "", rarity = "") => {
+  const lotSheet = async (n: number, types: string[], start = 1, layout = "", need = "", sort = "", rarity = "", dupes = false) => {
     const VW = 300, VH = 165, HEAD = 58, per = 2;
     const specs: WeaponSpec[] = [];
     for (let s = start; s < start + 40000 && specs.length < n; s++) {
       const w = gen.generate(s, types[s % types.length] as never, (rarity || undefined) as RarityId | undefined);
       if ((layout && w.layout !== layout) || (need && !JSON.stringify(w).includes(need))) continue;
+      // (sin repetir base en la hoja, como en los cofres)
+      if (!dupes && specs.some((x) => (x.lineage?.base ?? x.parts[0].from) === (w.lineage?.base ?? w.parts[0].from))) continue;
       specs.push(w);
     }
     if (sort === "era") specs.sort((a, b) => String(a.era).localeCompare(String(b.era)));

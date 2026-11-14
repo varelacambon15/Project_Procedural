@@ -366,6 +366,11 @@ export class WeaponAssembler {
         const kp = this.gen.kit.byId.get(tw2.device.id);
         if (kp) { const dev = await this.kitNode(kp); dev.scale.setScalar(DEVICE_SCALE(spec.type)); dev.position.set(tw2.device.at[0], tw2.device.at[1] + 0.002, 0); add(dev, "device", { id: kp.id, label: kitLabel(kp.id), pack: "kit" } as AssetEntry, [0.4, -1.1, 0]); }
       }
+      // Bípode del pack del usuario: origen en su cara superior, patas desplegadas hacia −Y (tamaño real)
+      if (tw2.bipod) {
+        const kp = this.gen.kit.byId.get(tw2.bipod.id);
+        if (kp) { const bp = await this.kitNode(kp); bp.position.set(tw2.bipod.at[0], tw2.bipod.at[1] + 0.002, 0); add(bp, "device", { id: kp.id, label: kitLabel(kp.id), pack: "kit" } as AssetEntry, [0.6, -1.2, 0]); }
+      }
       if (bodyE.sockets.optic) { opticTarget = v3(bodyE.sockets.optic.pos); opticLength = bodyE.sockets.optic.size?.[0] ?? 0; }
       else if (bodyE.sockets.rail) { opticTarget = v3(bodyE.sockets.rail.pos); opticLength = bodyE.sockets.rail.length ?? 0.1; }
     }

@@ -37,6 +37,8 @@ export interface AssetEntry {
   donor?: PartRole;
   /** Acción real del modelo (packs del usuario): semiautomatica, automatica, cerrojo, bombeo, revolver_simple/doble. */
   action?: string;
+  /** Era sugerida por el pack del usuario (classic, modern, rustic, scifi). */
+  era?: import("./eras").Era;
 }
 export interface Manifest { convention: string; weapons: AssetEntry[]; kit?: import("./kit").KitPart[] }
 
@@ -127,6 +129,8 @@ export interface Tweaks {
   /** Añadidos de era y de kit de modernización (posiciones antes de centrar). */
   eraAdds?: EraAdds | null;
   device?: { id: string; at: [number, number] } | null;
+  /** Bípode real (pieza del pack del usuario) colgado del guardamanos, desplegado. */
+  bipod?: { id: string; at: [number, number] } | null;
   /** Punto de montaje bajo el raíl que queda libre al desmontar el accesorio (se puede volver a montar uno). */
   deviceZone?: [number, number] | null;
   adds?: Addon[] | null;

@@ -46723,7 +46723,8 @@
     "scope"
    ],
    "file": "kit39/x-ak12.glb",
-   "label": "AK12"
+   "label": "AK12",
+   "era": "modern"
   },
   {
    "id": "x-ar70",
@@ -47921,7 +47922,8 @@
     "scope"
    ],
    "file": "kit39/x-arx-160.glb",
-   "label": "ARX-160"
+   "label": "ARX-160",
+   "era": "modern"
   },
   {
    "id": "x-lev-12",
@@ -48238,7 +48240,8 @@
     "scope"
    ],
    "file": "kit39/x-lev-12.glb",
-   "label": "LEV-12"
+   "label": "LEV-12",
+   "era": "rustic"
   },
   {
    "id": "x-mgp7",
@@ -48837,7 +48840,8 @@
     "scope"
    ],
    "file": "kit39/x-mgp7.glb",
-   "label": "MGP7"
+   "label": "MGP7",
+   "era": "modern"
   },
   {
    "id": "x-mp9",
@@ -49442,7 +49446,8 @@
     "scope"
    ],
    "file": "kit39/x-mp9.glb",
-   "label": "MP9"
+   "label": "MP9",
+   "era": "modern"
   },
   {
    "id": "x-rev-h",
@@ -49754,7 +49759,8 @@
     "scope"
    ],
    "file": "kit39/x-rev-h.glb",
-   "label": "REV-H"
+   "label": "REV-H",
+   "era": "classic"
   },
   {
    "id": "x-smg-w",
@@ -50353,7 +50359,8 @@
     "scope"
    ],
    "file": "kit39/x-smg-w.glb",
-   "label": "SMG-W"
+   "label": "SMG-W",
+   "era": "classic"
   },
   {
    "id": "x-smg45",
@@ -50952,7 +50959,8 @@
     "scope"
    ],
    "file": "kit39/x-smg45.glb",
-   "label": "SMG45"
+   "label": "SMG45",
+   "era": "modern"
   },
   {
    "id": "x-tar-21",
@@ -51269,7 +51277,8 @@
     "scope"
    ],
    "file": "kit39/x-tar-21.glb",
-   "label": "TAR-21"
+   "label": "TAR-21",
+   "era": "modern"
   },
   {
    "id": "x-zc57",
@@ -51581,7 +51590,8 @@
     "scope"
    ],
    "file": "kit39/x-zc57.glb",
-   "label": "ZC57"
+   "label": "ZC57",
+   "era": "modern"
   },
   {
    "id": "x-fusil-1",
@@ -58087,7 +58097,8 @@
     "scope"
    ],
    "file": "kit39/x-sniper-0.glb",
-   "label": "sniper_0"
+   "label": "sniper_0",
+   "era": "scifi"
   },
   {
    "id": "x-sniper-1",
@@ -62719,7 +62730,8 @@
     "scope"
    ],
    "file": "kit39/x-subfusil-5.glb",
-   "label": "subfusil_5"
+   "label": "subfusil_5",
+   "era": "modern"
   },
   {
    "id": "x-subfusil-6",
@@ -69145,7 +69157,8 @@
     "scope"
    ],
    "file": "kit39/x-p3-gl-18s.glb",
-   "label": "GL-18S"
+   "label": "GL-18S",
+   "era": "modern"
   },
   {
    "id": "x-p3-m4a4",
@@ -69744,7 +69757,8 @@
     "scope"
    ],
    "file": "kit39/x-p3-m4a4.glb",
-   "label": "M4A4"
+   "label": "M4A4",
+   "era": "modern"
   },
   {
    "id": "x-p3-toz-106",
@@ -70257,7 +70271,8 @@
     "magazine"
    ],
    "file": "kit39/x-p3-toz-106.glb",
-   "label": "TOZ-106"
+   "label": "TOZ-106",
+   "era": "rustic"
   },
   {
    "id": "x-p3-rev-45lc",
@@ -70483,7 +70498,8 @@
     "magazine"
    ],
    "file": "kit39/x-p3-rev-45lc.glb",
-   "label": "REV-45LC"
+   "label": "REV-45LC",
+   "era": "classic"
   },
   {
    "id": "x-p4-mk23",
@@ -70796,7 +70812,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-mk23.glb",
-   "label": "MK23"
+   "label": "MK23",
+   "era": "modern"
   },
   {
    "id": "x-p4-hk45",
@@ -71109,7 +71126,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-hk45.glb",
-   "label": "HK45"
+   "label": "HK45",
+   "era": "modern"
   },
   {
    "id": "x-p4-cz75",
@@ -71422,7 +71440,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-cz75.glb",
-   "label": "CZ75"
+   "label": "CZ75",
+   "era": "classic"
   },
   {
    "id": "x-p4-m9",
@@ -71735,7 +71754,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-m9.glb",
-   "label": "M9"
+   "label": "M9",
+   "era": "classic"
   },
   {
    "id": "x-p4-cp33",
@@ -72048,7 +72068,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-cp33.glb",
-   "label": "CP33"
+   "label": "CP33",
+   "era": "modern"
   },
   {
    "id": "x-p4-apb",
@@ -72366,7 +72387,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-apb.glb",
-   "label": "APB"
+   "label": "APB",
+   "era": "classic"
   },
   {
    "id": "x-p4-welrod",
@@ -72679,7 +72701,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-welrod.glb",
-   "label": "WELROD"
+   "label": "WELROD",
+   "era": "classic"
   },
   {
    "id": "x-p4-nagant",
@@ -72906,7 +72929,8 @@
     "magazine"
    ],
    "file": "kit39/x-p4-nagant.glb",
-   "label": "NAGANT"
+   "label": "NAGANT",
+   "era": "classic"
   },
   {
    "id": "x-p4-qb327",
@@ -73133,7 +73157,8 @@
     "magazine"
    ],
    "file": "kit39/x-p4-qb327.glb",
-   "label": "QB327"
+   "label": "QB327",
+   "era": "modern"
   },
   {
    "id": "x-p4-smg-s",
@@ -73647,7 +73672,8 @@
     "magazine"
    ],
    "file": "kit39/x-p4-smg-s.glb",
-   "label": "SMG-S"
+   "label": "SMG-S",
+   "era": "modern"
   },
   {
    "id": "x-p4-m249",
@@ -73879,7 +73905,8 @@
     "magazine"
    ],
    "file": "kit39/x-p4-m249.glb",
-   "label": "M249"
+   "label": "M249",
+   "era": "modern"
   },
   {
    "id": "x-p4-lvoa-c",
@@ -74393,7 +74420,8 @@
     "magazine"
    ],
    "file": "kit39/x-p4-lvoa-c.glb",
-   "label": "LVOA-C"
+   "label": "LVOA-C",
+   "era": "modern"
   },
   {
    "id": "x-p4-mosin",
@@ -74706,7 +74734,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-mosin.glb",
-   "label": "MOSIN"
+   "label": "MOSIN",
+   "era": "classic"
   },
   {
    "id": "x-p4-ssg69",
@@ -75134,7 +75163,8 @@
     "grip"
    ],
    "file": "kit39/x-p4-ssg69.glb",
-   "label": "SSG69"
+   "label": "SSG69",
+   "era": "classic"
   },
   {
    "id": "x-p4-sr25",
@@ -75648,7 +75678,8 @@
     "magazine"
    ],
    "file": "kit39/x-p4-sr25.glb",
-   "label": "SR25"
+   "label": "SR25",
+   "era": "modern"
   },
   {
    "id": "x-p4-m200",
@@ -76162,7 +76193,8 @@
     "magazine"
    ],
    "file": "kit39/x-p4-m200.glb",
-   "label": "M200"
+   "label": "M200",
+   "era": "modern"
   },
   {
    "id": "x-p4-m24",
@@ -76676,7 +76708,8 @@
     "magazine"
    ],
    "file": "kit39/x-p4-m24.glb",
-   "label": "M24"
+   "label": "M24",
+   "era": "modern"
   },
   {
    "id": "x-p4-vector",
@@ -77276,7 +77309,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-vector.glb",
-   "label": "VECTOR"
+   "label": "VECTOR",
+   "era": "modern"
   },
   {
    "id": "x-p4-jng90",
@@ -77790,7 +77824,8 @@
     "magazine"
    ],
    "file": "kit39/x-p4-jng90.glb",
-   "label": "JNG90"
+   "label": "JNG90",
+   "era": "modern"
   },
   {
    "id": "x-p4-g36c",
@@ -78390,7 +78425,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-g36c.glb",
-   "label": "G36C"
+   "label": "G36C",
+   "era": "modern"
   },
   {
    "id": "x-p4-evo3",
@@ -78990,7 +79026,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-evo3.glb",
-   "label": "EVO3"
+   "label": "EVO3",
+   "era": "modern"
   },
   {
    "id": "x-p4-m2",
@@ -79504,7 +79541,8 @@
     "magazine"
    ],
    "file": "kit39/x-p4-m2.glb",
-   "label": "M2"
+   "label": "M2",
+   "era": "modern"
   },
   {
    "id": "x-p4-m82",
@@ -80104,7 +80142,8 @@
     "scope"
    ],
    "file": "kit39/x-p4-m82.glb",
-   "label": "M82"
+   "label": "M82",
+   "era": "modern"
   }
  ],
  "kit": [
@@ -87006,6 +87045,128 @@
    "triangles": 648,
    "label": "ag_afg_b",
    "file": "kit/k-device-foregrip-lp4agafgb.glb"
+  },
+  {
+   "id": "k-bipod-lp4bpm249",
+   "slot": "Bipod",
+   "caliber": "any",
+   "sockets": {},
+   "profile": {
+    "x0": -0.0289,
+    "x1": 0.0289,
+    "top": [
+     -0.0232,
+     0,
+     0,
+     0,
+     0,
+     -0.1398,
+     -0.0603,
+     -0.0582,
+     -0.0582,
+     -0.0582,
+     -0.0602,
+     -0.1482,
+     -0.2345,
+     -0.2521,
+     -0.2521,
+     -0.2521
+    ],
+    "bot": [
+     -0.04,
+     -0.2625,
+     -0.2625,
+     -0.2625,
+     -0.2625,
+     -0.2826,
+     -0.2826,
+     -0.2826,
+     -0.2826,
+     -0.2826,
+     -0.2826,
+     -0.2824,
+     -0.2824,
+     -0.2824,
+     -0.2824,
+     -0.2824
+    ]
+   },
+   "bounds": {
+    "min": [
+     -0.0289,
+     -0.2826,
+     -0.206
+    ],
+    "max": [
+     0.0289,
+     0,
+     0.206
+    ]
+   },
+   "triangles": 556,
+   "label": "bp_m249",
+   "file": "kit/k-bipod-lp4bpm249.glb"
+  },
+  {
+   "id": "k-bipod-lp4bpm200",
+   "slot": "Bipod",
+   "caliber": "any",
+   "sockets": {},
+   "profile": {
+    "x0": -0.0188,
+    "x1": 0.0188,
+    "top": [
+     -0.0037,
+     -0.0037,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     -0.003,
+     -0.003,
+     -0.2485,
+     -0.2485
+    ],
+    "bot": [
+     -0.029,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696,
+     -0.2696
+    ]
+   },
+   "bounds": {
+    "min": [
+     -0.0188,
+     -0.2696,
+     -0.1759
+    ],
+    "max": [
+     0.0188,
+     0,
+     0.1759
+    ]
+   },
+   "triangles": 232,
+   "label": "bp_m200",
+   "file": "kit/k-bipod-lp4bpm200.glb"
   }
  ]
 }

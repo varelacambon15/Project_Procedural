@@ -17,8 +17,8 @@ export function baseEra(baseId: string): Era {
   return "modern";
 }
 /** Era final del arma: la de su base o, a veces, rústica (degradada) si la base es clásica o moderna. */
-export function rollEra(r: Rng, baseId: string): Era {
-  const e = baseEra(baseId);
+export function rollEra(r: Rng, baseId: string, own?: Era): Era {
+  const e = own ?? baseEra(baseId); // (own: era sugerida por el pack del usuario)
   return e !== "scifi" && r() < data.rusticChance ? "rustic" : e;
 }
 export const eraFinishes = (era: Era) => E[era].finishes;

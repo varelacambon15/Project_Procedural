@@ -200,13 +200,14 @@ const attJobs = Object.entries(ATT).flatMap(([name, slot]) => ["East", "West"].m
   // (Su catálogo puede no traer las piezas: se leen del manifest de cada arma.)
   const KIT = "raw/kit39", read = (f) => JSON.parse(readFileSync(new URL(`../${f}`, import.meta.url), "utf8"));
   const cat = [["raw/kit39", "x-"], ["raw/pack3", "x-p3-"], ["raw/pack4", "x-p4-"]].flatMap(([dir, pre]) =>
-    read(`${dir}/catalogo.json`).map((w) => ({ ...w, dir, pre, piezas: w.piezas ?? read(`${dir}/${w.nombre}/manifest.json`).piezas })));
+    read(`${dir}/catalogo.json`).map((w) => { const m = read(`${dir}/${w.nombre}/manifest.json`); return { ...w, dir, pre, piezas: w.piezas ?? m.piezas, era_sugerida: m.era_sugerida ?? w.era_sugerida }; }));
+  const ERA = { "clásica": "classic", moderna: "modern", "rústica": "rustic", "sci-fi": "scifi" };
   const typeOf = (w) => (w.chasis === "bullpup" && w.tipo_juego === "rifle" ? "bullpup" : w.tipo_juego);
   // Largo real relativo dentro del tipo (mediana = 1), acotado: variedad sin salirse de la escala del juego
   const med = {}; for (const t of new Set(cat.map(typeOf))) { const ls = cat.filter((w) => typeOf(w) === t).map((w) => w.largo_m).sort((a, b) => a - b); med[t] = ls[Math.floor(ls.length / 2)]; }
   for (const w of cat) {
     const type = typeOf(w), modular = w.chasis === "convencional" && !!w.piezas.culata && !!w.piezas.empunadura && ["rifle", "smg", "sniper", "shotgun"].includes(type);
-    ALL.push({ kind: "kit39", pack: "kit39", id: w.pre + w.nombre.toLowerCase().replace(/[^a-z0-9]+/g, "-"), label: w.nombre, type, modular, action: w.accion,
+    ALL.push({ kind: "kit39", pack: "kit39", id: w.pre + w.nombre.toLowerCase().replace(/[^a-z0-9]+/g, "-"), label: w.nombre, type, modular, action: w.accion, era: ERA[w.era_sugerida] ?? undefined,
       glb: `${w.dir}/${w.nombre}/${w.nombre}_ensamblada.glb`, sections: Object.fromEntries(Object.entries(w.piezas).map(([k, v]) => [k, v.seccion_union_m ?? {}])),
       lengthMul: Math.min(1.15, Math.max(0.87, w.largo_m / med[type])) });
   }
@@ -232,6 +233,8 @@ const libSightJobs = [];
     if (p.categoria === "miras")
       libSightJobs.push({ kind: "libsight", id: `k-att-${kindOf(p.tipo_mira)}-l${pre}${slug(p.id)}`, label: p.id, glb: `${dir}/${p.archivo}`,
         lens: p.centro_lente_local, zoom: p.aumento, seeThrough: p.ve_a_traves !== false, height: p.bbox_max[1] - p.bbox_min[1] });
+    else if (p.categoria === "bipodes") // (desplegado: origen arriba, patas hacia −Y; se cuelga del guardamanos)
+      libSightJobs.push({ kind: "libsight", slot: "Bipod", id: `k-bipod-l${pre}${slug(p.id)}`, label: p.id, glb: `${dir}/${p.archivo}` });
     else if (p.categoria === "agarres") // (agarre bajo el guardamanos: origen en la cara superior, colgando hacia −Y)
       libSightJobs.push({ kind: "libsight", slot: "Device", id: `k-device-foregrip-l${pre}${slug(p.id)}`, label: p.id, glb: `${dir}/${p.archivo}` });
     else if (p.categoria === "bocachas" && muzzleOf[p.tipo_bocacha])

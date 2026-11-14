@@ -42,9 +42,7 @@ void installPixelFont();
 setLang(getLang());
 
 // ---------- Render ----------
-// Profundidad logarítmica: con near = 0,02 (el arma en mano) y far = 300, el búfer normal no distinguía las marcas del
-// suelo, carteles y rótulos de su superficie a media distancia: parpadeaban (z-fighting)
-const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true }); // (sin profundidad logarítmica: caro en Android; las calcomanías usan polygonOffset, ver decal())
 renderer.localClippingEnabled = true; // escaneo de los muñecos de la simulación
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;

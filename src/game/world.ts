@@ -8,6 +8,16 @@ import { t } from "../i18n";
 import { buildNightCity } from "./nightcity";
 import { mergeStatic } from "./merge";
 
+/**
+ * Calcomanía: un plano pegado a otra superficie (marcas del suelo, carteles, pantallas). Se adelanta en profundidad
+ * con polygonOffset para que no parpadee contra su superficie (z-fighting) a media distancia.
+ */
+export function decal<T extends THREE.Mesh>(m: T): T {
+  for (const mat of ([] as THREE.Material[]).concat(m.material)) { mat.polygonOffset = true; mat.polygonOffsetFactor = -2; mat.polygonOffsetUnits = -4; }
+  return m;
+}
+
+
 export interface Interactable { id: "chest" | "workbench" | "waves" | "storage"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
 export interface RangeData { dps: number; ttk: number | null; accuracy: number | null; distance: number | null; message: string }
 export interface World {
@@ -61,7 +71,7 @@ export function buildRange(scene: THREE.Scene): World {
     g.fillText(text, c.width / 2, c.height * 0.58, c.width - 8);
     const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; tx.magFilter = THREE.NearestFilter;
     const m = new THREE.MeshStandardMaterial({ map: tx, roughness: 0.8, emissive: 0xffffff, emissiveMap: tx, emissiveIntensity: 0.25 }); signMats.push(m);
-    return new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+    return decal(new THREE.Mesh(new THREE.PlaneGeometry(w, h), m));
   };
   const neonC = new THREE.MeshStandardMaterial({ color: NEON_CYAN, emissive: NEON_CYAN, emissiveIntensity: 1.6 });
   const neonA = new THREE.MeshStandardMaterial({ color: NEON_AMBER, emissive: NEON_AMBER, emissiveIntensity: 1.4 });
@@ -101,12 +111,12 @@ export function buildRange(scene: THREE.Scene): World {
   // Líneas de distancia en el suelo (finas y claras) con su rótulo de terminal en las paredes
   const lineMat = new THREE.MeshBasicMaterial({ color: 0xf4f4f0, transparent: true, opacity: 0.85 });
   for (const d of [5, 10, 15, 25, 35, 50]) {
-    const ln = new THREE.Mesh(new THREE.PlaneGeometry(W, d % 25 === 0 || d === 10 ? 0.14 : 0.08), lineMat); ln.rotation.x = -Math.PI / 2; ln.position.set(0, 0.012, -d); scene.add(ln);
+    const ln = new THREE.Mesh(new THREE.PlaneGeometry(W, d % 25 === 0 || d === 10 ? 0.14 : 0.08), lineMat); ln.rotation.x = -Math.PI / 2; ln.position.set(0, 0.012, -d); scene.add(decal(ln));
     const tex = pixelTexture(64, 24, (g) => { g.fillStyle = "#f2f2ee"; g.fillRect(0, 0, 64, 24); g.fillStyle = "#1c1f22"; g.font = "bold 18px monospace"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(`${d}M`, 32, 14); g.fillStyle = "#e07a2a"; g.fillRect(0, 0, 64, 3); });
     for (const x of [-W / 2 + 0.02, W / 2 - 0.02]) {
       const bm = new THREE.MeshBasicMaterial({ map: tex }); boardMats.push(bm);
       const s = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.9), bm);
-      s.position.set(x, 2.4, -d); s.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2; scene.add(s);
+      s.position.set(x, 2.4, -d); s.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2; scene.add(decal(s));
     }
   }
 
@@ -121,7 +131,7 @@ export function buildRange(scene: THREE.Scene): World {
   }
   colliders.push(new THREE.Box3(new THREE.Vector3(-15.2, 0, -0.3), new THREE.Vector3(15.2, 1.05, 0.7)));
   for (const x of [-15, -10, -5, 0, 5, 10, 15]) box(0.1, 2.4, 1.6, x, 1.2, 0.6, new THREE.MeshStandardMaterial({ color: 0x3a4248, transparent: true, opacity: 0.7, roughness: 0.3, metalness: 0.3 }));
-  const stripe = new THREE.Mesh(new THREE.PlaneGeometry(W, 0.25), hazard); stripe.rotation.x = -Math.PI / 2; stripe.position.set(0, 0.006, 1.2); scene.add(stripe);
+  const stripe = new THREE.Mesh(new THREE.PlaneGeometry(W, 0.25), hazard); stripe.rotation.x = -Math.PI / 2; stripe.position.set(0, 0.006, 1.2); scene.add(decal(stripe));
 
   // Cobertura de prueba: bloques de simulación (cajas de paneles)
   for (const [x, z, w, h] of [[-17, -18, 1.4, 1.1], [-15.6, -18.4, 1, 1.6], [17, -36, 1.4, 1.2], [-4.8, -40, 1.6, 1], [4.9, -22, 1.2, 1.3]]) box(w, h, w, x, h / 2, z, wall);
@@ -130,11 +140,11 @@ export function buildRange(scene: THREE.Scene): World {
   const dataCanvas = document.createElement("canvas"); dataCanvas.width = 160; dataCanvas.height = 96;
   const dataTex = new THREE.CanvasTexture(dataCanvas); dataTex.colorSpace = THREE.SRGBColorSpace; dataTex.magFilter = THREE.NearestFilter; dataTex.minFilter = THREE.NearestFilter;
   const dataPanel = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({ map: dataTex }));
-  dataPanel.position.set(-W / 2 + 0.03, 3.8, -6); dataPanel.rotation.y = Math.PI / 2; scene.add(dataPanel);
+  dataPanel.position.set(-W / 2 + 0.03, 3.8, -6); dataPanel.rotation.y = Math.PI / 2; scene.add(decal(dataPanel));
   const msgCanvas = document.createElement("canvas"); msgCanvas.width = 256; msgCanvas.height = 32;
   const msgTex = new THREE.CanvasTexture(msgCanvas); msgTex.colorSpace = THREE.SRGBColorSpace; msgTex.magFilter = THREE.NearestFilter; msgTex.minFilter = THREE.NearestFilter;
   const msgPanel = new THREE.Mesh(new THREE.PlaneGeometry(16, 2), new THREE.MeshBasicMaterial({ map: msgTex, transparent: true }));
-  msgPanel.position.set(0, H - 1.6, FRONT + 0.05); scene.add(msgPanel);
+  msgPanel.position.set(0, H - 1.6, FRONT + 0.05); scene.add(decal(msgPanel));
   let dataT = 0, blink = 0;
   const drawData = (d: RangeData) => {
     const g = dataCanvas.getContext("2d")!;
@@ -215,7 +225,7 @@ export function buildRange(scene: THREE.Scene): World {
 
   // ---------- Zona de entrenamiento cuerpo a cuerpo (muñecos en dummies.ts, junto a la pared izquierda) ----------
   const mat = new THREE.Mesh(new THREE.PlaneGeometry(4, 9), new THREE.MeshStandardMaterial({ color: 0x3f5a46, roughness: 0.95 }));
-  mat.rotation.x = -Math.PI / 2; mat.position.set(-17.6, 0.008, 7.5); scene.add(mat);
+  mat.rotation.x = -Math.PI / 2; mat.position.set(-17.6, 0.008, 7.5); scene.add(decal(mat));
   { const m = sign(t("sign.training"), "#e07a2a", 4, 1); m.position.set(-W / 2 + 0.04, 3.2, 7.5); m.rotation.y = Math.PI / 2; scene.add(m); }
 
   // ---------- Sala de oleadas (detrás de la pared del fondo, entrando por la puerta) ----------

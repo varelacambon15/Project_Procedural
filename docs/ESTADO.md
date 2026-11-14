@@ -131,6 +131,30 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 18 (relevo, versión 0.8.3)
+
+Hecho (revisión de las hojas p4 y lib2):
+- Parecido: las despiezadas por encima del 90 % se vuelven a mezclar con 2 piezas ajenas (`mixLong(..., more)`), y
+  si ninguna arma de modelo baja de 0,9, `generate` la descarta y genera otra (hasta 5; `generateOne`). Culata y
+  guardamanos se cambian más que la empuñadura; más amplitud de largo (`rollTweaks`). Sigue la regla de 1-2 piezas.
+- Retirada `x-subfusil-10` (el "Hound": deforme con cualquier pieza). Las hojas no repiten base (como los cofres).
+- Agarres: solo bajo el tramo grueso del guardamanos, en su cara inferior; nunca en era clásica.
+- Bípodes reales del pack 4 (`k-bipod-l…`, slot Bipod, `Tweaks.bipod`) desplegados hacia la punta del guardamanos;
+  sin la varilla por código en el kit del usuario. Sin culata plegada en el kit (quedaba como una placa).
+- Culatas sueltas de la biblioteca solo en armas largas (no en subfusiles).
+- Eras: `era_sugerida` del manifest de cada arma → `AssetEntry.era` (la Mosin y la Nagant son clásicas).
+- `accion` en todos los tipos (`actionHint`): pistola semi/auto/cerrojo (Welrod: arquetipo `bolt`, peso 0),
+  revólver simple (heavy) / doble (standard), subfusil, fusil, ametralladora, francotirador y escopeta.
+- Profundidad: fuera el búfer logarítmico (caro en Android); las calcomanías usan `decal()` (polygonOffset) en
+  world.ts y nightcity.ts. Las lámparas siguen parpadeando a propósito.
+
+Pendiente:
+- D (miras de hierro desmontables, raíl_frontal, packs actualizados): faltan los archivos (miras_hierro.zip y los
+  packs con raíl_frontal no llegaron). C (apuntado solo por miras del pool; mira del arma decorativa) va con D.
+- Pack 2 (RB-454, SG-226, VK-45, RD-556, DV-762, SR-1216, LS-556) y el kit de revólveres: no están en el repo.
+- Accesorios de serie del pack 4; acercar armas lejanas (con capturas antes).
+- `x-subfusil-4`, `-3` y `-8` también son de bloques: decidir si se retiran.
+
 ## Ronda 17 (relevo)
 
 Hecho:

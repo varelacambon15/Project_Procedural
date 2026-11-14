@@ -65,6 +65,7 @@ if (args[0] === "--tree") {
     const entry = { ...out, file: rel, label: job.label || job.id };
     if (job.quarantine) { entry.quarantine = job.quarantine; entry.approved = []; }
     if (job.excluded) entry.excluded = job.excluded;
+    if (job.era) entry.era = job.era; // (era sugerida del manifest del pack)
     manifest.weapons.push(entry);
     console.log(`✓ ${rel.padEnd(52)} ${String(out.triangles).padStart(6)} tris  ${out.parts.map((p) => p.role).join(",")}`);
   }
