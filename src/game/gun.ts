@@ -189,7 +189,7 @@ export class Gun {
     const libZ = item.spec.optic ? this.asm.kitZoom(item.spec.optic) : undefined;
     // Pantalla de visor (con desenfoque alrededor) solo en miras de francotirador; ACOG, prismas y térmica se apuntan a
     // través del modelo con su aumento
-    const sniperScope = !!item.spec.optic && (/^k-att-scope-/.test(item.spec.optic) || opt?.id === "acc:scope6");
+    const sniperScope = !!item.spec.optic && (/^k-att-scope-|ltermica$/.test(item.spec.optic) || opt?.id === "acc:scope6");
     if (libZ !== undefined) { this.sight = sniperScope ? "scope" : libZ <= 1.2 ? "dot" : "holo"; this.zoom = libZ <= 1.2 ? 1.3 : libZ; }
     else if (opt) { this.sight = sniperScope ? "scope" : opt.id === "acc:reddot" ? "dot" : "holo"; this.zoom = opt.zoom ?? 1; }
     else if (item.spec.optic) { this.sight = "scope"; this.zoom = 3; }                 // mira de modelo (cosmo)
