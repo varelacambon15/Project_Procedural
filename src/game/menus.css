@@ -373,3 +373,4 @@ body.nav-keys #vcursor { opacity: 0; }
 /* La marca y el menú siempre por encima del escaparate */
 .brandcol { position: relative; z-index: 1; }
 body.touch #vcursor { display: none; }
+.holdat { display: grid; gap: 4px; font-size: 11px; color: var(--t-dim); margin: 4px 0 8px; } .holdat input { width: 100%; }

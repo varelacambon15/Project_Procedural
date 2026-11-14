@@ -4,7 +4,8 @@
 import { ACC_KINDS, accZones, attach, canDetach, canMount, detach, mountedAcc, type AccItem, type AccKind } from "../../weapons/accbank";
 import { accessory } from "../../weapons/accessories";
 import type { WeaponGenerator } from "../../weapons/generator";
-import { accName, paintName } from "../../weapons/labels";
+import { accName, holdName, paintName } from "../../weapons/labels";
+import { gripChoices } from "../../weapons/grip";
 import { paints, repaint } from "../../weapons/workshop";
 import type { RarityId, WeaponSpec } from "../../weapons/types";
 import { RARITIES } from "../../weapons/generator";
@@ -32,6 +33,11 @@ export class WorkshopScreen {
 
   constructor(private inv: Inventory, private gen: WeaponGenerator, private view: ModelView, private thumbs: Thumbnails, private hooks: WorkshopHooks) {
     this.el.addEventListener("click", (e) => this.click(e));
+    // Agarre libre: la posición de la mano de apoyo se guarda al mover el deslizador
+    this.el.addEventListener("input", (e) => {
+      const r = e.target as HTMLInputElement; if (!r.dataset.holdat || !this.sel?.spec.hold) return;
+      this.sel.spec.hold = { ...this.sel.spec.hold, at: Number(r.value) / 100 };
+    });
     this.el.addEventListener("focusin", (e) => this.explain(e.target as HTMLElement));
     this.el.addEventListener("mouseover", (e) => this.explain(e.target as HTMLElement));
   }
@@ -105,6 +111,9 @@ export class WorkshopScreen {
         <button type="button" class="btn ghost" data-act="undo" ${this.undo.some((u) => u.uid === this.sel?.uid) && !p ? "" : "disabled"}>${t("ui.undo")}</button>
         <button type="button" class="btn ghost" data-act="rename" ${p ? "disabled" : ""}>${t("ui.rename")}</button>
       </div>
+      <h2>${t("ui.hold")} <small>${holdName(s)}</small></h2>
+      <div class="chips">${gripChoices(s).map((g) => `<button type="button" class="chip ${s.hold?.variant === g.variant ? "on" : ""}" data-hold="${g.variant}" ${p ? "disabled" : ""}>${t(`hold.${g.variant}`)}</button>`).join("")}</div>
+      ${s.hold?.variant === "custom" ? `<label class="holdat">${t("ui.holdAt")} <input type="range" min="0" max="100" step="5" value="${Math.round((s.hold.at ?? 0.5) * 100)}" data-holdat="1" ${p ? "disabled" : ""}></label>` : ""}
       <h2>${t("ui.finish")} <small>${paintName(s.paint)}</small></h2>
       <div class="swatches">${paints().map((pt, i) => `<button type="button" class="swatch ${pt.id === s.paint.id ? "on" : ""}" title="${paintName(pt)}" data-paint="${i}" ${p ? "disabled" : ""} style="background:${pt.color ? `rgb(${pt.color.map((c) => Math.round(c * 255)).join(",")})` : "linear-gradient(135deg,#555,#222)"}"></button>`).join("")}</div>`;
   }
@@ -162,6 +171,12 @@ export class WorkshopScreen {
     const bk = target.closest<HTMLElement>("[data-bk]"); if (bk) { this.bankKind = bk.dataset.bk as AccKind | "all"; this.render(); this.el.querySelector<HTMLElement>(`[data-bk="${this.bankKind}"]`)?.focus({ preventScroll: true }); return; }
     const sw = target.closest<HTMLElement>("[data-paint]");
     if (sw && !this.pending) return this.stage(t("ui.paintLabel", { p: paintName(paints()[Number(sw.dataset.paint)]) }), (spec) => repaint(this.gen, spec, paints()[Number(sw.dataset.paint)]));
+    const hb = target.closest<HTMLElement>("[data-hold]");
+    if (hb && this.sel && !this.pending) {
+      const g = gripChoices(this.sel.spec).find((x) => x.variant === hb.dataset.hold);
+      if (g) { this.sel.spec.hold = { ...g, chosen: true, at: g.variant === "custom" ? this.sel.spec.hold?.at ?? 0.5 : undefined }; this.hooks.changed(this.sel); this.render(); this.el.querySelector<HTMLElement>(`[data-hold="${g.variant}"]`)?.focus({ preventScroll: true }); }
+      return;
+    }
     const act = target.closest<HTMLElement>("[data-act]")?.dataset.act;
     if (act) this.action(act);
   }

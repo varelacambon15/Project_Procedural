@@ -540,7 +540,14 @@ export class Gun {
     // Mano de apoyo según el perfil de agarre: su soporte en la cadera y al apuntar (con transición suave); sin soporte,
     // la mano baja fuera de la vista (pistola a una mano)
     const hold = this.spec?.hold, A = h.anchors, k = ease(Math.min(1, Math.max(0, this.poseOverride?.ads ?? this.aimT)));
-    const at = (s: Support | undefined) => (!s || s === "none" ? null : (A[s] ?? A.grip ?? h.support).clone());
+    const at = (s: Support | undefined) => {
+      if (!s || s === "none") return null;
+      if (s === "custom") { // agarre libre: a lo largo del arma, entre la empuñadura y la boca, a la altura del guardamanos
+        const f = Math.min(1, Math.max(0, hold?.at ?? 0.5)), x0 = h.grip.x + 0.07, x1 = Math.min(m.muzzle.x - 0.04, h.grip.x + 0.42);
+        return new THREE.Vector3(x0 + (x1 - x0) * f, (A.front ?? h.support).y, 0);
+      }
+      return (A[s] ?? A.grip ?? h.support).clone();
+    };
     const rest = h.grip.clone().add(new THREE.Vector3(-0.05, -0.24, -0.12));
     const hipP = at(hold?.hip ?? "front"), adsP = at(hold?.ads ?? "front");
     let base: THREE.Vector3 | null = hipP && adsP ? hipP.lerp(adsP, k) : adsP ? (k < 0.03 ? null : rest.clone().lerp(adsP, k)) : hipP ? (k > 0.97 ? null : hipP.lerp(rest, k)) : null;

@@ -38,6 +38,25 @@ function dressHandguard(node: THREE.Object3D) {
   box(0.006, H * 0.86, W * 0.9, b.max.x - 0.003, cy, 0, "procmetal");
 }
 
+/**
+ * Agarre vertical: la malla con forma de agarre (más alta que larga, colgando por debajo del eje) entre las piezas de
+ * accesorio o de guardamanos. La mano va a media altura de esa malla.
+ */
+function vgripAnchor(parts: { object: THREE.Object3D; role: PartRole }[]): THREE.Vector3 | null {
+  let best: THREE.Box3 | null = null;
+  for (const p of parts) {
+    if (p.role !== "device" && p.role !== "front") continue;
+    p.object.traverse((o) => {
+      const m = o as THREE.Mesh; if (!m.isMesh) return;
+      const b = new THREE.Box3().setFromObject(m), h = b.max.y - b.min.y, l = b.max.x - b.min.x;
+      if (h > 0.035 && h > l * 1.15 && l < 0.07 && (!best || b.min.y < best.min.y)) best = b;
+    });
+  }
+  if (!best) return null;
+  const b = best as THREE.Box3;
+  return new THREE.Vector3((b.min.x + b.max.x) / 2, b.min.y + (b.max.y - b.min.y) * 0.45, 0);
+}
+
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
 export interface AssembledWeapon {
   group: THREE.Group; parts: AssembledPart[]; length: number;
@@ -553,10 +572,11 @@ export class WeaponAssembler {
       // Dos manos en la empuñadura: la de apoyo envuelve a la principal, algo por delante y por debajo
       grip: grip.clone().add(new THREE.Vector3(0.012, -0.018, 0)),
       front: fb2 ? new THREE.Vector3(fb2.min.x + (fb2.max.x - fb2.min.x) * 0.35, fb2.min.y + (fb2.max.y - fb2.min.y) * 0.2, 0) : handgun ? null : support.clone(),
-      vgrip: db ? new THREE.Vector3((db.min.x + db.max.x) / 2, db.min.y + (db.max.y - db.min.y) * 0.45, 0) : null,
+      vgrip: vgripAnchor(parts) ?? (db ? new THREE.Vector3((db.min.x + db.max.x) / 2, db.min.y + (db.max.y - db.min.y) * 0.45, 0) : null),
       mag: magBox ? new THREE.Vector3(magBox.max.x - (magBox.max.x - magBox.min.x) * 0.3, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.4, 0) : null,
       frame: frb ? new THREE.Vector3(frb.min.x + (frb.max.x - frb.min.x) * 0.72, frb.min.y + 0.004, 0) : null,
       pump: pb ? new THREE.Vector3((pb.min.x + pb.max.x) / 2, pb.min.y + (pb.max.y - pb.min.y) * 0.2, 0) : null,
+      custom: null, // (agarre libre: lo calcula gun.ts a partir de la posición elegida)
     };
     return { grip, support, magwell, charge, anchors };
   }
