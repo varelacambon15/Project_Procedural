@@ -124,7 +124,8 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Fusiles del kit: culata por código maciza (sólida, polímero, carabina o esqueleto ancho) en el socket de la culata.
 - Revólveres: culata solo como kit de carabina, con cañón alargado. Bullpups por código: cargadores curvos con forma real.
 - APK Android (Capacitor, en release.yml) con controles táctiles (`src/game/touch.ts`).
-- Pendiente de decisión del usuario: repositorio público o de versiones (comando SteamOS y botón de actualizar).
+- Distribución: el repositorio sigue privado y las versiones se descargan a mano desde GitHub (decisión del usuario:
+  sin comando de SteamOS ni botón de actualizar).
 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
