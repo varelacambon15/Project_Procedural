@@ -126,6 +126,9 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - APK Android (Capacitor, en release.yml) con controles táctiles (`src/game/touch.ts`).
 - Pendiente de decisión del usuario: repositorio público o de versiones (comando SteamOS y botón de actualizar).
 
+- Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
+  variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
+
 ## Pendiente (prompt 06)
 
 - Miras que no funcionan: falta auditarlas (comparar sightY con el centro de la óptica en muchas armas).

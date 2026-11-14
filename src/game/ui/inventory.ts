@@ -2,6 +2,8 @@
 // (equipar, a la mochila, renombrar, soltar, desguazar con confirmación suave). Teclado, ratón y mando.
 import { RARITIES } from "../../weapons/generator";
 import { typeName } from "../../weapons/labels";
+/** Clase para filtrar: el bullpup va con los fusiles. */
+const cls = (t: string) => (t === "bullpup" ? "rifle" : t);
 import { accessoriesOf } from "../../weapons/accbank";
 import { scrap } from "../../weapons/workshop";
 import { t } from "../../i18n";
@@ -86,7 +88,7 @@ export class InventoryScreen {
 
   private visible(list: Item[]) {
     const f = this.filter;
-    const ok = (it: Item) => (f.rarity === "all" || it.spec.rarity.id === f.rarity) && (f.cls === "all" || it.spec.type === f.cls) && (f.era === "all" || (it.spec.era ?? "modern") === f.era);
+    const ok = (it: Item) => (f.rarity === "all" || it.spec.rarity.id === f.rarity) && (f.cls === "all" || cls(it.spec.type) === f.cls) && (f.era === "all" || (it.spec.era ?? "modern") === f.era);
     const key = (it: Item): number | string => {
       const s = it.spec;
       switch (this.sort) {
@@ -183,7 +185,7 @@ export class InventoryScreen {
     if (cyc) {
       const k = cyc.dataset.cyc!;
       if (k === "sort") this.sort = SORTS[(SORTS.indexOf(this.sort) + 1) % SORTS.length];
-      else if (k === "cls") { const cl = ["all", ...new Set(this.inv.all.map((x) => x.spec.type))]; this.filter.cls = cl[(cl.indexOf(this.filter.cls) + 1) % cl.length]; }
+      else if (k === "cls") { const cl = ["all", ...new Set(this.inv.all.map((x) => cls(x.spec.type)))]; this.filter.cls = cl[(cl.indexOf(this.filter.cls) + 1) % cl.length]; }
       else this.filter.era = ERAS[(ERAS.indexOf(this.filter.era) + 1) % ERAS.length];
       return this.renderKeep(cyc);
     }

@@ -271,7 +271,10 @@ export class WeaponGenerator {
 
   generate(seed: number, wanted?: BaseType, forceRarity?: RarityId): WeaponSpec {
     const r = mulberry32(seed);
-    const type = wanted ?? pick(r, this.types);
+    // El bullpup no es una categoría propia: es una variante de fusil (≈ 1 de cada 4 fusiles al azar).
+    // Por dentro conserva su tipo (piezas, animación y estadísticas propias); se muestra y se filtra como fusil.
+    let type = wanted ?? pick(r, this.types.filter((t) => t !== "bullpup"));
+    if (!wanted && type === "rifle" && this.types.includes("bullpup") && r() < 0.25) type = "bullpup";
     const pool = this.byType.get(type);
     if (!pool?.length) throw new Error(`No weapons of type ${type}`);
     const info = TYPE_INFO[type];
@@ -801,7 +804,7 @@ export class WeaponGenerator {
           let kEnd = prof.top.length - 1; while (kEnd > 0 && (prof.top[kEnd] == null || prof.bot[kEnd] == null)) kEnd--;
           const xEnd = Math.min(mz.pos[0], prof.x0 + ((prof.x1 - prof.x0) * (kEnd + 1)) / prof.top.length);
           // (subfusiles: conjunto corto; uno largo y fino parecía un tubo pegado en la boca)
-          const len = type === "smg" ? 0.07 + r() * 0.06 : (long ? 0.12 : 0.07) + r() * (long ? 0.12 : 0.07);
+          const len = type === "smg" ? ((BASE_SIZE[parts[0].from] ?? 1) < 1 ? 0.14 + r() * 0.09 : 0.07 + r() * 0.06) : (long ? 0.12 : 0.07) + r() * (long ? 0.12 : 0.07);
           tw.body = 1; tw.cutFront = null; // sin estirar ni cortar el cuerpo: el conjunto va en la boca de serie
           tw.pfront = { kind: era === "classic" ? (r(), "tube") : (["tube", "quad", "slot"] as const)[Math.floor(r() * 3)], at: [xEnd - 0.012, mz.pos[1]], h, w: Math.min(0.04, h * 0.9), len, barrel: type === "smg" ? 0.015 + r() * 0.035 : 0.02 + r() * 0.05, d: Math.min(0.02, Math.max(0.011, mz.diameter ?? 0.013)) };
         } });

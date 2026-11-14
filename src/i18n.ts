@@ -35,7 +35,7 @@ const en: Dict = {
   // Rarezas y tipos
   "ui.lootDrop": "{r} drop: {n}",
   "rarity.comun": "Common", "rarity.poco": "Uncommon", "rarity.rara": "Rare", "rarity.epica": "Epic", "rarity.legendaria": "Legendary",
-  "type.pistol": "Pistol", "type.revolver": "Revolver", "type.smg": "SMG", "type.rifle": "Rifle", "type.bullpup": "Bullpup",
+  "type.pistol": "Pistol", "type.revolver": "Revolver", "type.smg": "SMG", "type.rifle": "Rifle", "type.bullpup": "Rifle",
   "type.shotgun": "Shotgun", "type.sniper": "Sniper Rifle", "type.launcher": "Launcher", "type.flamethrower": "Flamethrower", "type.lmg": "Machine Gun",
   // Variantes (arquetipos)
   "rc.stat.dmg": "damage", "rc.stat.rate": "fire rate", "rc.stat.crit": "crit damage", "rc.stat.spread": "spread", "rc.stat.recoil": "recoil", "rc.stat.reload": "reload time", "rc.stat.mag": "magazine size", "rc.stat.range": "range",
@@ -126,7 +126,7 @@ const es: Dict = {
   "fx.echochamber": "Cámara de eco", "fx.echochamber.d": "Cada 4.º disparo se repite dos veces.",
   "ui.lootDrop": "Botín {r}: {n}",
   "rarity.comun": "Común", "rarity.poco": "Poco común", "rarity.rara": "Rara", "rarity.epica": "Épica", "rarity.legendaria": "Legendaria",
-  "type.pistol": "Pistola", "type.revolver": "Revólver", "type.smg": "Subfusil", "type.rifle": "Fusil", "type.bullpup": "Bullpup",
+  "type.pistol": "Pistola", "type.revolver": "Revólver", "type.smg": "Subfusil", "type.rifle": "Fusil", "type.bullpup": "Fusil",
   "type.shotgun": "Escopeta", "type.sniper": "Francotirador", "type.launcher": "Lanzacohetes", "type.flamethrower": "Lanzallamas", "type.lmg": "Ametralladora",
   "rc.stat.dmg": "daño", "rc.stat.rate": "cadencia", "rc.stat.crit": "daño crítico", "rc.stat.spread": "dispersión", "rc.stat.recoil": "retroceso", "rc.stat.reload": "tiempo de recarga", "rc.stat.mag": "capacidad del cargador", "rc.stat.range": "alcance",
   "rc.Stat.dmg": "Daño", "rc.Stat.rate": "Cadencia", "rc.Stat.crit": "Críticos", "rc.Stat.spread": "Agrupación", "rc.Stat.recoil": "Firmeza", "rc.Stat.reload": "Recarga ágil", "rc.Stat.mag": "Cargador grande", "rc.Stat.range": "Largo alcance",

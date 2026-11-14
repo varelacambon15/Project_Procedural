@@ -311,8 +311,11 @@ async function boot() {
   let machineT = -1;
   const recentDrops: WeaponSpec[] = [];
   function rollWeapon(rarity: RarityId) {
-    const types = gen.types;
-    const spec = gen.generateDistinct(Math.floor(Math.random() * 1e9), types[Math.floor(Math.random() * types.length)], recentDrops, rarity);
+    // (el bullpup no es categoría propia: sale como una variante de fusil, 1 de cada 4)
+    const types = gen.types.filter((t) => t !== "bullpup");
+    let type: (typeof gen.types)[number] = types[Math.floor(Math.random() * types.length)];
+    if (type === "rifle" && gen.types.includes("bullpup") && Math.random() < 0.25) type = "bullpup";
+    const spec = gen.generateDistinct(Math.floor(Math.random() * 1e9), type, recentDrops, rarity);
     recentDrops.push(spec); if (recentDrops.length > 6) recentDrops.shift();
     return spec;
   }
