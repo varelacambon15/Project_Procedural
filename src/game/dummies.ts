@@ -35,6 +35,15 @@ const mat = (color: number, emissive = 0.55) => new THREE.MeshStandardMaterial({
 // Naranja de muñeco de pruebas: se distingue bien sobre el gris claro de la sala (y de noche, con su rejilla)
 const skin = mat(0xd2702e, 0.18), skinDark = mat(0x3a3f45, 0.25), vest = mat(0x5c5e4a, 0.15);
 const standMat = new THREE.MeshStandardMaterial({ color: 0x23262a, roughness: 0.5, metalness: 0.7 });
+/** Variante de aspecto de un enemigo de oleada. */
+export interface DummyLook { suit: number; dark: number; vest: number; bulk: number; extras: ("helmet" | "vest" | "pack" | "visor" | "pads")[] }
+const SUITS = [0xd2702e, 0x4f7a5c, 0x5b6f8a, 0x8a4a4a, 0xb0a070, 0x6a5a86, 0x3c4a54];
+/** Aspecto al azar para un enemigo de oleada (colores de traje y algunos accesorios). */
+export function randomLook(rnd: () => number = Math.random): DummyLook {
+  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
+  const extras = (["helmet", "vest", "pack", "visor", "pads"] as const).filter(() => rnd() < 0.4);
+  return { suit: pick(SUITS), dark: pick([0x2c3036, 0x3a3f45, 0x24282c]), vest: pick([0x5c5e4a, 0x3d4a3a, 0x4a4f58, 0x6a5a40]), bulk: 0.92 + rnd() * 0.2, extras: [...extras] };
+}
 const BIT_GEO = new THREE.BoxGeometry(0.025, 0.025, 0.025);
 
 export class Dummy {
@@ -59,7 +68,11 @@ export class Dummy {
   private path: { a: THREE.Vector3; b: THREE.Vector3; speed: number; t: number } | null = null;
   private onDamage: (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => void;
 
-  constructor(readonly kind: Kind, readonly id: string, pos: THREE.Vector3, overlay: HTMLElement, onDamage: (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => void) {
+  /** Aspecto: sin peana (camina con piernas completas) y variante de color y accesorios (enemigos de las oleadas). */
+  private look: DummyLook | null = null;
+  private legs: THREE.Object3D[] = []; private walkT = Math.random() * 6;
+  constructor(readonly kind: Kind, readonly id: string, pos: THREE.Vector3, overlay: HTMLElement, onDamage: (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => void, look?: DummyLook) {
+    this.look = look ?? null;
     this.onDamage = onDamage;
     this.layers = [{ id: "health", value: kind.health, max: kind.health }];
     this.group.position.copy(pos);
@@ -74,7 +87,11 @@ export class Dummy {
     this.body.traverse((o) => {
       const m = o as THREE.Mesh; if (!m.isMesh) return;
       const src = m.material as THREE.Material;
-      if (!cache.has(src)) { const c = src.clone(); c.clippingPlanes = [this.clip]; cache.set(src, c); }
+      if (!cache.has(src)) {
+        const c = src.clone() as THREE.MeshStandardMaterial; c.clippingPlanes = [this.clip]; cache.set(src, c);
+        // Colores de la variante (traje, piezas oscuras y chaleco)
+        if (this.look) { if (src === skin) c.color.set(this.look.suit); else if (src === skinDark) c.color.set(this.look.dark); else if (src === vest) c.color.set(this.look.vest); }
+      }
       m.material = cache.get(src)!;
     });
     this.scan = new THREE.Mesh(new THREE.RingGeometry(0.36 * (kind.scale ?? 1), 0.42 * (kind.scale ?? 1), 32), new THREE.MeshBasicMaterial({ color: 0x9fe8ee, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
@@ -104,11 +121,22 @@ export class Dummy {
   }
 
   private build(kind: Kind) {
-    this.part(new THREE.CylinderGeometry(0.35, 0.42, 0.08, 16), standMat, 0, 0.04, 0, null);
-    this.part(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), standMat, 0, 0.3, 0, null);
     const cap = (r: number, l: number) => new THREE.CapsuleGeometry(r, l, 4, 10);
-    this.part(cap(0.085, 0.62), skin, -0.11, 0.98, 0, "limb");
-    this.part(cap(0.085, 0.62), skin, 0.11, 0.98, 0, "limb");
+    const L = this.look;
+    if (!L) {
+      this.part(new THREE.CylinderGeometry(0.35, 0.42, 0.08, 16), standMat, 0, 0.04, 0, null);
+      this.part(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), standMat, 0, 0.3, 0, null);
+      this.part(cap(0.085, 0.62), skin, -0.11, 0.98, 0, "limb");
+      this.part(cap(0.085, 0.62), skin, 0.11, 0.98, 0, "limb");
+    } else {
+      // Sin peana: piernas completas hasta el suelo, con pies; cada pierna gira desde la cadera al andar
+      for (const x of [-0.11, 0.11]) {
+        const hip = new THREE.Group(); hip.position.set(x, 1.27, 0); this.body.add(hip); this.legs.push(hip);
+        const add = (geo: THREE.BufferGeometry, mat: THREE.Material, y: number, z = 0, zone: Zone | null = "limb") => { const m = new THREE.Mesh(geo, mat); m.position.set(0, y, z); m.castShadow = true; hip.add(m); if (zone) { m.userData = { dummy: this, zone }; this.hitboxes.push(m); } return m; };
+        add(cap(0.09, 0.5), skin, -0.33); add(cap(0.075, 0.5), skin, -0.92);
+        add(new THREE.BoxGeometry(0.13, 0.08, 0.24), skinDark, -1.23, 0.04);
+      }
+    }
     this.part(new THREE.BoxGeometry(0.36, 0.2, 0.2), skinDark, 0, 1.38, 0, "body");
     this.part(cap(0.19, 0.38), skin, 0, 1.68, 0, "body").scale.set(1.15, 1, 0.75);
     const armL = this.part(cap(0.065, 0.5), skin, -0.3, 1.58, 0, "limb"); armL.rotation.z = 0.18;
@@ -118,7 +146,14 @@ export class Dummy {
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.08, 24), new THREE.MeshBasicMaterial({ color: 0xe8a040 }));
     ring.position.set(0, 1.7, 0.145); this.body.add(ring);
     // Los muñecos más duros llevan chaleco (solo estética: no es una capa de armadura)
-    if (kind.key !== "basic") this.part(new THREE.BoxGeometry(0.46, 0.48, 0.34), vest, 0, 1.68, 0, "body");
+    if (kind.key !== "basic" || L?.vest !== undefined && L.extras.includes("vest")) this.part(new THREE.BoxGeometry(0.46, 0.48, 0.34), vest, 0, 1.68, 0, "body");
+    if (L) {
+      if (L.extras.includes("helmet")) { const h = this.part(new THREE.SphereGeometry(0.15, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), vest, 0, 2.17, 0, "head"); h.scale.set(1.05, 0.9, 1.1); }
+      if (L.extras.includes("pack")) this.part(new THREE.BoxGeometry(0.34, 0.4, 0.16), skinDark, 0, 1.66, -0.26, "body");
+      if (L.extras.includes("visor")) this.part(new THREE.BoxGeometry(0.2, 0.05, 0.06), new THREE.MeshStandardMaterial({ color: 0x1a1d22, roughness: 0.3, metalness: 0.5 }), 0, 2.16, 0.12, null);
+      if (L.extras.includes("pads")) for (const x of [-0.3, 0.3]) this.part(new THREE.BoxGeometry(0.16, 0.08, 0.2), vest, x, 1.86, 0, "limb");
+      if (L.bulk !== 1) this.body.scale.x *= L.bulk;
+    }
   }
 
   get center() { return this.group.localToWorld(new THREE.Vector3(0, 1.5 * (this.kind.scale ?? 1), 0)); }
@@ -152,6 +187,9 @@ export class Dummy {
       if (d > c.range) this.group.position.addScaledVector(to.normalize(), Math.min(d - c.range, c.speed * dt));
       else if (c.cd <= 0) { c.cd = c.interval; c.onAttack(c.damage); this.flash = 0.1; }
       this.group.rotation.y = Math.atan2(to.x, to.z);
+      // Andar: las piernas se balancean (más rápido cuanto más rápido avanza)
+      if (this.legs.length && d > c.range) { this.walkT += dt * c.speed * 3.2; this.legs.forEach((l, i) => (l.rotation.x = Math.sin(this.walkT + i * Math.PI) * 0.5)); }
+      else this.legs.forEach((l) => (l.rotation.x *= 0.85));
     }
     if (this.path && this.alive && this.stunT <= 0) {
       this.path.t += dt * this.path.speed / this.path.a.distanceTo(this.path.b);

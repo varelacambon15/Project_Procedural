@@ -219,7 +219,7 @@ export function buildRange(scene: THREE.Scene): World {
   { const m = sign(t("sign.training"), "#e07a2a", 4, 1); m.position.set(-W / 2 + 0.04, 3.2, 7.5); m.rotation.y = Math.PI / 2; scene.add(m); }
 
   // ---------- Sala de oleadas (detrás de la pared del fondo, entrando por la puerta) ----------
-  const RW = 30, R0 = BACK + 1, R1 = BACK + 33, RH = 6;
+  const RW = 46, R0 = BACK + 1, R1 = BACK + 57, RH = 8; // (más grande: antes 30 × 32 m)
   const roomFloor = new THREE.Mesh(new THREE.PlaneGeometry(RW, R1 - R0), floor);
   roomFloor.rotation.x = -Math.PI / 2; roomFloor.position.set(0, 0, (R0 + R1) / 2); roomFloor.receiveShadow = true; scene.add(roomFloor); shootables.push(roomFloor);
   box(1, RH, R1 - R0, -RW / 2 - 0.5, RH / 2, (R0 + R1) / 2, wall);
@@ -227,14 +227,14 @@ export function buildRange(scene: THREE.Scene): World {
   box(RW + 2, RH, 1, 0, RH / 2, R1 + 0.5, wall);
   const roomCeil = new THREE.Mesh(new THREE.PlaneGeometry(RW + 2, R1 - R0 + 1), dark); roomCeil.rotation.x = Math.PI / 2; roomCeil.position.set(0, RH, (R0 + R1) / 2); scene.add(roomCeil);
   const roomPanel = panelLight.clone(); // propio: de noche se atenúa (si no, con la niebla y el resplandor quema la sala)
-  for (let z = R0 + 4; z < R1; z += 8) for (const x of [-8, 0, 8]) box(4, 0.06, 1.2, x, RH - 0.04, z, roomPanel, false, false);
+  for (let z = R0 + 4; z < R1; z += 8) for (const x of [-15, -5, 5, 15]) box(4, 0.06, 1.2, x, RH - 0.04, z, roomPanel, false, false);
   // Franja roja a media altura: aquí se recibe daño
   const danger = new THREE.MeshStandardMaterial({ color: 0xc8402e, roughness: 0.7 });
   box(0.04, 0.25, R1 - R0, -RW / 2 + 0.03, 1.1, (R0 + R1) / 2, danger, false, false);
   box(0.04, 0.25, R1 - R0, RW / 2 - 0.03, 1.1, (R0 + R1) / 2, danger, false, false);
   box(RW, 0.25, 0.04, 0, 1.1, R1 - 0.03, danger, false, false);
   // Coberturas bajas
-  for (const [x, z, w] of [[-7, R0 + 12, 2.4], [7, R0 + 12, 2.4], [0, R0 + 20, 3.2], [-10, R0 + 24, 1.6], [10, R0 + 24, 1.6]]) {
+  for (const [x, z, w] of [[-7, R0 + 12, 2.4], [7, R0 + 12, 2.4], [0, R0 + 20, 3.2], [-14, R0 + 22, 1.8], [14, R0 + 22, 1.8], [-6, R0 + 32, 2.6], [8, R0 + 34, 2.2], [-17, R0 + 40, 1.6], [16, R0 + 42, 2.4], [0, R0 + 44, 3.4]]) {
     box(w, 1.0, 1.0, x, 0.5, z, wall); box(w + 0.04, 0.12, 1.04, x, 0.95, z, danger, false, false);
   }
   // Cartel del fondo: por ahí entran los enemigos
@@ -258,7 +258,7 @@ export function buildRange(scene: THREE.Scene): World {
   const lamps: { light: THREE.PointLight; mesh: THREE.Mesh; base: number; phase: number }[] = [];
   const lampMat = () => new THREE.MeshStandardMaterial({ color: WARM, emissive: WARM, emissiveIntensity: 1.6 });
   // 8 luces en total (el número de luces no cambia nunca: cambiarlo recompila todos los shaders)
-  for (const [x, z, y] of [[-12, 9, H], [12, 9, H], [0, -6, H], [0, -22, H], [0, -38, H], [0, -54, H], [-6, BACK + 12, 6], [6, BACK + 24, 6]]) {
+  for (const [x, z, y] of [[-12, 9, H], [12, 9, H], [0, -6, H], [0, -22, H], [0, -38, H], [0, -54, H], [-8, BACK + 16, 8], [8, BACK + 40, 8]]) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.3), lampMat()); mesh.position.set(x, y - 0.55, z); scene.add(mesh);
     const light = new THREE.PointLight(WARM, 34, 24, 1.4); light.position.set(x, y - 0.8, z); scene.add(light);
     lamps.push({ light, mesh, base: 34, phase: Math.random() * 10 });

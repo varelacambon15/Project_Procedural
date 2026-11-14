@@ -2,13 +2,18 @@
 // que avanzan hacia el jugador, golpean al llegar y mueren (no reaparecen). Sin IA compleja.
 import * as THREE from "three";
 import data from "../data/waves.json";
-import { Dummy, KINDS } from "./dummies";
+import { Dummy, KINDS, randomLook } from "./dummies";
 
 export interface WaveEvents {
   /** Se ha completado una oleada (para el botín de fin de oleada). */
   onWaveEnd(index: number, last: Dummy | null): void;
   onAllDone(): void;
   onPlayerHit(dmg: number): void;
+}
+
+/** Oleada generada n (1, 2, 3…) tras las de diseño: más pequeños y normales, y grandes cada vez más a menudo. */
+function extraWave(n: number): Record<string, number> {
+  return { small: 3 + Math.floor(n * 0.8), basic: 4 + n, large: 1 + Math.floor(n / 2) };
 }
 
 export class Waves {
@@ -24,7 +29,8 @@ export class Waves {
     private onDamage: ConstructorParameters<typeof Dummy>[4], private ev: WaveEvents) {}
 
   get remaining() { return this.queue.length + this.alive.filter((d) => d.alive).length; }
-  get total() { return data.waves.length; }
+  /** Oleadas infinitas: después de las de diseño se generan más, cada vez con más enemigos y algo más duros. */
+  get total() { return Infinity; }
 
   start() { if (this.active) return; this.active = true; this.index = -1; this.ended = false; this.next(); }
   stop() {
@@ -35,8 +41,7 @@ export class Waves {
 
   private next() {
     this.index++;
-    if (this.index >= data.waves.length) { this.active = false; this.ev.onAllDone(); return; }
-    const w = data.waves[this.index] as Record<string, number>;
+    const w = (this.index < data.waves.length ? data.waves[this.index] : extraWave(this.index - data.waves.length + 1)) as Record<string, number>;
     this.queue = [];
     for (const [k, n] of Object.entries(w)) for (let i = 0; i < n; i++) this.queue.push(k as keyof typeof KINDS);
     for (let i = this.queue.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [this.queue[i], this.queue[j]] = [this.queue[j], this.queue[i]]; }
@@ -46,7 +51,8 @@ export class Waves {
   private spawn(kind: keyof typeof KINDS) {
     const k = KINDS[kind];
     const x = (Math.random() - 0.5) * data.spawnWidth;
-    const d = new Dummy({ ...k, health: k.health * data.healthScale }, `wave-${kind}-${Math.random()}`, new THREE.Vector3(x, 0, data.spawnZ), this.overlay, this.onDamage);
+    const hp = k.health * data.healthScale * (1 + Math.max(0, this.index - data.waves.length + 1) * 0.08);
+    const d = new Dummy({ ...k, health: hp }, `wave-${kind}-${Math.random()}`, new THREE.Vector3(x, 0, data.spawnZ), this.overlay, this.onDamage, randomLook());
     d.respawn = false;
     const sp = (data.speed as Record<string, number>)[kind] ?? 2.4, dmg = (data.damage as Record<string, number>)[kind] ?? 8;
     d.chase = { target: this.player, speed: sp, range: data.attackRange, interval: data.attackInterval, damage: dmg, onAttack: (x) => this.ev.onPlayerHit(x), cd: 0.5 };
