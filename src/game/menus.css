@@ -357,3 +357,19 @@ body.nav-keys #vcursor { opacity: 0; }
   .card .nm { font-size: 30px; }
   .tier .tname { font-size: 30px; }
 }
+
+/* Móvil apaisado (APK): el inicio mantiene dos columnas; en una sola, el escaparate 3D tapaba los botones y se
+   quedaba con los toques */
+@media (max-width: 1100px) and (orientation: landscape) {
+  .startwrap { grid-template-columns: minmax(200px, 0.9fr) minmax(0, 1.1fr); }
+}
+@media (max-height: 520px) {
+  .showcase { min-height: 0; }
+  .brandcol { gap: 8px; }
+  #start-title { font-size: clamp(28px, 7vh, 44px); }
+  .mainmenu button { padding-top: 4px; padding-bottom: 4px; }
+  .screen .term { padding-top: 8px; padding-bottom: 8px; }
+}
+/* La marca y el menú siempre por encima del escaparate */
+.brandcol { position: relative; z-index: 1; }
+body.touch #vcursor { display: none; }
