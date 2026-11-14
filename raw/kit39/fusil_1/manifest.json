@@ -42,7 +42,7 @@
    }
   },
   "cuerpo": {
-   "triangulos": 1825,
+   "triangulos": 1574,
    "origen_local": "origen del arma",
    "posicion_en_arma": [
     0.0,
@@ -51,7 +51,7 @@
    ],
    "bbox_local_min": [
     -0.2789,
-    0.019,
+    0.2,
     -0.082
    ],
    "bbox_local_max": [
@@ -125,7 +125,7 @@
    }
   },
   "cargador": {
-   "triangulos": 188,
+   "triangulos": 603,
    "origen_local": "pozo_cargador",
    "posicion_en_arma": [
     0.035,
@@ -135,12 +135,12 @@
    "bbox_local_min": [
     -0.1439,
     -0.2239,
-    -0.0462
+    -0.0623
    ],
    "bbox_local_max": [
-    0.0626,
+    0.0689,
     0.0,
-    0.0462
+    0.0623
    ],
    "material": "mat_cargador",
    "color": [
@@ -154,21 +154,21 @@
    }
   },
   "mira": {
-   "triangulos": 236,
+   "triangulos": 395,
    "origen_local": "raíl_superior",
    "posicion_en_arma": [
     -0.1501,
-    0.325,
-    -0.0
+    0.3438,
+    0.0
    ],
    "bbox_local_min": [
     -0.0614,
-    0.0,
+    -0.0188,
     -0.0419
    ],
    "bbox_local_max": [
     0.0614,
-    0.0998,
+    0.0811,
     0.0419
    ],
    "material": "mat_mira",
@@ -178,9 +178,20 @@
     0.07
    ],
    "seccion_union_m": {
-    "largo": 0.1227,
-    "ancho": 0.0839
-   }
+    "largo": 0.0392,
+    "ancho": 0.0
+   },
+   "tipo_mira": "holografica",
+   "aumento": 1,
+   "centro_lente_local": [
+    -0.0194,
+    0.0462,
+    0.0
+   ],
+   "apertura_m": [
+    0.05,
+    0.056
+   ]
   }
  },
  "anclas": {
@@ -196,7 +207,7 @@
   ],
   "raíl_superior": [
    -0.1501,
-   0.325,
+   0.3438,
    -0.0
   ],
   "cara_culata": [
@@ -213,7 +224,21 @@
    -0.174,
    0.2464,
    0.0
+  ],
+  "centro_lente": [
+   -0.1695,
+   0.39,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.22,
+   0.1914,
+   0.0
   ]
  },
- "triangulos_total": 5212
+ "triangulos_total": 5535,
+ "mira_integrada": null,
+ "boca_diametro_m": 0.0311,
+ "era_sugerida": null,
+ "piezas_ausentes": []
 }

@@ -130,17 +130,17 @@
    "origen_local": "raíl_superior",
    "posicion_en_arma": [
     0.0795,
-    0.238,
+    0.2491,
     0.0087
    ],
    "bbox_local_min": [
     -0.1829,
-    0.0,
+    -0.0111,
     -0.0115
    ],
    "bbox_local_max": [
     0.1829,
-    0.0257,
+    0.0146,
     0.0115
    ],
    "material": "mat_mira",
@@ -150,9 +150,11 @@
     0.07
    ],
    "seccion_union_m": {
-    "largo": 0.0196,
+    "largo": 0.3563,
     "ancho": 0.0231
-   }
+   },
+   "tipo_mira": "alza",
+   "aumento": 1
   },
   "culata": {
    "triangulos": 409,
@@ -197,7 +199,7 @@
   ],
   "raíl_superior": [
    0.0795,
-   0.238,
+   0.2491,
    0.0087
   ],
   "cara_culata": [
@@ -214,7 +216,21 @@
    -0.0514,
    0.145,
    0.0087
+  ],
+  "linea_mira": [
+   -0.0748,
+   0.2583,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.1802,
+   0.1634,
+   0.0
   ]
  },
- "triangulos_total": 4828
+ "triangulos_total": 4828,
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0237,
+ "era_sugerida": "moderna",
+ "piezas_ausentes": []
 }

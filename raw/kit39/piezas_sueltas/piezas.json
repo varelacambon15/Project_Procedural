@@ -1,0 +1,1785 @@
+[
+ {
+  "id": "gm_rieles_corto",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.15,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_rieles_corto.glb",
+  "triangulos": 2164,
+  "seccion_union_m": {
+   "alto": 0.0357,
+   "ancho": 0.0324
+  },
+  "bbox_min": [
+   -0.01,
+   -0.028,
+   -0.02
+  ],
+  "bbox_max": [
+   0.21,
+   0.028,
+   0.02
+  ],
+  "anclas_locales": {
+   "raíl_inferior": [
+    0.0825,
+    -0.0298,
+    0.0
+   ],
+   "boca": [
+    0.21,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_rieles_medio",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.23,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_rieles_medio.glb",
+  "triangulos": 3616,
+  "seccion_union_m": {
+   "alto": 0.0357,
+   "ancho": 0.0324
+  },
+  "bbox_min": [
+   -0.01,
+   -0.028,
+   -0.02
+  ],
+  "bbox_max": [
+   0.31,
+   0.028,
+   0.02
+  ],
+  "anclas_locales": {
+   "raíl_inferior": [
+    0.1265,
+    -0.0298,
+    0.0
+   ],
+   "boca": [
+    0.31,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_rieles_largo",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.32,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_rieles_largo.glb",
+  "triangulos": 5200,
+  "seccion_union_m": {
+   "alto": 0.0357,
+   "ancho": 0.0324
+  },
+  "bbox_min": [
+   -0.01,
+   -0.028,
+   -0.02
+  ],
+  "bbox_max": [
+   0.42,
+   0.028,
+   0.02
+  ],
+  "anclas_locales": {
+   "raíl_inferior": [
+    0.176,
+    -0.0298,
+    0.0
+   ],
+   "boca": [
+    0.42,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_mlok_corto",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.15,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_mlok_corto.glb",
+  "triangulos": 1236,
+  "seccion_union_m": {
+   "alto": 0.0507,
+   "ancho": 0.051
+  },
+  "bbox_min": [
+   -0.01,
+   -0.0275,
+   -0.0255
+  ],
+  "bbox_max": [
+   0.21,
+   0.0305,
+   0.0255
+  ],
+  "anclas_locales": {
+   "raíl_inferior": [
+    0.0825,
+    -0.0275,
+    0.0
+   ],
+   "boca": [
+    0.21,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_mlok_medio",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.23,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_mlok_medio.glb",
+  "triangulos": 1780,
+  "seccion_union_m": {
+   "alto": 0.0507,
+   "ancho": 0.051
+  },
+  "bbox_min": [
+   -0.01,
+   -0.0275,
+   -0.0255
+  ],
+  "bbox_max": [
+   0.31,
+   0.0305,
+   0.0255
+  ],
+  "anclas_locales": {
+   "raíl_inferior": [
+    0.1265,
+    -0.0275,
+    0.0
+   ],
+   "boca": [
+    0.31,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_mlok_largo",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.32,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_mlok_largo.glb",
+  "triangulos": 2368,
+  "seccion_union_m": {
+   "alto": 0.0507,
+   "ancho": 0.051
+  },
+  "bbox_min": [
+   -0.01,
+   -0.0275,
+   -0.0255
+  ],
+  "bbox_max": [
+   0.42,
+   0.0305,
+   0.0255
+  ],
+  "anclas_locales": {
+   "raíl_inferior": [
+    0.176,
+    -0.0275,
+    0.0
+   ],
+   "boca": [
+    0.42,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_madera_corto",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.15,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_madera_corto.glb",
+  "triangulos": 360,
+  "seccion_union_m": {
+   "alto": 0.029,
+   "ancho": 0.0413
+  },
+  "bbox_min": [
+   -0.01,
+   -0.028,
+   -0.022
+  ],
+  "bbox_max": [
+   0.21,
+   0.0142,
+   0.022
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.21,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_madera_medio",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.23,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_madera_medio.glb",
+  "triangulos": 360,
+  "seccion_union_m": {
+   "alto": 0.029,
+   "ancho": 0.044
+  },
+  "bbox_min": [
+   -0.01,
+   -0.028,
+   -0.022
+  ],
+  "bbox_max": [
+   0.31,
+   0.0142,
+   0.022
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.31,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_madera_largo",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.32,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_madera_largo.glb",
+  "triangulos": 360,
+  "seccion_union_m": {
+   "alto": 0.0305,
+   "ancho": 0.044
+  },
+  "bbox_min": [
+   -0.01,
+   -0.028,
+   -0.022
+  ],
+  "bbox_max": [
+   0.42,
+   0.0142,
+   0.022
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.42,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_perforado_corto",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.15,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_perforado_corto.glb",
+  "triangulos": 912,
+  "seccion_union_m": {
+   "alto": 0.046,
+   "ancho": 0.046
+  },
+  "bbox_min": [
+   -0.01,
+   -0.017,
+   -0.023
+  ],
+  "bbox_max": [
+   0.21,
+   0.029,
+   0.023
+  ],
+  "anclas_locales": {
+   "raíl_inferior": [
+    0.0825,
+    -0.017,
+    0.0
+   ],
+   "boca": [
+    0.21,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_perforado_medio",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.23,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_perforado_medio.glb",
+  "triangulos": 1392,
+  "seccion_union_m": {
+   "alto": 0.046,
+   "ancho": 0.046
+  },
+  "bbox_min": [
+   -0.01,
+   -0.017,
+   -0.023
+  ],
+  "bbox_max": [
+   0.31,
+   0.029,
+   0.023
+  ],
+  "anclas_locales": {
+   "raíl_inferior": [
+    0.1265,
+    -0.017,
+    0.0
+   ],
+   "boca": [
+    0.31,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "gm_perforado_largo",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.32,
+  "boca_diametro_m": 0.015,
+  "archivo": "guardamanos/gm_perforado_largo.glb",
+  "triangulos": 1872,
+  "seccion_union_m": {
+   "alto": 0.046,
+   "ancho": 0.046
+  },
+  "bbox_min": [
+   -0.01,
+   -0.017,
+   -0.023
+  ],
+  "bbox_max": [
+   0.42,
+   0.029,
+   0.023
+  ],
+  "anclas_locales": {
+   "raíl_inferior": [
+    0.176,
+    -0.017,
+    0.0
+   ],
+   "boca": [
+    0.42,
+    0.006,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon"
+ },
+ {
+  "id": "cu_maciza_a2",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "estilo": "maciza",
+  "archivo": "culatas/cu_maciza_a2.glb",
+  "triangulos": 112,
+  "seccion_union_m": {
+   "alto": 0.0378,
+   "ancho": 0.0342
+  },
+  "bbox_min": [
+   -0.266,
+   -0.105,
+   -0.02
+  ],
+  "bbox_max": [
+   0.0,
+   0.025,
+   0.02
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata"
+ },
+ {
+  "id": "cu_maciza_recta",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "estilo": "maciza",
+  "archivo": "culatas/cu_maciza_recta.glb",
+  "triangulos": 104,
+  "seccion_union_m": {
+   "alto": 0.0408,
+   "ancho": 0.0362
+  },
+  "bbox_min": [
+   -0.256,
+   -0.09,
+   -0.021
+  ],
+  "bbox_max": [
+   0.0,
+   0.03,
+   0.021
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata"
+ },
+ {
+  "id": "cu_polimero_ajustable",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "estilo": "polímero",
+  "archivo": "culatas/cu_polimero_ajustable.glb",
+  "triangulos": 144,
+  "seccion_union_m": {
+   "alto": 0.0276,
+   "ancho": 0.029
+  },
+  "bbox_min": [
+   -0.237,
+   -0.0875,
+   -0.02
+  ],
+  "bbox_max": [
+   0.0,
+   0.0275,
+   0.02
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata"
+ },
+ {
+  "id": "cu_polimero_carrillera",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "estilo": "polímero",
+  "archivo": "culatas/cu_polimero_carrillera.glb",
+  "triangulos": 136,
+  "seccion_union_m": {
+   "alto": 0.0438,
+   "ancho": 0.0383
+  },
+  "bbox_min": [
+   -0.26,
+   -0.075,
+   -0.021
+  ],
+  "bbox_max": [
+   0.0,
+   0.046,
+   0.021
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata"
+ },
+ {
+  "id": "cu_plegable_gruesa",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "estilo": "plegable",
+  "archivo": "culatas/cu_plegable_gruesa.glb",
+  "triangulos": 176,
+  "seccion_union_m": {
+   "alto": 0.04,
+   "ancho": 0.034
+  },
+  "bbox_min": [
+   -0.236,
+   -0.095,
+   -0.017
+  ],
+  "bbox_max": [
+   0.0,
+   0.035,
+   0.017
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata"
+ },
+ {
+  "id": "cu_plegable_hueco",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "estilo": "plegable",
+  "archivo": "culatas/cu_plegable_hueco.glb",
+  "triangulos": 164,
+  "seccion_union_m": {
+   "alto": 0.0431,
+   "ancho": 0.0367
+  },
+  "bbox_min": [
+   -0.251,
+   -0.0855,
+   -0.021
+  ],
+  "bbox_max": [
+   0.0,
+   0.0299,
+   0.021
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata"
+ },
+ {
+  "id": "cu_madera_clasica",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "estilo": "madera",
+  "archivo": "culatas/cu_madera_clasica.glb",
+  "triangulos": 144,
+  "seccion_union_m": {
+   "alto": 0.0351,
+   "ancho": 0.0369
+  },
+  "bbox_min": [
+   -0.302,
+   -0.1,
+   -0.021
+  ],
+  "bbox_max": [
+   0.0,
+   0.03,
+   0.021
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata"
+ },
+ {
+  "id": "cu_madera_montecarlo",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "estilo": "madera",
+  "archivo": "culatas/cu_madera_montecarlo.glb",
+  "triangulos": 104,
+  "seccion_union_m": {
+   "alto": 0.0352,
+   "ancho": 0.0388
+  },
+  "bbox_min": [
+   -0.3,
+   -0.1047,
+   -0.022
+  ],
+  "bbox_max": [
+   0.0,
+   0.045,
+   0.022
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata"
+ },
+ {
+  "id": "ca_recto_pistola",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "tipo_cargador": "recto",
+  "uso": "pistola",
+  "archivo": "cargadores/ca_recto_pistola.glb",
+  "triangulos": 88,
+  "seccion_union_m": {
+   "largo": 0.028,
+   "ancho": 0.021
+  },
+  "bbox_min": [
+   -0.015,
+   -0.117,
+   -0.0125
+  ],
+  "bbox_max": [
+   0.019,
+   0.0,
+   0.0125
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador"
+ },
+ {
+  "id": "ca_recto_pistola_largo",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "tipo_cargador": "recto",
+  "uso": "pistola",
+  "archivo": "cargadores/ca_recto_pistola_largo.glb",
+  "triangulos": 88,
+  "seccion_union_m": {
+   "largo": 0.028,
+   "ancho": 0.021
+  },
+  "bbox_min": [
+   -0.015,
+   -0.187,
+   -0.0125
+  ],
+  "bbox_max": [
+   0.019,
+   0.0,
+   0.0125
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador"
+ },
+ {
+  "id": "ca_recto_subfusil",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "tipo_cargador": "recto",
+  "uso": "subfusil",
+  "archivo": "cargadores/ca_recto_subfusil.glb",
+  "triangulos": 88,
+  "seccion_union_m": {
+   "largo": 0.03,
+   "ancho": 0.022
+  },
+  "bbox_min": [
+   -0.016,
+   -0.187,
+   -0.013
+  ],
+  "bbox_max": [
+   0.018,
+   0.0,
+   0.013
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador"
+ },
+ {
+  "id": "ca_recto_fusil",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "tipo_cargador": "recto",
+  "uso": "fusil",
+  "archivo": "cargadores/ca_recto_fusil.glb",
+  "triangulos": 88,
+  "seccion_union_m": {
+   "largo": 0.065,
+   "ancho": 0.026
+  },
+  "bbox_min": [
+   -0.033,
+   -0.147,
+   -0.015
+  ],
+  "bbox_max": [
+   0.037,
+   0.0,
+   0.015
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador"
+ },
+ {
+  "id": "ca_curvo_556",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "tipo_cargador": "curvo",
+  "uso": "fusil",
+  "archivo": "cargadores/ca_curvo_556.glb",
+  "triangulos": 232,
+  "seccion_union_m": {
+   "largo": 0.062,
+   "ancho": 0.024
+  },
+  "bbox_min": [
+   -0.031,
+   -0.1993,
+   -0.014
+  ],
+  "bbox_max": [
+   0.065,
+   0.0,
+   0.014
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador"
+ },
+ {
+  "id": "ca_curvo_762",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "tipo_cargador": "curvo",
+  "uso": "fusil",
+  "archivo": "cargadores/ca_curvo_762.glb",
+  "triangulos": 232,
+  "seccion_union_m": {
+   "largo": 0.066,
+   "ancho": 0.028
+  },
+  "bbox_min": [
+   -0.033,
+   -0.2345,
+   -0.016
+  ],
+  "bbox_max": [
+   0.094,
+   0.0,
+   0.016
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador"
+ },
+ {
+  "id": "ca_tambor",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "tipo_cargador": "tambor",
+  "uso": "subfusil/fusil",
+  "archivo": "cargadores/ca_tambor.glb",
+  "triangulos": 148,
+  "seccion_union_m": {
+   "largo": 0.04,
+   "ancho": 0.024
+  },
+  "bbox_min": [
+   -0.065,
+   -0.17,
+   -0.025
+  ],
+  "bbox_max": [
+   0.065,
+   0.0,
+   0.03
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador"
+ },
+ {
+  "id": "ca_tambor_doble",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "tipo_cargador": "tambor_doble",
+  "uso": "fusil",
+  "archivo": "cargadores/ca_tambor_doble.glb",
+  "triangulos": 216,
+  "seccion_union_m": {
+   "largo": 0.04,
+   "ancho": 0.024
+  },
+  "bbox_min": [
+   -0.056,
+   -0.171,
+   -0.05
+  ],
+  "bbox_max": [
+   0.056,
+   0.0,
+   0.05
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador"
+ },
+ {
+  "id": "em_ergonomica",
+  "categoria": "empunaduras",
+  "pieza": "empunadura",
+  "ancla": "cara_empunadura",
+  "estilo": "polímero",
+  "incluye": "guardamonte",
+  "archivo": "empunaduras/em_ergonomica.glb",
+  "triangulos": 212,
+  "seccion_union_m": {
+   "largo": 0.0822,
+   "ancho": 0.0249
+  },
+  "bbox_min": [
+   -0.0692,
+   -0.1146,
+   -0.0145
+  ],
+  "bbox_max": [
+   0.04,
+   0.0,
+   0.0145
+  ],
+  "anclas_locales": {},
+  "material": "mat_empunadura"
+ },
+ {
+  "id": "em_recta",
+  "categoria": "empunaduras",
+  "pieza": "empunadura",
+  "ancla": "cara_empunadura",
+  "estilo": "recta",
+  "incluye": "guardamonte",
+  "archivo": "empunaduras/em_recta.glb",
+  "triangulos": 184,
+  "seccion_union_m": {
+   "largo": 0.0896,
+   "ancho": 0.0253
+  },
+  "bbox_min": [
+   -0.0578,
+   -0.1097,
+   -0.0145
+  ],
+  "bbox_max": [
+   0.04,
+   0.0,
+   0.0145
+  ],
+  "anclas_locales": {},
+  "material": "mat_empunadura"
+ },
+ {
+  "id": "em_madera",
+  "categoria": "empunaduras",
+  "pieza": "empunadura",
+  "ancla": "cara_empunadura",
+  "estilo": "madera",
+  "incluye": "guardamonte",
+  "archivo": "empunaduras/em_madera.glb",
+  "triangulos": 204,
+  "seccion_union_m": {
+   "largo": 0.0887,
+   "ancho": 0.0289
+  },
+  "bbox_min": [
+   -0.0741,
+   -0.1046,
+   -0.017
+  ],
+  "bbox_max": [
+   0.042,
+   0.0,
+   0.017
+  ],
+  "anclas_locales": {},
+  "material": "mat_empunadura"
+ },
+ {
+  "id": "ag_vertical",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "vertical",
+  "archivo": "agarres/ag_vertical.glb",
+  "triangulos": 140,
+  "seccion_union_m": {
+   "largo": 0.04,
+   "ancho": 0.026
+  },
+  "bbox_min": [
+   -0.02,
+   -0.1,
+   -0.016
+  ],
+  "bbox_max": [
+   0.02,
+   0.0,
+   0.016
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre"
+ },
+ {
+  "id": "ag_angulado",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "angulado",
+  "archivo": "agarres/ag_angulado.glb",
+  "triangulos": 96,
+  "seccion_union_m": {
+   "largo": 0.04,
+   "ancho": 0.026
+  },
+  "bbox_min": [
+   -0.0396,
+   -0.0411,
+   -0.013
+  ],
+  "bbox_max": [
+   0.0392,
+   0.0,
+   0.013
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre"
+ },
+ {
+  "id": "ag_tope",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "tope",
+  "archivo": "agarres/ag_tope.glb",
+  "triangulos": 88,
+  "seccion_union_m": {
+   "largo": 0.04,
+   "ancho": 0.026
+  },
+  "bbox_min": [
+   -0.02,
+   -0.035,
+   -0.013
+  ],
+  "bbox_max": [
+   0.02,
+   0.0,
+   0.013
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre"
+ },
+ {
+  "id": "bo_apagallamas",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "apagallamas",
+  "diametro_encaje_m": 0.015,
+  "archivo": "bocachas/bo_apagallamas.glb",
+  "triangulos": 312,
+  "seccion_union_m": {
+   "alto": 0.0203,
+   "ancho": 0.0203
+  },
+  "bbox_min": [
+   0.0,
+   -0.0105,
+   -0.0113
+  ],
+  "bbox_max": [
+   0.058,
+   0.0105,
+   0.0113
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.058,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha"
+ },
+ {
+  "id": "bo_freno",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "freno",
+  "diametro_encaje_m": 0.015,
+  "archivo": "bocachas/bo_freno.glb",
+  "triangulos": 432,
+  "seccion_union_m": {
+   "alto": 0.0213,
+   "ancho": 0.0213
+  },
+  "bbox_min": [
+   0.0,
+   -0.011,
+   -0.011
+  ],
+  "bbox_max": [
+   0.056,
+   0.011,
+   0.011
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.056,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha"
+ },
+ {
+  "id": "bo_compensador",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "compensador",
+  "diametro_encaje_m": 0.015,
+  "archivo": "bocachas/bo_compensador.glb",
+  "triangulos": 132,
+  "seccion_union_m": {
+   "alto": 0.021,
+   "ancho": 0.021
+  },
+  "bbox_min": [
+   0.0,
+   -0.0105,
+   -0.0105
+  ],
+  "bbox_max": [
+   0.05,
+   0.0125,
+   0.0105
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.05,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha"
+ },
+ {
+  "id": "bo_supresor_corto",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "supresor",
+  "diametro_encaje_m": 0.015,
+  "archivo": "bocachas/bo_supresor_corto.glb",
+  "triangulos": 240,
+  "seccion_union_m": {
+   "alto": 0.0241,
+   "ancho": 0.0241
+  },
+  "bbox_min": [
+   0.0,
+   -0.0177,
+   -0.0177
+  ],
+  "bbox_max": [
+   0.145,
+   0.0177,
+   0.0177
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.145,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha"
+ },
+ {
+  "id": "bo_supresor_largo",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "supresor",
+  "diametro_encaje_m": 0.015,
+  "archivo": "bocachas/bo_supresor_largo.glb",
+  "triangulos": 240,
+  "seccion_union_m": {
+   "alto": 0.0241,
+   "ancho": 0.0241
+  },
+  "bbox_min": [
+   0.0,
+   -0.0196,
+   -0.0196
+  ],
+  "bbox_max": [
+   0.205,
+   0.0196,
+   0.0196
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.205,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha"
+ },
+ {
+  "id": "pr_abierto_compacto",
+  "tipo_mira": "punto_rojo",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "variante": "abierta",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.002,
+   0.029,
+   0.0
+  ],
+  "archivo": "miras/pr_abierto_compacto.glb",
+  "triangulos": 258,
+  "seccion_union_m": {
+   "largo": 0.045,
+   "ancho": 0.032
+  },
+  "bbox_min": [
+   -0.0225,
+   0.0,
+   -0.014
+  ],
+  "bbox_max": [
+   0.0225,
+   0.041,
+   0.019
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.002,
+    0.029,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "pr_abierto_grande",
+  "tipo_mira": "punto_rojo",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "variante": "abierta",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.002,
+   0.033,
+   0.0
+  ],
+  "archivo": "miras/pr_abierto_grande.glb",
+  "triangulos": 294,
+  "seccion_union_m": {
+   "largo": 0.055,
+   "ancho": 0.034
+  },
+  "bbox_min": [
+   -0.028,
+   0.0,
+   -0.016
+  ],
+  "bbox_max": [
+   0.0275,
+   0.046,
+   0.02
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.002,
+    0.033,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "pr_tubo_30",
+  "tipo_mira": "punto_rojo",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "variante": "tubo",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   0.0,
+   0.047,
+   0.0
+  ],
+  "archivo": "miras/pr_tubo_30.glb",
+  "triangulos": 647,
+  "seccion_union_m": {
+   "largo": 0.04,
+   "ancho": 0.026
+  },
+  "bbox_min": [
+   -0.035,
+   0.0,
+   -0.0169
+  ],
+  "bbox_max": [
+   0.035,
+   0.0805,
+   0.019
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.0,
+    0.047,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "pr_tubo_alto",
+  "tipo_mira": "punto_rojo",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "variante": "tubo, montura alta",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   0.0025,
+   0.062,
+   0.0
+  ],
+  "archivo": "miras/pr_tubo_alto.glb",
+  "triangulos": 574,
+  "seccion_union_m": {
+   "largo": 0.045,
+   "ancho": 0.028
+  },
+  "bbox_min": [
+   -0.03,
+   0.0,
+   -0.0155
+  ],
+  "bbox_max": [
+   0.035,
+   0.085,
+   0.023
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.0025,
+    0.062,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "holo_caja",
+  "tipo_mira": "holografica",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.0067,
+   0.042,
+   0.0
+  ],
+  "archivo": "miras/holo_caja.glb",
+  "triangulos": 448,
+  "seccion_union_m": {
+   "largo": 0.08,
+   "ancho": 0.034
+  },
+  "bbox_min": [
+   -0.0455,
+   0.0,
+   -0.022
+  ],
+  "bbox_max": [
+   0.04,
+   0.06,
+   0.024
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.0067,
+    0.042,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "holo_compacta",
+  "tipo_mira": "holografica",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   0.004,
+   0.036,
+   0.0
+  ],
+  "archivo": "miras/holo_compacta.glb",
+  "triangulos": 285,
+  "seccion_union_m": {
+   "largo": 0.06,
+   "ancho": 0.0357
+  },
+  "bbox_min": [
+   -0.03,
+   0.0,
+   -0.016
+  ],
+  "bbox_max": [
+   0.03,
+   0.05,
+   0.021
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.004,
+    0.036,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "acog_4x",
+  "tipo_mira": "acog",
+  "aumento": 4,
+  "ve_a_traves": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.072,
+   0.04,
+   0.0
+  ],
+  "archivo": "miras/acog_4x.glb",
+  "triangulos": 958,
+  "seccion_union_m": {
+   "largo": 0.08,
+   "ancho": 0.03
+  },
+  "bbox_min": [
+   -0.072,
+   0.0,
+   -0.0208
+  ],
+  "bbox_max": [
+   0.072,
+   0.0608,
+   0.021
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.072,
+    0.04,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "acog_compacto_3x",
+  "tipo_mira": "acog",
+  "aumento": 3,
+  "ve_a_traves": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.06,
+   0.036,
+   0.0
+  ],
+  "archivo": "miras/acog_compacto_3x.glb",
+  "triangulos": 936,
+  "seccion_union_m": {
+   "largo": 0.065,
+   "ancho": 0.028
+  },
+  "bbox_min": [
+   -0.06,
+   0.0,
+   -0.0174
+  ],
+  "bbox_max": [
+   0.056,
+   0.0534,
+   0.02
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.06,
+    0.036,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "prisma_2x",
+  "tipo_mira": "prisma",
+  "aumento": 2,
+  "ve_a_traves": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.045,
+   0.037,
+   0.0
+  ],
+  "archivo": "miras/prisma_2x.glb",
+  "triangulos": 394,
+  "seccion_union_m": {
+   "largo": 0.07,
+   "ancho": 0.03
+  },
+  "bbox_min": [
+   -0.045,
+   0.0,
+   -0.018
+  ],
+  "bbox_max": [
+   0.04,
+   0.057,
+   0.021
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.045,
+    0.037,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "prisma_3x_con_punto",
+  "tipo_mira": "prisma",
+  "aumento": 3,
+  "ve_a_traves": true,
+  "punto_rojo_superior": true,
+  "centro_lente_punto": [
+   0.004,
+   0.071,
+   0.0
+  ],
+  "ve_a_traves_punto": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.048,
+   0.037,
+   0.0
+  ],
+  "archivo": "miras/prisma_3x_con_punto.glb",
+  "triangulos": 1044,
+  "seccion_union_m": {
+   "largo": 0.075,
+   "ancho": 0.03
+  },
+  "bbox_min": [
+   -0.048,
+   0.0,
+   -0.019
+  ],
+  "bbox_max": [
+   0.05,
+   0.079,
+   0.021
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.048,
+    0.037,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "visor_corto_4x",
+  "tipo_mira": "visor",
+  "aumento": 4,
+  "ve_a_traves": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.135,
+   0.042,
+   0.0
+  ],
+  "archivo": "miras/visor_corto_4x.glb",
+  "triangulos": 3706,
+  "seccion_union_m": {
+   "largo": 0.13,
+   "ancho": 0.026
+  },
+  "bbox_min": [
+   -0.135,
+   0.0,
+   -0.0193
+  ],
+  "bbox_max": [
+   0.13,
+   0.071,
+   0.028
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.135,
+    0.042,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "visor_medio_8x",
+  "tipo_mira": "visor",
+  "aumento": 8,
+  "ve_a_traves": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.155,
+   0.046,
+   0.0
+  ],
+  "archivo": "miras/visor_medio_8x.glb",
+  "triangulos": 3802,
+  "seccion_union_m": {
+   "largo": 0.15,
+   "ancho": 0.026
+  },
+  "bbox_min": [
+   -0.155,
+   0.0,
+   -0.0232
+  ],
+  "bbox_max": [
+   0.16,
+   0.075,
+   0.028
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.155,
+    0.046,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "visor_largo_10x",
+  "tipo_mira": "visor_largo",
+  "aumento": 10,
+  "ve_a_traves": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.185,
+   0.05,
+   0.0
+  ],
+  "archivo": "miras/visor_largo_10x.glb",
+  "triangulos": 3483,
+  "seccion_union_m": {
+   "largo": 0.18,
+   "ancho": 0.026
+  },
+  "bbox_min": [
+   -0.185,
+   0.0,
+   -0.027
+  ],
+  "bbox_max": [
+   0.195,
+   0.081,
+   0.03
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.185,
+    0.05,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "visor_parasol_12x",
+  "tipo_mira": "visor_largo",
+  "aumento": 12,
+  "ve_a_traves": true,
+  "parasol": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.185,
+   0.05,
+   0.0
+  ],
+  "archivo": "miras/visor_parasol_12x.glb",
+  "triangulos": 3579,
+  "seccion_union_m": {
+   "largo": 0.18,
+   "ancho": 0.026
+  },
+  "bbox_min": [
+   -0.185,
+   0.0,
+   -0.028
+  ],
+  "bbox_max": [
+   0.255,
+   0.081,
+   0.03
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.185,
+    0.05,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "termica",
+  "tipo_mira": "termica",
+  "aumento": 2,
+  "ve_a_traves": true,
+  "pantalla": true,
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   -0.075,
+   0.045,
+   0.0
+  ],
+  "archivo": "miras/termica.glb",
+  "triangulos": 1763,
+  "seccion_union_m": {
+   "largo": 0.1,
+   "ancho": 0.034
+  },
+  "bbox_min": [
+   -0.075,
+   0.0,
+   -0.025
+  ],
+  "bbox_max": [
+   0.075,
+   0.082,
+   0.025
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    -0.075,
+    0.045,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ },
+ {
+  "id": "punto_rojo_lupa",
+  "tipo_mira": "punto_rojo",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "variante": "tubo con lupa abatible (abatida al lado izquierdo)",
+  "aumento_lupa": 3,
+  "lupa_abatida_eje": [
+   -0.04,
+   0.047,
+   -0.034
+  ],
+  "lupa_en_linea": [
+   -0.04,
+   0.047,
+   0.0
+  ],
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "centro_lente_local": [
+   0.006,
+   0.047,
+   0.0
+  ],
+  "archivo": "miras/punto_rojo_lupa.glb",
+  "triangulos": 832,
+  "seccion_union_m": {
+   "largo": 0.11,
+   "ancho": 0.028
+  },
+  "bbox_min": [
+   -0.068,
+   0.0,
+   -0.048
+  ],
+  "bbox_max": [
+   0.06,
+   0.0629,
+   0.02
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.006,
+    0.047,
+    0.0
+   ]
+  },
+  "material": "mat_mira"
+ }
+]

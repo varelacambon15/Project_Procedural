@@ -42,7 +42,7 @@
    }
   },
   "cuerpo": {
-   "triangulos": 2500,
+   "triangulos": 2521,
    "origen_local": "origen del arma",
    "posicion_en_arma": [
     0.0,
@@ -50,13 +50,13 @@
     0.0
    ],
    "bbox_local_min": [
-    -0.4277,
+    -0.3653,
     0.0979,
     -0.0725
    ],
    "bbox_local_max": [
     0.2566,
-    0.3778,
+    0.3736,
     0.0725
    ],
    "material": "mat_cuerpo",
@@ -125,21 +125,21 @@
    }
   },
   "mira": {
-   "triangulos": 286,
+   "triangulos": 499,
    "origen_local": "raíl_superior",
    "posicion_en_arma": [
     0.0034,
-    0.3367,
-    -0.0
+    0.3563,
+    0.0
    ],
    "bbox_local_min": [
     -0.1117,
-    0.0,
+    -0.0196,
     -0.0403
    ],
    "bbox_local_max": [
     0.1117,
-    0.0923,
+    0.0727,
     0.0403
    ],
    "material": "mat_mira",
@@ -149,8 +149,48 @@
     0.07
    ],
    "seccion_union_m": {
-    "largo": 0.2234,
-    "ancho": 0.0713
+    "largo": 0.0145,
+    "ancho": 0.0
+   },
+   "tipo_mira": "holografica",
+   "aumento": 1,
+   "centro_lente_local": [
+    0.0244,
+    0.0404,
+    0.0
+   ],
+   "apertura_m": [
+    0.046,
+    0.05
+   ]
+  },
+  "culata": {
+   "origen_local": "cara_culata",
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ],
+   "triangulos": 600,
+   "posicion_en_arma": [
+    -0.3653,
+    0.2875,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0624,
+    -0.0861,
+    -0.0725
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0902,
+    0.0725
+   ],
+   "seccion_union_m": {
+    "alto": 0.1722,
+    "ancho": 0.145
    }
   }
  },
@@ -167,13 +207,13 @@
   ],
   "raíl_superior": [
    0.0034,
-   0.3367,
+   0.3563,
    -0.0
   ],
   "cara_culata": [
-   -0.4277,
-   0.2896,
-   0.0
+   -0.36529658397436143,
+   0.28752178791809485,
+   9.560845982969912e-09
   ],
   "cara_guardamanos": [
    0.2566,
@@ -184,7 +224,16 @@
    -0.2464,
    0.2016,
    -0.0
+  ],
+  "centro_lente": [
+   0.0278,
+   0.3967,
+   0.0
   ]
  },
- "triangulos_total": 4357
+ "triangulos_total": 5191,
+ "mira_integrada": null,
+ "boca_diametro_m": 0.0411,
+ "era_sugerida": null,
+ "piezas_ausentes": []
 }

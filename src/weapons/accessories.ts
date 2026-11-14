@@ -27,7 +27,9 @@ export const KIT_ALIAS: Record<string, string> = {
   "k-att-holographic-east": "acc:holo", "k-att-holographic-west": "acc:holo", "k-att-magnified-east": "acc:acog", "k-att-magnified-west": "acc:acog",
   "k-att-scope-east": "acc:scope6", "k-att-scope-west": "acc:scope6", "k-att-suppressor-east": "acc:suppressor-l", "k-att-suppressor-west": "acc:suppressor-s",
 };
-export const accessory = (id: string | null) => (id ? ACCESSORIES.find((a) => a.id === (KIT_ALIAS[id] ?? id)) ?? null : null);
+/** Miras de la biblioteca del usuario (k-att-<tipo>-l…): estadísticas del equivalente por tipo. */
+const libAlias = (id: string) => (/^k-att-[a-z]+-l/.test(id) ? { reddot: "acc:reddot", holographic: "acc:holo", magnified: "acc:acog", scope: "acc:scope6" }[id.split("-")[2]] : undefined);
+export const accessory = (id: string | null) => (id ? ACCESSORIES.find((a) => a.id === (KIT_ALIAS[id] ?? libAlias(id) ?? id)) ?? null : null);
 export const isAccessory = (id: string | null) => !!id && id.startsWith("acc:");
 
 const black = () => new THREE.MeshStandardMaterial({ name: "Steel", color: 0x1c1d1f, metalness: 0.75, roughness: 0.42 });

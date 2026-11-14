@@ -43,7 +43,7 @@
    }
   },
   "cuerpo": {
-   "triangulos": 2426,
+   "triangulos": 2540,
    "origen_local": "origen del arma",
    "posicion_en_arma": [
     0.0,
@@ -57,7 +57,7 @@
    ],
    "bbox_local_max": [
     0.084,
-    0.1408,
+    0.1344,
     0.0149
    ],
    "material": "mat_cuerpo",
@@ -124,6 +124,37 @@
     "largo": 0.0331,
     "ancho": 0.0164
    }
+  },
+  "mira": {
+   "origen_local": "base_alza",
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1,
+   "triangulos": 80,
+   "posicion_en_arma": [
+    -0.0656,
+    0.1331,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0115,
+    0.0,
+    -0.0087
+   ],
+   "bbox_local_max": [
+    0.0115,
+    0.0077,
+    0.0087
+   ],
+   "seccion_union_m": {
+    "largo": 0.023,
+    "ancho": 0.0174
+   }
   }
  },
  "anclas": {
@@ -156,7 +187,28 @@
    -0.0491,
    0.0873,
    0.0
+  ],
+  "linea_mira": [
+   -0.0761,
+   0.1408,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.0315,
+   0.0965,
+   0.0
+  ],
+  "base_alza": [
+   -0.06559999999999996,
+   0.13307111534354243,
+   0.0
   ]
  },
- "triangulos_total": 3679
+ "triangulos_total": 3873,
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0224,
+ "era_sugerida": "moderna",
+ "piezas_ausentes": [
+  "culata"
+ ]
 }

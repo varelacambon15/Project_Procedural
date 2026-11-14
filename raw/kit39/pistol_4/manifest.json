@@ -138,7 +138,7 @@
   ],
   "raíl_superior": [
    -0.0119,
-   0.1257,
+   0.141,
    0.0
   ],
   "cara_culata": [
@@ -155,7 +155,24 @@
    -0.0438,
    0.0828,
    -0.0
+  ],
+  "linea_mira": [
+   -0.0801,
+   0.1432,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.0425,
+   0.0612,
+   0.0
   ]
  },
- "triangulos_total": 4402
+ "triangulos_total": 4402,
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0192,
+ "era_sugerida": null,
+ "piezas_ausentes": [
+  "culata",
+  "mira"
+ ]
 }

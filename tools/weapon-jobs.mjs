@@ -208,6 +208,17 @@ const attJobs = Object.entries(ATT).flatMap(([name, slot]) => ["East", "West"].m
   }
 }
 
+// --- Miras de la biblioteca del kit (raw/kit39/piezas_sueltas): piezas del kit con centro de lente y aumento ---
+const libSightJobs = [];
+{
+  const lib = JSON.parse(readFileSync(new URL("../raw/kit39/piezas_sueltas/piezas.json", import.meta.url), "utf8"));
+  const kindOf = (t) => (/^punto_rojo/.test(t) ? "reddot" : t === "holografica" ? "holographic" : /^visor/.test(t) ? "scope" : "magnified");
+  for (const p of lib.filter((x) => x.categoria === "miras")) {
+    libSightJobs.push({ kind: "libsight", id: `k-att-${kindOf(p.tipo_mira)}-l${p.id.replace(/[^a-z0-9]+/g, "")}`, label: p.id, glb: `raw/kit39/piezas_sueltas/${p.archivo}`,
+      lens: p.centro_lente_local, zoom: p.aumento, seeThrough: p.ve_a_traves !== false, height: p.bbox_max[1] - p.bbox_min[1] });
+  }
+}
+
 // --- Armas pulidas por el usuario (piezas separadas a mano, textura pixelada de 16 colores) ---
 const AP = "raw/armas-pulidas";
 ALL.push(
@@ -215,4 +226,4 @@ ALL.push(
   { kind: "glbparts", pack: "pulidas", id: "u-bullpup-b", label: "Bullpup B", type: "bullpup", glb: `${AP}/bullpup_B/bullpup_B_piezas_ensambladas.glb`, modular: false },
 );
 
-export const JOBS = ALL.map((j) => (BODY_ONLY[j.id] ? { ...j, pick: [{ match: BODY_ONLY[j.id], role: "body" }] } : j)).concat(kitJobs, attJobs);
+export const JOBS = ALL.map((j) => (BODY_ONLY[j.id] ? { ...j, pick: [{ match: BODY_ONLY[j.id], role: "body" }] } : j)).concat(kitJobs, attJobs, libSightJobs);

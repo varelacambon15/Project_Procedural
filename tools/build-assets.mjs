@@ -50,7 +50,7 @@ if (args[0] === "--tree") {
     const j = { ...job };
     for (const k of ["obj", "mtl", "fbx", "glb"]) if (j[k]) j[k] = "/" + j[k];
     const out = await page.evaluate((jj) => window.convertJob(jj), j);
-    if (job.kind === "kitpart") {
+    if (job.kind === "kitpart" || job.kind === "libsight") {
       const dir = path.join(ROOT, "assets/weapons/kit"); await mkdir(dir, { recursive: true });
       await writeFile(path.join(dir, job.id + ".glb"), Buffer.from(out.glb, "base64")); delete out.glb;
       (manifest.kit ??= []).push({ ...out, file: `kit/${job.id}.glb` });

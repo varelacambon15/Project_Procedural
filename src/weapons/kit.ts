@@ -11,6 +11,8 @@ export interface KitPart {
   id: string; file: string; slot: string; caliber: Caliber;
   /** Sockets propios, en metros y relativos al origen de la pieza (puede haber varios del mismo nombre). */
   sockets: Record<string, V3[]>;
+  /** Miras de la biblioteca del usuario: centro de la lente (relativo al origen) y aumento. */
+  lens?: V3; zoom?: number;
   bounds: { min: V3; max: V3 };
   triangles: number;
   profile?: import("./variation").Profile;

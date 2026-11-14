@@ -186,7 +186,9 @@ export class Gun {
     this.anim.setClass(item.spec.type, item.spec.hold?.stance);
     // Tipo de mira y aumentos (solo dependen del arma: se fijan ya, antes de cargar el modelo)
     const opt = accessory(item.spec.optic);
-    if (opt) { this.sight = opt.id === "acc:reddot" ? "dot" : opt.id === "acc:holo" ? "holo" : "scope"; this.zoom = opt.zoom ?? 1; }
+    const libZ = item.spec.optic ? this.asm.kitZoom(item.spec.optic) : undefined;
+    if (libZ !== undefined) { this.sight = libZ <= 1.2 ? "dot" : libZ < 2.5 ? "holo" : "scope"; this.zoom = libZ <= 1.2 ? 1.3 : libZ; }
+    else if (opt) { this.sight = opt.id === "acc:reddot" ? "dot" : opt.id === "acc:holo" ? "holo" : "scope"; this.zoom = opt.zoom ?? 1; }
     else if (item.spec.optic) { this.sight = "scope"; this.zoom = 3; }                 // mira de modelo (cosmo)
     else { this.sight = "iron"; this.zoom = 1; } // (francotirador: visor solo si el modelo lo trae, ver abajo)
     const m = await this.modelFor(item, rebuild);

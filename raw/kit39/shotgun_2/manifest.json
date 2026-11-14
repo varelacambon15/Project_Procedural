@@ -13,7 +13,7 @@
  "bisel": "1.6 mm, aristas > 30°",
  "piezas": {
   "guardamanos_canon": {
-   "triangulos": 988,
+   "triangulos": 851,
    "origen_local": "cara_guardamanos",
    "posicion_en_arma": [
     -0.0998,
@@ -42,7 +42,7 @@
    }
   },
   "cuerpo": {
-   "triangulos": 1073,
+   "triangulos": 1028,
    "origen_local": "origen del arma",
    "posicion_en_arma": [
     0.0,
@@ -50,7 +50,7 @@
     0.0
    ],
    "bbox_local_min": [
-    -0.4979,
+    -0.4529,
     0.136,
     -0.0518
    ],
@@ -94,6 +94,66 @@
     "largo": 0.2583,
     "ancho": 0.0905
    }
+  },
+  "culata": {
+   "origen_local": "cara_culata",
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ],
+   "triangulos": 269,
+   "posicion_en_arma": [
+    -0.4529,
+    0.1903,
+    -0.0006
+   ],
+   "bbox_local_min": [
+    -0.045,
+    -0.0282,
+    -0.0462
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0282,
+    0.046
+   ],
+   "seccion_union_m": {
+    "alto": 0.0565,
+    "ancho": 0.0912
+   }
+  },
+  "cargador": {
+   "origen_local": "pozo_cargador",
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "tipo_cargador": "tubular",
+   "eje_cargador": "+X (el tubo va hacia la boca)",
+   "triangulos": 140,
+   "posicion_en_arma": [
+    -0.0855,
+    0.1666,
+    -0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0148,
+    -0.0148
+   ],
+   "bbox_local_max": [
+    0.4989,
+    0.0148,
+    0.0148
+   ],
+   "seccion_union_m": {
+    "alto": 0.0295,
+    "ancho": 0.0295
+   }
   }
  },
  "anclas": {
@@ -108,9 +168,9 @@
    0.0
   ],
   "cara_culata": [
-   -0.4979,
-   0.1843,
-   0.0
+   -0.45288188934326173,
+   0.190319132683417,
+   -0.0006327282864246088
   ],
   "cara_guardamanos": [
    -0.0998,
@@ -121,7 +181,23 @@
    -0.3688,
    0.1621,
    -0.0006
+  ],
+  "linea_mira": [
+   -0.3935,
+   0.2344,
+   0.0
+  ],
+  "pozo_cargador": [
+   -0.08549079302251339,
+   0.16663918761089444,
+   -9.778887033462524e-09
   ]
  },
- "triangulos_total": 2712
+ "triangulos_total": 2939,
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0337,
+ "era_sugerida": null,
+ "piezas_ausentes": [
+  "mira"
+ ]
 }

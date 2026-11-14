@@ -89,7 +89,9 @@
     0.1,
     0.1,
     0.11
-   ]
+   ],
+   "equivale_a": "cargador",
+   "tipo_cargador": "tambor_revolver"
   },
   "guardamanos_canon": {
    "triangulos": 224,
@@ -125,17 +127,17 @@
    "origen_local": "raíl_superior",
    "posicion_en_arma": [
     -0.035,
-    0.159,
+    0.1646,
     0.0
    ],
    "bbox_local_min": [
     -0.005,
-    -0.0,
+    -0.0056,
     -0.0045
    ],
    "bbox_local_max": [
     0.005,
-    0.008,
+    0.0024,
     0.0045
    ],
    "material": "mat_mira",
@@ -147,40 +149,53 @@
    "seccion_union_m": {
     "largo": 0.01,
     "ancho": 0.009
-   }
+   },
+   "tipo_mira": "alza",
+   "aumento": 1
   }
  },
  "anclas": {
   "boca": [
    0.158,
    0.143,
-   0
+   0.0
   ],
   "eje_tambor": [
    -0.0095,
    0.128,
-   0
+   0.0
   ],
   "raíl_superior": [
    -0.035,
-   0.159,
-   0
+   0.1646,
+   0.0
   ],
   "cara_culata": [
    -0.058,
    0.11,
-   0
+   0.0
   ],
   "cara_guardamanos": [
    0.036,
    0.13,
-   0
+   0.0
   ],
   "cara_empunadura": [
    -0.07,
    0.118,
-   0
+   0.0
+  ],
+  "linea_mira": [
+   -0.0395,
+   0.167,
+   0.0
   ]
  },
- "triangulos_total": 1220
+ "triangulos_total": 1220,
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0217,
+ "era_sugerida": "clásica",
+ "piezas_ausentes": [
+  "culata"
+ ]
 }

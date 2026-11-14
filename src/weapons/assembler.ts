@@ -59,6 +59,8 @@ export class WeaponAssembler {
 
   constructor(private gen: WeaponGenerator, private baseUrl: string) {}
 
+  /** Aumento de una mira de la biblioteca del usuario (undefined si no lo es). */
+  kitZoom(id: string): number | undefined { return this.gen.kit.byId.get(id)?.zoom; }
   private load(entry: AssetEntry): Promise<THREE.Group> {
     if (!this.cache.has(entry.id)) {
       let p = this.fetchModel(this.baseUrl + entry.file);
@@ -375,7 +377,7 @@ export class WeaponAssembler {
         const opt = await this.kitNode(kp);
         const lens = opt.children.find((c) => /lens/i.test(c.name));
         const lb = lens ? new THREE.Box3().setFromObject(lens) : null;
-        const lensY = lb ? (lb.min.y + lb.max.y) / 2 : kp.bounds.max[1] * 0.6;
+        const lensY = kp.lens ? kp.lens[1] : lb ? (lb.min.y + lb.max.y) / 2 : kp.bounds.max[1] * 0.6;
         const top = new THREE.Box3().setFromObject(group).max.y;
         const riser = Math.max(0, top + 0.004 - (opticTarget.y + lensY));
         opt.position.copy(opticTarget).add(new THREE.Vector3(0, riser, 0));
@@ -384,7 +386,7 @@ export class WeaponAssembler {
           block.position.set(opticTarget.x, opticTarget.y + riser / 2, 0); add(block, "scope", { id: "riser", label: "Riser", pack: "proc" } as AssetEntry, [0, 1.2, 0]);
         }
         add(opt, "scope", { id: kp.id, label: kitLabel(kp.id), pack: "kit" } as AssetEntry, [0, 1.4, 0]);
-        sight = opticTarget.y + riser + lensY; zoom = accessory(spec.optic)?.zoom ?? 1;
+        sight = opticTarget.y + riser + lensY; zoom = kp.zoom ?? accessory(spec.optic)?.zoom ?? 1;
       }
     } else if (spec.optic?.startsWith("pp-") || spec.optic?.startsWith("pl-")) {
       // Óptica integrada de una pistola generada: ya es parte de su malla (corredera)

@@ -687,7 +687,32 @@ async function convertKit39(job) {
   joints.stockFace = joints.rear; joints.frontFace = joints.front; joints.gripFace = joints.grip;
   return finish(job.id, job.type, parts, { pack: job.pack, joints: roundSockets({ joints }).joints, modular: true });
 }
-window.convertJob = async (job) => (job.kind === "kit39" ? convertKit39(job) : job.kind === "glbparts" ? convertGLBParts(job) : job.kind === "kitpart" ? convertKitPart(job) : job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
+/** Mira de la biblioteca del kit del usuario: pieza del kit (ranura Sights_Rear) con su centro de lente y aumento. */
+async function convertLibSight(job) {
+  const gltf = await new GLTFLoader().parseAsync(await fetchBuf(job.glb), job.glb.slice(0, job.glb.lastIndexOf("/") + 1));
+  gltf.scene.updateMatrixWorld(true);
+  const parts = [];
+  gltf.scene.traverse((o) => {
+    if (!o.isMesh) return;
+    let g = o.geometry.clone().applyMatrix4(o.matrixWorld); g = g.index ? g.toNonIndexed() : g;
+    for (const a of Object.keys(g.attributes)) if (!["position", "normal", "uv"].includes(a)) g.deleteAttribute(a);
+    g.computeBoundingBox();
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ name: "kit", color: 0x2a2c30, roughness: 0.55, metalness: 0.35 })); m.name = o.name || "mira";
+    parts.push({ role: "kit", source: job.id, mesh: m });
+  });
+  // Cristal: un disco tenue en el centro de la lente (se ve que es una óptica; no tapa la vista al apuntar)
+  if (job.lens && job.seeThrough) {
+    const r = Math.max(0.006, Math.min(0.02, (job.height ?? 0.03) * 0.35));
+    const glass = new THREE.Mesh(new THREE.CircleGeometry(r, 16).rotateY(Math.PI / 2).translate(job.lens[0], job.lens[1], job.lens[2]).toNonIndexed(), new THREE.MeshStandardMaterial({ name: "Lens", color: 0x4a7a8c, roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.35, side: THREE.DoubleSide }));
+    glass.name = "lens"; parts.push({ role: "lens", source: job.id, mesh: glass });
+  }
+  const box = boxOf(parts.map((p) => p.mesh));
+  const tris = parts.reduce((s, p) => s + p.mesh.geometry.attributes.position.count / 3, 0);
+  bakeAO(parts.map((p) => p.mesh));
+  const glb = await exportGLB(parts);
+  return { id: job.id, slot: "Sights_Rear", caliber: "any", sockets: {}, profile: profileOf(parts.map((p) => p.mesh), 16), bounds: { min: box.min.toArray().map((v) => +v.toFixed(4)), max: box.max.toArray().map((v) => +v.toFixed(4)) }, triangles: Math.round(tris), lens: job.lens, zoom: job.zoom, label: job.label, glb };
+}
+window.convertJob = async (job) => (job.kind === "libsight" ? convertLibSight(job) : job.kind === "kit39" ? convertKit39(job) : job.kind === "glbparts" ? convertGLBParts(job) : job.kind === "kitpart" ? convertKitPart(job) : job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
 window.treeFBX = async (url) => { const root = await loadFBX(url); const out = []; root.traverse((o) => out.push({ n: o.name, t: o.type, p: o.position.toArray().map((v) => +v.toFixed(2)), r: o.rotation.toArray().slice(0, 3).map((v) => +v.toFixed(2)), s: +o.scale.x.toFixed(3), mat: o.isMesh ? [].concat(o.material).map((m) => m.name + (m.map ? "*" : "")) : undefined })); return out; };
 window.listFBX = async (url) => { const root = await loadFBX(url); const out = []; root.updateMatrixWorld(true); root.traverse((o) => { if (o.isMesh) { const b = new THREE.Box3().setFromObject(o); out.push({ name: o.name, min: b.min.toArray().map((v) => +v.toFixed(1)), max: b.max.toArray().map((v) => +v.toFixed(1)) }); } }); return out; };
 window.ready = true;

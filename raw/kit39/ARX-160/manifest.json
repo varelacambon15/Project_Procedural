@@ -180,7 +180,9 @@
    "seccion_union_m": {
     "largo": 0.0768,
     "ancho": 0.029
-   }
+   },
+   "tipo_mira": "alza",
+   "aumento": 1
   }
  },
  "anclas": {
@@ -213,7 +215,21 @@
    -0.0652,
    0.1728,
    0.0
+  ],
+  "linea_mira": [
+   -0.1951,
+   0.2887,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.3083,
+   0.1612,
+   0.0
   ]
  },
- "triangulos_total": 1945
+ "triangulos_total": 1945,
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0227,
+ "era_sugerida": "moderna",
+ "piezas_ausentes": []
 }

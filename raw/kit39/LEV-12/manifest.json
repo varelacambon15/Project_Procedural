@@ -96,7 +96,7 @@
    }
   },
   "guardamanos_canon": {
-   "triangulos": 584,
+   "triangulos": 488,
    "origen_local": "cara_guardamanos",
    "posicion_en_arma": [
     -0.02,
@@ -151,6 +151,39 @@
    "seccion_union_m": {
     "largo": 0.022,
     "ancho": 0.012
+   },
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "cargador": {
+   "origen_local": "pozo_cargador",
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "tipo_cargador": "tubular",
+   "eje_cargador": "+X (el tubo va hacia la boca)",
+   "triangulos": 96,
+   "posicion_en_arma": [
+    -0.02,
+    0.153,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0125,
+    -0.0125
+   ],
+   "bbox_local_max": [
+    0.495,
+    0.0125,
+    0.0125
+   ],
+   "seccion_union_m": {
+    "alto": 0.021,
+    "ancho": 0.021
    }
   }
  },
@@ -158,28 +191,42 @@
   "boca": [
    0.5,
    0.186,
-   0
+   0.0
   ],
   "raíl_superior": [
    -0.115,
    0.211,
-   0
+   0.0
   ],
   "cara_culata": [
    -0.17,
    0.14,
-   0
+   0.0
   ],
   "cara_guardamanos": [
    -0.02,
    0.16,
-   0
+   0.0
   ],
   "cara_empunadura": [
    -0.125,
    0.112,
-   0
+   0.0
+  ],
+  "linea_mira": [
+   -0.1253,
+   0.219,
+   0.0
+  ],
+  "pozo_cargador": [
+   -0.020000000000000018,
+   0.15299999978393317,
+   0.0
   ]
  },
- "triangulos_total": 1652
+ "triangulos_total": 1652,
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0,
+ "era_sugerida": "rústica",
+ "piezas_ausentes": []
 }

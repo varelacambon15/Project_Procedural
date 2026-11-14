@@ -184,7 +184,23 @@
    -0.1341,
    0.1738,
    0.0
+  ],
+  "linea_mira": [
+   -0.1184,
+   0.3271,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.3,
+   0.1422,
+   0.0
   ]
  },
- "triangulos_total": 5794
+ "triangulos_total": 5794,
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0279,
+ "era_sugerida": null,
+ "piezas_ausentes": [
+  "mira"
+ ]
 }

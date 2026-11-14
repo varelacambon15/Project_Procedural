@@ -429,7 +429,8 @@ export class WeaponGenerator {
     const name = sig?.name ?? "";
     const statSeed = Math.floor(r() * 2 ** 31);
     // Añadidos de era y de modernización (con adaptadores); el parecido se mide de nuevo con ellos
-    tweaks.eraAdds = layout === "modular-pistol" || layout === "proc-long" ? null : this.eraAddons(r, era, modLevel, type, layout, parts, tweaks, barrelLength);
+    // (tampoco añadidos de era en el kit del usuario: solo cinta y parches, que no cambian la forma)
+    tweaks.eraAdds = layout === "modular-pistol" || layout === "proc-long" ? null : body.pack === "kit39" ? kit39Era(this.eraAddons(r, era, modLevel, type, layout, parts, tweaks, barrelLength)) : this.eraAddons(r, era, modLevel, type, layout, parts, tweaks, barrelLength);
     const changes = [...varied.changes, ...eraChanges(tweaks.eraAdds)];
     const simNow = tweaks.eraAdds ? similarity(this.baseSilhouette(layout, parts), this.silhouette(layout, parts, tweaks, barrelLength)) : varied.similarity;
     const lineage = { base: layout === "modular-pistol" ? ppArchId(parts[0].from) : parts[0].from, swaps: this.swapsOf(layout, parts), changes, ops: tweaks, similarity: +simNow.toFixed(3), era, modLevel };
@@ -919,6 +920,12 @@ export class WeaponGenerator {
       }
     }
     if (tw.adds?.length) tw.adds = this.placeAdds(layout, type, parts, tw, bl, [...new Set(tw.adds.map((a) => a.kind))]);
+    // Kit del usuario (pack kit39): piezas reales con sus anclas; nada de culatas, guardamanos o añadidos por código
+    // (quedaban pegotes); la variedad viene de cambiar piezas entre armas, los largos, el cargador y raíl/accesorio
+    if (this.byId.get(parts[0].from)?.pack === "kit39") {
+      tw.pstock = null; tw.pfront = null; tw.cutFront = null; tw.cutRear = null; tw.nostock = false;
+      tw.adds = tw.adds?.filter((a) => a.kind === "bipod" || a.kind === "ladder") ?? null;
+    }
     return { tw, barrelLength: bl };
   }
 
@@ -1147,6 +1154,8 @@ export const BASE_SIZE: Record<string, number> = {
   "w-mp5k": 0.62, "m-mp7": 0.72, "z-submachinegun-01": 0.65, "z-submachinegun-05": 0.8,
   "p-submachine-gun-3": 0.82, "p-submachine-gun-4": 0.82,
 };
+/** Añadidos de era permitidos en el kit del usuario: solo los que no cambian la forma (cinta, parches). */
+function kit39Era(a: Tweaks["eraAdds"]): Tweaks["eraAdds"] { return a ? { ...a, cover: undefined, cell: undefined, display: undefined, adapters: [] } : a; }
 /** Cuerpos con la culata integrada (no se estira el tramo trasero). */
 const INTEGRAL_STOCK = new Set(["w-p90", "z-submachinegun-03", "u-bullpup-b"]);
 /** Bases retiradas del sorteo (se siguen pudiendo cargar en partidas guardadas), con el motivo. */

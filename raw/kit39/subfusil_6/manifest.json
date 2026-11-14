@@ -42,7 +42,7 @@
    }
   },
   "cuerpo": {
-   "triangulos": 1113,
+   "triangulos": 997,
    "origen_local": "origen del arma",
    "posicion_en_arma": [
     0.0,
@@ -50,8 +50,8 @@
     0.0
    ],
    "bbox_local_min": [
-    -0.2531,
-    0.0972,
+    -0.168,
+    0.1073,
     -0.0364
    ],
    "bbox_local_max": [
@@ -125,21 +125,21 @@
    }
   },
   "mira": {
-   "triangulos": 288,
+   "triangulos": 1157,
    "origen_local": "raíl_superior",
    "posicion_en_arma": [
     -0.0903,
-    0.1913,
+    0.1981,
     0.0
    ],
    "bbox_local_min": [
     -0.0311,
-    0.0,
+    -0.0068,
     -0.0179
    ],
    "bbox_local_max": [
     0.0311,
-    0.0523,
+    0.0456,
     0.0179
    ],
    "material": "mat_mira",
@@ -150,8 +150,16 @@
    ],
    "seccion_union_m": {
     "largo": 0.0444,
-    "ancho": 0.0274
-   }
+    "ancho": 0.0256
+   },
+   "tipo_mira": "holografica",
+   "aumento": 1,
+   "centro_lente_local": [
+    -0.0,
+    0.0252,
+    0.0
+   ],
+   "apertura_m": 0.022
   },
   "agarre": {
    "triangulos": 290,
@@ -181,6 +189,35 @@
     "largo": 0.0433,
     "ancho": 0.0335
    }
+  },
+  "culata": {
+   "origen_local": "cara_culata",
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ],
+   "triangulos": 444,
+   "posicion_en_arma": [
+    -0.168,
+    0.1585,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0851,
+    -0.0613,
+    -0.0328
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0396,
+    0.0328
+   ],
+   "seccion_union_m": {
+    "alto": 0.0791,
+    "ancho": 0.0656
+   }
   }
  },
  "anclas": {
@@ -196,13 +233,13 @@
   ],
   "raíl_superior": [
    -0.0903,
-   0.1913,
+   0.1981,
    0.0
   ],
   "cara_culata": [
-   -0.2531,
-   0.1421,
-   0.0
+   -0.16796376100778582,
+   0.15849347583250323,
+   4.188563830359593e-07
   ],
   "cara_guardamanos": [
    0.0607,
@@ -218,7 +255,16 @@
    0.0424,
    0.1421,
    -0.0
+  ],
+  "centro_lente": [
+   -0.0903,
+   0.2233,
+   0.0
   ]
  },
- "triangulos_total": 2848
+ "triangulos_total": 4045,
+ "mira_integrada": null,
+ "boca_diametro_m": 0.0231,
+ "era_sugerida": null,
+ "piezas_ausentes": []
 }
