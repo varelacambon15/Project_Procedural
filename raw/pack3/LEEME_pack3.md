@@ -28,3 +28,9 @@ Las convenciones son las mismas que en `kit_armas_v3`:
   - El modelo original traía dos revólveres y dos cartuchos; solo se ha usado uno.
   - El cañón venía despiezado en el modelo original (las placas laterales y la tira superior separadas hacia arriba y hacia fuera). Se ha montado como en la segunda copia del mismo archivo.
   - El alza va fundida con el puente superior.
+
+## Campo `accion`
+Cada manifest y el catálogo llevan `accion`, para elegir la animación de recarga y de disparo: `semiautomatica`, `automatica`, `cerrojo`, `bombeo`, `revolver_simple`, `revolver_doble`. La TOZ-106 es de cerrojo, no de bombeo.
+
+## Ancla raíl_frontal (nueva)
+Cada arma tiene el ancla `raíl_frontal` en lo alto del guardamanos, cerca de la boca, tanto en el manifest como en un nodo vacío de la ensamblada. Ahí va el punto de mira de las miras de hierro desmontables (ver el pack miras_hierro).

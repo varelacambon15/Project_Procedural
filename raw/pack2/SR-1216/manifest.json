@@ -1,0 +1,240 @@
+{
+ "nombre": "SR-1216",
+ "tipo_juego": "shotgun",
+ "chasis": "convencional",
+ "era_sugerida": "sci-fi",
+ "base_real": "SRM Arms Model 1216 (M1216 de Black Ops 2)",
+ "largo_m": 0.862,
+ "alto_m": 0.2,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 1920,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.191,
+    0.066,
+    -0.029
+   ],
+   "bbox_local_max": [
+    0.047,
+    0.188,
+    0.029
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "culata": {
+   "triangulos": 316,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.191,
+    0.138,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.24,
+    -0.066,
+    -0.022
+   ],
+   "bbox_local_max": [
+    -0.0,
+    0.046,
+    0.022
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ],
+   "seccion_union_m": {
+    "alto": 0.0823,
+    "ancho": 0.039
+   }
+  },
+  "empunadura": {
+   "triangulos": 336,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.059,
+    0.098,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0475,
+    -0.098,
+    -0.016
+   ],
+   "bbox_local_max": [
+    0.0179,
+    0.0,
+    0.016
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.0351,
+    "ancho": 0.032
+   }
+  },
+  "cargador": {
+   "triangulos": 616,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    0.047,
+    0.112,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0353,
+    -0.0353
+   ],
+   "bbox_local_max": [
+    0.322,
+    0.0353,
+    0.0353
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "tipo_cargador": "tubular_giratorio_4",
+   "seccion_union_m": {
+    "alto": 0.0706,
+    "ancho": 0.0706
+   }
+  },
+  "guardamanos_canon": {
+   "triangulos": 1988,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.047,
+    0.166,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0,
+    -0.094,
+    -0.0272
+   ],
+   "bbox_local_max": [
+    0.384,
+    0.0294,
+    0.0272
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.0374,
+    "ancho": 0.028
+   }
+  },
+  "mira": {
+   "triangulos": 128,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.071,
+    0.188,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.11,
+    -0.0,
+    -0.011
+   ],
+   "bbox_local_max": [
+    -0.09,
+    0.012,
+    0.011
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1,
+   "seccion_union_m": {
+    "largo": 0.02,
+    "ancho": 0.022
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.431,
+   0.158,
+   0.0
+  ],
+  "pozo_cargador": [
+   0.047,
+   0.112,
+   0.0
+  ],
+  "raíl_superior": [
+   -0.071,
+   0.188,
+   0.0
+  ],
+  "cara_culata": [
+   -0.191,
+   0.138,
+   0.0
+  ],
+  "cara_guardamanos": [
+   0.047,
+   0.166,
+   0.0
+  ],
+  "cara_empunadura": [
+   -0.059,
+   0.098,
+   0.0
+  ],
+  "linea_mira": [
+   -0.171,
+   0.2,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.387,
+   0.072,
+   0.0
+  ],
+  "raíl_frontal": [
+   0.383,
+   0.194,
+   0.0
+  ]
+ },
+ "triangulos_total": 5304,
+ "piezas_ausentes": [],
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0256,
+ "accion": "semiautomatica"
+}

@@ -1,0 +1,228 @@
+{
+ "nombre": "RB-454",
+ "tipo_juego": "revolver",
+ "chasis": "revolver",
+ "era_sugerida": "moderna",
+ "base_real": "Taurus Raging Bull (.44 Magnum de Ghosts)",
+ "largo_m": 0.3194,
+ "alto_m": 0.178,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 1703,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.1418,
+    0.076,
+    -0.0191
+   ],
+   "bbox_local_max": [
+    -0.0078,
+    0.1676,
+    0.016
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "tambor": {
+   "triangulos": 608,
+   "origen_local": "eje_tambor",
+   "posicion_en_arma": [
+    -0.0583,
+    0.132,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.033,
+    -0.0205,
+    -0.0236
+   ],
+   "bbox_local_max": [
+    0.036,
+    0.0205,
+    0.0236
+   ],
+   "material": "mat_tambor",
+   "color": [
+    0.1,
+    0.1,
+    0.11
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 1280,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    -0.0088,
+    0.142,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.032,
+    -0.0106
+   ],
+   "bbox_local_max": [
+    0.1685,
+    0.036,
+    0.0106
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.0426,
+    "ancho": 0.0212
+   }
+  },
+  "empunadura": {
+   "triangulos": 580,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0988,
+    0.114,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.06,
+    -0.114,
+    -0.0175
+   ],
+   "bbox_local_max": [
+    0.0117,
+    0.0118,
+    0.0175
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.0,
+    "ancho": 0.0325
+   }
+  },
+  "inserto": {
+   "triangulos": 132,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0988,
+    0.114,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0609,
+    -0.0879,
+    -0.0105
+   ],
+   "bbox_local_max": [
+    -0.0442,
+    -0.012,
+    0.0105
+   ],
+   "material": "mat_inserto",
+   "color": [
+    0.45,
+    0.06,
+    0.05
+   ]
+  },
+  "mira": {
+   "triangulos": 56,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.1038,
+    0.161,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.006,
+    0.0002,
+    -0.0065
+   ],
+   "bbox_local_max": [
+    0.006,
+    0.0074,
+    0.0065
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1,
+   "seccion_union_m": {
+    "largo": 0.012,
+    "ancho": 0.013
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.1597,
+   0.142,
+   0.0
+  ],
+  "eje_tambor": [
+   -0.0583,
+   0.132,
+   0.0
+  ],
+  "cara_guardamanos": [
+   -0.0088,
+   0.142,
+   0.0
+  ],
+  "raíl_superior": [
+   -0.1038,
+   0.161,
+   0.0
+  ],
+  "cara_empunadura": [
+   -0.0988,
+   0.114,
+   0.0
+  ],
+  "cara_culata": [
+   -0.1318,
+   0.126,
+   0.0
+  ],
+  "linea_mira": [
+   -0.1038,
+   0.167,
+   0.0
+  ],
+  "raíl_frontal": [
+   0.1432,
+   0.178,
+   0.0
+  ]
+ },
+ "triangulos_total": 4359,
+ "piezas_ausentes": [
+  "culata"
+ ],
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0415,
+ "accion": "revolver_doble"
+}

@@ -1,0 +1,239 @@
+{
+ "nombre": "LS-556",
+ "tipo_juego": "lmg",
+ "chasis": "convencional",
+ "era_sugerida": "sci-fi",
+ "base_real": "AAI LSAT (Ghosts)",
+ "largo_m": 1.185,
+ "alto_m": 0.198,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 2088,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.3345,
+    0.065,
+    -0.0303
+   ],
+   "bbox_local_max": [
+    -0.0245,
+    0.198,
+    0.0283
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 336,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.3145,
+    0.098,
+    -0.001
+   ],
+   "bbox_local_min": [
+    -0.0514,
+    -0.098,
+    -0.0145
+   ],
+   "bbox_local_max": [
+    0.0179,
+    0.0,
+    0.0145
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.0352,
+    "ancho": 0.029
+   }
+  },
+  "cargador": {
+   "triangulos": 208,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.1485,
+    0.095,
+    -0.001
+   ],
+   "bbox_local_min": [
+    -0.0679,
+    -0.087,
+    -0.03
+   ],
+   "bbox_local_max": [
+    0.0688,
+    0.0,
+    0.032
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "seccion_union_m": {
+    "largo": 0.1283,
+    "ancho": 0.0592
+   }
+  },
+  "guardamanos_canon": {
+   "triangulos": 2136,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    -0.0245,
+    0.133,
+    -0.001
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.057,
+    -0.0269
+   ],
+   "bbox_local_max": [
+    0.617,
+    0.036,
+    0.0269
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.0574,
+    "ancho": 0.052
+   }
+  },
+  "culata": {
+   "triangulos": 304,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.3345,
+    0.133,
+    -0.001
+   ],
+   "bbox_local_min": [
+    -0.258,
+    -0.054,
+    -0.023
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.042,
+    0.023
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ],
+   "seccion_union_m": {
+    "alto": 0.0496,
+    "ancho": 0.0404
+   }
+  },
+  "mira": {
+   "triangulos": 128,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.1945,
+    0.173,
+    -0.001
+   ],
+   "bbox_local_min": [
+    -0.13,
+    -0.0,
+    -0.011
+   ],
+   "bbox_local_max": [
+    -0.11,
+    0.012,
+    0.011
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1,
+   "seccion_union_m": {
+    "largo": 0.02,
+    "ancho": 0.022
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.6025,
+   0.133,
+   -0.001
+  ],
+  "pozo_cargador": [
+   -0.1485,
+   0.095,
+   -0.001
+  ],
+  "raíl_superior": [
+   -0.1945,
+   0.173,
+   -0.001
+  ],
+  "cara_culata": [
+   -0.3345,
+   0.133,
+   -0.001
+  ],
+  "cara_guardamanos": [
+   -0.0245,
+   0.133,
+   -0.001
+  ],
+  "cara_empunadura": [
+   -0.3145,
+   0.098,
+   -0.001
+  ],
+  "raíl_inferior": [
+   0.1155,
+   0.103,
+   -0.001
+  ],
+  "linea_mira": [
+   -0.3145,
+   0.185,
+   -0.001
+  ],
+  "raíl_frontal": [
+   0.2695,
+   0.169,
+   -0.001
+  ]
+ },
+ "triangulos_total": 5200,
+ "piezas_ausentes": [],
+ "mira_integrada": "alza",
+ "boca_diametro_m": null,
+ "accion": "automatica"
+}

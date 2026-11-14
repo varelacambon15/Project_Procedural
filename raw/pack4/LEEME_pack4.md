@@ -69,3 +69,6 @@ En cada manifest, `accesorios_de_serie` dice qué accesorios llevaba el arma y e
 - **Welrod:** el supresor es parte del cañón (integrado), no un accesorio.
 - **SR-25:** va como `sniper` por ser fusil de tirador. Cámbialo a `rifle` si lo prefieres.
 - **No incluidas:** el lanzagranadas Milkor MGL, porque no hay categoría de juego para él, y los cartuchos sueltos del modelo QB327.
+
+## Ancla raíl_frontal (nueva)
+Cada arma tiene el ancla `raíl_frontal` en lo alto del guardamanos, cerca de la boca, tanto en el manifest como en un nodo vacío de la ensamblada. Ahí va el punto de mira de las miras de hierro desmontables (ver el pack miras_hierro).

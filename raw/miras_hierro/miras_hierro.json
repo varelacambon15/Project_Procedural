@@ -1,0 +1,614 @@
+[
+ {
+  "id": "hi_abatible",
+  "nombre": "Abatible de fusil",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "mirilla",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "rifle",
+   "smg",
+   "lmg",
+   "sniper",
+   "shotgun"
+  ],
+  "eras": [
+   "moderna"
+  ],
+  "color_inserto": null,
+  "alza": {
+   "archivo": "modelos/hi_abatible_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 1308,
+   "altura_linea_cabeza_m": 0.022,
+   "centro_lente_en_cabeza": [
+    -0.0115,
+    0.022,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_abatible_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 332,
+   "altura_linea_cabeza_m": 0.022,
+   "punta_en_cabeza": [
+    0.0,
+    0.022,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_ak",
+  "nombre": "Tipo AK",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "muesca",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "rifle",
+   "smg",
+   "lmg",
+   "shotgun"
+  ],
+  "eras": [
+   "rústica",
+   "moderna"
+  ],
+  "color_inserto": null,
+  "alza": {
+   "archivo": "modelos/hi_ak_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 376,
+   "altura_linea_cabeza_m": 0.013,
+   "centro_lente_en_cabeza": [
+    -0.0205,
+    0.013,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_ak_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 1224,
+   "altura_linea_cabeza_m": 0.016,
+   "punta_en_cabeza": [
+    0.0,
+    0.016,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_tambor",
+  "nombre": "Diópter de tambor",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "mirilla",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "rifle",
+   "smg"
+  ],
+  "eras": [
+   "moderna"
+  ],
+  "color_inserto": null,
+  "alza": {
+   "archivo": "modelos/hi_tambor_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 332,
+   "altura_linea_cabeza_m": 0.02,
+   "centro_lente_en_cabeza": [
+    -0.005,
+    0.02,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_tambor_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 336,
+   "altura_linea_cabeza_m": 0.02,
+   "punta_en_cabeza": [
+    0.0,
+    0.02,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_compacta",
+  "nombre": "Abatible compacta de polímero",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "mirilla",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "rifle",
+   "smg",
+   "shotgun",
+   "lmg"
+  ],
+  "eras": [
+   "moderna"
+  ],
+  "color_inserto": null,
+  "alza": {
+   "archivo": "modelos/hi_compacta_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 1020,
+   "altura_linea_cabeza_m": 0.016,
+   "centro_lente_en_cabeza": [
+    -0.0025,
+    0.016,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_compacta_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 228,
+   "altura_linea_cabeza_m": 0.016,
+   "punta_en_cabeza": [
+    0.0,
+    0.016,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_tangente",
+  "nombre": "Clásica de rampa y hoja",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "muesca_v",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "rifle",
+   "sniper",
+   "lmg"
+  ],
+  "eras": [
+   "clásica"
+  ],
+  "color_inserto": null,
+  "alza": {
+   "archivo": "modelos/hi_tangente_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 220,
+   "altura_linea_cabeza_m": 0.012,
+   "centro_lente_en_cabeza": [
+    -0.0281,
+    0.012,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_tangente_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 192,
+   "altura_linea_cabeza_m": 0.012,
+   "punta_en_cabeza": [
+    0.0,
+    0.012,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_competicion",
+  "nombre": "Diópter de competición",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "mirilla",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "sniper",
+   "rifle"
+  ],
+  "eras": [
+   "clásica",
+   "moderna"
+  ],
+  "color_inserto": null,
+  "alza": {
+   "archivo": "modelos/hi_competicion_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 484,
+   "altura_linea_cabeza_m": 0.024,
+   "centro_lente_en_cabeza": [
+    -0.01,
+    0.024,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_competicion_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 964,
+   "altura_linea_cabeza_m": 0.024,
+   "punta_en_cabeza": [
+    0.0,
+    0.024,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_scifi",
+  "nombre": "Sci-fi con insertos luminosos",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "mirilla",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "rifle",
+   "smg",
+   "lmg",
+   "sniper",
+   "shotgun"
+  ],
+  "eras": [
+   "sci-fi realista"
+  ],
+  "color_inserto": [
+   0.25,
+   0.85,
+   1.0
+  ],
+  "alza": {
+   "archivo": "modelos/hi_scifi_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 316,
+   "altura_linea_cabeza_m": 0.018,
+   "centro_lente_en_cabeza": [
+    -0.009,
+    0.018,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_scifi_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 224,
+   "altura_linea_cabeza_m": 0.018,
+   "punta_en_cabeza": [
+    -0.0005,
+    0.018,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_fantasma",
+  "nombre": "Anillo fantasma y fibra",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "mirilla",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "shotgun",
+   "rifle",
+   "smg"
+  ],
+  "eras": [
+   "moderna"
+  ],
+  "color_inserto": [
+   0.95,
+   0.15,
+   0.1
+  ],
+  "alza": {
+   "archivo": "modelos/hi_fantasma_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 1312,
+   "altura_linea_cabeza_m": 0.02,
+   "centro_lente_en_cabeza": [
+    -0.0025,
+    0.02,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_fantasma_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 172,
+   "altura_linea_cabeza_m": 0.02,
+   "punta_en_cabeza": [
+    0.0,
+    0.02,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_bola",
+  "nombre": "Bola de escopeta",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "canal",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "shotgun"
+  ],
+  "eras": [
+   "clásica",
+   "rústica"
+  ],
+  "color_inserto": [
+   0.78,
+   0.62,
+   0.28
+  ],
+  "alza": {
+   "archivo": "modelos/hi_bola_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 124,
+   "altura_linea_cabeza_m": 0.006,
+   "centro_lente_en_cabeza": [
+    0.0,
+    0.006,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_bola_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 452,
+   "altura_linea_cabeza_m": 0.006,
+   "punta_en_cabeza": [
+    0.0,
+    0.006,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_tres_puntos",
+  "nombre": "Pistola de tres puntos",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "muesca",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "pistol",
+   "revolver"
+  ],
+  "eras": [
+   "moderna"
+  ],
+  "color_inserto": [
+   0.95,
+   0.95,
+   0.92
+  ],
+  "alza": {
+   "archivo": "modelos/hi_tres_puntos_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 216,
+   "altura_linea_cabeza_m": 0.0095,
+   "centro_lente_en_cabeza": [
+    -0.001,
+    0.0095,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_tres_puntos_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 172,
+   "altura_linea_cabeza_m": 0.0095,
+   "punta_en_cabeza": [
+    0.0,
+    0.0095,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_fibra_pistola",
+  "nombre": "Pistola con fibra verde",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "muesca",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "pistol"
+  ],
+  "eras": [
+   "moderna",
+   "sci-fi realista"
+  ],
+  "color_inserto": [
+   0.2,
+   0.95,
+   0.3
+  ],
+  "alza": {
+   "archivo": "modelos/hi_fibra_pistola_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 328,
+   "altura_linea_cabeza_m": 0.009,
+   "centro_lente_en_cabeza": [
+    -0.0015,
+    0.009,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_fibra_pistola_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 120,
+   "altura_linea_cabeza_m": 0.009,
+   "punta_en_cabeza": [
+    -0.0005,
+    0.009,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_revolver",
+  "nombre": "Revólver de rampa",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "muesca",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "revolver",
+   "pistol"
+  ],
+  "eras": [
+   "clásica"
+  ],
+  "color_inserto": [
+   0.9,
+   0.2,
+   0.12
+  ],
+  "alza": {
+   "archivo": "modelos/hi_revolver_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 180,
+   "altura_linea_cabeza_m": 0.006,
+   "centro_lente_en_cabeza": [
+    -0.0116,
+    0.006,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_revolver_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 112,
+   "altura_linea_cabeza_m": 0.012,
+   "punta_en_cabeza": [
+    0.002,
+    0.012,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ },
+ {
+  "id": "hi_rustica",
+  "nombre": "Rústica de chapa y tornillo",
+  "categoria": "miras",
+  "tipo_mira": "hierro",
+  "subtipo": "mirilla",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "categorias_compatibles": [
+   "rifle",
+   "smg",
+   "shotgun",
+   "lmg"
+  ],
+  "eras": [
+   "rústica"
+  ],
+  "color_inserto": null,
+  "alza": {
+   "archivo": "modelos/hi_rustica_alza.glb",
+   "ancla": "raíl_superior",
+   "triangulos": 568,
+   "altura_linea_cabeza_m": 0.018,
+   "centro_lente_en_cabeza": [
+    -0.0088,
+    0.018,
+    0.0
+   ]
+  },
+  "punto": {
+   "archivo": "modelos/hi_rustica_punto.glb",
+   "ancla": "raíl_frontal",
+   "triangulos": 168,
+   "altura_linea_cabeza_m": 0.018,
+   "punta_en_cabeza": [
+    0.0,
+    0.018,
+    0.0
+   ]
+  },
+  "alzador": {
+   "alto_en_glb_m": 0.004,
+   "minimo_m": 0.002,
+   "maximo_m": 0.03
+  }
+ }
+]

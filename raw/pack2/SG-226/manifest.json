@@ -1,0 +1,212 @@
+{
+ "nombre": "SG-226",
+ "tipo_juego": "pistol",
+ "chasis": "pistola",
+ "era_sugerida": "moderna",
+ "base_real": "SIG Sauer P226 (Ghosts)",
+ "largo_m": 0.2245,
+ "alto_m": 0.1568,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 1188,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.1,
+    0.073,
+    -0.0165
+   ],
+   "bbox_local_max": [
+    0.1017,
+    0.1516,
+    0.0165
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 248,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.0778,
+    0.134,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.016,
+    -0.0155
+   ],
+   "bbox_local_max": [
+    0.0345,
+    0.022,
+    0.0155
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.032,
+    "ancho": 0.031
+   }
+  },
+  "empunadura": {
+   "triangulos": 348,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.0602,
+    0.102,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.052,
+    -0.098,
+    -0.0152
+   ],
+   "bbox_local_max": [
+    0.0275,
+    0.0096,
+    0.0152
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.003,
+    "ancho": 0.0303
+   }
+  },
+  "cargador": {
+   "triangulos": 88,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0612,
+    0.092,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.047,
+    -0.092,
+    -0.0132
+   ],
+   "bbox_local_max": [
+    0.0148,
+    0.0,
+    0.0132
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "seccion_union_m": {
+    "largo": 0.03,
+    "ancho": 0.0192
+   }
+  },
+  "mira": {
+   "triangulos": 56,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.0762,
+    0.15,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.005,
+    -0.0,
+    -0.0089
+   ],
+   "bbox_local_max": [
+    0.005,
+    0.0068,
+    0.0089
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1,
+   "seccion_union_m": {
+    "largo": 0.01,
+    "ancho": 0.0178
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.1123,
+   0.1324,
+   0.0
+  ],
+  "pozo_cargador": [
+   -0.0612,
+   0.092,
+   0.0
+  ],
+  "raíl_superior": [
+   -0.0762,
+   0.15,
+   0.0
+  ],
+  "cara_culata": [
+   -0.0902,
+   0.1308,
+   0.0
+  ],
+  "cara_guardamanos": [
+   0.0778,
+   0.134,
+   0.0
+  ],
+  "cara_empunadura": [
+   -0.0602,
+   0.102,
+   0.0
+  ],
+  "linea_mira": [
+   -0.0762,
+   0.1568,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.0588,
+   0.0985,
+   0.0
+  ],
+  "raíl_frontal": [
+   0.0978,
+   0.15,
+   0.0
+  ]
+ },
+ "triangulos_total": 1928,
+ "piezas_ausentes": [
+  "culata"
+ ],
+ "mira_integrada": "alza",
+ "boca_diametro_m": 0.0417,
+ "accion": "semiautomatica"
+}
