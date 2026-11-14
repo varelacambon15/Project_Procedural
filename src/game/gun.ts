@@ -520,10 +520,14 @@ export class Gun {
   /** Manos: la derecha en la empuñadura; la izquierda en el guardamanos o siguiendo la fase de recarga / corredera. */
   private updateHands(dt: number) {
     const m = this.model!; const h = m.handles;
-    this.viewmodel.updateMatrixWorld(true);
+    // La cámara primero: si no, el arma se calculaba con la rotación de la cámara del fotograma anterior y las manos
+    // con la del actual, y al girar los brazos saltaban en proporción a la velocidad de giro
+    this.camera.updateMatrixWorld(true);
     const toCam = (p: THREE.Vector3) => this.camera.worldToLocal(m.group.localToWorld(p.clone()));
     const camQ = this.camera.getWorldQuaternion(new THREE.Quaternion()).invert();
-    const orient = camQ.multiply(this.holder.getWorldQuaternion(new THREE.Quaternion())).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.35, 0, 0)));
+    // (clone: multiply modifica camQ, y luego hq salía con la rotación del mundo dentro; las manos dependían de hacia
+    // dónde se miraba y al girar los brazos se retorcían)
+    const orient = camQ.clone().multiply(this.holder.getWorldQuaternion(new THREE.Quaternion())).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.35, 0, 0)));
     // Mano de apoyo según el perfil de agarre: su soporte en la cadera y al apuntar (con transición suave); sin soporte,
     // la mano baja fuera de la vista (pistola a una mano)
     const hold = this.spec?.hold, A = h.anchors, k = ease(Math.min(1, Math.max(0, this.poseOverride?.ads ?? this.aimT)));
