@@ -131,6 +131,25 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 19 (relevo, versión 0.8.4)
+
+Hecho:
+- Fusionada la rama `assets-miras-hierro` (solo raw/): pack 2 (`x-p2-*`, 7 armas con `accion`), `raíl_frontal` en
+  todos los packs y `raw/miras_hierro/` (aún sin integrar: el usuario pidió dejarlo para más adelante).
+- Reconvertidas todas las armas `x-` (~95 + piezas sueltas): `AssetEntry.anchors` (raíl_inferior, raíl_superior,
+  raíl_frontal, boca…), `stockAcc` (accesorios de serie del pack 4) y `era`.
+- Agarre y bípode en el `raíl_inferior` real cuando el guardamanos es el propio (`railT`); si no, bajo el tramo grueso.
+- Accesorios de serie: bocacha/mira de serie en su hueco (60 %), agarre de serie (70 %), bípode de serie; las de serie
+  entran en las listas de opciones de su arma (`serie()`), así se pueden desmontar y volver a montar.
+- C (sin las miras de hierro): en los packs del usuario la pieza "mira" del modelo es decorativa; sin mira del pool se
+  apunta estilo Black y, con una montada, la pieza se oculta. Ya no se ofrecen las miras de otros modelos como óptica.
+- `subfusil_3`, `_4` y `_8` se quedan (decisión del usuario); solo se retira `x-subfusil-10`.
+
+Pendiente:
+- D: miras de hierro desmontables (`raw/miras_hierro`, LEEME con el cálculo de alzadores; zoom ×1,1).
+- La óptica se apoya en el perfil del arma, no en `raíl_superior`: con el asa del G36C oculta puede quedar alta.
+- Acercar pistolas y revólveres (propuesta: `gripZ` 0,29 → 0,25), pendiente del visto bueno del usuario.
+
 ## Ronda 18 (relevo, versión 0.8.3)
 
 Hecho (revisión de las hojas p4 y lib2):

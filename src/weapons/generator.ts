@@ -293,6 +293,8 @@ export class WeaponGenerator {
     if (isKit(spec.parts[0].from)) return kitOpticOptions(this.kit, spec, spec.type === "pistol" ? ["acc:reddot"] : procedural());
     const body = this.byId.get(spec.parts[0].from);
     // Mira de modelo (p. ej. el kit del usuario): se cambia por la de otro modelo del mismo pack, como al generar
+    // Packs del usuario (kit39): solo miras del pool (su pieza "mira" es decorativa) y las de serie del modelo
+    if (body?.pack === "kit39") return spec.type === "launcher" || spec.type === "flamethrower" ? [] : [...new Set([...serie(this.kit, body, "miras"), ...realOptics(this.kit, spec.type), ...procedural()])];
     if (body?.parts.some((p) => p.role === "scope")) return this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id && !RETIRED.has(x.id)).map((x) => x.id);
     if (!body?.sockets.rail || spec.type === "sniper" || spec.type === "launcher" || spec.type === "flamethrower") return [];
     // Miras reales (preferidas al generar) y las hechas por código como alternativa
@@ -303,9 +305,11 @@ export class WeaponGenerator {
     if (isKit(bodyId)) return kitMuzzleOptions(this.kit, spec);
     if (type === "launcher" || type === "flamethrower" || (bodyId && INTEGRATED_MUZZLE.has(bodyId))) return [];
     // Revólveres: solo compensador (frenos y apagallamas de fusil quedaban desproporcionados en un cañón corto)
-    if (type === "revolver") return ["acc:compensator"];
+    // Bocachas de serie del modelo del pack (supresor de la APB, freno de la QB327…): siempre valen en su propia arma
+    const own = serie(this.kit, bodyId ? this.byId.get(bodyId) : undefined, "bocachas");
+    if (type === "revolver") return [...own, "acc:compensator"];
     // (escopetas sin supresor: un tubo largo en la boca de una escopeta no quedaba natural)
-    return [...ACCESSORIES.filter((a) => a.kind === "muzzle" && (!a.quiet || type === "pistol")).map((a) => a.id), ...(type === "shotgun" ? [] : realSuppressors(this.kit, type))];
+    return [...own, ...ACCESSORIES.filter((a) => a.kind === "muzzle" && (!a.quiet || type === "pistol")).map((a) => a.id), ...(type === "shotgun" ? [] : realSuppressors(this.kit, type))];
   }
 
   /**
