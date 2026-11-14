@@ -54,6 +54,7 @@ export interface AnimInput {
   lookX: number; lookY: number;
   /** Largo del modelo y altura de la línea de mira (para la posición de apuntado). */ length: number; sightY: number;
   /** X local de la empuñadura respecto al centro del modelo (la boca está en +X). */ gripX?: number;
+  /** Sin óptica: al apuntar no se alinea la mira de hierro; el arma se acerca y se centra un poco (estilo Black). */ iron?: boolean;
   /** Progreso de la recarga 0..1, o null. */ reload: number | null;
   /** Progreso de sacar el arma (1 al empezar … 0 lista), de guardarla (0 … 1 guardada) y de la inspección (0..1 o null). */
   draw: number; holster: number; inspect: number | null;
@@ -109,7 +110,11 @@ export class ViewAnimator {
     // apuntar, la culata a `aimZ` delante, como antes
     const adsZ = -(i.length * 0.5 + p.aimZ);
     const hipZ = i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, 0.12 - i.length * 0.5) : -(i.length * 0.5 + p.hip[2]);
-    const pos: V3 = [lerp(p.hip[0], 0, e), lerp(p.hip[1], -i.sightY, e), lerp(hipZ, adsZ, e)];
+    // Mira de hierro: se acerca el arma hacia el centro, por debajo de la vista (la cámara hace zoom); con óptica, la
+    // línea de mira pasa por el centro de la óptica
+    const ironPos: V3 = [p.hip[0] * 0.45, p.hip[1] * 0.78, hipZ + 0.05];
+    const tgt: V3 = i.iron ? ironPos : [0, -i.sightY, adsZ];
+    const pos: V3 = [lerp(p.hip[0], tgt[0], e), lerp(p.hip[1], tgt[1], e), lerp(hipZ, tgt[2], e)];
     const rot: V3 = [0, 0, -p.adsRoll * tri(ads, 0, 1)];
     // Sprint
     this.sprint = lerp(this.sprint, i.sprinting && i.reload === null ? 1 : 0, Math.min(1, dt * p.sprint.speed));

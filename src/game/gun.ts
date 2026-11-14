@@ -323,7 +323,7 @@ export class Gun {
     // ---------- Animación (capa procedural: src/game/anim.ts) ----------
     const pose = this.anim.update({
       dt, time: performance.now() / 1000, ads: this.aimT, moving: c.moving, sprinting: c.sprinting, grounded: c.grounded, vy: c.vy,
-      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, sightY: this.sightY, gripX: this.model?.handles.grip.x,
+      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, sightY: this.sightY, gripX: this.model?.handles.grip.x, iron: this.sight === "iron",
       reload: this.reloadT > 0 && s ? 1 - this.reloadT / this.reloadDur : null,
       draw: this.equipT > 0 ? this.equipT / this.equipDur : 0,
       holster: this.pending ? 1 - Math.max(0, this.holsterT) / Math.max(0.01, this.anim.p.holster) : 0,
@@ -536,6 +536,8 @@ export class Gun {
     const hipP = at(hold?.hip ?? "front"), adsP = at(hold?.ads ?? "front");
     let base: THREE.Vector3 | null = hipP && adsP ? hipP.lerp(adsP, k) : adsP ? (k < 0.03 ? null : rest.clone().lerp(adsP, k)) : hipP ? (k > 0.97 ? null : hipP.lerp(rest, k)) : null;
     if (!hold && !base) base = h.support.clone();
+    // La mano de apoyo no se estira más allá de un brazo cómodo (en armas largas se iba a la punta del guardamanos)
+    if (base && base.x - h.grip.x > 0.34) base.x = h.grip.x + 0.34;
     const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
     let left: THREE.Vector3 | null = base;
     const ph = this.reloadPhase, style = this.anim.p.reload.style;
