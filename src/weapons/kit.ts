@@ -56,7 +56,7 @@ export function realOptics(kit: KitIndex, type: WeaponType): string[] {
   return kit.parts.filter((p) => p.id.startsWith("k-att-") && p.slot === "Sights_Rear").filter((p) => { const k = p.id.split("-")[2]; const t = ok[k]; return t === null ? true : !!t?.includes(type); })
     .filter((p) => type !== "pistol" && type !== "revolver" || /reddot|reflex/.test(p.id)).map((p) => p.id);
 }
-export const realSuppressors = (kit: KitIndex, type: WeaponType) => (type === "pistol" || type === "revolver" ? [] : kit.parts.filter((p) => p.id.startsWith("k-att-suppressor")).map((p) => p.id));
+export const realSuppressors = (kit: KitIndex, type: WeaponType) => (type === "pistol" || type === "revolver" ? [] : kit.parts.filter((p) => /^k-att-(suppressor|brake|compensator|flashhider)/.test(p.id) && (p.id.startsWith("k-att-suppressor") || p.slot === "Muzzle")).map((p) => p.id));
 export const isKit = (id: string | null | undefined): id is string => !!id && id.startsWith("k-");
 const FOREGRIP = /foregrip/;
 

@@ -196,26 +196,46 @@ const attJobs = Object.entries(ATT).flatMap(([name, slot]) => ["East", "West"].m
 
 // --- Kit de 39 armas del usuario (raw/kit39): piezas en anclas con nombre, escala real, normales con aristas vivas ---
 {
-  const KIT = "raw/kit39", cat = JSON.parse(readFileSync(new URL(`../${KIT}/catalogo.json`, import.meta.url), "utf8"));
+  // Packs con las mismas convenciones (raw/pack3 y raw/pack4) entran en el mismo pack del juego: comparten piezas.
+  // (Su catálogo puede no traer las piezas: se leen del manifest de cada arma.)
+  const KIT = "raw/kit39", read = (f) => JSON.parse(readFileSync(new URL(`../${f}`, import.meta.url), "utf8"));
+  const cat = [["raw/kit39", "x-"], ["raw/pack3", "x-p3-"], ["raw/pack4", "x-p4-"]].flatMap(([dir, pre]) =>
+    read(`${dir}/catalogo.json`).map((w) => ({ ...w, dir, pre, piezas: w.piezas ?? read(`${dir}/${w.nombre}/manifest.json`).piezas })));
   const typeOf = (w) => (w.chasis === "bullpup" && w.tipo_juego === "rifle" ? "bullpup" : w.tipo_juego);
   // Largo real relativo dentro del tipo (mediana = 1), acotado: variedad sin salirse de la escala del juego
   const med = {}; for (const t of new Set(cat.map(typeOf))) { const ls = cat.filter((w) => typeOf(w) === t).map((w) => w.largo_m).sort((a, b) => a - b); med[t] = ls[Math.floor(ls.length / 2)]; }
   for (const w of cat) {
-    const type = typeOf(w), modular = w.chasis === "convencional" && !!w.piezas.culata && ["rifle", "smg", "sniper", "shotgun"].includes(type);
-    ALL.push({ kind: "kit39", pack: "kit39", id: "x-" + w.nombre.toLowerCase().replace(/[^a-z0-9]+/g, "-"), label: w.nombre, type, modular,
-      glb: `${KIT}/${w.nombre}/${w.nombre}_ensamblada.glb`, sections: Object.fromEntries(Object.entries(w.piezas).map(([k, v]) => [k, v.seccion_union_m ?? {}])),
+    const type = typeOf(w), modular = w.chasis === "convencional" && !!w.piezas.culata && !!w.piezas.empunadura && ["rifle", "smg", "sniper", "shotgun"].includes(type);
+    ALL.push({ kind: "kit39", pack: "kit39", id: w.pre + w.nombre.toLowerCase().replace(/[^a-z0-9]+/g, "-"), label: w.nombre, type, modular, action: w.accion,
+      glb: `${w.dir}/${w.nombre}/${w.nombre}_ensamblada.glb`, sections: Object.fromEntries(Object.entries(w.piezas).map(([k, v]) => [k, v.seccion_union_m ?? {}])),
       lengthMul: Math.min(1.15, Math.max(0.87, w.largo_m / med[type])) });
+  }
+  // Piezas sueltas de la biblioteca (culatas, guardamanos, empuñaduras): "donantes" del pack kit39. No salen como arma;
+  // solo prestan su pieza a las armas modulares del kit (mixLong), con la escala de un fusil medio del kit.
+  const lib = JSON.parse(readFileSync(new URL(`../${KIT}/piezas_sueltas/piezas.json`, import.meta.url), "utf8"));
+  const ROLE = { culatas: "stock", guardamanos: "front", empunaduras: "grip" };
+  for (const p of lib.filter((x) => ROLE[x.categoria])) {
+    ALL.push({ kind: "kit39part", pack: "kit39", id: "x-lib-" + p.id.replace(/[^a-z0-9]+/g, "-"), label: p.id, type: "rifle", role: ROLE[p.categoria],
+      glb: `${KIT}/piezas_sueltas/${p.archivo}`, section: p.seccion_union_m ?? {}, realScale: 0.9 / med.rifle, wood: /madera/.test(p.id) });
   }
 }
 
-// --- Miras de la biblioteca del kit (raw/kit39/piezas_sueltas): piezas del kit con centro de lente y aumento ---
+// --- Miras y bocachas de la biblioteca del kit (raw/kit39/piezas_sueltas) y del pool del pack 4 (raw/pack4/accesorios) ---
 const libSightJobs = [];
 {
-  const lib = JSON.parse(readFileSync(new URL("../raw/kit39/piezas_sueltas/piezas.json", import.meta.url), "utf8"));
-  const kindOf = (t) => (/^punto_rojo/.test(t) ? "reddot" : t === "holografica" ? "holographic" : /^visor/.test(t) ? "scope" : "magnified");
-  for (const p of lib.filter((x) => x.categoria === "miras")) {
-    libSightJobs.push({ kind: "libsight", id: `k-att-${kindOf(p.tipo_mira)}-l${p.id.replace(/[^a-z0-9]+/g, "")}`, label: p.id, glb: `raw/kit39/piezas_sueltas/${p.archivo}`,
-      lens: p.centro_lente_local, zoom: p.aumento, seeThrough: p.ve_a_traves !== false, height: p.bbox_max[1] - p.bbox_min[1] });
+  const read = (f) => JSON.parse(readFileSync(new URL(`../${f}`, import.meta.url), "utf8"));
+  const libs = [["raw/kit39/piezas_sueltas", "piezas.json", ""], ["raw/pack4", "accesorios/accesorios.json", "p4"]];
+  const kindOf = (t) => (/^punto_rojo/.test(t) ? "reddot" : t === "holografica" ? "holographic" : /^visor|^telescopica/.test(t) ? "scope" : "magnified");
+  const muzzleOf = { supresor: "suppressor", freno: "brake", compensador: "compensator", apagallamas: "flashhider" };
+  const slug = (id) => id.replace(/[^a-z0-9]+/g, "");
+  for (const [dir, file, pre] of libs) for (const p of read(`${dir}/${file}`)) {
+    if (p.categoria === "miras")
+      libSightJobs.push({ kind: "libsight", id: `k-att-${kindOf(p.tipo_mira)}-l${pre}${slug(p.id)}`, label: p.id, glb: `${dir}/${p.archivo}`,
+        lens: p.centro_lente_local, zoom: p.aumento, seeThrough: p.ve_a_traves !== false, height: p.bbox_max[1] - p.bbox_min[1] });
+    else if (p.categoria === "agarres") // (agarre bajo el guardamanos: origen en la cara superior, colgando hacia −Y)
+      libSightJobs.push({ kind: "libsight", slot: "Device", id: `k-device-foregrip-l${pre}${slug(p.id)}`, label: p.id, glb: `${dir}/${p.archivo}` });
+    else if (p.categoria === "bocachas" && muzzleOf[p.tipo_bocacha])
+      libSightJobs.push({ kind: "libsight", slot: "Muzzle", id: `k-att-${muzzleOf[p.tipo_bocacha]}-l${pre}${slug(p.id)}`, label: p.id, glb: `${dir}/${p.archivo}` });
   }
 }
 

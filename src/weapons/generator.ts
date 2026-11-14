@@ -133,6 +133,17 @@ const MODEL_HINTS: Record<string, { arch?: string; mag?: number; strict?: boolea
   "w-m249": { arch: "standard", mag: 100 }, "w-m60": { arch: "heavy", mag: 100 }, "w-minigun": { arch: "minigun", mag: 300 },
 };
 
+/**
+ * Acción real del modelo (campo `accion` de los packs del usuario): elige la variante de modo que coincide (un
+ * francotirador de cerrojo hace la animación del cerrojo; uno semiautomático, no).
+ */
+function actionHint(body: AssetEntry): { arch: string; strict?: boolean } | undefined {
+  const a = body.action; if (!a) return undefined;
+  if (body.type === "sniper") return a === "cerrojo" ? { arch: "bolt", strict: true } : a === "semiautomatica" ? { arch: "semi", strict: true } : undefined;
+  if (body.type === "shotgun") return a === "bombeo" ? { arch: "pump", strict: true } : a === "semiautomatica" ? { arch: "semi", strict: true } : undefined;
+  return undefined;
+}
+
 /** Modelos que ya llevan silenciador u otro dispositivo integrado en el cañón. */
 const INTEGRATED_MUZZLE = new Set(["w-usp45", "w-vss", "w-minigun"]);
 
@@ -226,12 +237,12 @@ export class WeaponGenerator {
     this.kit = new KitIndex(manifest.kit ?? []);
     for (const w of manifest.weapons) {
       this.byId.set(w.id, w);
-      if (w.excluded || RETIRED.has(w.id)) continue; // se puede leer (armas guardadas), pero no sale en el botín
+      if (w.excluded || w.donor || RETIRED.has(w.id)) continue; // se puede leer (armas guardadas), pero no sale en el botín
       if (!this.byType.has(w.type)) this.byType.set(w.type, []);
       this.byType.get(w.type)!.push(w);
     }
     // Miras de modelo (las de cosmo vienen separadas). Los accesorios de Quaternius ya no se usan: hay accesorios propios.
-    this.scopes = manifest.weapons.filter((w) => !w.excluded && w.type !== "accessory" && w.parts.some((p) => p.role === "scope"));
+    this.scopes = manifest.weapons.filter((w) => !w.excluded && !w.donor && w.type !== "accessory" && w.parts.some((p) => p.role === "scope"));
     // Pistolas modulares generadas por código: cada arquetipo en cada era es una "base" (recurso virtual)
     for (const a of PISTOL_ARCHES) for (const era of a.eras) { const id = `pp-${a.id}-${era}`; this.byId.set(id, designEntry(id, archDesign(a.id, era))); }
     for (const a of LONG_ARCHES) for (const era of a.eras) { const id = `pl-${a.id}-${era}`; this.byId.set(id, longEntry(id, longArchDesign(a.id, era))); }
@@ -363,7 +374,7 @@ export class WeaponGenerator {
     // 2. Variante: la propia del modelo (70%) o cualquiera del tipo
     // Revólveres generados: la variante sale del calibre (ligero → rápida, medio → estándar, pesado/mágnum → pesada)
     const cal = tweaks.pistol?.cyl?.cal;
-    const hint = MODEL_HINTS[body.id] ?? (layout === "proc-long" ? LONG_HINTS[tweaks.long?.arch ?? ""] : layout === "modular-pistol" ? (cal ? { arch: CAL_EFFECT[cal].arch, strict: true } : PP_HINTS[parts[0].from.split("-")[1]]) : undefined);
+    const hint = MODEL_HINTS[body.id] ?? actionHint(body) ?? (layout === "proc-long" ? LONG_HINTS[tweaks.long?.arch ?? ""] : layout === "modular-pistol" ? (cal ? { arch: CAL_EFFECT[cal].arch, strict: true } : PP_HINTS[parts[0].from.split("-")[1]]) : undefined);
     const regular = info.archetypes.filter((a) => a.w > 0);
     const arch = hint?.arch && (r() < 0.7 || hint.strict) ? info.archetypes.find((a) => a.id === hint.arch) ?? regular[0] : weighted(r, regular, (a) => a.w);
     // Rareza (antes que el modo: los modos raros son exclusivos de moradas y legendarias)
@@ -450,10 +461,17 @@ export class WeaponGenerator {
         const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && !w.excluded && !RETIRED.has(w.id) && (!w.id.startsWith("u-") || role !== "front") && w.pack === base.pack && w.id !== base.id && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)) && !w.quarantine);
         const cls = (t: WeaponType) => (t === "smg" ? "compact" : "long");
         const fit = (joint: "rear" | "front" | "grip", lo: number, hi: number) => (w: AssetEntry) => within(jointScale(base, w, joint), lo, hi);
-        const stocks = donors("stock", (w) => cls(w.type) === cls(type)).filter(fit("rear", 0.7, 1.4));
-        const fronts = donors("front", (w) => w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front", 0.7, 1.4));
-        const grips = donors("grip", () => true).filter(fit("grip", 0.72, 1.35));
-        const choose = (list: AssetEntry[]) => (list.length ? pick(r, list) : base);
+        const libOk = (joint: "rear" | "front" | "grip") => (w: AssetEntry) => !w.donor || within(jointScale(base, w, joint), 0.82, 1.22);
+        const stocks = donors("stock", (w) => !!w.donor || cls(w.type) === cls(type)).filter(fit("rear", 0.7, 1.4)).filter(libOk("rear"));
+        const fronts = donors("front", (w) => (!!w.donor && type !== "sniper") || w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front", 0.7, 1.4)).filter(libOk("front"));
+        const grips = donors("grip", () => true).filter(fit("grip", 0.72, 1.35)).filter(libOk("grip"));
+        // Piezas sueltas de la biblioteca: menos frecuentes que las de armas reales (son muchas y más sencillas) y solo
+        // si la junta casi coincide (sin agrandarlas hasta parecer bloques)
+        const choose = (list: AssetEntry[]) => {
+          if (!list.length) return base;
+          const real = list.filter((w) => !w.donor), lib = list.filter((w) => w.donor);
+          return pick(r, lib.length && (!real.length || r() < 0.3) ? lib : real);
+        };
         const max = base.pack === "kit39" ? 2 : 1 + (r() < 0.5 ? 1 : 0);
         for (let tries = 0; tries < 40; tries++) {
           // (en el kit del usuario la variedad viene de sus piezas: se cambian más a menudo)
@@ -560,7 +578,9 @@ export class WeaponGenerator {
     if (layout === "modular-pistol") return designSpans(ppBaseDesign(parts[0].from));
     if (layout === "proc-long") return longSpans(plBaseDesign(parts[0].from));
     const base = this.byId.get(parts[0].from)!;
-    return spans(Object.values(base.profiles ?? {}).filter(Boolean).map((profile) => ({ profile: profile! })));
+    // Despiezadas: solo las piezas que lleva el arma (si se le quitó la mira de serie, la base se mide sin ella)
+    const roles = layout === "modular-long" ? new Set<string>(["receiver", ...parts.map((p) => p.role)]) : null;
+    return spans(Object.entries(base.profiles ?? {}).filter(([role, pr]) => pr && (!roles || roles.has(role))).map(([, profile]) => ({ profile: profile! })));
   }
   /**
    * Arma para un lote (cofre, botín): no repite la base de las armas recientes y no se parece de perfil más de

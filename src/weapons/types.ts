@@ -33,6 +33,10 @@ export interface AssetEntry {
   profiles?: Partial<Record<PartRole, import("./variation").Profile>>;
   /** Fuera del botín (revisión visual), con el motivo. */
   excluded?: string;
+  /** Pieza suelta de la biblioteca: no es un arma; solo presta esa pieza a las armas modulares de su pack. */
+  donor?: PartRole;
+  /** Acción real del modelo (packs del usuario): semiautomatica, automatica, cerrojo, bombeo, revolver_simple/doble. */
+  action?: string;
 }
 export interface Manifest { convention: string; weapons: AssetEntry[]; kit?: import("./kit").KitPart[] }
 

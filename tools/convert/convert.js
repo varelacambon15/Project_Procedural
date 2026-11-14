@@ -11,6 +11,7 @@ import * as THREE from "three";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const TARGET_LENGTH = { lmg: 1.15, pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, launcher: 1.1, flamethrower: 0.95, accessory: null };
 
@@ -674,18 +675,49 @@ async function convertKit39(job) {
   if (!job.modular) {
     const parts = [mk(body, "body"), mk("guardamanos_canon", "body"), mk("empunadura", "body"), mk("culata", "body"), mk("agarre", "body"),
       mk("cargador", "magazine"), mk("tambor", "magazine"), mk("mira", "scope")].filter(Boolean);
-    return finish(job.id, job.type, parts, { pack: job.pack });
+    return finish(job.id, job.type, parts, { pack: job.pack, action: job.action });
   }
   const parts = [mk(body, "receiver"), mk("culata", "stock"), mk("guardamanos_canon", "front"), mk("agarre", "front"), mk("empunadura", "grip"), mk("cargador", "magazine"), mk("mira", "scope")].filter(Boolean);
   const sec = job.sections ?? {}, at = (n) => anchors.get(n)?.toArray().map((v, i) => (i === 2 ? 0 : v));
   const fb = parts.find((p) => p.role === "front").mesh.geometry.boundingBox, gb = parts.find((p) => p.role === "grip").mesh.geometry.boundingBox;
+  // Sin sección en el manifest (pack 4): se mide la cara de la pieza junto a su ancla
+  const measured = (role, anchor, def) => {
+    const g = parts.find((p) => p.role === role)?.mesh.geometry, a = anchors.get(anchor); if (!g || !a) return def;
+    const f = face(g.attributes.position.array, 0, a.x, TARGET_LENGTH[job.type] * 0.012); return f && f.size[0] > 0.01 ? f.size[0] : def;
+  };
   const joints = {
-    rear: { pos: at("cara_culata"), size: [(sec.culata?.alto ?? 0.06) * k, 0] },
-    front: { pos: at("cara_guardamanos"), size: [Math.min(fb.max.y - fb.min.y, (sec.guardamanos_canon?.alto ?? 0.05) * k), 0] },
+    rear: { pos: at("cara_culata"), size: [sec.culata?.alto ? sec.culata.alto * k : measured("stock", "cara_culata", 0.06 * k), 0] },
+    front: { pos: at("cara_guardamanos"), size: [Math.min(fb.max.y - fb.min.y, sec.guardamanos_canon?.alto ? sec.guardamanos_canon.alto * k : measured("front", "cara_guardamanos", 0.05 * k)), 0] },
     grip: { pos: [(gb.min.x + gb.max.x) / 2, at("cara_empunadura")[1], 0], size: [gb.max.x - gb.min.x, 0] },
   };
   joints.stockFace = joints.rear; joints.frontFace = joints.front; joints.gripFace = joints.grip;
-  return finish(job.id, job.type, parts, { pack: job.pack, joints: roundSockets({ joints }).joints, modular: true });
+  return finish(job.id, job.type, parts, { pack: job.pack, action: job.action, joints: roundSockets({ joints }).joints, modular: true });
+}
+/**
+ * Pieza suelta de la biblioteca del kit (culata, guardamanos o empuñadura): "donante" modular del pack kit39. La pieza
+ * trae el origen en su ancla (cara de unión), así que su cara queda en el origen; se escala como un fusil medio del kit.
+ */
+async function convertKit39Part(job) {
+  const gltf = await new GLTFLoader().parseAsync(await fetchBuf(job.glb), job.glb.slice(0, job.glb.lastIndexOf("/") + 1));
+  gltf.scene.updateMatrixWorld(true);
+  const k = job.realScale, S = new THREE.Matrix4().makeScale(k, k, k), geos = [];
+  let mat = null;
+  gltf.scene.traverse((o) => {
+    if (!o.isMesh) return;
+    let g = o.geometry.clone().applyMatrix4(o.matrixWorld).applyMatrix4(S); g = g.index ? g.toNonIndexed() : g;
+    for (const a of Object.keys(g.attributes)) if (!["position", "normal", "uv"].includes(a)) g.deleteAttribute(a);
+    geos.push(g); mat ??= o.material;
+  });
+  const pieceName = { stock: "culata", front: "guardamanos_canon", grip: "empunadura" }[job.role];
+  const m = new THREE.Mesh(geos.length === 1 ? geos[0] : mergeGeometries(geos), mat.clone());
+  m.material.name = job.wood ? `${pieceName}_wood` : pieceName; m.name = job.role;
+  m.geometry.computeBoundingBox();
+  const bb = m.geometry.boundingBox, sec = job.section ?? {};
+  const face = job.role === "grip" ? { pos: [(bb.min.x + bb.max.x) / 2, 0, 0], size: [bb.max.x - bb.min.x, 0] }
+    : { pos: [0, 0, 0], size: [(sec.alto ?? (bb.max.y - bb.min.y)) * k, 0] };
+  const joints = { rear: face, front: face, grip: face, stockFace: face, frontFace: face, gripFace: face };
+  const out = await finish(job.id, job.type, [{ role: job.role, source: job.id, mesh: m }], { pack: job.pack, joints: roundSockets({ joints }).joints, modular: true, donor: job.role });
+  return out;
 }
 /** Mira de la biblioteca del kit del usuario: pieza del kit (ranura Sights_Rear) con su centro de lente y aumento. */
 async function convertLibSight(job) {
@@ -697,7 +729,7 @@ async function convertLibSight(job) {
     let g = o.geometry.clone().applyMatrix4(o.matrixWorld); g = g.index ? g.toNonIndexed() : g;
     for (const a of Object.keys(g.attributes)) if (!["position", "normal", "uv"].includes(a)) g.deleteAttribute(a);
     g.computeBoundingBox();
-    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ name: "kit", color: 0x2a2c30, roughness: 0.55, metalness: 0.35 })); m.name = o.name || "mira";
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ name: "kit", color: 0x2a2c30, roughness: 0.55, metalness: 0.35 })); m.name = o.name || (job.slot === "Muzzle" ? "muzzle" : "mira");
     parts.push({ role: "kit", source: job.id, mesh: m });
   });
   // Cristal: un disco tenue en el centro de la lente (se ve que es una óptica; no tapa la vista al apuntar)
@@ -710,9 +742,9 @@ async function convertLibSight(job) {
   const tris = parts.reduce((s, p) => s + p.mesh.geometry.attributes.position.count / 3, 0);
   bakeAO(parts.map((p) => p.mesh));
   const glb = await exportGLB(parts);
-  return { id: job.id, slot: "Sights_Rear", caliber: "any", sockets: {}, profile: profileOf(parts.map((p) => p.mesh), 16), bounds: { min: box.min.toArray().map((v) => +v.toFixed(4)), max: box.max.toArray().map((v) => +v.toFixed(4)) }, triangles: Math.round(tris), lens: job.lens, zoom: job.zoom, label: job.label, glb };
+  return { id: job.id, slot: job.slot ?? "Sights_Rear", caliber: "any", sockets: {}, profile: profileOf(parts.map((p) => p.mesh), 16), bounds: { min: box.min.toArray().map((v) => +v.toFixed(4)), max: box.max.toArray().map((v) => +v.toFixed(4)) }, triangles: Math.round(tris), lens: job.lens, zoom: job.zoom, label: job.label, glb };
 }
-window.convertJob = async (job) => (job.kind === "libsight" ? convertLibSight(job) : job.kind === "kit39" ? convertKit39(job) : job.kind === "glbparts" ? convertGLBParts(job) : job.kind === "kitpart" ? convertKitPart(job) : job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
+window.convertJob = async (job) => (job.kind === "kit39part" ? convertKit39Part(job) : job.kind === "libsight" ? convertLibSight(job) : job.kind === "kit39" ? convertKit39(job) : job.kind === "glbparts" ? convertGLBParts(job) : job.kind === "kitpart" ? convertKitPart(job) : job.kind === "obj" ? convertQuaternius(job) : job.kind === "objmulti" ? convertMultiOBJ(job) : convertFBX(job));
 window.treeFBX = async (url) => { const root = await loadFBX(url); const out = []; root.traverse((o) => out.push({ n: o.name, t: o.type, p: o.position.toArray().map((v) => +v.toFixed(2)), r: o.rotation.toArray().slice(0, 3).map((v) => +v.toFixed(2)), s: +o.scale.x.toFixed(3), mat: o.isMesh ? [].concat(o.material).map((m) => m.name + (m.map ? "*" : "")) : undefined })); return out; };
 window.listFBX = async (url) => { const root = await loadFBX(url); const out = []; root.updateMatrixWorld(true); root.traverse((o) => { if (o.isMesh) { const b = new THREE.Box3().setFromObject(o); out.push({ name: o.name, min: b.min.toArray().map((v) => +v.toFixed(1)), max: b.max.toArray().map((v) => +v.toFixed(1)) }); } }); return out; };
 window.ready = true;
