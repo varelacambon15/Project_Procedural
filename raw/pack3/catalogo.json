@@ -91,7 +91,8 @@
     0.0482,
     -0.0001
    ]
-  }
+  },
+  "accion": "semiautomatica"
  },
  {
   "nombre": "M4A4",
@@ -185,7 +186,8 @@
     0.1633,
     -0.0001
    ]
-  }
+  },
+  "accion": "automatica"
  },
  {
   "nombre": "TOZ-106",
@@ -274,7 +276,8 @@
     0.1832,
     0.0
    ]
-  }
+  },
+  "accion": "cerrojo"
  },
  {
   "nombre": "REV-45LC",
@@ -428,6 +431,7 @@
     0.06,
     -0.0
    ]
-  }
+  },
+  "accion": "revolver_simple"
  }
 ]

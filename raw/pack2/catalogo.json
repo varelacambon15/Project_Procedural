@@ -1,0 +1,679 @@
+[
+ {
+  "nombre": "RB-454",
+  "tipo_juego": "revolver",
+  "chasis": "revolver",
+  "era_sugerida": "moderna",
+  "base_real": "Taurus Raging Bull (.44 Magnum de Ghosts)",
+  "largo_m": 0.3194,
+  "triangulos_total": 4359,
+  "boca_diametro_m": 0.0415,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata"
+  ],
+  "mira": {
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 1703
+   },
+   "tambor": {
+    "triangulos": 608
+   },
+   "guardamanos_canon": {
+    "triangulos": 1280,
+    "seccion_union_m": {
+     "alto": 0.0426,
+     "ancho": 0.0212
+    }
+   },
+   "empunadura": {
+    "triangulos": 580,
+    "seccion_union_m": {
+     "largo": 0.0,
+     "ancho": 0.0325
+    }
+   },
+   "inserto": {
+    "triangulos": 132
+   },
+   "mira": {
+    "triangulos": 56,
+    "seccion_union_m": {
+     "largo": 0.012,
+     "ancho": 0.013
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.1597,
+    0.142,
+    0.0
+   ],
+   "eje_tambor": [
+    -0.0583,
+    0.132,
+    0.0
+   ],
+   "cara_guardamanos": [
+    -0.0088,
+    0.142,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.1038,
+    0.161,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.0988,
+    0.114,
+    0.0
+   ],
+   "cara_culata": [
+    -0.1318,
+    0.126,
+    0.0
+   ],
+   "linea_mira": [
+    -0.1038,
+    0.167,
+    0.0
+   ]
+  },
+  "accion": "revolver_doble"
+ },
+ {
+  "nombre": "SG-226",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "era_sugerida": "moderna",
+  "base_real": "SIG Sauer P226 (Ghosts)",
+  "largo_m": 0.2245,
+  "triangulos_total": 1928,
+  "boca_diametro_m": 0.0417,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata"
+  ],
+  "mira": {
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 1188
+   },
+   "guardamanos_canon": {
+    "triangulos": 248,
+    "seccion_union_m": {
+     "alto": 0.032,
+     "ancho": 0.031
+    }
+   },
+   "empunadura": {
+    "triangulos": 348,
+    "seccion_union_m": {
+     "largo": 0.003,
+     "ancho": 0.0303
+    }
+   },
+   "cargador": {
+    "triangulos": 88,
+    "seccion_union_m": {
+     "largo": 0.03,
+     "ancho": 0.0192
+    }
+   },
+   "mira": {
+    "triangulos": 56,
+    "seccion_union_m": {
+     "largo": 0.01,
+     "ancho": 0.0178
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.1123,
+    0.1324,
+    0.0
+   ],
+   "pozo_cargador": [
+    -0.0612,
+    0.092,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.0762,
+    0.15,
+    0.0
+   ],
+   "cara_culata": [
+    -0.0902,
+    0.1308,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.0778,
+    0.134,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.0602,
+    0.102,
+    0.0
+   ],
+   "linea_mira": [
+    -0.0762,
+    0.1568,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.0588,
+    0.0985,
+    0.0
+   ]
+  },
+  "accion": "semiautomatica"
+ },
+ {
+  "nombre": "VK-45",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "era_sugerida": "sci-fi",
+  "base_real": "KRISS Vector (Ghosts)",
+  "largo_m": 0.6995,
+  "triangulos_total": 3704,
+  "boca_diametro_m": null,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "mira": {
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 2260
+   },
+   "empunadura": {
+    "triangulos": 336,
+    "seccion_union_m": {
+     "largo": 0.0331,
+     "ancho": 0.029
+    }
+   },
+   "cargador": {
+    "triangulos": 88,
+    "seccion_union_m": {
+     "largo": 0.03,
+     "ancho": 0.024
+    }
+   },
+   "guardamanos_canon": {
+    "triangulos": 532,
+    "seccion_union_m": {
+     "alto": 0.0263,
+     "ancho": 0.027
+    }
+   },
+   "culata": {
+    "triangulos": 360,
+    "seccion_union_m": {
+     "alto": 0.0337,
+     "ancho": 0.0295
+    }
+   },
+   "mira": {
+    "triangulos": 128,
+    "seccion_union_m": {
+     "largo": 0.02,
+     "ancho": 0.022
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.3608,
+    0.176,
+    0.0
+   ],
+   "pozo_cargador": [
+    0.0593,
+    0.133,
+    0.0
+   ],
+   "raíl_superior": [
+    0.0433,
+    0.2,
+    0.0
+   ],
+   "cara_culata": [
+    -0.1067,
+    0.176,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.1933,
+    0.176,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.0217,
+    0.158,
+    0.0
+   ],
+   "linea_mira": [
+    -0.0767,
+    0.212,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.1633,
+    0.083,
+    0.0
+   ]
+  },
+  "accion": "automatica"
+ },
+ {
+  "nombre": "RD-556",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "era_sugerida": "moderna",
+  "base_real": "MSBS Radon (Ghosts)",
+  "largo_m": 0.88,
+  "triangulos_total": 4740,
+  "boca_diametro_m": null,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "mira": {
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 1844
+   },
+   "empunadura": {
+    "triangulos": 336,
+    "seccion_union_m": {
+     "largo": 0.0331,
+     "ancho": 0.029
+    }
+   },
+   "cargador": {
+    "triangulos": 232,
+    "seccion_union_m": {
+     "largo": 0.062,
+     "ancho": 0.023
+    }
+   },
+   "guardamanos_canon": {
+    "triangulos": 1844,
+    "seccion_union_m": {
+     "alto": 0.048,
+     "ancho": 0.037
+    }
+   },
+   "culata": {
+    "triangulos": 356,
+    "seccion_union_m": {
+     "alto": 0.0313,
+     "ancho": 0.0383
+    }
+   },
+   "mira": {
+    "triangulos": 128,
+    "seccion_union_m": {
+     "largo": 0.02,
+     "ancho": 0.022
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.4496,
+    0.196,
+    0.0
+   ],
+   "pozo_cargador": [
+    -0.116,
+    0.151,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.09,
+    0.229,
+    0.0
+   ],
+   "cara_culata": [
+    -0.2,
+    0.203,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.026,
+    0.196,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.18,
+    0.161,
+    0.0
+   ],
+   "linea_mira": [
+    -0.18,
+    0.241,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.2,
+    0.171,
+    0.0
+   ]
+  },
+  "accion": "automatica"
+ },
+ {
+  "nombre": "DV-762",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "era_sugerida": "clásica",
+  "base_real": "SVD Dragunov",
+  "largo_m": 1.252,
+  "triangulos_total": 3832,
+  "boca_diametro_m": null,
+  "mira_integrada": null,
+  "piezas_ausentes": [],
+  "mira": {
+   "tipo_mira": "visor",
+   "aumento": 4,
+   "centro_lente_local": [
+    -0.135,
+    0.042,
+    0.0
+   ]
+  },
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 764
+   },
+   "culata": {
+    "triangulos": 340,
+    "seccion_union_m": {
+     "alto": 0.0367,
+     "ancho": 0.0362
+    }
+   },
+   "empunadura": {
+    "triangulos": 120,
+    "seccion_union_m": {
+     "largo": 0.0378,
+     "ancho": 0.0283
+    }
+   },
+   "cargador": {
+    "triangulos": 232,
+    "seccion_union_m": {
+     "largo": 0.07,
+     "ancho": 0.022
+    }
+   },
+   "guardamanos_canon": {
+    "triangulos": 676,
+    "seccion_union_m": {
+     "alto": 0.0387,
+     "ancho": 0.0369
+    }
+   },
+   "mira": {
+    "triangulos": 1700,
+    "seccion_union_m": {
+     "largo": 0.13,
+     "ancho": 0.032
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.641,
+    0.1558,
+    -0.001
+   ],
+   "pozo_cargador": [
+    -0.161,
+    0.1278,
+    -0.001
+   ],
+   "raíl_superior": [
+    -0.181,
+    0.1878,
+    -0.001
+   ],
+   "cara_culata": [
+    -0.311,
+    0.1518,
+    -0.001
+   ],
+   "cara_guardamanos": [
+    -0.043,
+    0.1548,
+    -0.001
+   ],
+   "cara_empunadura": [
+    -0.281,
+    0.1318,
+    -0.001
+   ],
+   "centro_lente": [
+    -0.316,
+    0.2298,
+    -0.001
+   ]
+  },
+  "accion": "semiautomatica"
+ },
+ {
+  "nombre": "LS-556",
+  "tipo_juego": "lmg",
+  "chasis": "convencional",
+  "era_sugerida": "sci-fi",
+  "base_real": "AAI LSAT (Ghosts)",
+  "largo_m": 1.185,
+  "triangulos_total": 5200,
+  "boca_diametro_m": null,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "mira": {
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 2088
+   },
+   "empunadura": {
+    "triangulos": 336,
+    "seccion_union_m": {
+     "largo": 0.0352,
+     "ancho": 0.029
+    }
+   },
+   "cargador": {
+    "triangulos": 208,
+    "seccion_union_m": {
+     "largo": 0.1283,
+     "ancho": 0.0592
+    }
+   },
+   "guardamanos_canon": {
+    "triangulos": 2136,
+    "seccion_union_m": {
+     "alto": 0.0574,
+     "ancho": 0.052
+    }
+   },
+   "culata": {
+    "triangulos": 304,
+    "seccion_union_m": {
+     "alto": 0.0496,
+     "ancho": 0.0404
+    }
+   },
+   "mira": {
+    "triangulos": 128,
+    "seccion_union_m": {
+     "largo": 0.02,
+     "ancho": 0.022
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.6025,
+    0.133,
+    -0.001
+   ],
+   "pozo_cargador": [
+    -0.1485,
+    0.095,
+    -0.001
+   ],
+   "raíl_superior": [
+    -0.1945,
+    0.173,
+    -0.001
+   ],
+   "cara_culata": [
+    -0.3345,
+    0.133,
+    -0.001
+   ],
+   "cara_guardamanos": [
+    -0.0245,
+    0.133,
+    -0.001
+   ],
+   "cara_empunadura": [
+    -0.3145,
+    0.098,
+    -0.001
+   ],
+   "raíl_inferior": [
+    0.1155,
+    0.103,
+    -0.001
+   ],
+   "linea_mira": [
+    -0.3145,
+    0.185,
+    -0.001
+   ]
+  },
+  "accion": "automatica"
+ },
+ {
+  "nombre": "SR-1216",
+  "tipo_juego": "shotgun",
+  "chasis": "convencional",
+  "era_sugerida": "sci-fi",
+  "base_real": "SRM Arms Model 1216 (M1216 de Black Ops 2)",
+  "largo_m": 0.862,
+  "triangulos_total": 5304,
+  "boca_diametro_m": 0.0256,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "mira": {
+   "tipo_mira": "alza",
+   "aumento": 1
+  },
+  "piezas": {
+   "cuerpo": {
+    "triangulos": 1920
+   },
+   "culata": {
+    "triangulos": 316,
+    "seccion_union_m": {
+     "alto": 0.0823,
+     "ancho": 0.039
+    }
+   },
+   "empunadura": {
+    "triangulos": 336,
+    "seccion_union_m": {
+     "largo": 0.0351,
+     "ancho": 0.032
+    }
+   },
+   "cargador": {
+    "triangulos": 616,
+    "seccion_union_m": {
+     "alto": 0.0706,
+     "ancho": 0.0706
+    }
+   },
+   "guardamanos_canon": {
+    "triangulos": 1988,
+    "seccion_union_m": {
+     "alto": 0.0374,
+     "ancho": 0.028
+    }
+   },
+   "mira": {
+    "triangulos": 128,
+    "seccion_union_m": {
+     "largo": 0.02,
+     "ancho": 0.022
+    }
+   }
+  },
+  "anclas": {
+   "boca": [
+    0.431,
+    0.158,
+    0.0
+   ],
+   "pozo_cargador": [
+    0.047,
+    0.112,
+    0.0
+   ],
+   "raíl_superior": [
+    -0.071,
+    0.188,
+    0.0
+   ],
+   "cara_culata": [
+    -0.191,
+    0.138,
+    0.0
+   ],
+   "cara_guardamanos": [
+    0.047,
+    0.166,
+    0.0
+   ],
+   "cara_empunadura": [
+    -0.059,
+    0.098,
+    0.0
+   ],
+   "linea_mira": [
+    -0.171,
+    0.2,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.387,
+    0.072,
+    0.0
+   ]
+  },
+  "accion": "semiautomatica"
+ }
+]

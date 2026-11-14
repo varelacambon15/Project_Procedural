@@ -193,6 +193,11 @@
    0.433,
    0.1832,
    0.0
+  ],
+  "raíl_frontal": [
+   0.424,
+   0.1808,
+   0.0
   ]
  },
  "triangulos_total": 5103,
@@ -200,5 +205,6 @@
   "mira"
  ],
  "mira_integrada": "alza",
- "boca_diametro_m": 0.0221
+ "boca_diametro_m": 0.0221,
+ "accion": "cerrojo"
 }

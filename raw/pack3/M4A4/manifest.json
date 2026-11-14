@@ -224,10 +224,16 @@
    0.125,
    0.1633,
    -0.0001
+  ],
+  "raíl_frontal": [
+   0.195,
+   0.2544,
+   -0.0001
   ]
  },
  "triangulos_total": 5887,
  "piezas_ausentes": [],
  "mira_integrada": "alza",
- "boca_diametro_m": 0.0212
+ "boca_diametro_m": 0.0212,
+ "accion": "automatica"
 }

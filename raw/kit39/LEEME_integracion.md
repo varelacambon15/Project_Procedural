@@ -100,3 +100,6 @@ Comparad `seccion_union_m` entre la pieza nueva y la del arma base:
 - Fuera de eso: descartarla.
 
 Para `stock-len`, `barrel-len` y `front-len`, escalad solo en X desde el origen local de la pieza.
+
+## Ancla raíl_frontal (nueva)
+Cada arma tiene el ancla `raíl_frontal` en lo alto del guardamanos, cerca de la boca, tanto en el manifest como en un nodo vacío de la ensamblada. Ahí va el punto de mira de las miras de hierro desmontables (ver el pack miras_hierro).

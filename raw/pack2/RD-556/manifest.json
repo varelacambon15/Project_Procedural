@@ -1,0 +1,239 @@
+{
+ "nombre": "RD-556",
+ "tipo_juego": "rifle",
+ "chasis": "convencional",
+ "era_sugerida": "moderna",
+ "base_real": "MSBS Radon (Ghosts)",
+ "largo_m": 0.88,
+ "alto_m": 0.241,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 1844,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.2,
+    0.121,
+    -0.022
+   ],
+   "bbox_local_max": [
+    0.026,
+    0.229,
+    0.022
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 336,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.18,
+    0.161,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.056,
+    -0.098,
+    -0.0145
+   ],
+   "bbox_local_max": [
+    0.0169,
+    -0.0,
+    0.0145
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.0331,
+    "ancho": 0.029
+   }
+  },
+  "cargador": {
+   "triangulos": 232,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.116,
+    0.151,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.031,
+    -0.151,
+    -0.0135
+   ],
+   "bbox_local_max": [
+    0.049,
+    0.0,
+    0.0135
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "seccion_union_m": {
+    "largo": 0.062,
+    "ancho": 0.023
+   }
+  },
+  "guardamanos_canon": {
+   "triangulos": 1844,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.026,
+    0.196,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.0,
+    -0.025,
+    -0.0194
+   ],
+   "bbox_local_max": [
+    0.414,
+    0.031,
+    0.0194
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.048,
+    "ancho": 0.037
+   }
+  },
+  "culata": {
+   "triangulos": 356,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.2,
+    0.203,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.24,
+    -0.0777,
+    -0.021
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.026,
+    0.021
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ],
+   "seccion_union_m": {
+    "alto": 0.0313,
+    "ancho": 0.0383
+   }
+  },
+  "mira": {
+   "triangulos": 128,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.09,
+    0.229,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.1,
+    0.0,
+    -0.011
+   ],
+   "bbox_local_max": [
+    -0.08,
+    0.012,
+    0.011
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "alza",
+   "aumento": 1,
+   "seccion_union_m": {
+    "largo": 0.02,
+    "ancho": 0.022
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.4496,
+   0.196,
+   0.0
+  ],
+  "pozo_cargador": [
+   -0.116,
+   0.151,
+   0.0
+  ],
+  "raíl_superior": [
+   -0.09,
+   0.229,
+   0.0
+  ],
+  "cara_culata": [
+   -0.2,
+   0.203,
+   0.0
+  ],
+  "cara_guardamanos": [
+   0.026,
+   0.196,
+   0.0
+  ],
+  "cara_empunadura": [
+   -0.18,
+   0.161,
+   0.0
+  ],
+  "linea_mira": [
+   -0.18,
+   0.241,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.2,
+   0.171,
+   0.0
+  ],
+  "raíl_frontal": [
+   0.304,
+   0.227,
+   0.0
+  ]
+ },
+ "triangulos_total": 4740,
+ "piezas_ausentes": [],
+ "mira_integrada": "alza",
+ "boca_diametro_m": null,
+ "accion": "automatica"
+}

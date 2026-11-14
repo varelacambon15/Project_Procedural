@@ -1,0 +1,240 @@
+{
+ "nombre": "DV-762",
+ "tipo_juego": "sniper",
+ "chasis": "convencional",
+ "era_sugerida": "clásica",
+ "base_real": "SVD Dragunov",
+ "largo_m": 1.252,
+ "alto_m": 0.2588,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 764,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.311,
+    0.1018,
+    -0.027
+   ],
+   "bbox_local_max": [
+    -0.043,
+    0.1737,
+    0.016
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "culata": {
+   "triangulos": 340,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.311,
+    0.1518,
+    -0.001
+   ],
+   "bbox_local_min": [
+    -0.315,
+    -0.063,
+    -0.02
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.034,
+    0.02
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ],
+   "seccion_union_m": {
+    "alto": 0.0367,
+    "ancho": 0.0362
+   }
+  },
+  "empunadura": {
+   "triangulos": 120,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.281,
+    0.1318,
+    -0.001
+   ],
+   "bbox_local_min": [
+    -0.034,
+    -0.082,
+    -0.015
+   ],
+   "bbox_local_max": [
+    0.0195,
+    0.0,
+    0.015
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ],
+   "seccion_union_m": {
+    "largo": 0.0378,
+    "ancho": 0.0283
+   }
+  },
+  "cargador": {
+   "triangulos": 232,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.161,
+    0.1278,
+    -0.001
+   ],
+   "bbox_local_min": [
+    -0.035,
+    -0.1278,
+    -0.013
+   ],
+   "bbox_local_max": [
+    0.053,
+    0.0,
+    0.013
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ],
+   "seccion_union_m": {
+    "largo": 0.07,
+    "ancho": 0.022
+   }
+  },
+  "guardamanos_canon": {
+   "triangulos": 676,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    -0.043,
+    0.1548,
+    -0.001
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.021,
+    -0.0198
+   ],
+   "bbox_local_max": [
+    0.669,
+    0.0224,
+    0.0198
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ],
+   "seccion_union_m": {
+    "alto": 0.0387,
+    "ancho": 0.0369
+   }
+  },
+  "mira": {
+   "triangulos": 1700,
+   "origen_local": "raíl_superior",
+   "posicion_en_arma": [
+    -0.181,
+    0.1878,
+    -0.001
+   ],
+   "bbox_local_min": [
+    -0.135,
+    0.0,
+    -0.0193
+   ],
+   "bbox_local_max": [
+    0.13,
+    0.071,
+    0.028
+   ],
+   "material": "mat_mira",
+   "color": [
+    0.06,
+    0.06,
+    0.07
+   ],
+   "tipo_mira": "visor",
+   "aumento": 4,
+   "ve_a_traves": true,
+   "centro_lente_local": [
+    -0.135,
+    0.042,
+    0.0
+   ],
+   "seccion_union_m": {
+    "largo": 0.13,
+    "ancho": 0.032
+   }
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.641,
+   0.1558,
+   -0.001
+  ],
+  "pozo_cargador": [
+   -0.161,
+   0.1278,
+   -0.001
+  ],
+  "raíl_superior": [
+   -0.181,
+   0.1878,
+   -0.001
+  ],
+  "cara_culata": [
+   -0.311,
+   0.1518,
+   -0.001
+  ],
+  "cara_guardamanos": [
+   -0.043,
+   0.1548,
+   -0.001
+  ],
+  "cara_empunadura": [
+   -0.281,
+   0.1318,
+   -0.001
+  ],
+  "centro_lente": [
+   -0.316,
+   0.2298,
+   -0.001
+  ],
+  "raíl_frontal": [
+   0.547,
+   0.1678,
+   -0.001
+  ]
+ },
+ "triangulos_total": 3832,
+ "piezas_ausentes": [],
+ "mira_integrada": null,
+ "boca_diametro_m": null,
+ "accion": "semiautomatica"
+}
