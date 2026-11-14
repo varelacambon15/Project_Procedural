@@ -106,10 +106,10 @@ export class ViewAnimator {
 
     const ads = i.ads, e = ease(ads);
     // Cadera → mira (con un leve giro a mitad del gesto, como al subir el arma a la cara)
-    // En cadera, la empuñadura queda a `gripZ` de la cámara (sin que la culata pase de 12 cm detrás del ojo); al
+    // En cadera, la empuñadura queda a `gripZ` de la cámara (sin que la culata pase de 34 cm detrás del ojo: más, en armas muy largas, las alejaba); al
     // apuntar, la culata a `aimZ` delante, como antes
     const adsZ = -(i.length * 0.5 + p.aimZ);
-    const hipZ = i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, 0.12 - i.length * 0.5) : -(i.length * 0.5 + p.hip[2]);
+    const hipZ = i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, 0.34 - i.length * 0.5) : -(i.length * 0.5 + p.hip[2]);
     // Mira de hierro: se acerca el arma hacia el centro, por debajo de la vista (la cámara hace zoom); con óptica, la
     // línea de mira pasa por el centro de la óptica
     const ironPos: V3 = [p.hip[0] * 0.45, p.hip[1] * 0.78, hipZ + 0.05];

@@ -188,8 +188,7 @@ export class Gun {
     const opt = accessory(item.spec.optic);
     if (opt) { this.sight = opt.id === "acc:reddot" ? "dot" : opt.id === "acc:holo" ? "holo" : "scope"; this.zoom = opt.zoom ?? 1; }
     else if (item.spec.optic) { this.sight = "scope"; this.zoom = 3; }                 // mira de modelo (cosmo)
-    else if (item.spec.type === "sniper") { this.sight = "scope"; this.zoom = 4.5; }  // francotirador con visor integrado
-    else { this.sight = "iron"; this.zoom = 1; }
+    else { this.sight = "iron"; this.zoom = 1; } // (francotirador: visor solo si el modelo lo trae, ver abajo)
     const m = await this.modelFor(item, rebuild);
     if (this.item !== item || seq !== this.equipSeq) return;
     m.group.traverse((o) => {
@@ -199,6 +198,11 @@ export class Gun {
     });
     m.group.rotation.y = Math.PI / 2; // +X (boca) hacia -Z de la cámara
     this.sightY = m.sightY ?? new THREE.Box3().setFromObject(m.group).max.y;
+    // Visor integrado en el modelo (sin óptica añadida): solo si de verdad hay una pieza de mira con aumentos
+    // (solo francotiradores: en otras armas esa pieza suele ser un asa con alza, que apunta como mira de hierro)
+    if (!item.spec.optic && item.spec.type === "sniper" && m.parts.some((p) => p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser") && m.zoom > 1.5) {
+      this.sight = "scope"; this.zoom = 4.5;
+    }
     this.mag = m.parts.find((p) => p.role === "magazine") ?? null;
     this.moving = {};
     for (const role of ["slide", "pump", "charging"] as MovingPart[]) { const part = m.parts.find((p) => p.role === role); if (part) this.moving[role] = part; }
