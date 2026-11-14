@@ -130,6 +130,34 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 16 (versiones 0.7.4 – 0.8.2) y relevo
+
+Para retomar en otro chat: rama `ccr-9154dbc6-lqpjb5`. Antes de subir: `npm test` (si va justo de memoria,
+`npx vitest run --minWorkers=1 --maxWorkers=2`) y `npm run build` en verde. Publicar: subir `version` en package.json,
+commit y push, y lanzar el workflow `release.yml` (workflow_dispatch) → Windows, Linux y APK en GitHub Releases.
+Comunicación con el usuario en español de España (tuteo). Commits con el pie de atribución que indique la sesión.
+
+Hecho en esta ronda:
+- Kit del usuario v3 (`raw/kit39`, pack "kit39", ids `x-…`): 24 armas modulares y 15 enteras; conversor kind "kit39"
+  en tools/convert/convert.js; `npm run assets -- x-` (≈25 min). Sin añadidos por código (generator.ts, bloque kit39).
+- 16 miras de su biblioteca como miras reales del kit (`k-att-<tipo>-l…`, kind "libsight"), con `lens` y `zoom`.
+  Pantalla de visor (con desenfoque alrededor) solo en miras de francotirador y térmica.
+- Apuntado sin óptica estilo Black (anim.ts `iron`): el arma se acerca y zoom ×1,35; con óptica, por el centro de lente.
+- Agarres: el agarre vertical siempre se usa (grip.ts `gripTraits`, `vgripAnchor` en assembler.ts); en el banco se
+  elige el agarre (`gripChoices`), incluido una mano y agarre libre con deslizador (`hold.at`).
+- Brazos: arreglado el retorcimiento al girar (camQ.clone en gun.ts); dedos que rodean el arma; mangas más finas.
+- Oleadas infinitas (waves.ts `extraWave`), enemigos sin peana y variados (`randomLook`), arena 46 × 56 m.
+- Desmembramiento pixelado con impactos muy fuertes (`Dummy.dismember`).
+- Economía: cápsulas, la primera común gratis, 150 CR al empezar. Bullpup = variante de fusil (25 %).
+- Android: controles táctiles (src/game/touch.ts) y menús táctiles arreglados.
+- Distribución manual (repositorio privado; sin comando de SteamOS ni botón de actualizar).
+
+Pendiente:
+- Piezas sueltas de la biblioteca (culatas, guardamanos, cargadores, agarres, bocachas): montarlas en las anclas.
+- Seguir puliendo manos y brazos (mano de apoyo en pistolas, forma del antebrazo) y la distancia del arma por caso.
+- Campo de tiro con estilo más "Coded Arms" (pedido del usuario, aplazado).
+- Encargo para el chat de kits: `docs/ENCARGO_KITS.md` (la culata de un bullpup es solo carcasa: no mezclar).
+
 ## Pendiente (prompt 06)
 
 - Miras que no funcionan: falta auditarlas (comparar sightY con el centro de la óptica en muchas armas).
