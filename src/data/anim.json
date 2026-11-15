@@ -119,10 +119,10 @@
   },
   "classes": {
     "pistol": {
-      "gripZ": 0.29,
+      "gripZ": 0.22,
       "hip": [
-        0.15,
-        -0.135,
+        0.11,
+        -0.123,
         0.2
       ],
       "aimZ": 0.24,
@@ -201,13 +201,14 @@
         "travel": 0.028,
         "time": 0.06,
         "lockEmpty": true
-      }
+      },
+      "gripAnchor": true
     },
     "revolver": {
-      "gripZ": 0.29,
+      "gripZ": 0.22,
       "hip": [
-        0.15,
-        -0.135,
+        0.11,
+        -0.123,
         0.2
       ],
       "aimZ": 0.24,
@@ -275,7 +276,8 @@
       "cycle": {
         "part": "",
         "travel": 0
-      }
+      },
+      "gripAnchor": true
     },
     "smg": {
       "hip": [

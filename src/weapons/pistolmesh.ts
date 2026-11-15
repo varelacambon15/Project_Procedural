@@ -177,6 +177,18 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
         // Guardamonte de varilla barrida con su hueco real; redondo (clásico), de esquinas vivas o con gancho delantero
         const gt = 0.0045, rb = d.frame.guard === "round" ? 0.01 : 0.004, rf = d.frame.guard === "round" ? 0.013 : 0.005;
         const gm = rev ? "frame" : fm;
+        if (rev) {
+          // Revólver: el tramo trasero baja pegado al frente de la empuñadura, siguiendo su inclinación (antes nacía arriba,
+          // la empuñadura se iba hacia atrás y quedaba un hueco: el guardamonte parecía una grapa colgando del armazón)
+          const tf = gripCorners(d).TF, ta = Math.tan(d.grip.angle), gtr = 0.0055;
+          const yT = -fh + 0.001, yB = -fh - gd + gtr / 2, xAt = (y: number) => tf[0] + (y - tf[1]) * ta + gtr * 0.4;
+          const x1 = gx + gl - gtr / 2, r = Math.min(0.009, (x1 - xAt(yB)) * 0.4, (yT - yB) * 0.6);
+          const path: [number, number][] = [[xAt(yT), yT], [xAt(yB + 0.003), yB + 0.003], [xAt(yB) + 0.004, yB]];
+          for (let k = 0; k <= 4; k++) { const t = -Math.PI / 2 + (k / 4) * (Math.PI / 2); path.push([x1 - r + Math.cos(t) * r, yB + r + Math.sin(t) * r]); }
+          path.push([x1, yT]);
+          G("frame").add(new THREE.Mesh(sweep(path, gtr, p.depth, { segs: 2, r: 0.55 }), mat(gm)));
+          break;
+        }
         G("frame").add(new THREE.Mesh(sweep(guardPath(gx + 0.004, gx + gl - gt / 2, -fh + 0.001, -fh - gd + gt / 2, rb, rf), gt, p.depth, { segs: 2, r: 0.55 }), mat(gm)));
         if (d.frame.guard === "hook") G("frame").add(new THREE.Mesh(sweep([[gx + gl - gt / 2, -fh - gd * 0.45], [gx + gl + 0.004, -fh - gd * 0.62], [gx + gl + 0.006, -fh - gd * 0.82], [gx + gl - 0.002, -fh - gd + gt / 2]], gt * 0.9, p.depth, { segs: 2, r: 0.55 }), mat(gm)));
         break;

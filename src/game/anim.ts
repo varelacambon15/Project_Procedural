@@ -17,6 +17,8 @@ export interface AnimParams {
   sprint: { pos: V3; rot: V3; speed: number };
   draw: { drop: number; pitch: number; roll: number };
   holster: number;
+  /** Colocar el arma en cadera por la empuñadura (altura de la mano igual en todas), no por el centro del modelo. */ gripAnchor?: boolean;
+  /** Giro en reposo a la cadera (cabeceo, guiñada, alabeo): las armas cortas, con la boca algo abajo y hacia dentro; al apuntar se anula. */ rest?: V3;
   reload: { style: "mag" | "shells" | "cylinder"; phases: [string, number][]; tilt: V3; drop: V3; mag: V3; rackPart: MovingPart | ""; rackTravel: number };
   cycle: { part: MovingPart | ""; travel: number; time: number; lockEmpty: boolean };
 }
@@ -73,6 +75,7 @@ export interface AnimInput {
   lookX: number; lookY: number;
   /** Largo del modelo y altura de la línea de mira (para la posición de apuntado). */ length: number; sightY: number;
   /** X local de la empuñadura respecto al centro del modelo (la boca está en +X). */ gripX?: number;
+  /** Y local de la empuñadura (las armas cortas se colocan por ella: igual altura de mano en todas). */ gripY?: number;
   /** Sin óptica: al apuntar no se alinea la mira de hierro; el arma se acerca y se centra un poco (estilo Black). */ iron?: boolean;
   /** Miras de hierro montadas: X del alza respecto al centro del arma (el ojo queda a 2,5 cm detrás de ella (los cuerpos de las alzas no pasan de 1,5 cm detrás de su lente), como en un shooter moderno: la mirilla llena la vista). */ sightX?: number;
   /** Progreso de la recarga 0..1, o null. */ reload: number | null;
@@ -140,8 +143,11 @@ export class ViewAnimator {
     // línea de mira pasa por el centro de la óptica
     const ironPos: V3 = [p.hip[0] * 0.45, p.hip[1] * 0.78, hipZ + 0.05];
     const tgt: V3 = i.iron ? ironPos : [0, -i.sightY, adsZ];
-    const pos: V3 = [lerp(p.hip[0], tgt[0], e), lerp(p.hip[1], tgt[1], e), lerp(hipZ, tgt[2], e)];
-    const rot: V3 = [0, 0, -p.adsRoll * tri(ads, 0, 1)];
+    // (armas cortas: la empuñadura siempre a la misma altura; un cargador largo o un tambor ya no suben el arma entera)
+    const hipY = p.gripAnchor && i.gripY !== undefined ? p.hip[1] - i.gripY : p.hip[1];
+    const pos: V3 = [lerp(p.hip[0], tgt[0], e), lerp(hipY, tgt[1], e), lerp(hipZ, tgt[2], e)];
+    const rest = p.rest ?? [0, 0, 0];
+    const rot: V3 = [rest[0] * (1 - e), rest[1] * (1 - e), rest[2] * (1 - e) - p.adsRoll * tri(ads, 0, 1)];
     // Sprint
     this.sprint = lerp(this.sprint, i.sprinting && i.reload === null ? 1 : 0, Math.min(1, dt * p.sprint.speed));
     for (let a = 0; a < 3; a++) { pos[a] += p.sprint.pos[a] * this.sprint; rot[a] += p.sprint.rot[a] * this.sprint; }

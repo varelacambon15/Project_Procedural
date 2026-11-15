@@ -131,6 +131,19 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 22 (relevo): pistolas y revólveres en mano, guardamonte de revólver
+
+Hecho (con el visto bueno del usuario sobre las capturas):
+- Pistolas y revólveres más cerca (`gripZ` 0,22), más arriba y algo más al centro (`hip` [0,11, −0,123]).
+- `gripAnchor` (anim.json, solo pistol/revolver): en cadera se colocan por la empuñadura (`gripY` del modelo), no
+  por el centro: todas con la mano a la misma altura (un cargador largo o un tambor ya no suben el arma).
+- Probado y descartado: girar el arma en reposo (boca abajo y hacia dentro); al usuario le pareció peor.
+- Guardamonte de revólver: el tramo trasero baja pegado al frente de la empuñadura siguiendo su inclinación (antes
+  quedaba un hueco y parecía una grapa colgando) y es algo más grueso.
+
+Pendiente:
+- Dedos de la mano derecha en armas cortas: falanges gruesas que parecen bloques sueltos.
+
 ## Ronda 21 (relevo, versión 0.8.6): miras de hierro desmontables
 
 Hecho:
