@@ -28,6 +28,8 @@ export interface SaveData {
   pixelLevel: number;
   /** Contratos diarios y semanales (opcional: partidas antiguas no lo tienen). */
   contracts?: import("./contracts").ContractState;
+  /** Granadas y la equipada (opcional). */
+  grenades?: import("./grenades").GrenadeSpec[]; grenadeActive?: number;
 }
 
 // ---------- Migraciones: una función por versión, de N a N+1 ----------
@@ -95,6 +97,8 @@ export function parseSave(text: string | null): LoadResult {
     version: SAVE_VERSION, savedAt: typeof raw.savedAt === "string" ? raw.savedAt : new Date(0).toISOString(), name: typeof raw.name === "string" ? raw.name.slice(0, 32) : "",
     playSeconds: num(raw.playSeconds, 0), credits: Math.max(0, Math.floor(num(raw.credits, 0))), weapons, active: raw.active === 1 ? 1 : 0, bank, shop,
     settings: isObj(raw.settings) ? raw.settings : {}, lang: typeof raw.lang === "string" ? raw.lang : "en", pixelLevel: num(raw.pixelLevel, 64),
+    grenades: Array.isArray(raw.grenades) ? (raw.grenades as SaveData["grenades"])!.filter((g) => isObj(g) && typeof (g as Raw).kind === "string").slice(0, 8) : undefined,
+    grenadeActive: typeof raw.grenadeActive === "number" ? raw.grenadeActive : -1,
     contracts: isObj(raw.contracts) && Array.isArray((raw.contracts as Raw).list) ? (raw.contracts as unknown as SaveData["contracts"]) : undefined,
   };
   return { ok: true, data, dropped: raw.weapons.length - weapons.length + ((raw.bank as unknown[] | undefined)?.length ?? 0) - bank.length };

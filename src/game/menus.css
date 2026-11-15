@@ -418,3 +418,9 @@ body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family
 .ct-bar { height: 8px; background: rgba(255,255,255,.08); } .ct-bar i { display: block; height: 100%; background: var(--sim); }
 .ct-row.done .ct-bar i { background: var(--amber); }
 @media (max-height: 520px) and (orientation: landscape) { .ct-row { grid-template-columns: minmax(0, 1fr) 90px 48px 70px; gap: 6px; padding: 6px; } .ct-what { font-size: 12px; } }
+
+/* Granadas (inventario) */
+.nades { display: grid; gap: 6px; }
+.nade { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 10px; align-items: center; padding: 8px; background: var(--t-panel2); border: 1px solid var(--t-line); border-left: 3px solid var(--c); }
+.nade b { font-family: var(--display); color: var(--c); font-size: 18px; font-weight: 400; } .nade span { grid-column: 1; color: var(--t-dim); font-size: 12px; }
+.nade .btn { grid-row: 1 / span 2; } .nade.on { outline: 1px solid var(--c); }

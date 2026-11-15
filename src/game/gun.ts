@@ -140,7 +140,7 @@ export class Gun {
   private inHand: { loader: THREE.Group; shell: THREE.Mesh } | null = null;
   private lastPhaseId = "";
 
-  constructor(private camera: THREE.PerspectiveCamera, private scene: THREE.Scene, private asm: WeaponAssembler, private world: THREE.Object3D[], private hooks: ShotHooks) {
+  constructor(private camera: THREE.PerspectiveCamera, private scene: THREE.Scene, private asm: WeaponAssembler, private world: THREE.Object3D[], readonly hooks: ShotHooks) {
     camera.add(this.viewmodel);
     this.viewmodel.add(this.sway); this.sway.add(this.holder);
     this.flash = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0 }));

@@ -16,6 +16,10 @@ export class Inventory {
   readonly storage: (Item | null)[] = Array(40).fill(null);
   /** Accesorios desmontados (solo se consiguen desmontándolos de tus armas). */
   bank: AccItem[] = [];
+  /** Granadas que tienes (hasta 8) y la equipada (−1: ninguna; sin granada equipada no se lanza nada). */
+  grenades: import("./grenades").GrenadeSpec[] = [];
+  grenadeActive = -1;
+  get grenade() { return this.grenades[this.grenadeActive] ?? null; }
   credits = 0;
   active = 0;
   private listeners: (() => void)[] = [];
@@ -60,5 +64,5 @@ export class Inventory {
   /** Todas, también las del almacén. */
   get all(): Item[] { return [...this.equip, ...this.pack, ...this.storage].filter((x): x is Item => !!x); }
   /** Vacía todo (nueva partida o carga). */
-  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; }
+  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; this.grenades = []; this.grenadeActive = -1; }
 }

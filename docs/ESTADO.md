@@ -131,6 +131,16 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 27 (relevo, versión 0.8.9): granadas
+
+- Granadas equipables (`src/game/grenades.ts`, tests/grenades.test.ts): tipos frag, incendiaria, descarga, racimo,
+  singularidad y adhesiva; rareza común–legendaria (daño, radio, cargas, recarga). Sin granada equipada no se lanza
+  nada; las cargas se recargan solas (`GrenadePouch`).
+- Lanzamiento y efectos en `src/game/grenadefx.ts` (parábola, rebote, mecha, destello sin luces, sonidos del pack).
+  Teclas: G, RB del mando y botón táctil ✹. Indicador `#nadehud` con cargas y recarga.
+- Se consiguen en la tienda (3 por ronda del escaparate) y con un 25 % al superar una oleada; se equipan y venden
+  en el inventario (hasta 8). Se guardan en `SaveData.grenades` / `grenadeActive`.
+
 ## Ronda 26 (relevo): contratos y sala B
 
 - Contratos (`src/game/contracts.ts`, tests/contracts.test.ts): 3 diarios (cambian cada día) y 2 semanales (cada

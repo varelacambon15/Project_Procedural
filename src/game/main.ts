@@ -4,6 +4,8 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import * as THREE from "three";
+import { GRENADE_RARITY, GrenadePouch, makeGrenade, setGrenadeUid } from "./grenades";
+import { GrenadeFx } from "./grenadefx";
 import { applyEvent, claimAll, refreshContracts, type Contract, type ContractState } from "./contracts";
 import { initSounds, loadSamples, playSample, sample, soundManifest, startMusic } from "./audio";
 import showcaseWeapon from "../data/showcase-weapon.json";
@@ -157,6 +159,18 @@ async function boot() {
     hurt(dmg) { if (php.hit(dmg)) { waves.stop(); php.reset(); toast(t("ui.simReset")); } },
   });
   gun.env = weaponEnv;
+  // Granadas: la equipada se lanza con G / RB / botón táctil; sus cargas se recargan solas
+  const pouch = new GrenadePouch(null);
+  const nades = new GrenadeFx(scene, {
+    dummies: () => dummies,
+    onHit(d, point, dmg, element) { const alive = d.alive; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); },
+  });
+  const syncNade = () => { if (pouch.g !== inv.grenade) { const fresh = pouch.g == null; pouch.equip(inv.grenade); if (fresh && inv.grenade) pouch.charges = inv.grenade.charges; } };
+  const nadeHud = () => {
+    const el = $("nadehud"), g = inv.grenade; el.hidden = !g; if (!g) return;
+    el.style.color = GRENADE_RARITY[g.rarity].color;
+    el.innerHTML = `<span>${t(`gr.${g.kind}`)}</span>${Array.from({ length: g.charges }, (_, i) => `<span class="pip${i < pouch.charges ? " on" : ""}"></span>`).join("")}${pouch.charges < g.charges ? `<span class="rc"><i style="width:${Math.round(pouch.progress * 100)}%"></i></span>` : ""}`;
+  };
   gun.actionOf = (sp) => gen.byId.get(sp.parts[0].from)?.action;
   const pickups = new Pickups(scene, asm, world.colliders);
   // Compilación de shaders en segundo plano (KHR_parallel_shader_compile): armas nuevas sin congelar el juego
@@ -254,7 +268,7 @@ async function boot() {
     const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i })), ...inv.storage.map((it, i) => ({ it, area: "storage" as const, index: i }))]
       .filter((x) => x.it).map((x) => ({ spec: x.it!.spec, ammo: x.it!.ammo, area: x.area, index: x.index }));
     return { version: SAVE_VERSION, savedAt: "", name, playSeconds: Math.round(playSeconds), credits: inv.credits, weapons, active: inv.active, bank: inv.bank, shop: shopState,
-      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts };
+      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive };
   }
   function apply(d: SaveData) {
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
@@ -269,6 +283,7 @@ async function boot() {
     inv.bank = d.bank; setAccUid(Math.max(0, ...d.bank.map((a) => a.uid)) + 1);
     inv.credits = d.credits; inv.active = inv.equip[d.active] ? d.active : Math.max(0, inv.equip.findIndex(Boolean));
     shopState = d.shop; playSeconds = d.playSeconds; contracts = refreshContracts(d.contracts, new Date());
+    inv.grenades = d.grenades ?? []; inv.grenadeActive = inv.grenades[d.grenadeActive ?? -1] ? d.grenadeActive! : -1; setGrenadeUid(Math.max(0, ...inv.grenades.map((g) => g.uid)) + 1); pouch.equip(null);
     replaceSettings(d.settings as Partial<Settings>); if (d.lang === "es" || d.lang === "en") setLang(d.lang as Lang); setPixelLevel(d.pixelLevel);
     inGame = true; php.reset(); inv.changed();
   }
@@ -417,7 +432,8 @@ async function boot() {
   const php = new PlayerHealth();
   let waveHurt = false;
   const waves = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
-    onWaveEnd: (i, last) => { contractEvent({ type: "wave", reached: i + 1, clean: !waveHurt }); waveHurt = false; toast(t("ui.waveDone", { n: i + 1 })); earn(SHOP.income.waveEnd); hooksWaveEnd(i, last); },
+    onWaveEnd: (i, last) => { if (Math.random() < 0.25 && inv.grenades.length < 8) { const g = makeGrenade(Math.floor(Math.random() * 1e9)); inv.grenades.push(g); if (inv.grenadeActive < 0) inv.grenadeActive = inv.grenades.length - 1; toast(t("gr.found", { n: t(`gr.${g.kind}`), r: t(`rarity.${g.rarity}`) })); }
+      contractEvent({ type: "wave", reached: i + 1, clean: !waveHurt }); waveHurt = false; toast(t("ui.waveDone", { n: i + 1 })); earn(SHOP.income.waveEnd); hooksWaveEnd(i, last); },
     onAllDone: () => { toast(t("ui.wavesDone")); autosave(); },
     onPlayerHit: (dmg) => {
       waveHurt = true;
@@ -506,6 +522,11 @@ async function boot() {
     if (state === "play") {
       if (f.pause) { input.unlock(); openStart(); }
       if (f.inventory) openScreen("inventory");
+      syncNade();
+      if (f.grenade) {
+        if (!inv.grenade) toast(t("gr.none"));
+        else if (pouch.use()) { const dir = camera.getWorldDirection(new THREE.Vector3()); nades.throw(inv.grenade, camera.getWorldPosition(new THREE.Vector3()).addScaledVector(dir, 0.5).add(new THREE.Vector3(0, -0.15, 0)), dir); }
+      }
       const key = `<kbd>${input.device === "pad" ? "Ⓑ" : "E"}</kbd>`;
       const look = camera.getWorldDirection(new THREE.Vector3());
       const ground = pickups.target(camera.position, look);
@@ -585,7 +606,8 @@ async function boot() {
     if (state === "play") {
       // Las oleadas viven en su sala: salir por la puerta las detiene
       if (waves.active && (player.pos.z < world.wavesRoom.z0 || player.pos.z > world.wavesRoom.z1)) { waves.stop(); toast(t("ui.wavesLeft")); }
-      waves.update(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
+      waves.update(dt);
+      pouch.update(dt); nades.update(dt); nadeHud(); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
     healthHud();
     {
@@ -615,7 +637,7 @@ async function boot() {
   openStart();
   frame();
   (window as unknown as Record<string, unknown>).__game = {
-    debug, gen, inv, gun, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
+    debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
     loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };

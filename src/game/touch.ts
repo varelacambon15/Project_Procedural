@@ -33,6 +33,7 @@ export class TouchControls implements TouchState {
       <button class="t-btn t-jump" data-b="jump">⤒</button>
       <button class="t-btn t-reload" data-b="reload">R</button>
       <button class="t-btn t-crouch" data-b="crouch">⤓</button>
+      <button class="t-btn t-sm t-nade" data-b="nade">✹</button>
       <button class="t-btn t-use" data-b="use">E</button>
       <button class="t-btn t-swap" data-b="swap">⇄</button>
       <button class="t-btn t-sm t-inv" data-b="inv">☰</button>

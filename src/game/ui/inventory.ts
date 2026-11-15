@@ -1,5 +1,6 @@
 // Inventario: rejilla por rareza con filtros y orden, ficha del arma elegida comparada con la equipada y acciones
 // (equipar, a la mochila, renombrar, soltar, desguazar con confirmación suave). Teclado, ratón y mando.
+import { GRENADE_RARITY } from "../grenades";
 import { RARITIES } from "../../weapons/generator";
 import { typeName } from "../../weapons/labels";
 /** Clase para filtrar: el bullpup va con los fusiles. */
@@ -122,6 +123,9 @@ export class InventoryScreen {
         <h2>${t("ui.backpack")} <small>${18 - free}/18</small></h2>
         <div class="tiles" data-packzone>${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${packItems.length ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
         <div class="dropzone" data-dropzone>${t("ui.dropZone")}</div>
+        <h2>${t("gr.title")} <small>${i.grenades.length}/8</small></h2>
+        <div class="nades">${i.grenades.map((g, k) => `<div class="nade ${k === i.grenadeActive ? "on" : ""}" style="--c:${GRENADE_RARITY[g.rarity].color}"><b>${t(`gr.${g.kind}`)}</b><span>${t(`rarity.${g.rarity}`)} · ${t("gr.stats", { d: g.damage, r: g.radius, c: g.charges, s: g.recharge })}</span>
+          <button type="button" class="btn sm ${k === i.grenadeActive ? "ghost" : ""}" data-nadeeq="${k}">${k === i.grenadeActive ? t("gr.unequip") : t("gr.equip")}</button><button type="button" class="btn ghost sm" data-nadesell="${k}">${t("gr.sell", { c: Math.round(GRENADE_RARITY[g.rarity].price / 3) })}</button></div>`).join("") || `<div class="tile empty wide">${t("gr.noneOwned")}</div>`}</div>
         ${this.storageMode ? this.storageHTML() : ""}
       </section>
       <section class="panel detail">
@@ -177,6 +181,10 @@ export class InventoryScreen {
   private click(e: Event) {
     const target = e.target as HTMLElement;
     if (target.closest("[data-close]")) return this.close();
+    const ne = target.closest<HTMLElement>("[data-nadeeq]");
+    if (ne) { const k = Number(ne.dataset.nadeeq); this.inv.grenadeActive = this.inv.grenadeActive === k ? -1 : k; return this.render(); }
+    const ns = target.closest<HTMLElement>("[data-nadesell]");
+    if (ns) { const k = Number(ns.dataset.nadesell), g = this.inv.grenades[k]; if (!g) return; this.inv.credits += Math.round(GRENADE_RARITY[g.rarity].price / 3); this.inv.grenades.splice(k, 1); if (this.inv.grenadeActive === k) this.inv.grenadeActive = -1; else if (this.inv.grenadeActive > k) this.inv.grenadeActive--; return this.render(); }
     const tile = target.closest<HTMLElement>(".tile[data-uid]");
     if (tile) return this.select(Number(tile.dataset.uid));
     const chip = target.closest<HTMLElement>("[data-rar]");

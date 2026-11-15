@@ -141,9 +141,16 @@ body.in-menu #touch { display: none; }
 #touch .t-jump { right: calc(32px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
 #touch .t-crouch { right: calc(110px + env(safe-area-inset-right, 0px)); bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
 #touch .t-reload { right: calc(132px + env(safe-area-inset-right, 0px)); bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
+#touch .t-nade { right: calc(180px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
 #touch .t-use { right: calc(48px + env(safe-area-inset-right, 0px)); bottom: calc(218px + env(safe-area-inset-bottom, 0px)); }
 #touch .t-swap { right: calc(210px + env(safe-area-inset-right, 0px)); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
 #touch .t-inv { left: calc(16px + env(safe-area-inset-left, 0px)); top: calc(16px + env(safe-area-inset-top, 0px)); }
 #touch .t-pause { left: calc(70px + env(safe-area-inset-left, 0px)); top: calc(16px + env(safe-area-inset-top, 0px)); }
 body.touch #hint { display: none; }
 body.touch #weaponhud { bottom: auto; top: calc(12px + env(safe-area-inset-top, 0px)); }
+
+/* Granada equipada: icono, cargas y recarga (junto al arma) */
+#nadehud { position: fixed; right: calc(24px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); font-family: var(--display); font-size: 18px; color: #fff; text-shadow: 0 1px 3px #000; display: flex; gap: 6px; align-items: center; pointer-events: none; }
+#nadehud .pip { width: 12px; height: 12px; border: 1px solid currentColor; } #nadehud .pip.on { background: currentColor; }
+#nadehud .rc { width: 40px; height: 4px; background: rgba(255,255,255,.2); } #nadehud .rc i { display: block; height: 100%; background: #fff; }
+body.in-menu #nadehud { visibility: hidden; }
