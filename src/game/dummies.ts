@@ -191,7 +191,9 @@ export class Dummy {
   /** Aplica daño a las capas, de fuera adentro (hoy, solo vida). Devuelve el daño infligido. */
   damage(amount: number, element: Element, crit: boolean, at: THREE.Vector3): number {
     if (!this.alive) return 0;
-    this.flash = 0.08; this.engagedT = 12;
+    this.flash = 0.08;
+    // Barra visible tras el daño: jefe 12 s; élites, resistentes y grandes 9 s; el resto 5 s (luego se desvanece)
+    this.engagedT = this.kind.boss ? 12 : /^(elite|sturdy|large)$/.test(this.kind.key) ? 9 : 5;
     let left = amount, dealt = 0;
     for (const layer of this.layers) { if (left <= 0) break; const d = Math.min(layer.value, left); layer.value -= d; left -= d; dealt += d; }
     const color = element ? ELEMENT_COLOR[element] : crit ? "#ffd84a" : "#ffffff";
@@ -278,7 +280,12 @@ export class Dummy {
     top.project(camera);
     // La sala de oleadas está detrás de la pared del fondo: solo se ven las barras de la sala en la que está el jugador
     const sameRoom = (camera.position.z > WAVES_ROOM_Z) === (this.group.position.z > WAVES_ROOM_Z);
-    const visible = top.z < 1 && dist < 70 && this.alive && sameRoom;
+    // Como en Borderlands o Destiny: la barra solo se ve al mirar al enemigo o tras dañarlo, y se desvanece al acabar
+    this.engagedT = Math.max(0, this.engagedT - dt);
+    const aim = this.alive && sameRoom && dist < 70 && Math.hypot(top.x * viewW / viewH, top.y) < 0.05 && top.z < 1; // cerca del centro de la mira
+    if (aim) this.engagedT = Math.max(this.engagedT, 1.5);
+    const visible = top.z < 1 && dist < 70 && this.alive && sameRoom && this.engagedT > 0;
+    b.style.opacity = String(Math.min(1, this.engagedT / 0.8));
     b.style.display = visible ? "" : "none";
     if (visible) b.style.transform = `translate(${(top.x * 0.5 + 0.5) * viewW}px, ${(-top.y * 0.5 + 0.5) * viewH}px) translate(-50%, -100%) scale(${THREE.MathUtils.clamp(14 / dist, 0.55, 1)})`;
   }

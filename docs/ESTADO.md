@@ -131,7 +131,11 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
-## Ronda 28 (relevo): música
+## Ronda 28 (relevo): música y barras de vida
+
+- Barras de vida (dummies.ts): ya no están siempre visibles, como en Borderlands o Destiny. Se ven al mirar al
+  enemigo (cerca de la mira) o tras dañarlo: 5 s los normales, 9 s élites, resistentes y grandes, 12 s el jefe (que
+  mantiene su barra grande arriba mientras vive).
 
 - `assets/music/ambient-03.ogg` sustituye a ambient-02 (que se retiró; sigue en el historial de git): la canción de
   ejemplo del usuario (19 min), pasada a OGG con bucle sin corte (cola y cabeza mezcladas 8 s), paso alto 30 Hz,
