@@ -1,6 +1,7 @@
 // Banco de armero: genera armas, las monta en 3D y muestra su ficha.
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { WeaponGenerator, TYPE_INFO, type BaseType } from "../weapons/generator";
 import { archName, damageText, effectDesc, effectName, paintName, partLabel, rarityName, roleName, typeName } from "../weapons/labels";
 import { setLang, getLang } from "../i18n";
@@ -280,6 +281,33 @@ async function boot() {
     }
     return out.toDataURL("image/png");
   };
+  /**
+   * Hoja de criba: cada arma de modelo tal cual viene (su .glb, sin variar), 4 por fila, con su id, pack y tipo.
+   * `from`/`count` paginan la lista (sin excluidas, donantes ni accesorios).
+   */
+  const modelSheet = async (from = 0, count = 24) => {
+    const list = manifestRef.weapons.filter((w) => !w.excluded && !w.donor && w.type !== "accessory").slice(from, from + count);
+    const VW = 420, VH = 200, HEAD = 34, per = 4;
+    const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(VW, VH); r.toneMapping = THREE.ACESFilmicToneMapping;
+    const sc = new THREE.Scene(); studioLights(sc, r, 0x4a4e55);
+    const out = document.createElement("canvas"); out.width = VW * per; out.height = (VH + HEAD) * Math.ceil(list.length / per); const g = out.getContext("2d")!;
+    g.fillStyle = "#15171a"; g.fillRect(0, 0, out.width, out.height);
+    const loader = new GLTFLoader();
+    for (const [i, w] of list.entries()) {
+      const x0 = (i % per) * VW, y0 = Math.floor(i / per) * (VH + HEAD);
+      try {
+        const gl = await loader.loadAsync(ASSETS + w.file); const grp = gl.scene; grp.rotation.set(0.1, -0.35, 0); sc.add(grp);
+        const b = new THREE.Box3().setFromObject(grp), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+        const half = Math.max((sz.x / 2) * VH / VW, sz.y / 2) * 1.12;
+        const cam = new THREE.OrthographicCamera(-half * VW / VH, half * VW / VH, half, -half, -10, 10); cam.position.set(c.x, c.y, c.z + 3); cam.lookAt(c);
+        r.render(sc, cam); g.drawImage(r.domElement, x0, y0 + HEAD); sc.remove(grp);
+      } catch { /* sin modelo */ }
+      g.fillStyle = "#1e2023"; g.fillRect(x0, y0, VW - 4, HEAD);
+      g.fillStyle = "#e8e8e8"; g.font = "bold 15px sans-serif"; g.fillText(`${from + i + 1}. ${w.id}`, x0 + 8, y0 + 15);
+      g.fillStyle = "#999"; g.font = "12px sans-serif"; g.fillText(`${w.label} · ${w.type} · ${w.pack}${w.era ? " · " + w.era : ""}`, x0 + 8, y0 + 29);
+    }
+    return out.toDataURL("image/png");
+  };
   /** Inspección: cajas de cada pieza montada de la primera arma que cumpla el filtro (depurar piezas flotantes). */
   const inspect = async (type: string, need: string, start = 1) => {
     for (let s2 = start; s2 < start + 20000; s2++) {
@@ -487,6 +515,6 @@ async function boot() {
     }
     return out.toDataURL("image/png");
   };
-  (window as unknown as Record<string, unknown>).__bench = { longSheet, inspect, decisionSheet, varietySheet, closeups, lotSheet, simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+  (window as unknown as Record<string, unknown>).__bench = { modelSheet, longSheet, inspect, decisionSheet, varietySheet, closeups, lotSheet, simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
 }
 boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });

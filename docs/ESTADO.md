@@ -131,6 +131,24 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 24 (relevo)
+
+Hecho:
+- Escopetas: con cargador (la pieza cuelga bajo el cajón) cambian el cargador; con tubo meten los cartuchos que faltan
+  (`anim.reloadOverride`, tiempo y sonido por cartucho) y solo bombean si estaban vacías.
+- Desmembramiento solo con el golpe que mata. Vender un arma ya no pasa sus accesorios al banco (desguazar sí).
+- Revólver: pasos de recarga sincronizados con la animación del tambor; disparo según calibre (Judge solo pesados).
+- Miras de serie de los packs: desde la 0.8.4 no se montaban; ahora se añaden y se apunta por ellas
+  (`AssetEntry.ownSight`, calculado en tools/own-sights.mjs; alza → miras de hierro, punto rojo, holo, prisma, visor).
+  Miras de hierro desmontables con más peso al generar (40 % cuando caben).
+- Oleadas: `caster` (lanza esferas de energía; `Waves.orb`, sin luces), `sturdy` y `elite` en las generadas; jefe
+  `warden` cada `bossEvery` (5) oleadas con barra grande arriba siempre visible (`alwaysBar`) y ráfagas de 5 esferas.
+- Mapa: 48 m de ancho, campo hasta 82 m (línea de 75 m y más coberturas), vestíbulo hasta z 28, sala de oleadas
+  60 × 73 m; muñecos de entrenamiento y jefe del campo recolocados. Máquinas con más detalle (sin luces nuevas).
+- Banco: `__bench.modelSheet(desde, cuántas)` = hoja de criba con cada modelo tal cual.
+
+Pendiente: respuesta del usuario a la criba de modelos (8 hojas); manos y pulgar (prioridad).
+
 ## Ronda 23 (relevo): pack de sonidos
 
 Hecho:
