@@ -6,6 +6,7 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import * as THREE from "three";
 import { GRENADE_RARITY, GrenadePouch, makeGrenade, setGrenadeUid, type GrenadeRarity, type GrenadeSpec } from "./grenades";
 import { GrenadeFx } from "./grenadefx";
+import { grenadeObject, loadGrenadeModel } from "./grenademodel";
 import { applyEvent, claimAll, refreshContracts, type Contract, type ContractState } from "./contracts";
 import { initSounds, loadSamples, playSample, sample, soundManifest, startMusic } from "./audio";
 import showcaseWeapon from "../data/showcase-weapon.json";
@@ -460,7 +461,7 @@ async function boot() {
   const nadeDrops: { g: GrenadeSpec; mesh: THREE.Group; t: number }[] = [];
   function dropNade(g: GrenadeSpec, at: THREE.Vector3) {
     const grp = new THREE.Group(), col = new THREE.Color(GRENADE_RARITY[g.rarity].color);
-    grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.6 })));
+    const body = new THREE.Group(); grp.add(body); void loadGrenadeModel().then((m) => body.add(grenadeObject(m, g.kind, g.rarity, 0.22)));
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 8, 1, true), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })); beam.position.y = 1.1; grp.add(beam);
     grp.position.copy(at).setY(0.2); scene.add(grp); nadeDrops.push({ g, mesh: grp, t: LOOT.expireSeconds });
     lootChime(LEVEL[g.rarity] ?? 0);

@@ -11,10 +11,9 @@ export function loadGrenadeModel(url = "./grenade/grenade.glb"): Promise<THREE.G
   base ??= new GLTFLoader().loadAsync(url).then((g) => {
     const s = g.scene; s.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(s), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
-    const k = 1 / Math.max(size.x, size.y, size.z), wrap = new THREE.Group();
-    s.position.sub(c).multiplyScalar(1); s.scale.multiplyScalar(1); const inner = new THREE.Group(); inner.add(s); inner.scale.setScalar(k); inner.position.copy(c).multiplyScalar(-k);
-    s.position.set(0, 0, 0); inner.position.set(-c.x * k, -c.y * k, -c.z * k);
-    wrap.add(inner); return wrap;
+    // Centrado en el origen y escalado a 1 de lado mayor (cada copia se escala luego a su tamaño)
+    const k = 1 / Math.max(size.x, size.y, size.z), inner = new THREE.Group(), wrap = new THREE.Group();
+    s.position.sub(c); inner.add(s); inner.scale.setScalar(k); wrap.add(inner); return wrap;
   }).catch(() => null);
   return base;
 }

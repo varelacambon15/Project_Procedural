@@ -1,6 +1,7 @@
 // Inventario: rejilla por rareza con filtros y orden, ficha del arma elegida comparada con la equipada y acciones
 // (equipar, a la mochila, renombrar, soltar, desguazar con confirmación suave). Teclado, ratón y mando.
 import { GRENADE_RARITY } from "../grenades";
+import { fillNadeThumbs } from "./shop";
 import { RARITIES } from "../../weapons/generator";
 import { typeName } from "../../weapons/labels";
 /** Clase para filtrar: el bullpup va con los fusiles. */
@@ -124,7 +125,7 @@ export class InventoryScreen {
         <div class="tiles" data-packzone>${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${packItems.length ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
         <div class="dropzone" data-dropzone>${t("ui.dropZone")}</div>
         <h2>${t("gr.title")} <small>${i.grenades.length}/8</small></h2>
-        <div class="nades">${i.grenades.map((g, k) => `<div class="nade ${k === i.grenadeActive ? "on" : ""}" style="--c:${GRENADE_RARITY[g.rarity].color}"><b>${t(`gr.${g.kind}`)}</b><span>${t(`rarity.${g.rarity}`)} · ${t("gr.stats", { d: g.damage, r: g.radius, c: g.charges, s: g.recharge })}</span>
+        <div class="nades">${i.grenades.map((g, k) => `<div class="nade ${k === i.grenadeActive ? "on" : ""}" style="--c:${GRENADE_RARITY[g.rarity].color}"><img class="nthumb" data-nadethumb="${g.kind}:${g.rarity}" alt=""><b>${t(`gr.${g.kind}`)}</b><span>${t(`rarity.${g.rarity}`)} · ${t("gr.stats", { d: g.damage, r: g.radius, c: g.charges, s: g.recharge })}</span>
           <button type="button" class="btn sm ${k === i.grenadeActive ? "ghost" : ""}" data-nadeeq="${k}">${k === i.grenadeActive ? t("gr.unequip") : t("gr.equip")}</button><button type="button" class="btn ghost sm" data-nadesell="${k}">${t("gr.sell", { c: Math.round(GRENADE_RARITY[g.rarity].price / 3) })}</button></div>`).join("") || `<div class="tile empty wide">${t("gr.noneOwned")}</div>`}</div>
         ${this.storageMode ? this.storageHTML() : ""}
       </section>
@@ -137,6 +138,7 @@ export class InventoryScreen {
       keyHint("Enter", "Ⓐ", t("ui.select")) + keyHint("1 / 2", "LB / RB", t("ui.equipSlot")) + keyHint("R", "Ⓨ", t("ui.rename")) + keyHint("G", "RS", t("ui.drop")) + keyHint("X", "Ⓧ", t("ui.scrapAction")) + keyHint("Esc", "Ⓑ", t("ui.back"));
     this.el.querySelectorAll<HTMLElement>(".tile[data-uid]").forEach((x) => { x.draggable = true; });
     this.thumbs.fill(this.el, this.storageMode ? i.all : i.carried);
+    fillNadeThumbs(this.el);
   }
 
   private storageHTML() {

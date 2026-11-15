@@ -140,7 +140,9 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
   Teclas: G, RB del mando y botón táctil ✹. Indicador `#nadehud` con cargas y recarga.
 - Se consiguen: en la tienda, ocupando a veces un hueco del escaparate (≈ 1 de cada 6 huecos, `nadeAt`), y como
   botín de enemigos de oleada (20 % de los drops que tocan, en lugar del arma; se recogen al pasar por encima).
-  No salen en cápsulas ni como premio de oleada (decisión del usuario). Se equipan y venden en el inventario (hasta 8). Se guardan en `SaveData.grenades` / `grenadeActive`.
+  No salen en cápsulas ni como premio de oleada (decisión del usuario). Se equipan y venden en el inventario (hasta 8).
+- Modelo `assets/grenade/grenade.glb` (del usuario) en `src/game/grenademodel.ts`: color del cuerpo por tipo, anillo y
+  brillo por rareza, proporciones por tipo; fotos para tienda e inventario (`grenadeThumb`, `fillNadeThumbs`). Se guardan en `SaveData.grenades` / `grenadeActive`.
 
 ## Ronda 26 (relevo): contratos y sala B
 

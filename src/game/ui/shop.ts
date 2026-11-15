@@ -6,7 +6,8 @@ import { RARITIES, type WeaponGenerator } from "../../weapons/generator";
 import type { WeaponSpec, RarityId } from "../../weapons/types";
 import { t } from "../../i18n";
 import { displayName } from "../../weapons/naming";
-import { GRENADE_RARITY, makeGrenade } from "../grenades";
+import { GRENADE_RARITY, makeGrenade, type GrenadeKind, type GrenadeRarity } from "../grenades";
+import { grenadeThumb } from "../grenademodel";
 import { CRATES, SHOP, SHOWCASE, isFree, sellPrice, buyShowcase, crateOdds, ensureShowcase, openCrate, pityLeft, record, showcasePrice, showcaseRarities, showcaseSeed, type CrateId, type ShopState } from "../shop";
 import type { Inventory, Item } from "../inventory";
 import { $, esc, keyHint, weaponCard, type Thumbnails } from "./common";
@@ -87,6 +88,7 @@ export class ShopScreen {
     $("shop-tiers").innerHTML = `<div class="sc-head"><h2>${t("shop.showcase")}</h2><span class="timer">${t("shop.refreshIn", { t: mmss(Math.max(0, sc.refreshAt - this.hooks.gameTime())) })}</span></div>
       <div class="sc-row">${tiles}</div><div class="crates">${crates}</div>${this.sellHTML()}`;
     $("shop-detail").innerHTML = detail;
+    fillNadeThumbs(this.el);
     // Imagen fija de cada arma del escaparate (miniatura; se cachea por semilla, ronda y ranura)
     specs.forEach((s, i) => {
       const it = { uid: -((sc.seed % 100000) * 1000 + (sc.round % 100) * 10 + i + 1), spec: s } as unknown as Item;
@@ -105,7 +107,7 @@ export class ShopScreen {
     const g = this.nadeAt(i)!, cr = this.inv.credits, price = GRENADE_RARITY[g.rarity].price;
     const btn = sold ? `<span class="soldtag">${t("shop.soldOut")}</span>` : cr < price ? `<button type="button" class="btn ghost sm" disabled>${t("shop.short", { c: price - cr })}</button>`
       : `<button type="button" class="btn sm" data-buynade="${i}">${t("shop.buy", { c: price })}</button>`;
-    return `<div class="sc-tile ${sold ? "sold" : ""}" style="--c:${GRENADE_RARITY[g.rarity].color}"><div class="img nadeimg">✹</div><b class="nm">${t("gr.title1")}: ${t(`gr.${g.kind}`)}</b>
+    return `<div class="sc-tile ${sold ? "sold" : ""}" style="--c:${GRENADE_RARITY[g.rarity].color}"><div class="img nadeimg"><img data-nadethumb="${g.kind}:${g.rarity}" alt=""></div><b class="nm">${t("gr.title1")}: ${t(`gr.${g.kind}`)}</b>
       <span class="meta">${t(`rarity.${g.rarity}`)} · ${t("gr.stats", { d: g.damage, r: g.radius, c: g.charges, s: g.recharge })}</span><span class="meta">${t(`gr.desc.${g.kind}`)}</span>
       <div class="price"><strong>${price}</strong> ${t("unit.cr")}</div>${btn}</div>`;
   }
@@ -213,3 +215,11 @@ export class ShopScreen {
   }
 }
 export const SHOWCASE_SIZE = SHOWCASE.slots.length;
+
+/** Pone la foto de cada granada en sus <img data-nadethumb="tipo:rareza"> (se dibujan una vez y se guardan). */
+export function fillNadeThumbs(root: HTMLElement) {
+  root.querySelectorAll<HTMLImageElement>("img[data-nadethumb]").forEach((img) => {
+    const [k, r] = img.dataset.nadethumb!.split(":") as [GrenadeKind, GrenadeRarity];
+    void grenadeThumb(k, r).then((url) => { img.src = url; }).catch(() => undefined);
+  });
+}

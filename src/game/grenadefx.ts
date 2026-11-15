@@ -5,8 +5,9 @@ import * as THREE from "three";
 import type { Dummy, Element } from "./dummies";
 import { GRENADE_KINDS, falloff, type GrenadeSpec } from "./grenades";
 import { audio, playSample, sample, soundManifest } from "./audio";
+import { grenadeObject, loadGrenadeModel } from "./grenademodel";
 
-interface Flying { mesh: THREE.Mesh; v: THREE.Vector3; t: number; g: GrenadeSpec; stuck: Dummy | null; stuckOff: THREE.Vector3; mini?: boolean }
+interface Flying { mesh: THREE.Object3D; v: THREE.Vector3; t: number; g: GrenadeSpec; stuck: Dummy | null; stuckOff: THREE.Vector3; mini?: boolean }
 interface Blast { mesh: THREE.Mesh; t: number; dur: number; r: number }
 interface Pull { at: THREE.Vector3; t: number; g: GrenadeSpec }
 
@@ -19,11 +20,12 @@ const geo = new THREE.SphereGeometry(0.07, 10, 8), blastGeo = new THREE.SphereGe
 
 export class GrenadeFx {
   private flying: Flying[] = []; private blasts: Blast[] = []; private pulls: Pull[] = [];
-  constructor(private scene: THREE.Scene, private hooks: GrenadeHooks) {}
+  private model: THREE.Group | null = null;
+  constructor(private scene: THREE.Scene, private hooks: GrenadeHooks) { void loadGrenadeModel().then((m) => (this.model = m)); }
 
   /** Lanza desde `from` en la dirección de la mirada (algo hacia arriba), a unos 13 m/s. */
   throw(g: GrenadeSpec, from: THREE.Vector3, dir: THREE.Vector3) {
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: GRENADE_KINDS[g.kind].color, roughness: 0.5, metalness: 0.4, emissive: GRENADE_KINDS[g.kind].color, emissiveIntensity: 0.35 }));
+    const m = grenadeObject(this.model, g.kind, g.rarity, 0.13);
     m.position.copy(from); this.scene.add(m);
     const v = dir.clone().normalize().multiplyScalar(13).add(new THREE.Vector3(0, 3.5, 0));
     this.flying.push({ mesh: m, v, t: g.fuse, g, stuck: null, stuckOff: new THREE.Vector3() });
