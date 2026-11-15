@@ -63,6 +63,7 @@ export interface AssembledWeapon {
   /** Punta del cañón (o del accesorio de boca), en coordenadas del grupo. */ muzzle: THREE.Vector3;
   /** Altura de la línea de mira (centro de la mira, si la lleva), en coordenadas del grupo. */ sightY: number | null;
   /** Con miras de hierro: posición (X, hacia la boca) del alza respecto al centro; el ojo se pone justo detrás. */ sightX?: number;
+  /** Sin mira montada: la de serie del modelo (alza, punto rojo, visor…) con la que se apunta. */ ownSight?: { kind: string; zoom: number };
   /** Aumentos de la mira (1 = sin mira). */ zoom: number;
   /** Puntos de agarre (coordenadas del grupo): mano derecha en la empuñadura, izquierda en el guardamanos,
    *  pozo del cargador y palanca de carga. Los usan los brazos (IK) y las animaciones de recarga. */
@@ -584,8 +585,25 @@ export class WeaponAssembler {
     // Mira integrada en el modelo (asa-mira, visor de fábrica) sin óptica añadida: la línea de mira pasa por el centro de
     // esa mira; si no, el arma apuntaba por encima de todo el modelo y la mira "no funcionaba"
     // Packs del usuario (kit39): su mira integrada (alza, asa del G36C…) es decorativa; con una mira montada se oculta
-    const decor = parts.filter((p) => p.role === "scope" && p.from.pack === "kit39");
+    // Mira de serie del modelo (packs del usuario): su pieza "scope" no la monta nadie más; se añade aquí
+    const decor: { object: THREE.Object3D }[] = [];
+    { const be = this.gen.byId.get(spec.parts[0].from);
+      if (be?.pack === "kit39" && be.parts.some((p) => p.role === "scope")) {
+        const sc = await this.nodes(be, "scope");
+        if (sc.children.length) { if (size !== 1) { sc.scale.setScalar(size); } add(sc, "scope", be, [0, 1.4, 0]); decor.push({ object: sc }); }
+      } }
     if (spec.optic) for (const p of decor) p.object.visible = false;
+    // Sin mira montada se apunta por la de serie del modelo (su alza o su óptica), si la tiene
+    let ownSight: { kind: string; zoom: number } | undefined;
+    const os = this.gen.byId.get(spec.parts[0].from)?.ownSight;
+    if (!spec.optic && os && decor.length) {
+      const ob = new THREE.Box3(); for (const p of decor) ob.expandByObject(p.object);
+      if (!ob.isEmpty()) {
+        const lx = os.lens ? os.lens[0] * size : os.kind === "alza" ? ob.min.x : (ob.min.x + ob.max.x) / 2;
+        const ly = os.lens ? os.lens[1] * size : os.kind === "alza" ? ob.max.y - 0.003 : ob.min.y + (ob.max.y - ob.min.y) * 0.62;
+        sight = ly; ironRearX = lx; ownSight = { kind: os.kind, zoom: os.zoom };
+      }
+    }
     if (sight === null) {
       const own = parts.filter((p) => p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser" && p.from.pack !== "kit39");
       if (own.length) { const ob = new THREE.Box3(); for (const p of own) ob.expandByObject(p.object); if (!ob.isEmpty()) { sight = ob.min.y + (ob.max.y - ob.min.y) * 0.62; zoom = Math.max(zoom, 1.6); } }
@@ -597,7 +615,7 @@ export class WeaponAssembler {
     const muzzleOut = (muzzle ?? new THREE.Vector3(box.max.x, center.y, 0)).clone().sub(center);
     group.updateMatrixWorld(true);
     const handles = this.handles(spec, parts, new THREE.Box3().setFromObject(group));
-    return { group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, sightX: ironRearX === null ? undefined : ironRearX - center.x, zoom, handles };
+    return { group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, sightX: ironRearX === null ? undefined : ironRearX - center.x, ownSight, zoom, handles };
   }
 
   /** Estima dónde agarran las manos: empuñadura (junta o detrás del cargador), guardamanos, pozo y palanca. */

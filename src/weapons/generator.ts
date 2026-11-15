@@ -485,7 +485,7 @@ export class WeaponGenerator {
     if (arch.id === "marksman" && slots.includes("optic")) slots.sort((x) => (x === "optic" ? -1 : 1)); else if (r() < 0.5) slots.reverse();
     for (const slot of slots) {
       if (nAcc <= 0) break;
-      if (slot === "optic") { const real = opticOpts.filter(isKit); optic = real.length && r() < 0.75 ? pick(r, real) : pick(r, opticOpts); } else muzzle = pick(r, muzzleOpts);
+      if (slot === "optic") { const real = opticOpts.filter(isKit), irons = opticOpts.filter(isIron); optic = irons.length && r() < 0.4 ? pick(r, irons) : real.length && r() < 0.75 ? pick(r, real) : pick(r, opticOpts); } else muzzle = pick(r, muzzleOpts);
       // Accesorio de serie del modelo (pack 4): en su hueco, más a menudo que uno cualquiera (el arma queda como el original)
       const own = serie(this.kit, body, slot === "optic" ? "miras" : "bocachas");
       if (own.length && r() < 0.6) { if (slot === "optic") optic = own[0]; else muzzle = own[0]; }

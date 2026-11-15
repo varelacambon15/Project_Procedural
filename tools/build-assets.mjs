@@ -8,6 +8,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { JOBS } from "./weapon-jobs.mjs";
+import { ownSights } from "./own-sights.mjs";
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -96,6 +97,7 @@ if (args[0] === "--tree") {
       console.log(`✓ iron/${j.id}`);
     }
   }
+  ownSights(out); // (mira de serie de los packs del usuario)
   await writeFile(path.join(ROOT, "assets/weapons/manifest.json"), JSON.stringify(out, null, 1));
 }
 await browser.close();

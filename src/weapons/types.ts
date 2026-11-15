@@ -43,6 +43,8 @@ export interface AssetEntry {
   anchors?: Record<string, [number, number, number]>;
   /** Accesorios de serie del pack (id del pool, categoría y ancla). */
   stockAcc?: { id: string; categoria: string; ancla: string }[];
+  /** Mira de serie del modelo (packs del usuario): tipo, aumento y centro de la lente (X, Y del arma convertida). */
+  ownSight?: { kind: string; zoom: number; lens: [number, number] | null };
 }
 /** Juego de miras de hierro desmontable: alza (raíl_superior) y punto de mira (raíl_frontal). */
 export interface IronSet {

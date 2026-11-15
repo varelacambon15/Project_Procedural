@@ -205,6 +205,13 @@ export class Gun {
     else if (item.spec.optic) { this.sight = "scope"; this.zoom = 3; }                 // mira de modelo (cosmo)
     else { this.sight = "iron"; this.zoom = 1; } // (francotirador: visor solo si el modelo lo trae, ver abajo)
     const m = await this.modelFor(item, rebuild);
+    // Sin mira montada: la de serie del modelo (alza → miras de hierro; punto rojo, holográfica, prisma, visor)
+    if (!item.spec.optic && m.ownSight) {
+      const k = m.ownSight.kind, z = m.ownSight.zoom;
+      if (k === "alza") { this.sight = "irons"; this.zoom = 1.1; }
+      else if (/^visor/.test(k)) { this.sight = "scope"; this.zoom = Math.max(2, z); }
+      else { this.sight = k === "punto_rojo" ? "dot" : "holo"; this.zoom = k === "punto_rojo" || k === "holografica" ? 1.3 : Math.max(1.3, z); }
+    }
     if (this.item !== item || seq !== this.equipSeq) return;
     m.group.traverse((o) => {
       const mesh = o as THREE.Mesh; if (!mesh.isMesh) return;
