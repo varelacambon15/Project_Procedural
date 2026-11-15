@@ -1,7 +1,7 @@
 // Generador de armas: decide variante, piezas, accesorios, rareza, habilidades y estadísticas a partir de una semilla.
 // Lógica pura (sin Three.js): se puede probar sin navegador. Los textos se traducen fuera, a partir de los ids.
 import { hashString, mulberry32, pick, type Rng } from "./rng";
-import { ACCESSORIES, accessory } from "./accessories";
+import { ACCESSORIES, accessory, isIron } from "./accessories";
 import { FINISHES, FINISH_WEIGHTS } from "./finish";
 import { EFFECTS_A, EFFECTS_B, EFFECTS_L, legalWith } from "./effects";
 import { eraFinishes, rollEra, rollModernization, type Era } from "./eras";
@@ -12,7 +12,7 @@ import { CAL_EFFECT, PISTOL_ARCHES, PISTOL_MUTATIONS, STRUCTURAL, archDesign, ar
 import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
 import { ensureGrip } from "./grip";
 import { recipeStatMods } from "./effects";
-import { NO_TWEAKS, type AssetEntry, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Addon, type Rarity, type RarityId, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
+import { NO_TWEAKS, type AssetEntry, type IronSet, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Addon, type Rarity, type RarityId, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
 
@@ -148,6 +148,16 @@ function railT(base: AssetEntry | null | undefined, parts: PartPick[], anchor: s
   if (!a || !fb || parts.find((p) => p.role === "front")?.from !== base!.id) return null;
   const t = (a[0] - fb.min[0]) / Math.max(1e-4, fb.max[0] - fb.min[0]);
   return t > 0.02 && t < 0.98 ? t : null;
+}
+/**
+ * Alturas de los dos alzadores de un juego de miras de hierro para que la línea centro_lente → punta quede paralela al
+ * cañón (LEEME de las miras); null si alguno pasa del máximo (no cabe en esa arma).
+ */
+export function ironRisers(j: IronSet, rsY: number, rfY: number): [number, number] | null {
+  let ar = j.riser.min, af = j.riser.min;
+  const d = (rsY + ar + j.rear.h) - (rfY + af + j.front.h);
+  if (d > 0) af += d; else ar -= d;
+  return ar > j.riser.max || af > j.riser.max ? null : [ar, af];
 }
 /** Pieza del kit convertida desde un accesorio del pool del pack 4 (id del pack → k-…-lp4<id>). */
 function stockPart(kit: KitIndex, id: string): string | null {
@@ -287,6 +297,17 @@ export class WeaponGenerator {
   get types(): BaseType[] { return [...this.byType.keys()].filter((t): t is BaseType => t !== "accessory" && t !== "flamethrower" && t !== "launcher"); }
 
   /** Miras (accesorio) que admite un arma. Las que llevan mira integrada en el cuerpo no admiten otra. */
+  /**
+   * Miras de hierro desmontables que caben en un arma de los packs del usuario: tipo compatible, con raíl_superior y
+   * raíl_frontal, y alzadores dentro de su rango (cálculo del LEEME de las miras). Ids "iron:<juego>".
+   */
+  ironOptions(spec: Pick<WeaponSpec, "type" | "parts">): string[] {
+    const body = this.byId.get(spec.parts[0].from), rs = body?.anchors?.["raíl_superior"], rf = body?.anchors?.["raíl_frontal"];
+    if (!rs || !rf) return [];
+    const type = spec.type === "bullpup" ? "rifle" : spec.type;
+    return (this.manifest.iron ?? []).filter((j) => j.types.includes(type) && ironRisers(j, rs[1], rf[1]) !== null).map((j) => `iron:${j.id}`);
+  }
+
   opticOptions(spec: Pick<WeaponSpec, "type" | "parts">): string[] {
     const procedural = () => ACCESSORIES.filter((a) => a.kind === "optic" && (!a.for || a.for.includes(spec.type))).map((a) => a.id);
     // Las miras reales (Flat Gun Attachments) sustituyen a las hechas por código; se conservan solo las de aumento sin equivalente
@@ -294,7 +315,7 @@ export class WeaponGenerator {
     const body = this.byId.get(spec.parts[0].from);
     // Mira de modelo (p. ej. el kit del usuario): se cambia por la de otro modelo del mismo pack, como al generar
     // Packs del usuario (kit39): solo miras del pool (su pieza "mira" es decorativa) y las de serie del modelo
-    if (body?.pack === "kit39") return spec.type === "launcher" || spec.type === "flamethrower" ? [] : [...new Set([...serie(this.kit, body, "miras"), ...realOptics(this.kit, spec.type), ...procedural()])];
+    if (body?.pack === "kit39") return spec.type === "launcher" || spec.type === "flamethrower" ? [] : [...new Set([...serie(this.kit, body, "miras"), ...realOptics(this.kit, spec.type), ...procedural(), ...this.ironOptions(spec)])];
     if (body?.parts.some((p) => p.role === "scope")) return this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id && !RETIRED.has(x.id)).map((x) => x.id);
     if (!body?.sockets.rail || spec.type === "sniper" || spec.type === "launcher" || spec.type === "flamethrower") return [];
     // Miras reales (preferidas al generar) y las hechas por código como alternativa
@@ -453,7 +474,10 @@ export class WeaponGenerator {
     if (ownScope) optic = parts[0].from; // (en las pistolas procedurales, el diseño concreto, no el arquetipo)
     let opticOpts = ownScope ? this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id && !RETIRED.has(x.id)).map((x) => x.id) : this.opticOptions({ type, parts });
     // Una clásica solo lleva visores de época (de aumento sencillos); nada de puntos rojos ni holográficas
-    if (era === "classic") opticOpts = opticOpts.filter((o) => /scope/.test(o));
+    // Miras de hierro: las de la era del arma, si las hay (si no, cualquiera compatible)
+    const irons = opticOpts.filter(isIron), eraIrons = irons.filter((o) => this.manifest.iron?.find((j) => `iron:${j.id}` === o)?.eras.includes(era));
+    if (eraIrons.length) opticOpts = opticOpts.filter((o) => !isIron(o) || eraIrons.includes(o));
+    if (era === "classic") opticOpts = opticOpts.filter((o) => /scope/.test(o) || isIron(o));
     const muzzleOpts = this.muzzleOptions({ type, parts });
     const [amin, amax] = rarity.accessories;
     let nAcc = amin + Math.floor(r() * (amax - amin + 1));

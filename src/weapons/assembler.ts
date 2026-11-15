@@ -3,10 +3,10 @@ import * as THREE from "three";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { NO_TWEAKS, type AssetEntry, type PartRole, type WeaponSpec } from "./types";
-import { BASE_SIZE, TYPE_LENGTH, bodyZones, drumOf, pieceScale, type WeaponGenerator } from "./generator";
+import { BASE_SIZE, TYPE_LENGTH, bodyZones, drumOf, ironRisers, pieceScale, type WeaponGenerator } from "./generator";
 import { midZone, stretchAll, stretchX, type Stretches } from "./variation";
 import { KIT_FLIP, isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
-import { accessory, buildFrontSight, buildMuzzle, buildOptic } from "./accessories";
+import { accessory, buildFrontSight, buildMuzzle, buildOptic, isIron } from "./accessories";
 import { applyFinish } from "./finish";
 import { contactAO } from "./ao";
 import { ADDON_ROLE, buildAddon } from "./addons";
@@ -62,6 +62,7 @@ export interface AssembledWeapon {
   group: THREE.Group; parts: AssembledPart[]; length: number;
   /** Punta del cañón (o del accesorio de boca), en coordenadas del grupo. */ muzzle: THREE.Vector3;
   /** Altura de la línea de mira (centro de la mira, si la lleva), en coordenadas del grupo. */ sightY: number | null;
+  /** Con miras de hierro: posición (X, hacia la boca) del alza respecto al centro; el ojo se pone justo detrás. */ sightX?: number;
   /** Aumentos de la mira (1 = sin mira). */ zoom: number;
   /** Puntos de agarre (coordenadas del grupo): mano derecha en la empuñadura, izquierda en el guardamanos,
    *  pozo del cargador y palanca de carga. Los usan los brazos (IK) y las animaciones de recarga. */
@@ -108,6 +109,23 @@ export class WeaponAssembler {
   preloadKit() { for (const p of this.gen.kit.parts) if (!this.cache.has(p.id)) this.cache.set(p.id, this.fetchModel(this.baseUrl + p.file)); }
 
   /** Pieza del kit: sus mallas con el acabado común (el cristal de las miras se conserva). */
+  /**
+   * Mitad de una mira de hierro (alza o punto): el alzador se estira en Y hasta `riser` y la cabeza (y su inserto
+   * luminoso) sube encima. El inserto conserva su material emisivo.
+   */
+  private async ironNode(file: string, riser: number, glbRiser: number): Promise<THREE.Group> {
+    const key = "iron:" + file;
+    if (!this.cache.has(key)) this.cache.set(key, this.fetchModel(this.baseUrl + file));
+    const scene = (await this.cache.get(key)!).clone(true);
+    scene.traverse((o) => {
+      if (/^alzador/.test(o.name)) o.scale.y *= riser / glbRiser;
+      else if (/^cabeza/.test(o.name) && !/^cabeza/.test(o.parent?.name ?? "")) o.position.y += riser - glbRiser;
+      const m = o as THREE.Mesh;
+      if (m.isMesh) { m.castShadow = true; const mats = ([] as THREE.Material[]).concat(m.material); if (!mats.some((x) => /inserto/.test(x.name))) m.material = Array.isArray(m.material) ? m.material.map(finish) : finish(m.material); }
+    });
+    const g = new THREE.Group(); g.add(scene); return g;
+  }
+
   private async kitNode(part: KitPart): Promise<THREE.Group> {
     if (!this.cache.has(part.id)) this.cache.set(part.id, this.fetchModel(this.baseUrl + part.file));
     const scene = await this.cache.get(part.id)!;
@@ -145,6 +163,9 @@ export class WeaponAssembler {
       group.add(object); parts.push({ object, role, from, explode: new THREE.Vector3(...explode), base: object.position.clone() });
     };
     let muzzle: THREE.Vector3 | null = null;
+    // Raíles del pack del usuario en coordenadas del arma montada (miras de hierro y ópticas): raíl_superior del cajón o
+    // del cuerpo y raíl_frontal del guardamanos que lleve
+    let railTop: THREE.Vector3 | null = null, railFront: THREE.Vector3 | null = null;
     const first = this.gen.byId.get(spec.parts[0].from);
     const length0 = first ? first.bounds.max[0] - first.bounds.min[0] : TYPE_LENGTH[spec.type] ?? 0.9;
     let muzzleDiameter = 0.03;
@@ -291,6 +312,8 @@ export class WeaponAssembler {
           muzzle = pf.muzzle; muzzleDiameter = tw.pfront.d;
         } else fr = await attach("front", "front", "frontFace", [1.1, 0.2, 0]);
         await attach("grip", "grip", "gripFace", [0, -1, 0]);
+        { const a = bodyE.anchors?.["raíl_superior"]; if (a) railTop = new THREE.Vector3(a[0], a[1], 0); }
+        if (fr?.donor.anchors?.["raíl_frontal"]) { const a = fr.donor.anchors["raíl_frontal"]; railFront = new THREE.Vector3(stretchX(a[0], fr.zone), a[1], 0).multiply(fr.sv).add(fr.node.position).setZ(0); }
         if (fr && fr.donor.sockets.muzzle) {
           const m = fr.donor.sockets.muzzle;
           muzzle = new THREE.Vector3(stretchX(m.pos[0], fr.zone), m.pos[1], m.pos[2]).multiply(fr.sv).add(fr.node.position);
@@ -312,6 +335,9 @@ export class WeaponAssembler {
         add(body, "body", bodyE, [0, 0, 0]);
         if (twb.pstock) add(buildStock(twb.pstock), "stock", { id: `proc-stock-${twb.pstock.kind}`, label: "Stock", pack: "proc" } as AssetEntry, [-1.2, 0, 0]);
         if (bodyE.sockets.muzzle) { const m = bodyE.sockets.muzzle; muzzle = new THREE.Vector3(stretchAll(m.pos[0], bodyZoneUsed), m.pos[1], m.pos[2]); muzzleDiameter = m.diameter ?? 0.03; }
+        { const a = bodyE.anchors?.["raíl_superior"], b = bodyE.anchors?.["raíl_frontal"];
+          if (a) railTop = new THREE.Vector3(stretchAll(a[0], bodyZoneUsed), a[1], 0);
+          if (b) railFront = new THREE.Vector3(stretchAll(b[0], bodyZoneUsed), b[1], 0); }
         if (twb.pfront) {
           // Conjunto en la boca sin corte: se apoya donde acaba de verdad la malla del cuerpo (algunos modelos traen
           // medidas de relleno en el manifiesto y la malla es más corta): nada flotando
@@ -373,12 +399,37 @@ export class WeaponAssembler {
       }
       if (bodyE.sockets.optic) { opticTarget = v3(bodyE.sockets.optic.pos); opticLength = bodyE.sockets.optic.size?.[0] ?? 0; }
       else if (bodyE.sockets.rail) { opticTarget = v3(bodyE.sockets.rail.pos); opticLength = bodyE.sockets.rail.length ?? 0.1; }
+      // Packs del usuario: la óptica se apoya en su raíl_superior real (con la mira decorativa oculta no queda en el aire)
+      if (railTop && bodyE.pack === "kit39") { opticTarget = railTop.clone(); opticLength ||= 0.1; }
     }
     let sight: number | null = sightKit, zoom = isKit(spec.optic) ? accessory(spec.optic)?.zoom ?? 1 : 1;
 
     // Mira: la propia del arma o una de otra arma/accesorio, apoyada en el socket "optic" o en la parte superior.
     const optAcc = accessory(spec.optic);
-    if (optAcc && opticTarget && !isKit(spec.optic)) {
+    let ironRearX: number | null = null;
+    const ironSet = isIron(spec.optic) ? this.gen.manifest.iron?.find((j) => `iron:${j.id}` === spec.optic) : undefined;
+    if (ironSet && railTop && railFront) {
+      // Miras de hierro: alza en raíl_superior y punto en raíl_frontal, con los alzadores a la altura que deja la línea
+      // centro_lente → punta paralela al cañón (si se sale del rango, al máximo)
+      let [ar, af] = ironRisers(ironSet, railTop.y, railFront.y) ?? [ironSet.riser.max, ironSet.riser.max];
+      // Si el cajón o la culata asoman por encima de la línea de mira justo detrás del alza (donde va el ojo), se suben
+      // los dos alzadores lo mismo (la línea sigue paralela al cañón): si no, al apuntar el ojo quedaba dentro del arma
+      {
+        const x1 = railTop.x + ironSet.rear.lens[0], x0 = x1 - 0.09; let top = -Infinity; const v = new THREE.Vector3();
+        group.updateMatrixWorld(true);
+        for (const p of parts) if (p.role !== "scope" && p.role !== "muzzle") p.object.traverse((o) => {
+          const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position;
+          for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (v.x > x0 && v.x < x1 && Math.abs(v.z) < 0.02 && v.y > top) top = v.y; }
+        });
+        const lift = Math.max(0, top + 0.004 - (railTop.y + ar + ironSet.rear.h));
+        if (lift > 0) { ar = Math.min(ironSet.riser.max + 0.02, ar + lift); af = Math.min(ironSet.riser.max + 0.02, af + lift); }
+      }
+      const rear = await this.ironNode(ironSet.rear.file, ar, ironSet.riser.glb), front = await this.ironNode(ironSet.front.file, af, ironSet.riser.glb);
+      rear.position.copy(railTop); front.position.copy(railFront); ironRearX = railTop.x + ironSet.rear.lens[0];
+      const from = { id: spec.optic!, label: ironSet.name, pack: "iron" } as AssetEntry;
+      add(rear, "scope", from, [0, 1.4, 0]); add(front, "scope", from, [0.6, 1.2, 0]);
+      sight = railTop.y + ar + ironSet.rear.h; // (centro_lente: a altura_linea_cabeza sobre la base de la cabeza) zoom = optAcc?.zoom ?? 1.1;
+    } else if (optAcc && opticTarget && !isKit(spec.optic) && !isIron(spec.optic)) {
       // Mira propia, generada a medida del raíl
       const { group: opt, sightHeight } = buildOptic(optAcc.id, opticLength, length0);
       // Si alguna parte del arma (cajón, culata, alzas) queda por encima de la línea de mira, la mira va sobre
@@ -415,7 +466,7 @@ export class WeaponAssembler {
     } else if (spec.optic?.startsWith("pp-") || spec.optic?.startsWith("pl-")) {
       // Óptica integrada de una pistola generada: ya es parte de su malla (corredera)
       zoom = 2.5;
-    } else if (spec.optic && opticTarget && !isKit(spec.optic)) {
+    } else if (spec.optic && opticTarget && !isKit(spec.optic) && !isIron(spec.optic)) {
       const optE = get(spec.optic);
       const opt = await this.nodes(optE, "scope");
       if (optE.id !== spec.parts[0].from) {
@@ -525,7 +576,7 @@ export class WeaponAssembler {
     const size = BASE_SIZE[spec.parts[0]?.from ?? ""] ?? 1;
     if (size !== 1) {
       for (const p of parts) { p.object.position.multiplyScalar(size); p.object.scale.multiplyScalar(size); }
-      muzzle?.multiplyScalar(size); if (sight !== null) sight *= size;
+      muzzle?.multiplyScalar(size); if (sight !== null) sight *= size; if (ironRearX !== null) ironRearX *= size;
       group.updateMatrixWorld(true);
     }
     // Centrar y guardar posiciones base para el despiece.
@@ -546,7 +597,7 @@ export class WeaponAssembler {
     const muzzleOut = (muzzle ?? new THREE.Vector3(box.max.x, center.y, 0)).clone().sub(center);
     group.updateMatrixWorld(true);
     const handles = this.handles(spec, parts, new THREE.Box3().setFromObject(group));
-    return { group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, zoom, handles };
+    return { group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, sightX: ironRearX === null ? undefined : ironRearX - center.x, zoom, handles };
   }
 
   /** Estima dónde agarran las manos: empuñadura (junta o detrás del cargador), guardamanos, pozo y palanca. */

@@ -16,6 +16,9 @@ export const ACCESSORIES: AccessoryDef[] = [
   { id: "acc:holo", kind: "optic", mods: { precision: 5, alcance: 3 }, zoom: 1.35, for: ["rifle", "bullpup", "lmg", "smg", "shotgun"] },
   { id: "acc:acog", kind: "optic", mods: { precision: 8, alcance: 12, manejo: -3 }, zoom: 3, for: ["rifle", "bullpup", "lmg", "smg"] },
   { id: "acc:scope6", kind: "optic", mods: { precision: 12, alcance: 20, manejo: -6 }, zoom: 5, for: ["rifle", "bullpup", "sniper"] },
+  // Miras de hierro desmontables (iron:<juego>): estadísticas comunes; zoom pequeño. `for: []` = no sale entre las
+  // miras por código (se ofrecen aparte, por juego y por arma)
+  { id: "acc:iron", kind: "optic", mods: { precision: 2 }, zoom: 1.1, for: [] },
 ];
 /** Piezas del kit modular que hacen de accesorio: usan las estadísticas (y el sonido, el retículo) del equivalente. */
 export const KIT_ALIAS: Record<string, string> = {
@@ -29,7 +32,8 @@ export const KIT_ALIAS: Record<string, string> = {
 };
 /** Miras de la biblioteca del usuario (k-att-<tipo>-l…): estadísticas del equivalente por tipo. */
 const libAlias = (id: string) => (/^k-att-[a-z]+-l/.test(id) ? ({ reddot: "acc:reddot", holographic: "acc:holo", magnified: "acc:acog", scope: "acc:scope6", suppressor: "acc:suppressor-l", brake: "acc:brake", compensator: "acc:compensator", flashhider: "acc:flashhider" } as Record<string, string>)[id.split("-")[2]] : undefined);
-export const accessory = (id: string | null) => (id ? ACCESSORIES.find((a) => a.id === (KIT_ALIAS[id] ?? libAlias(id) ?? id)) ?? null : null);
+export const accessory = (id: string | null) => (id ? ACCESSORIES.find((a) => a.id === (id.startsWith("iron:") ? "acc:iron" : KIT_ALIAS[id] ?? libAlias(id) ?? id)) ?? null : null);
+export const isIron = (id: string | null | undefined): id is string => !!id && id.startsWith("iron:");
 export const isAccessory = (id: string | null) => !!id && id.startsWith("acc:");
 
 const black = () => new THREE.MeshStandardMaterial({ name: "Steel", color: 0x1c1d1f, metalness: 0.75, roughness: 0.42 });

@@ -501,7 +501,7 @@ async function boot() {
       }
       player.update(dt, f, gun.aimT > 0.5, 1 - gun.aimT * (1 - 1 / Math.max(1.5, gun.zoom)));
       gun.update(dt, { fire: f.fire, aim: f.aim, moving: Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5), sprinting: player.sprinting, lookX: f.lookX, lookY: f.lookY, vy: player.vel.y, grounded: player.onGround, inspect: f.inspect });
-      const base = settings.fov, aimFov = gun.sight === "scope" ? base / gun.zoom : gun.sight === "iron" ? base / 1.35 : base / 1.6;
+      const base = settings.fov, aimFov = gun.sight === "scope" || gun.sight === "irons" ? base / gun.zoom : gun.sight === "iron" ? base / 1.35 : base / 1.6;
       camera.fov = THREE.MathUtils.lerp((player.sprinting ? base + 7 : base) + 9 * player.slideK, aimFov, gun.aimT); camera.updateProjectionMatrix();
       playSeconds += dt; autosaveT += dt; if (autosaveT > 60) autosave(); // autoguardado cada minuto de juego
     } else {

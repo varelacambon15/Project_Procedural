@@ -131,6 +131,25 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 21 (relevo, versión 0.8.6): miras de hierro desmontables
+
+Hecho:
+- `raw/miras_hierro` → `assets/weapons/iron/` (los GLB se copian) y `manifest.iron` (`npm run assets -- iron`).
+- Accesorio de mira `iron:<juego>` (estadísticas de `acc:iron`, zoom ×1,1). `generator.ironOptions`: tipo compatible,
+  el arma con `raíl_superior` y `raíl_frontal`, y alzadores en rango (`ironRisers`, cálculo del LEEME). Se prefieren
+  las de la era del arma; en era clásica también valen.
+- Montaje (`assembler`, `ironNode`): alza en el `raíl_superior` del cajón/cuerpo y punto en el `raíl_frontal` del
+  guardamanos montado (con su estirado). Si el cajón o la culata asoman por encima de la línea justo detrás del alza,
+  se suben los dos alzadores lo mismo. La pieza "mira" del modelo se oculta. Las ópticas de los packs se apoyan ahora
+  en `raíl_superior`.
+- Apuntado (`sight = "irons"`): por el centro de la mirilla, zoom ×1,1, sin retícula; el ojo a 2,5 cm del alza
+  (`sightX` del modelo), como en un shooter moderno; si así la mano de la empuñadura caía en el plano de la cámara (tapaba
+  la vista), el ojo se retrasa a 6 cm por detrás de la empuñadura.
+
+Pendiente:
+- Mezclar alzas y puntos del mismo subtipo (variedad), y miras de hierro en pistolas (pocas pistolas llevan mira).
+- Música: el usuario la prepara aparte y la pasará.
+
 ## Ronda 20 (relevo, versión 0.8.5): menús en Android
 
 Hecho:

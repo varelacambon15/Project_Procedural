@@ -44,7 +44,14 @@ export interface AssetEntry {
   /** Accesorios de serie del pack (id del pool, categoría y ancla). */
   stockAcc?: { id: string; categoria: string; ancla: string }[];
 }
-export interface Manifest { convention: string; weapons: AssetEntry[]; kit?: import("./kit").KitPart[] }
+/** Juego de miras de hierro desmontable: alza (raíl_superior) y punto de mira (raíl_frontal). */
+export interface IronSet {
+  id: string; name: string; types: string[]; eras: string[]; subtype: string; insert: string | null;
+  rear: { file: string; h: number; lens: [number, number, number] };
+  front: { file: string; h: number; tip: [number, number, number] };
+  riser: { glb: number; min: number; max: number };
+}
+export interface Manifest { convention: string; weapons: AssetEntry[]; kit?: import("./kit").KitPart[]; iron?: IronSet[] }
 
 export type StatKey = "dano" | "cadencia" | "precision" | "alcance" | "manejo" | "cargador";
 export type Stats = Record<StatKey, number>;

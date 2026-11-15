@@ -88691,246 +88691,6 @@
    "file": "kit/k-optic-rear-rail-02.glb"
   },
   {
-   "id": "k-ironsight-rear-rail-01",
-   "slot": "Sights_Rear",
-   "caliber": "any",
-   "sockets": {},
-   "profile": {
-    "x0": -0.0111,
-    "x1": 0.0143,
-    "top": [
-     0.0241,
-     0.0241,
-     0.0241,
-     0.0241,
-     0.0241,
-     0.0194,
-     0.0148,
-     0.0121,
-     0.0103,
-     0.0103,
-     0.0103,
-     0.0103,
-     0.0103,
-     0.0103,
-     0.0103,
-     0.0103
-    ],
-    "bot": [
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033,
-     -0.0033
-    ]
-   },
-   "bounds": {
-    "min": [
-     -0.0111,
-     -0.0033,
-     -0.0133
-    ],
-    "max": [
-     0.0143,
-     0.0241,
-     0.0139
-    ]
-   },
-   "triangles": 311,
-   "file": "kit/k-ironsight-rear-rail-01.glb"
-  },
-  {
-   "id": "k-ironsight-rear-welded-01",
-   "slot": "Sights_Rear_Welded",
-   "caliber": "any",
-   "sockets": {},
-   "profile": {
-    "x0": -0.0045,
-    "x1": 0.0045,
-    "top": [
-     0.0098,
-     0.0098,
-     0.0098,
-     0.0143,
-     0.0143,
-     0.0143,
-     0.0143,
-     0.0143,
-     0.0143,
-     0.0143,
-     0.0143,
-     0.0143,
-     0.0143,
-     0.0098,
-     0.0098,
-     0.0098
-    ],
-    "bot": [
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0
-    ]
-   },
-   "bounds": {
-    "min": [
-     -0.0045,
-     0,
-     -0.0079
-    ],
-    "max": [
-     0.0045,
-     0.0143,
-     0.0079
-    ]
-   },
-   "triangles": 96,
-   "file": "kit/k-ironsight-rear-welded-01.glb"
-  },
-  {
-   "id": "k-ironsight-front-556barrel-01",
-   "slot": "Sights_Front",
-   "caliber": "556",
-   "sockets": {},
-   "profile": {
-    "x0": -0.0164,
-    "x1": 0.017,
-    "top": [
-     0.0205,
-     0.0205,
-     0.0205,
-     0.0296,
-     0.0296,
-     0.0296,
-     0.0445,
-     0.0445,
-     0.0445,
-     0.0477,
-     0.0477,
-     0.0477,
-     0.0477,
-     0.0477,
-     0.0477,
-     0.0477
-    ],
-    "bot": [
-     -0.0084,
-     -0.0084,
-     -0.0084,
-     -0.0084,
-     0.0062,
-     0.0062,
-     0.0062,
-     0.0062,
-     0.0062,
-     0.0062,
-     0.0062,
-     -0.0084,
-     -0.0084,
-     -0.0084,
-     -0.0084,
-     -0.0084
-    ]
-   },
-   "bounds": {
-    "min": [
-     -0.0164,
-     -0.0084,
-     -0.0099
-    ],
-    "max": [
-     0.017,
-     0.0477,
-     0.0099
-    ]
-   },
-   "triangles": 106,
-   "file": "kit/k-ironsight-front-556barrel-01.glb"
-  },
-  {
-   "id": "k-ironsight-front-welded-01",
-   "slot": "Sights_Front_Welded",
-   "caliber": "any",
-   "sockets": {},
-   "profile": {
-    "x0": -0.0148,
-    "x1": 0.0162,
-    "top": [
-     0.0048,
-     0.0048,
-     0.0048,
-     0.0048,
-     0.0048,
-     0.0084,
-     0.0084,
-     0.0146,
-     0.0155,
-     0.0155,
-     0.0155,
-     0.0155,
-     0.0155,
-     0.0155,
-     0.0155,
-     0.0139
-    ],
-    "bot": [
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067,
-     -0.0067
-    ]
-   },
-   "bounds": {
-    "min": [
-     -0.0148,
-     -0.0067,
-     -0.0043
-    ],
-    "max": [
-     0.0162,
-     0.0155,
-     0.0043
-    ]
-   },
-   "triangles": 64,
-   "file": "kit/k-ironsight-front-welded-01.glb"
-  },
-  {
    "id": "k-device-foregrip-01",
    "slot": "Device",
    "caliber": "any",
@@ -92747,6 +92507,756 @@
    },
    "triangles": 278,
    "file": "kit/k-att-reflex-west.glb"
+  },
+  {
+   "id": "k-ironsight-rear-rail-01",
+   "slot": "Sights_Rear",
+   "caliber": "any",
+   "sockets": {},
+   "profile": {
+    "x0": -0.0111,
+    "x1": 0.0143,
+    "top": [
+     0.0241,
+     0.0241,
+     0.0241,
+     0.0241,
+     0.0241,
+     0.0194,
+     0.0148,
+     0.0121,
+     0.0103,
+     0.0103,
+     0.0103,
+     0.0103,
+     0.0103,
+     0.0103,
+     0.0103,
+     0.0103
+    ],
+    "bot": [
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033,
+     -0.0033
+    ]
+   },
+   "bounds": {
+    "min": [
+     -0.0111,
+     -0.0033,
+     -0.0133
+    ],
+    "max": [
+     0.0143,
+     0.0241,
+     0.0139
+    ]
+   },
+   "triangles": 311,
+   "file": "kit/k-ironsight-rear-rail-01.glb"
+  },
+  {
+   "id": "k-ironsight-rear-welded-01",
+   "slot": "Sights_Rear_Welded",
+   "caliber": "any",
+   "sockets": {},
+   "profile": {
+    "x0": -0.0045,
+    "x1": 0.0045,
+    "top": [
+     0.0098,
+     0.0098,
+     0.0098,
+     0.0143,
+     0.0143,
+     0.0143,
+     0.0143,
+     0.0143,
+     0.0143,
+     0.0143,
+     0.0143,
+     0.0143,
+     0.0143,
+     0.0098,
+     0.0098,
+     0.0098
+    ],
+    "bot": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "bounds": {
+    "min": [
+     -0.0045,
+     0,
+     -0.0079
+    ],
+    "max": [
+     0.0045,
+     0.0143,
+     0.0079
+    ]
+   },
+   "triangles": 96,
+   "file": "kit/k-ironsight-rear-welded-01.glb"
+  },
+  {
+   "id": "k-ironsight-front-556barrel-01",
+   "slot": "Sights_Front",
+   "caliber": "556",
+   "sockets": {},
+   "profile": {
+    "x0": -0.0164,
+    "x1": 0.017,
+    "top": [
+     0.0205,
+     0.0205,
+     0.0205,
+     0.0296,
+     0.0296,
+     0.0296,
+     0.0445,
+     0.0445,
+     0.0445,
+     0.0477,
+     0.0477,
+     0.0477,
+     0.0477,
+     0.0477,
+     0.0477,
+     0.0477
+    ],
+    "bot": [
+     -0.0084,
+     -0.0084,
+     -0.0084,
+     -0.0084,
+     0.0062,
+     0.0062,
+     0.0062,
+     0.0062,
+     0.0062,
+     0.0062,
+     0.0062,
+     -0.0084,
+     -0.0084,
+     -0.0084,
+     -0.0084,
+     -0.0084
+    ]
+   },
+   "bounds": {
+    "min": [
+     -0.0164,
+     -0.0084,
+     -0.0099
+    ],
+    "max": [
+     0.017,
+     0.0477,
+     0.0099
+    ]
+   },
+   "triangles": 106,
+   "file": "kit/k-ironsight-front-556barrel-01.glb"
+  },
+  {
+   "id": "k-ironsight-front-welded-01",
+   "slot": "Sights_Front_Welded",
+   "caliber": "any",
+   "sockets": {},
+   "profile": {
+    "x0": -0.0148,
+    "x1": 0.0162,
+    "top": [
+     0.0048,
+     0.0048,
+     0.0048,
+     0.0048,
+     0.0048,
+     0.0084,
+     0.0084,
+     0.0146,
+     0.0155,
+     0.0155,
+     0.0155,
+     0.0155,
+     0.0155,
+     0.0155,
+     0.0155,
+     0.0139
+    ],
+    "bot": [
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067,
+     -0.0067
+    ]
+   },
+   "bounds": {
+    "min": [
+     -0.0148,
+     -0.0067,
+     -0.0043
+    ],
+    "max": [
+     0.0162,
+     0.0155,
+     0.0043
+    ]
+   },
+   "triangles": 64,
+   "file": "kit/k-ironsight-front-welded-01.glb"
+  }
+ ],
+ "iron": [
+  {
+   "id": "hi_abatible",
+   "name": "Abatible de fusil",
+   "types": [
+    "rifle",
+    "smg",
+    "lmg",
+    "sniper",
+    "shotgun"
+   ],
+   "eras": [
+    "modern"
+   ],
+   "subtype": "mirilla",
+   "insert": null,
+   "rear": {
+    "file": "iron/hi_abatible_alza.glb",
+    "h": 0.022,
+    "lens": [
+     -0.0115,
+     0.022,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_abatible_punto.glb",
+    "h": 0.022,
+    "tip": [
+     0,
+     0.022,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_ak",
+   "name": "Tipo AK",
+   "types": [
+    "rifle",
+    "smg",
+    "lmg",
+    "shotgun"
+   ],
+   "eras": [
+    "rustic",
+    "modern"
+   ],
+   "subtype": "muesca",
+   "insert": null,
+   "rear": {
+    "file": "iron/hi_ak_alza.glb",
+    "h": 0.013,
+    "lens": [
+     -0.0205,
+     0.013,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_ak_punto.glb",
+    "h": 0.016,
+    "tip": [
+     0,
+     0.016,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_tambor",
+   "name": "Diópter de tambor",
+   "types": [
+    "rifle",
+    "smg"
+   ],
+   "eras": [
+    "modern"
+   ],
+   "subtype": "mirilla",
+   "insert": null,
+   "rear": {
+    "file": "iron/hi_tambor_alza.glb",
+    "h": 0.02,
+    "lens": [
+     -0.005,
+     0.02,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_tambor_punto.glb",
+    "h": 0.02,
+    "tip": [
+     0,
+     0.02,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_compacta",
+   "name": "Abatible compacta de polímero",
+   "types": [
+    "rifle",
+    "smg",
+    "shotgun",
+    "lmg"
+   ],
+   "eras": [
+    "modern"
+   ],
+   "subtype": "mirilla",
+   "insert": null,
+   "rear": {
+    "file": "iron/hi_compacta_alza.glb",
+    "h": 0.016,
+    "lens": [
+     -0.0025,
+     0.016,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_compacta_punto.glb",
+    "h": 0.016,
+    "tip": [
+     0,
+     0.016,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_tangente",
+   "name": "Clásica de rampa y hoja",
+   "types": [
+    "rifle",
+    "sniper",
+    "lmg"
+   ],
+   "eras": [
+    "classic"
+   ],
+   "subtype": "muesca_v",
+   "insert": null,
+   "rear": {
+    "file": "iron/hi_tangente_alza.glb",
+    "h": 0.012,
+    "lens": [
+     -0.0281,
+     0.012,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_tangente_punto.glb",
+    "h": 0.012,
+    "tip": [
+     0,
+     0.012,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_competicion",
+   "name": "Diópter de competición",
+   "types": [
+    "sniper",
+    "rifle"
+   ],
+   "eras": [
+    "classic",
+    "modern"
+   ],
+   "subtype": "mirilla",
+   "insert": null,
+   "rear": {
+    "file": "iron/hi_competicion_alza.glb",
+    "h": 0.024,
+    "lens": [
+     -0.01,
+     0.024,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_competicion_punto.glb",
+    "h": 0.024,
+    "tip": [
+     0,
+     0.024,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_scifi",
+   "name": "Sci-fi con insertos luminosos",
+   "types": [
+    "rifle",
+    "smg",
+    "lmg",
+    "sniper",
+    "shotgun"
+   ],
+   "eras": [
+    "scifi"
+   ],
+   "subtype": "mirilla",
+   "insert": [
+    0.25,
+    0.85,
+    1
+   ],
+   "rear": {
+    "file": "iron/hi_scifi_alza.glb",
+    "h": 0.018,
+    "lens": [
+     -0.009,
+     0.018,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_scifi_punto.glb",
+    "h": 0.018,
+    "tip": [
+     -0.0005,
+     0.018,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_fantasma",
+   "name": "Anillo fantasma y fibra",
+   "types": [
+    "shotgun",
+    "rifle",
+    "smg"
+   ],
+   "eras": [
+    "modern"
+   ],
+   "subtype": "mirilla",
+   "insert": [
+    0.95,
+    0.15,
+    0.1
+   ],
+   "rear": {
+    "file": "iron/hi_fantasma_alza.glb",
+    "h": 0.02,
+    "lens": [
+     -0.0025,
+     0.02,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_fantasma_punto.glb",
+    "h": 0.02,
+    "tip": [
+     0,
+     0.02,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_bola",
+   "name": "Bola de escopeta",
+   "types": [
+    "shotgun"
+   ],
+   "eras": [
+    "classic",
+    "rustic"
+   ],
+   "subtype": "canal",
+   "insert": [
+    0.78,
+    0.62,
+    0.28
+   ],
+   "rear": {
+    "file": "iron/hi_bola_alza.glb",
+    "h": 0.006,
+    "lens": [
+     0,
+     0.006,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_bola_punto.glb",
+    "h": 0.006,
+    "tip": [
+     0,
+     0.006,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_tres_puntos",
+   "name": "Pistola de tres puntos",
+   "types": [
+    "pistol",
+    "revolver"
+   ],
+   "eras": [
+    "modern"
+   ],
+   "subtype": "muesca",
+   "insert": [
+    0.95,
+    0.95,
+    0.92
+   ],
+   "rear": {
+    "file": "iron/hi_tres_puntos_alza.glb",
+    "h": 0.0095,
+    "lens": [
+     -0.001,
+     0.0095,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_tres_puntos_punto.glb",
+    "h": 0.0095,
+    "tip": [
+     0,
+     0.0095,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_fibra_pistola",
+   "name": "Pistola con fibra verde",
+   "types": [
+    "pistol"
+   ],
+   "eras": [
+    "modern",
+    "scifi"
+   ],
+   "subtype": "muesca",
+   "insert": [
+    0.2,
+    0.95,
+    0.3
+   ],
+   "rear": {
+    "file": "iron/hi_fibra_pistola_alza.glb",
+    "h": 0.009,
+    "lens": [
+     -0.0015,
+     0.009,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_fibra_pistola_punto.glb",
+    "h": 0.009,
+    "tip": [
+     -0.0005,
+     0.009,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_revolver",
+   "name": "Revólver de rampa",
+   "types": [
+    "revolver",
+    "pistol"
+   ],
+   "eras": [
+    "classic"
+   ],
+   "subtype": "muesca",
+   "insert": [
+    0.9,
+    0.2,
+    0.12
+   ],
+   "rear": {
+    "file": "iron/hi_revolver_alza.glb",
+    "h": 0.006,
+    "lens": [
+     -0.0116,
+     0.006,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_revolver_punto.glb",
+    "h": 0.012,
+    "tip": [
+     0.002,
+     0.012,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
+  },
+  {
+   "id": "hi_rustica",
+   "name": "Rústica de chapa y tornillo",
+   "types": [
+    "rifle",
+    "smg",
+    "shotgun",
+    "lmg"
+   ],
+   "eras": [
+    "rustic"
+   ],
+   "subtype": "mirilla",
+   "insert": null,
+   "rear": {
+    "file": "iron/hi_rustica_alza.glb",
+    "h": 0.018,
+    "lens": [
+     -0.0088,
+     0.018,
+     0
+    ]
+   },
+   "front": {
+    "file": "iron/hi_rustica_punto.glb",
+    "h": 0.018,
+    "tip": [
+     0,
+     0.018,
+     0
+    ]
+   },
+   "riser": {
+    "glb": 0.004,
+    "min": 0.002,
+    "max": 0.03
+   }
   }
  ]
 }

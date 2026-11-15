@@ -79,6 +79,23 @@ if (args[0] === "--tree") {
     for (const w of manifest.weapons) if (!old.weapons.some((o) => o.id === w.id)) out.weapons.push(w);
     if (manifest.kit) out.kit = [...(old.kit ?? []).filter((k) => !manifest.kit.some((n) => n.id === k.id)), ...manifest.kit];
   }
+  // Miras de hierro desmontables (raw/miras_hierro): los GLB ya siguen las convenciones; se copian tal cual y su índice
+  // pasa al manifest (alza en raíl_superior, punto en raíl_frontal; el ensamblador calcula la altura de los alzadores)
+  if (!only || only === "iron") {
+    const src = path.join(ROOT, "raw/miras_hierro"), dst = path.join(ROOT, "assets/weapons/iron");
+    await mkdir(dst, { recursive: true });
+    const idx = JSON.parse(await readFile(path.join(src, "miras_hierro.json"), "utf8"));
+    const ERA = { "clásica": "classic", moderna: "modern", "rústica": "rustic", "sci-fi realista": "scifi", "sci-fi": "scifi" };
+    out.iron = [];
+    for (const j of idx) {
+      for (const half of [j.alza, j.punto]) await writeFile(path.join(dst, path.basename(half.archivo)), await readFile(path.join(src, half.archivo)));
+      out.iron.push({ id: j.id, name: j.nombre, types: j.categorias_compatibles, eras: j.eras.map((e) => ERA[e] ?? e), subtype: j.subtipo, insert: j.color_inserto ?? null,
+        rear: { file: `iron/${path.basename(j.alza.archivo)}`, h: j.alza.altura_linea_cabeza_m, lens: j.alza.centro_lente_en_cabeza },
+        front: { file: `iron/${path.basename(j.punto.archivo)}`, h: j.punto.altura_linea_cabeza_m, tip: j.punto.punta_en_cabeza },
+        riser: { glb: j.alzador.alto_en_glb_m, min: j.alzador.minimo_m, max: j.alzador.maximo_m } });
+      console.log(`✓ iron/${j.id}`);
+    }
+  }
   await writeFile(path.join(ROOT, "assets/weapons/manifest.json"), JSON.stringify(out, null, 1));
 }
 await browser.close();

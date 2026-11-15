@@ -7,7 +7,7 @@ import type { WeaponAssembler, AssembledWeapon, AssembledPart } from "../weapons
 import type { WeaponType } from "../weapons/types";
 import { PELLETS } from "../weapons/generator";
 import { EffectRunner, type FxAction } from "../weapons/effects";
-import { accessory } from "../weapons/accessories";
+import { accessory, isIron } from "../weapons/accessories";
 import type { Item } from "./inventory";
 import type { Dummy, Element, Zone } from "./dummies";
 import { mergeStatic } from "./merge";
@@ -102,7 +102,8 @@ export class Gun {
   private sightY = 0.03;
   zoom = 1;
   /** Tipo de mira para apuntar: alzas, punto rojo, holográfica o visor de aumento (vista a pantalla completa). */
-  sight: "iron" | "dot" | "holo" | "scope" = "iron";
+  /** iron = sin mira (estilo Black); irons = miras de hierro desmontables (se apunta por su centro, zoom ×1,1). */
+  sight: "iron" | "irons" | "dot" | "holo" | "scope" = "iron";
   private flashLight = new THREE.PointLight(0xffc27a, 0, 6, 2);
   private flash: THREE.Mesh;
   private tracers: { line: THREE.Line; t: number; max: number }[] = [];
@@ -191,7 +192,8 @@ export class Gun {
     // Pantalla de visor (con desenfoque alrededor) solo en miras de francotirador; ACOG, prismas y térmica se apuntan a
     // través del modelo con su aumento
     const sniperScope = !!item.spec.optic && (/^k-att-scope-|ltermica$/.test(item.spec.optic) || opt?.id === "acc:scope6");
-    if (libZ !== undefined) { this.sight = sniperScope ? "scope" : libZ <= 1.2 ? "dot" : "holo"; this.zoom = libZ <= 1.2 ? 1.3 : libZ; }
+    if (isIron(item.spec.optic)) { this.sight = "irons"; this.zoom = opt?.zoom ?? 1.1; }
+    else if (libZ !== undefined) { this.sight = sniperScope ? "scope" : libZ <= 1.2 ? "dot" : "holo"; this.zoom = libZ <= 1.2 ? 1.3 : libZ; }
     else if (opt) { this.sight = sniperScope ? "scope" : opt.id === "acc:reddot" ? "dot" : "holo"; this.zoom = opt.zoom ?? 1; }
     else if (item.spec.optic) { this.sight = "scope"; this.zoom = 3; }                 // mira de modelo (cosmo)
     else { this.sight = "iron"; this.zoom = 1; } // (francotirador: visor solo si el modelo lo trae, ver abajo)
@@ -334,7 +336,7 @@ export class Gun {
     // ---------- Animación (capa procedural: src/game/anim.ts) ----------
     const pose = this.anim.update({
       dt, time: performance.now() / 1000, ads: this.aimT, moving: c.moving, sprinting: c.sprinting, grounded: c.grounded, vy: c.vy,
-      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, sightY: this.sightY, gripX: this.model?.handles.grip.x, iron: this.sight === "iron",
+      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, sightY: this.sightY, sightX: this.sight === "irons" ? this.model?.sightX : undefined, gripX: this.model?.handles.grip.x, iron: this.sight === "iron",
       reload: this.reloadT > 0 && s ? 1 - this.reloadT / this.reloadDur : null,
       draw: this.equipT > 0 ? this.equipT / this.equipDur : 0,
       holster: this.pending ? 1 - Math.max(0, this.holsterT) / Math.max(0.01, this.anim.p.holster) : 0,

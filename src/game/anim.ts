@@ -74,6 +74,7 @@ export interface AnimInput {
   /** Largo del modelo y altura de la línea de mira (para la posición de apuntado). */ length: number; sightY: number;
   /** X local de la empuñadura respecto al centro del modelo (la boca está en +X). */ gripX?: number;
   /** Sin óptica: al apuntar no se alinea la mira de hierro; el arma se acerca y se centra un poco (estilo Black). */ iron?: boolean;
+  /** Miras de hierro montadas: X del alza respecto al centro del arma (el ojo queda a 2,5 cm detrás de ella (los cuerpos de las alzas no pasan de 1,5 cm detrás de su lente), como en un shooter moderno: la mirilla llena la vista). */ sightX?: number;
   /** Progreso de la recarga 0..1, o null. */ reload: number | null;
   /** Progreso de sacar el arma (1 al empezar … 0 lista), de guardarla (0 … 1 guardada) y de la inspección (0..1 o null). */
   draw: number; holster: number; inspect: number | null;
@@ -129,7 +130,11 @@ export class ViewAnimator {
     // Cadera → mira (con un leve giro a mitad del gesto, como al subir el arma a la cara)
     // En cadera, la empuñadura queda a `gripZ` de la cámara (sin que la culata pase de 34 cm detrás del ojo: más, en armas muy largas, las alejaba); al
     // apuntar, la culata a `aimZ` delante, como antes
-    const adsZ = -(i.length * 0.5 + p.aimZ);
+    // (con miras de hierro, el ojo justo detrás del alza: si no, la culata quedaba delante de una línea de mira tan baja)
+    // (si con eso la mano de la empuñadura quedaba casi en el plano de la cámara, tapaba toda la vista: el ojo se
+    // retrasa hasta 6 cm por detrás de la empuñadura)
+    const eyeX = i.sightX === undefined ? 0 : i.gripX !== undefined && i.sightX - 0.025 < i.gripX + 0.045 ? Math.min(i.sightX - 0.025, i.gripX - 0.06) : i.sightX - 0.025;
+    const adsZ = i.sightX !== undefined ? eyeX : -(i.length * 0.5 + p.aimZ);
     const hipZ = i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, 0.34 - i.length * 0.5) : -(i.length * 0.5 + p.hip[2]);
     // Mira de hierro: se acerca el arma hacia el centro, por debajo de la vista (la cámara hace zoom); con óptica, la
     // línea de mira pasa por el centro de la óptica
