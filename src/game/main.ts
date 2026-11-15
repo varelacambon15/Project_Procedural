@@ -4,7 +4,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import * as THREE from "three";
-import { GRENADE_RARITY, GrenadePouch, makeGrenade, setGrenadeUid } from "./grenades";
+import { GRENADE_RARITY, GrenadePouch, makeGrenade, setGrenadeUid, type GrenadeRarity, type GrenadeSpec } from "./grenades";
 import { GrenadeFx } from "./grenadefx";
 import { applyEvent, claimAll, refreshContracts, type Contract, type ContractState } from "./contracts";
 import { initSounds, loadSamples, playSample, sample, soundManifest, startMusic } from "./audio";
@@ -432,7 +432,7 @@ async function boot() {
   const php = new PlayerHealth();
   let waveHurt = false;
   const waves = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
-    onWaveEnd: (i, last) => { if (Math.random() < 0.25 && inv.grenades.length < 8) { const g = makeGrenade(Math.floor(Math.random() * 1e9)); inv.grenades.push(g); if (inv.grenadeActive < 0) inv.grenadeActive = inv.grenades.length - 1; toast(t("gr.found", { n: t(`gr.${g.kind}`), r: t(`rarity.${g.rarity}`) })); }
+    onWaveEnd: (i, last) => {
       contractEvent({ type: "wave", reached: i + 1, clean: !waveHurt }); waveHurt = false; toast(t("ui.waveDone", { n: i + 1 })); earn(SHOP.income.waveEnd); hooksWaveEnd(i, last); },
     onAllDone: () => { toast(t("ui.wavesDone")); autosave(); },
     onPlayerHit: (dmg) => {
@@ -456,12 +456,31 @@ async function boot() {
   const loot = new LootDirector(Math.random);
   let gameTime = 0;
   const LEVEL: Record<string, number> = { comun: 0, poco: 1, rara: 2, epica: 3, legendaria: 4 };
+  // Granadas en el suelo: esfera brillante con haz; se recogen al pasar por encima y caducan como el botín
+  const nadeDrops: { g: GrenadeSpec; mesh: THREE.Group; t: number }[] = [];
+  function dropNade(g: GrenadeSpec, at: THREE.Vector3) {
+    const grp = new THREE.Group(), col = new THREE.Color(GRENADE_RARITY[g.rarity].color);
+    grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.6 })));
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 8, 1, true), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })); beam.position.y = 1.1; grp.add(beam);
+    grp.position.copy(at).setY(0.2); scene.add(grp); nadeDrops.push({ g, mesh: grp, t: LOOT.expireSeconds });
+    lootChime(LEVEL[g.rarity] ?? 0);
+  }
+  function updateNadeDrops(dt: number) {
+    for (const n of [...nadeDrops]) {
+      n.t -= dt; n.mesh.rotation.y += dt * 2; n.mesh.children[0].position.y = Math.sin(gameTime * 3) * 0.05;
+      const near = n.mesh.position.distanceTo(player.pos.clone().setY(0.2)) < 1.4;
+      if (near && inv.grenades.length < 8) { inv.grenades.push(n.g); if (inv.grenadeActive < 0) inv.grenadeActive = inv.grenades.length - 1; toast(t("gr.found", { n: t(`gr.${n.g.kind}`), r: t(`rarity.${n.g.rarity}`) })); }
+      if ((near && inv.grenades.includes(n.g)) || n.t <= 0) { scene.remove(n.mesh); nadeDrops.splice(nadeDrops.indexOf(n), 1); }
+    }
+  }
   function dropLoot(source: LootSource, at: THREE.Vector3) {
     const onGround = pickups.list.filter((p) => p.expires != null).length;
     const rarity = loot.kill(source, gameTime, onGround);
     if (!rarity) return;
-    const spec = rollWeapon(rarity);
     const a = Math.random() * Math.PI * 2;
+    // De vez en cuando, en lugar del arma cae una granada de esa rareza (menos común que las armas)
+    if (Math.random() < 0.2) { dropNade(makeGrenade(Math.floor(Math.random() * 1e9), undefined, rarity as GrenadeRarity), at); return; }
+    const spec = rollWeapon(rarity);
     pickups.spawn(makeItem(spec), at.clone().setY(1.1), new THREE.Vector3(Math.cos(a) * 1.2, 3.4, Math.sin(a) * 1.2), { compile: true, expires: LOOT.expireSeconds });
     lootChime(LEVEL[rarity] ?? 0);
     if (LEVEL[rarity] >= 3) toast(t("ui.lootDrop", { r: t(`rarity.${rarity}`), n: spec.name }));
@@ -607,7 +626,7 @@ async function boot() {
       // Las oleadas viven en su sala: salir por la puerta las detiene
       if (waves.active && (player.pos.z < world.wavesRoom.z0 || player.pos.z > world.wavesRoom.z1)) { waves.stop(); toast(t("ui.wavesLeft")); }
       waves.update(dt);
-      pouch.update(dt); nades.update(dt); nadeHud(); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
+      pouch.update(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
     healthHud();
     {

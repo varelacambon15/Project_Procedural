@@ -424,3 +424,4 @@ body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family
 .nade { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 10px; align-items: center; padding: 8px; background: var(--t-panel2); border: 1px solid var(--t-line); border-left: 3px solid var(--c); }
 .nade b { font-family: var(--display); color: var(--c); font-size: 18px; font-weight: 400; } .nade span { grid-column: 1; color: var(--t-dim); font-size: 12px; }
 .nade .btn { grid-row: 1 / span 2; } .nade.on { outline: 1px solid var(--c); }
+.sc-tile .nadeimg { font-size: 54px; color: var(--c); }

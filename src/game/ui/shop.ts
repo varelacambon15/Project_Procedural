@@ -60,6 +60,7 @@ export class ShopScreen {
     $("shop-credits").textContent = `${cr} ${t("unit.cr")}`;
     $("shop-level").textContent = "";
     const tiles = specs.map((s, i) => {
+      if (this.nadeAt(i)) return this.nadeTile(i, sc.sold[i]);
       const price = showcasePrice(s.rarity.id, s.level), sold = sc.sold[i];
       const btn = sold ? `<span class="soldtag">${t("shop.soldOut")}</span>`
         : cr < price ? `<button type="button" class="btn ghost sm" disabled>${t("shop.short", { c: price - cr })}</button>`
@@ -84,7 +85,7 @@ export class ShopScreen {
     }).join("");
     const detail = this.sel >= 0 ? weaponCard(specs[this.sel], this.inv.current?.spec ?? null, this.inv.current ? t("ui.compared") : "") : `<p class="hint-sel">${t("shop.pick")}</p>`;
     $("shop-tiers").innerHTML = `<div class="sc-head"><h2>${t("shop.showcase")}</h2><span class="timer">${t("shop.refreshIn", { t: mmss(Math.max(0, sc.refreshAt - this.hooks.gameTime())) })}</span></div>
-      <div class="sc-row">${tiles}</div>${this.nadeHTML()}<div class="crates">${crates}</div>${this.sellHTML()}`;
+      <div class="sc-row">${tiles}</div><div class="crates">${crates}</div>${this.sellHTML()}`;
     $("shop-detail").innerHTML = detail;
     // Imagen fija de cada arma del escaparate (miniatura; se cachea por semilla, ronda y ranura)
     specs.forEach((s, i) => {
@@ -95,22 +96,18 @@ export class ShopScreen {
     $("shop-reveal").hidden = !this.reveal;
     $("shop-foot").innerHTML = keyHint("Enter", "Ⓐ", t("shop.buyKey")) + keyHint("Esc", "Ⓑ", this.reveal ? t("shop.skip") : t("ui.back"));
   }
-  /** Granadas del escaparate (3 por ronda, deterministas por la semilla y la ronda). */
-  private nades() {
-    const sc = ensureShowcase(this.state(), this.hooks.gameTime()) as ReturnType<typeof ensureShowcase> & { nadeRound?: number; nadeSold?: boolean[] };
-    if (sc.nadeRound !== sc.round) { sc.nadeRound = sc.round; sc.nadeSold = [false, false, false]; }
-    return { sc, list: [0, 1, 2].map((i) => makeGrenade(sc.seed * 7 + sc.round * 131 + i * 17 + 5)) };
+  /** Huecos del escaparate que esta ronda ofrecen una granada en lugar de un arma (≈ 1 de cada 6, deterministas). */
+  private nadeAt(i: number) {
+    const { sc } = this.showcase(), h = Math.imul((sc.seed * 7 + sc.round * 131 + i * 17) | 0, 2654435761) >>> 0;
+    return h % 6 === 0 ? makeGrenade(sc.seed * 7 + sc.round * 131 + i * 17 + 5) : null;
   }
-  private nadeHTML() {
-    const { sc, list } = this.nades(), cr = this.inv.credits;
-    const tiles = list.map((g, i) => {
-      const price = GRENADE_RARITY[g.rarity].price, sold = sc.nadeSold![i];
-      const btn = sold ? `<span class="soldtag">${t("shop.soldOut")}</span>` : cr < price ? `<button type="button" class="btn ghost sm" disabled>${t("shop.short", { c: price - cr })}</button>`
-        : `<button type="button" class="btn sm" data-buynade="${i}">${t("shop.buy", { c: price })}</button>`;
-      return `<div class="sc-tile ${sold ? "sold" : ""}" style="--c:${GRENADE_RARITY[g.rarity].color}"><b class="nm">${t(`gr.${g.kind}`)}</b>
-        <span class="meta">${t(`rarity.${g.rarity}`)} · ${t("gr.stats", { d: g.damage, r: g.radius, c: g.charges, s: g.recharge })}</span><span class="meta">${t(`gr.desc.${g.kind}`)}</span>${btn}</div>`;
-    }).join("");
-    return `<div class="sc-head"><h2>${t("gr.title")}</h2></div><div class="sc-row">${tiles}</div>`;
+  private nadeTile(i: number, sold: boolean) {
+    const g = this.nadeAt(i)!, cr = this.inv.credits, price = GRENADE_RARITY[g.rarity].price;
+    const btn = sold ? `<span class="soldtag">${t("shop.soldOut")}</span>` : cr < price ? `<button type="button" class="btn ghost sm" disabled>${t("shop.short", { c: price - cr })}</button>`
+      : `<button type="button" class="btn sm" data-buynade="${i}">${t("shop.buy", { c: price })}</button>`;
+    return `<div class="sc-tile ${sold ? "sold" : ""}" style="--c:${GRENADE_RARITY[g.rarity].color}"><div class="img nadeimg">✹</div><b class="nm">${t("gr.title1")}: ${t(`gr.${g.kind}`)}</b>
+      <span class="meta">${t(`rarity.${g.rarity}`)} · ${t("gr.stats", { d: g.damage, r: g.radius, c: g.charges, s: g.recharge })}</span><span class="meta">${t(`gr.desc.${g.kind}`)}</span>
+      <div class="price"><strong>${price}</strong> ${t("unit.cr")}</div>${btn}</div>`;
   }
   /** Vender: las armas que llevas encima (equipadas y mochila), con su precio; un clic vende. */
   private sellHTML() {
@@ -137,10 +134,11 @@ export class ShopScreen {
     if (target.closest("[data-close]")) return this.close();
     const nadeBtn = target.closest<HTMLElement>("[data-buynade]");
     if (nadeBtn) {
-      const i = Number(nadeBtn.dataset.buynade), { sc, list } = this.nades(), g = list[i], price = GRENADE_RARITY[g.rarity].price;
-      if (sc.nadeSold![i] || this.inv.credits < price) return;
+      const i = Number(nadeBtn.dataset.buynade), { sc } = this.showcase(), g = this.nadeAt(i); if (!g) return;
+      const price = GRENADE_RARITY[g.rarity].price;
+      if (sc.sold[i] || this.inv.credits < price) return;
       if (this.inv.grenades.length >= 8) { this.hooks.toast(t("gr.full")); return; }
-      this.inv.credits -= price; sc.nadeSold![i] = true; this.inv.grenades.push(g);
+      this.inv.credits -= price; sc.sold[i] = true; this.inv.grenades.push(g);
       if (this.inv.grenadeActive < 0) this.inv.grenadeActive = this.inv.grenades.length - 1;
       this.hooks.toast(t("gr.bought", { n: t(`gr.${g.kind}`) })); this.render(); return;
     }
