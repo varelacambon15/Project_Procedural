@@ -249,4 +249,9 @@ ALL.push(
   { kind: "glbparts", pack: "pulidas", id: "u-bullpup-b", label: "Bullpup B", type: "bullpup", glb: `${AP}/bullpup_B/bullpup_B_piezas_ensambladas.glb`, modular: false },
 );
 
+// Revisión de orientación (criba del usuario): modelos que quedaban con la boca hacia −X (culata delante). Se invierte
+// su giro de media vuelta (flipX): a los que no lo tenían se les pone, y al que lo tenía de más (PPSH-Drum) se le quita.
+const FLIP_FIX = new Set(["z-assaultrifle-01", "z-submachinegun-02", "z-submachinegun-03", "p-machine-gun-1", "p-submachine-gun-1", "p-submachine-gun-5", "v-ppsh-drum"]);
+for (const j of ALL) if (FLIP_FIX.has(j.id)) j.hint = { ...(j.hint ?? {}), flipX: !j.hint?.flipX };
+
 export const JOBS = ALL.map((j) => (BODY_ONLY[j.id] ? { ...j, pick: [{ match: BODY_ONLY[j.id], role: "body" }] } : j)).concat(kitJobs, attJobs, libSightJobs);

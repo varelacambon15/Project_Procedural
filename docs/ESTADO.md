@@ -131,6 +131,22 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 25 (relevo): criba de modelos
+
+- `WHOLE_OUT` (generator.ts): 53 modelos que ya no salen como arma completa (criba del usuario); sus piezas siguen
+  como donantes dentro de su familia. `RETIRED` (fuera del todo, piezas incluidas): u-fusil-a, u-bullpup-b,
+  z-submachinegun-03 y p-submachine-gun-1 (las P90 del revés), x-subfusil-10, w-f2000, p-machine-gun-2.
+- Familia de intercambio = pack + era (`sameEra`, con `AssetEntry.era` o `baseEra`): culatas, guardamanos,
+  empuñaduras y cargadores. Los cargadores salen de todo el pack (no solo de las armas completas); los de tambor
+  de subfusil (v-m3gg-drum, v-ppsh-drum) valen aunque cambie la altura.
+- Orientación: `FLIP_FIX` en tools/weapon-jobs.mjs invierte `flipX` de z-assaultrifle-01, z-submachinegun-02/03,
+  p-machine-gun-1, p-submachine-gun-1/5 y v-ppsh-drum (reconvertidas; ya apuntan a +X).
+- Música: assets/music/ambient-02.ogg suavizada con ffmpeg (graves −9 dB, 2,5 kHz −8 dB, paso bajo 3,8 kHz, eco
+  corto, loudnorm −26 LUFS): nivel y graves como la canción de ejemplo del usuario, sin agudos ásperos.
+- Revólver: siempre el disparo del Python. Banco: `modelSheet(desde, n, ids)`.
+- Armas de modelo que quedan: pistol 33, revolver 13, smg 31, rifle 30 (+4 bullpup), shotgun 25, sniper 24, lmg 3
+  (más las generadas por código). Eras: modern 107, classic 39, scifi 15, rustic 2.
+
 ## Ronda 24 (relevo)
 
 Hecho:

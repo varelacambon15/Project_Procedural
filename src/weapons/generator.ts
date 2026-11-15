@@ -4,7 +4,7 @@ import { hashString, mulberry32, pick, type Rng } from "./rng";
 import { ACCESSORIES, accessory, isIron } from "./accessories";
 import { FINISHES, FINISH_WEIGHTS } from "./finish";
 import { EFFECTS_A, EFFECTS_B, EFFECTS_L, legalWith } from "./effects";
-import { eraFinishes, rollEra, rollModernization, type Era } from "./eras";
+import { baseEra, eraFinishes, rollEra, rollModernization, type Era } from "./eras";
 import { clipProfile, frontProfile, stockProfile, type FrontKind, type StockKind } from "./procparts";
 import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zoneLen, type Box2, type Placed, type Stretch } from "./variation";
 import { LONG_ARCHES, LONG_HINTS, LONG_MUTATIONS, LONG_STRUCTURAL, longArchDesign, longArchesFor, longEntry, longKey, longMutationAllowed, longPolys, longSpans, type LEra, type LFamily, type LongDesign } from "./longgen";
@@ -274,7 +274,7 @@ export class WeaponGenerator {
     this.kit = new KitIndex(manifest.kit ?? []);
     for (const w of manifest.weapons) {
       this.byId.set(w.id, w);
-      if (w.excluded || w.donor || RETIRED.has(w.id)) continue; // se puede leer (armas guardadas), pero no sale en el botín
+      if (w.excluded || w.donor || RETIRED.has(w.id) || WHOLE_OUT.has(w.id)) continue; // se puede leer (armas guardadas), pero no sale en el botín
       if (!this.byType.has(w.type)) this.byType.set(w.type, []);
       this.byType.get(w.type)!.push(w);
     }
@@ -415,7 +415,8 @@ export class WeaponGenerator {
         // (forma parecida y también alto parecido: un cargador de caja de ametralladora en un AK quedaba gigante)
         const magH = (w: AssetEntry) => { const pb = w.partBounds?.magazine; return pb ? pb.max[1] - pb.min[1] : 0; };
         const hRatio = (w: AssetEntry) => (magH(base) > 0 ? magH(w) / magH(base) : 1);
-        const mags = pool.filter((w) => w.pack === base.pack && w.id !== base.id && w.parts.some((p) => p.role === "magazine") && Math.abs(magSpread(w) - magSpread(base)) < 0.25 && hRatio(w) > 0.75 && hRatio(w) < 1.3);
+        const mags = this.manifest.weapons.filter((w) => w.type === base.type && !w.excluded && !RETIRED.has(w.id) && w.pack === base.pack && sameEra(w, base) && w.id !== base.id && w.parts.some((p) => p.role === "magazine") && ((Math.abs(magSpread(w) - magSpread(base)) < 0.25 && hRatio(w) > 0.75 && hRatio(w) < 1.3) || (/-drum$/.test(w.id) && base.type === "smg")));
+        // (los cargadores de tambor de los subfusiles se conservan como pieza: van de frente, de su propio modelo)
         parts.push({ role: "magazine", from: (swapped < 2 && mags.length && r() < 0.35 ? pick(r, mags) : base).id });
       }
     }
@@ -541,7 +542,7 @@ export class WeaponGenerator {
         // Una base y poco más: 1-2 piezas de la misma familia (se adaptan a la junta: pieceScale)
         // (los modelos del usuario, u-…, prestan culata, empuñadura y cargador, pero no el guardamanos: en cuña quedaba
         // como un pico pegado en otros fusiles; sí reciben piezas de otros)
-        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && !w.excluded && !RETIRED.has(w.id) && (!w.id.startsWith("u-") || role !== "front") && w.pack === base.pack && w.id !== base.id && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)) && !w.quarantine);
+        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && !w.excluded && !RETIRED.has(w.id) && (!w.id.startsWith("u-") || role !== "front") && w.pack === base.pack && sameEra(w, base) && w.id !== base.id && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)) && !w.quarantine);
         const cls = (t: WeaponType) => (t === "smg" ? "compact" : "long");
         const fit = (joint: "rear" | "front" | "grip", lo: number, hi: number) => (w: AssetEntry) => within(jointScale(base, w, joint), lo, hi);
         const libOk = (joint: "rear" | "front" | "grip") => (w: AssetEntry) => !w.donor || within(jointScale(base, w, joint), 0.82, 1.22);
@@ -1291,11 +1292,29 @@ function kit39Era(a: Tweaks["eraAdds"]): Tweaks["eraAdds"] { return a ? { ...a, 
 /** Cuerpos con la culata integrada (no se estira el tramo trasero). */
 const INTEGRAL_STOCK = new Set(["w-p90", "z-submachinegun-03", "u-bullpup-b"]);
 /** Bases retiradas del sorteo (se siguen pudiendo cargar en partidas guardadas), con el motivo. */
+/** Era de estilo de un modelo (la del pack del usuario o la de su prefijo): las piezas solo se cambian dentro de pack + era. */
+const eraOfEntry = (w: AssetEntry) => w.era ?? baseEra(w.id);
+const sameEra = (a: AssetEntry, b: AssetEntry) => eraOfEntry(a) === eraOfEntry(b);
+/**
+ * Criba del usuario: ya no salen como arma completa, pero sus piezas (culatas, guardamanos, empuñaduras, cargadores,
+ * tambores…) siguen en la biblioteca para otras armas de su familia. Se pueden leer en partidas guardadas.
+ */
+const WHOLE_OUT = new Set<string>([
+  "q-pistol-2", "q-pistol-5", "q-revolver-2", "q-submachinegun-5", "q-assaultrifle-3", "q-assaultrifle-4", "q-assaultrifle2-2", "q-shotgun-3", "q-sniperrifle-2", "q-sniperrifle-5",
+  "a-launcher",
+  "w-barrett", "w-m249", "w-ppsh", "w-m1911", "w-m16a4", "w-g36", "w-ak47", "w-mp5k", "w-vector", "w-deagle",
+  "v-boltaction-rifles-a-medium", "v-boltaction-rifles-a-short", "v-boltaction-rifles-b-medium", "v-boltaction-rifles-b-short", "v-lever-rifles-medium", "v-lever-rifles-short",
+  "v-revolver-rifles-medium", "v-revolver-rifles-short", "v-carabine-shotgun-short", "v-pump-shotgun-short", "v-semiautomati-schotgun", "v-hunter-shotgun-sawoff",
+  "v-m3gg-drum", "v-ppsh-drum", "v-msr-c96-medium", "v-msr-c96-short", "v-revolver-a-medium", "v-revolver-a-short", "v-revolver-b-medium", "v-revolver-b-short",
+  "z-assaultrifle-01", "z-assaultrifle-02", "z-submachinegun-01", "z-submachinegun-02", "z-submachinegun-03", "z-sniperrifle-02",
+  "p-machine-gun-4", "p-submachine-gun-2", "p-submachine-gun-5",
+  "x-pistol-3",
+]);
 const RETIRED = new Set<string>([
-  "v-ppsh-drum", // el tambor viene girado 90° dentro de la misma malla del cuerpo (se ve de canto); quedan w-ppsh y v-ppsh
   "p-machine-gun-2", // como fusil quedaba un cajón de ametralladora tosco con culata de caja
   "u-fusil-a", "u-bullpup-b", // ARX y TAR-21 antiguos: sustituidos por las versiones limpias del kit (x-arx-160, x-tar-21)
   "x-subfusil-10", // subfusil del kit de bloques: con cualquier pieza quedaba deforme (decisión del usuario, "Hound")
+  "z-submachinegun-03", "p-submachine-gun-1", // P90 que venían del revés: fuera del todo, también sus piezas (decisión del usuario)
   "w-f2000", // demasiado parecidas entre sí (decisión del usuario); los bullpups por código y u-bullpup-b cubren el tipo
 ]);
 export const TYPE_LENGTH: Partial<Record<WeaponType, number>> = { pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, lmg: 1.15, launcher: 1.1, flamethrower: 0.95 };

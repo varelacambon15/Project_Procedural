@@ -285,8 +285,8 @@ async function boot() {
    * Hoja de criba: cada arma de modelo tal cual viene (su .glb, sin variar), 4 por fila, con su id, pack y tipo.
    * `from`/`count` paginan la lista (sin excluidas, donantes ni accesorios).
    */
-  const modelSheet = async (from = 0, count = 24) => {
-    const list = manifestRef.weapons.filter((w) => !w.excluded && !w.donor && w.type !== "accessory").slice(from, from + count);
+  const modelSheet = async (from = 0, count = 24, ids: string[] | null = null) => {
+    const list = ids ? ids.map((id) => manifestRef.weapons.find((w) => w.id === id)!).filter(Boolean) : manifestRef.weapons.filter((w) => !w.excluded && !w.donor && w.type !== "accessory").slice(from, from + count);
     const VW = 420, VH = 200, HEAD = 34, per = 4;
     const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(VW, VH); r.toneMapping = THREE.ACESFilmicToneMapping;
     const sc = new THREE.Scene(); studioLights(sc, r, 0x4a4e55);
