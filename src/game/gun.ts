@@ -278,6 +278,8 @@ export class Gun {
   private sampleShot(type: WeaponType, quiet: boolean): boolean {
     const m = soundManifest; if (!m) return false;
     const p = pickShot(m, type, quiet); if (!p) return false;
+    // Revólver: el disparo según el calibre (el del Judge es un estampido de cartucho de escopeta: solo pesados y mágnum)
+    if (type === "revolver") { const cal = this.spec?.tweaks?.pistol?.cyl?.cal, l = m.tipos.revolver?.disparo ?? []; const want = l.find((f) => (cal === "heavy" || cal === "magnum") === /judge/.test(f)); if (want) p.main = want; }
     const buf = sample(p.main); if (!buf) return false;
     const a = audio(), now = a.currentTime;
     if (this.lastShot && now - this.lastShotT < 0.25) fadeOut(this.lastShot, 0.025);
@@ -335,6 +337,18 @@ export class Gun {
     this.tacReload = this.item.ammo > 0;
     // Variante de recarga fija del arma (por su semilla); cada paso suena en su fracción del tiempo de recarga
     this.reloadSnd = soundManifest ? pickReload(soundManifest, s.type, s.seed) : null; this.reloadDone = 0;
+    // Revólver: cada paso del pack suena en su fase de la animación del tambor (abrir, vaciar, cargar, cerrar); con las
+    // fracciones fijas del pack se oía el tambor cerrarse mientras la mano aún cargaba
+    if (s.type === "revolver" && this.reloadSnd) {
+      const phs = this.anim.p.reload.phases, at = (id: string, f: number) => { let acc = 0; for (const [p, w] of phs) { if (p === id) return acc + w * f; acc += w; } return null; };
+      const PH: Record<string, [string, number]> = { abrir_tambor: ["open", 0.5], vaciar: ["eject", 0.4], cargar: ["load", 0.75], girar: ["close", 0.1], cerrar_tambor: ["close", 0.7] };
+      const loads = this.reloadSnd.pasos.filter((p) => p.evento === "cargar").length; let k = 0;
+      this.reloadSnd = { ...this.reloadSnd, pasos: this.reloadSnd.pasos.map((p) => {
+        const m = PH[p.evento]; if (!m) return p;
+        const f = p.evento === "cargar" && loads > 1 ? 0.5 + 0.4 * (k++ / (loads - 1)) : m[1];
+        return { ...p, en: at(m[0], f) ?? p.en };
+      }).sort((a, b) => a.en - b.en) };
+    }
     if (s.type === "shotgun" && soundManifest) {
       const vs = soundManifest.tipos.shotgun?.recarga ?? [];
       const box = this.anim.reloadOverride?.style === "mag", v = vs.find((x) => x.id === (box ? "cargador" : "bombeo")) ?? null;
