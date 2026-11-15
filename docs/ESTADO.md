@@ -147,6 +147,8 @@ Hecho:
 - Pulgar de la mano derecha: cierre máximo sin atravesar la empuñadura (`fitCurls` devuelve también el pulgar).
 
 Pendiente: probar la mezcla de volúmenes en juego; `scifi_storm_psr` para armas sci-fi; corredera sin uso.
+- PRIORIDAD (usuario): pulgar que atraviesa las empuñaduras (el ajuste de `fitCurls` no está comprobado en capturas) y
+  rehacer las manos (dedos más finos y redondeados, menos separados; hoy parecen bloques).
 
 ## Ronda 22 (relevo): pistolas y revólveres en mano, guardamonte de revólver
 
