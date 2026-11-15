@@ -424,7 +424,8 @@ async function boot() {
     const radius = 6 + Math.tan(THREE.MathUtils.degToRad(spread)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * innerHeight / 2;
     ch.style.setProperty("--r", `${(Math.max(10, radius) + gun.crossKick * 9).toFixed(1)}px`);
     ch.dataset.type = s?.type ?? "fists";
-    ch.style.opacity = state !== "play" || player.sprinting ? "0" : String(1 - gun.aimT * (gun.sight === "iron" ? 0.35 : 1));
+    ch.style.opacity = state !== "play" ? "0" : player.sprinting ? "0.9" : String(1 - gun.aimT * (gun.sight === "iron" ? 0.35 : 1));
+    ch.classList.toggle("sprint", state === "play" && player.sprinting);
     ch.classList.toggle("hit", gun.hitmarker > 0); ch.classList.toggle("crit", gun.critmarker > 0); ch.classList.toggle("kill", gun.killmarker > 0);
     document.body.classList.toggle("in-menu", state !== "play");
   }
