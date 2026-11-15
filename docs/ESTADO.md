@@ -131,6 +131,12 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 28 (relevo): música
+
+- `assets/music/ambient-03.ogg` sustituye a ambient-02 (que se retiró; sigue en el historial de git): la canción de
+  ejemplo del usuario (19 min), pasada a OGG con bucle sin corte (cola y cabeza mezcladas 8 s), paso alto 30 Hz,
+  paso bajo 6,5 kHz y loudnorm −27 LUFS. Pesa 11 MB. Es provisional hasta que el usuario pase la definitiva.
+
 ## Ronda 27 (relevo, versión 0.8.9): granadas
 
 - Granadas equipables (`src/game/grenades.ts`, tests/grenades.test.ts): tipos frag, incendiaria, descarga, racimo,
