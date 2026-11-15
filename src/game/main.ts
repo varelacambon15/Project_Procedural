@@ -426,7 +426,7 @@ async function boot() {
     ch.style.setProperty("--r", `${((Math.max(10, radius) + gun.crossKick * 9) * (s?.type === "shotgun" ? 0.65 : 1)).toFixed(1)}px`);
     ch.dataset.type = s?.type ?? "fists";
     // Francotirador: sin punto de mira salvo al apuntar (con su mira o con el zoom del arma)
-    const sniperHidden = s?.type === "sniper" && gun.aimT < 0.4;
+    const sniperHidden = s?.type === "sniper" && (gun.aimT < 0.4 || (gun.sight === "scope" && gun.aimT > 0.9)); // (con visor a pantalla completa, el visor ya trae su retícula)
     ch.style.opacity = state !== "play" || sniperHidden ? "0" : player.sprinting ? "0.9" : String(1 - gun.aimT * (gun.sight === "iron" ? 0.35 : 1));
     ch.classList.toggle("sprint", state === "play" && player.sprinting);
     ch.classList.toggle("hit", gun.hitmarker > 0); ch.classList.toggle("crit", gun.critmarker > 0); ch.classList.toggle("kill", gun.killmarker > 0);
