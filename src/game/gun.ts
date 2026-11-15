@@ -303,14 +303,49 @@ export class Gun {
     this.noise(a, 0.03, 2, "bandpass", 3200, 0.06, t + 0.035, pitch * 1.3);                // mecánica
   }
 
+  /** ¿La escopeta equipada lleva cargador (cuelga bajo el cajón) en vez de tubo bajo el cañón? */
+  private boxMagShotgun(): boolean {
+    const mg = this.model?.parts.find((p) => p.role === "magazine"); if (!mg) return false;
+    // (caja en ejes del arma: +X = boca; el arma en mano va girada)
+    const g = this.model!.group; g.updateMatrixWorld(true); const inv = g.matrixWorld.clone().invert(), b = new THREE.Box3(), v = new THREE.Vector3();
+    mg.object.traverse((o) => { const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position; for (let i = 0; i < pos.count; i += 4) b.expandByPoint(v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld).applyMatrix4(inv)); });
+    const sz = b.getSize(new THREE.Vector3());
+    return sz.y > sz.x * 0.8;
+  }
+
   startReload() {
     const s = this.spec; if (!s || !this.item || this.reloadT > 0 || this.item.ammo >= s.stats.cargador || this.equipT > 0) return;
     let time = (RELOAD[s.type] ?? 2) * (1.35 - s.stats.manejo / 200);
+    // Escopetas: con cargador (cuelga bajo el cajón), cambio de cargador; con tubo, cartucho a cartucho los que falten
+    // (antes siempre 4) y solo se bombea si estaba vacía
+    this.anim.reloadOverride = null;
+    if (s.type === "shotgun" && this.model) {
+      if (this.boxMagShotgun()) {
+        this.anim.reloadOverride = { style: "mag", phases: [["tilt", 0.14], ["grab", 0.12], ["out", 0.14], ["pouch", 0.16], ["in", 0.2], ["rack", 0.14], ["settle", 0.1]], mag: [-0.01, -0.2, 0], rackPart: "pump" };
+      } else {
+        const n = Math.max(1, s.stats.cargador - this.item.ammo), empty = this.item.ammo === 0;
+        const ph: [string, number][] = [["tilt", 0.5], ...Array.from({ length: n }, () => ["shell", 1] as [string, number]), ...(empty ? [["rack", 0.7] as [string, number]] : []), ["settle", 0.4]];
+        const tot = ph.reduce((a, x) => a + x[1], 0);
+        this.anim.reloadOverride = { style: "shells", phases: ph.map(([id, w]) => [id, w / tot] as [string, number]) };
+        time = (0.45 + 0.4 * n + (empty ? 0.35 : 0)) * (1.35 - s.stats.manejo / 200);
+      }
+    }
     time *= this.fx?.reloadMult() ?? 1;
     this.reloadT = this.reloadDur = time; this.burstLeft = 0; this.inspectT = 0;
     this.tacReload = this.item.ammo > 0;
     // Variante de recarga fija del arma (por su semilla); cada paso suena en su fracción del tiempo de recarga
     this.reloadSnd = soundManifest ? pickReload(soundManifest, s.type, s.seed) : null; this.reloadDone = 0;
+    if (s.type === "shotgun" && soundManifest) {
+      const vs = soundManifest.tipos.shotgun?.recarga ?? [];
+      const box = this.anim.reloadOverride?.style === "mag", v = vs.find((x) => x.id === (box ? "cargador" : "bombeo")) ?? null;
+      // (cartucho a cartucho: un paso de carga por cada fase "shell" y el bombeo solo si se bombea)
+      if (v && !box) {
+        const phs = this.anim.reloadOverride!.phases!, loads = v.pasos.filter((p) => p.evento === "cargar_cartucho"), arm = v.pasos.filter((p) => p.evento === "armar");
+        let acc = 0, k = 0; const pasos: RecargaVariante["pasos"] = [];
+        for (const [id, w] of phs) { if (id === "shell") pasos.push({ ...loads[k++ % loads.length], en: acc + w * 0.55 }); if (id === "rack") arm.forEach((p, j) => pasos.push({ ...p, en: acc + w * (0.2 + 0.5 * j) })); acc += w; }
+        this.reloadSnd = { id: v.id, pasos };
+      } else this.reloadSnd = v;
+    }
     if (!this.reloadSnd) this.sfx("reload");
   }
 
@@ -380,7 +415,7 @@ export class Gun {
     if (this.mag) {
       this.mag.object.position.copy(this.mag.base).add(new THREE.Vector3(...pose.mag.offset)); this.mag.object.visible = pose.mag.visible;
       // Revólver: el tambor bascula hacia la izquierda (−Z del arma) mientras está abierto
-      const ph = pose.phase, cyl = this.anim.p.reload.style === "cylinder" && ph ? (ph.id === "open" ? ease(ph.t) : ph.id === "eject" || ph.id === "load" ? 1 : ph.id === "close" ? 1 - ease(ph.t) : 0) : 0;
+      const ph = pose.phase, cyl = (this.anim.reloadOverride?.style ?? this.anim.p.reload.style) === "cylinder" && ph ? (ph.id === "open" ? ease(ph.t) : ph.id === "eject" || ph.id === "load" ? 1 : ph.id === "close" ? 1 - ease(ph.t) : 0) : 0;
       this.mag.object.position.add(new THREE.Vector3(0, -0.006 * cyl, -0.032 * cyl));
       this.mag.object.rotation.x = -0.45 * cyl;
     }
@@ -595,7 +630,7 @@ export class Gun {
     if (base && base.x - h.grip.x > 0.34) base.x = h.grip.x + 0.34;
     const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
     let left: THREE.Vector3 | null = base;
-    const ph = this.reloadPhase, style = this.anim.p.reload.style;
+    const ph = this.reloadPhase, style = this.anim.reloadOverride?.style ?? this.anim.p.reload.style;
     const phId = ph ? `${ph.index}:${ph.id}` : "";
     if (phId !== this.lastPhaseId && ph?.id === "pouch" && style === "mag" && this.mag) this.dropMag();
     this.lastPhaseId = phId;

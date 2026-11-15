@@ -104,6 +104,8 @@ export class ViewAnimator {
   private sprint = 0; private bobT = 0; private landT = 0; private wasGrounded = true;
   private swayX = 0; private swayY = 0; private lookVX = 0; private lookVY = 0;
   private shotT = 1;
+  /** Recarga de esta vez (escopetas: cartucho a cartucho los que falten, o con cargador): sustituye a la de la clase. */
+  reloadOverride: Partial<AnimParams["reload"]> | null = null;
 
   /** Clase del arma y postura del perfil de agarre (las cortas con culata van al hombro). */
   setClass(type: string, stance?: string) {
@@ -190,7 +192,7 @@ export class ViewAnimator {
     let phase: Phase | null = null;
     const mag = { offset: [0, 0, 0] as V3, visible: true };
     if (i.reload !== null) {
-      const r = p.reload;
+      const r = this.reloadOverride ? { ...p.reload, ...this.reloadOverride } : p.reload;
       phase = phaseAt(r.phases, i.reload);
       const { id, t } = phase;
       const first = r.phases[0][0], last = r.phases[r.phases.length - 1][0];
