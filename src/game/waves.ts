@@ -49,6 +49,7 @@ export class Waves {
     for (const d of this.alive) this.remove(d);
     this.alive = [];
     for (const o of this.orbs) this.scene.remove(o.mesh); this.orbs = [];
+    this.volleys = []; // (si no, el jefe ya retirado seguía lanzando ráfagas)
   }
 
   private next() {
@@ -77,6 +78,7 @@ export class Waves {
 
   /** Lanza una esfera desde el pecho del enemigo hacia el jugador (con un poco de dispersión). */
   private orb(from: Dummy, speed: number, dmg: number, spread = 0) {
+    if (!from.alive) return;
     const at = from.center.clone(), target = this.player().clone().add(new THREE.Vector3(0, 1.4, 0));
     const dir = target.sub(at).normalize(); if (spread) dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), spread).normalize();
     // (sin luz: el número de luces de la escena es fijo; brillo con material básico y un halo aditivo)
@@ -101,7 +103,7 @@ export class Waves {
       if (hit || o.t <= 0 || p.y < 0) { this.scene.remove(o.mesh); this.orbs.splice(this.orbs.indexOf(o), 1); }
     }
     for (const v of [...this.volleys]) {
-      if (!v.d.alive) { this.volleys.splice(this.volleys.indexOf(v), 1); continue; }
+      if (!v.d.alive || !this.alive.includes(v.d)) { this.volleys.splice(this.volleys.indexOf(v), 1); continue; }
       v.t -= dt; if (v.t <= 0) { v.t = v.every; for (const a of [-0.22, -0.11, 0, 0.11, 0.22]) this.orb(v.d, v.speed, v.dmg, a); }
     }
     if (!this.active) return;

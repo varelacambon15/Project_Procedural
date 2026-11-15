@@ -142,7 +142,10 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
   botín de enemigos de oleada (20 % de los drops que tocan, en lugar del arma; se recogen al pasar por encima).
   No salen en cápsulas ni como premio de oleada (decisión del usuario). Se equipan y venden en el inventario (hasta 8).
 - Modelo `assets/grenade/grenade.glb` (del usuario) en `src/game/grenademodel.ts`: color del cuerpo por tipo, anillo y
-  brillo por rareza, proporciones por tipo; fotos para tienda e inventario (`grenadeThumb`, `fillNadeThumbs`). Se guardan en `SaveData.grenades` / `grenadeActive`.
+  brillo por rareza, proporciones por tipo; fotos para tienda e inventario (`grenadeThumb`, `fillNadeThumbs`).
+- Inventario: las granadas son fichas como las armas (`nadeTileHTML`): ranura G junto a las armas (arrastrar para
+  equipar), el resto en la mochila, ficha de detalle (`nadeCard`) y soltar al suelo; se venden en la tienda (un tercio
+  del precio del escaparate). Corregido: el jefe seguía lanzando ráfagas tras parar las oleadas (`Waves.stop`). Se guardan en `SaveData.grenades` / `grenadeActive`.
 
 ## Ronda 26 (relevo): contratos y sala B
 

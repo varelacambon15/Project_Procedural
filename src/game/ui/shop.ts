@@ -119,7 +119,9 @@ export class ShopScreen {
       return `<div class="sell-row" style="--c:${it.spec.rarity.color}"><span class="nm">${esc(displayName(it.spec))}</span>
         <span class="meta">${t(`rarity.${it.spec.rarity.id}`)} · ${t(`type.${it.spec.type}`)}${w.area === "equip" ? ` · ${t("ui.equipped")} ${w.index + 1}` : ""}</span>
         <button type="button" class="btn sm" data-sell="${it.uid}">${t("shop.sellFor", { c: sellPrice(it.spec) })}</button></div>`;
-    }).join("");
+    }).join("") + this.inv.grenades.map((g) => `<div class="sell-row" style="--c:${GRENADE_RARITY[g.rarity].color}"><span class="nm">${t("gr.title1")}: ${t(`gr.${g.kind}`)}</span>
+        <span class="meta">${t(`rarity.${g.rarity}`)}${g === this.inv.grenade ? ` · ${t("ui.equipped")}` : ""}</span>
+        <button type="button" class="btn sm" data-sellnade="${g.uid}">${t("shop.sellFor", { c: nadeSellPrice(g) })}</button></div>`).join("");
     return `<div class="sell"><h2>${t("shop.sell")}</h2>${rows || `<p class="hint-sel">${t("shop.nothingToSell")}</p>`}</div>`;
   }
   private source(tier: string) { if (tier === "sell") return t("shop.sold"); return tier.startsWith("crate:") ? t(`shop.crate.${tier.slice(6)}`) : tier.startsWith("shop:") ? t("shop.showcase") : t("shop.tier", { n: SHOP.tiers.findIndex((x) => x.id === tier) + 1 }); }
@@ -134,6 +136,14 @@ export class ShopScreen {
       return;
     }
     if (target.closest("[data-close]")) return this.close();
+    const sellNade = target.closest<HTMLElement>("[data-sellnade]");
+    if (sellNade) {
+      const k = this.inv.grenades.findIndex((g) => g.uid === Number(sellNade.dataset.sellnade)); if (k < 0) return;
+      const g = this.inv.grenades[k], price = nadeSellPrice(g);
+      this.inv.grenades.splice(k, 1); if (this.inv.grenadeActive === k) this.inv.grenadeActive = -1; else if (this.inv.grenadeActive > k) this.inv.grenadeActive--;
+      this.inv.credits += price; record(this.state(), { tier: "sell", rarity: g.rarity, name: t(`gr.${g.kind}`), price: -price, at: Date.now() });
+      this.hooks.toast(t("shop.soldMsg", { c: price })); this.render(); return;
+    }
     const nadeBtn = target.closest<HTMLElement>("[data-buynade]");
     if (nadeBtn) {
       const i = Number(nadeBtn.dataset.buynade), { sc } = this.showcase(), g = this.nadeAt(i); if (!g) return;
@@ -220,6 +230,9 @@ export const SHOWCASE_SIZE = SHOWCASE.slots.length;
 export function fillNadeThumbs(root: HTMLElement) {
   root.querySelectorAll<HTMLImageElement>("img[data-nadethumb]").forEach((img) => {
     const [k, r] = img.dataset.nadethumb!.split(":") as [GrenadeKind, GrenadeRarity];
-    void grenadeThumb(k, r).then((url) => { img.src = url; }).catch(() => undefined);
+    void grenadeThumb(k, r).then((url) => { img.src = url; img.classList.add("ready"); }).catch(() => undefined);
   });
 }
+
+/** Precio de venta de una granada: un tercio de lo que cuesta en el escaparate. */
+const nadeSellPrice = (g: { rarity: keyof typeof GRENADE_RARITY }) => Math.round(GRENADE_RARITY[g.rarity].price / 3);

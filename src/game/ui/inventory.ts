@@ -1,6 +1,6 @@
 // Inventario: rejilla por rareza con filtros y orden, ficha del arma elegida comparada con la equipada y acciones
 // (equipar, a la mochila, renombrar, soltar, desguazar con confirmación suave). Teclado, ratón y mando.
-import { GRENADE_RARITY } from "../grenades";
+import { GRENADE_RARITY, type GrenadeSpec } from "../grenades";
 import { fillNadeThumbs } from "./shop";
 import { RARITIES } from "../../weapons/generator";
 import { typeName } from "../../weapons/labels";
@@ -19,20 +19,22 @@ const ERAS = ["all", "classic", "modern", "rustic", "scifi"];
 
 export interface InventoryHooks {
   close(): void; drop(it: Item): void; rename(it: Item): void; toast(m: string): void; changed(it: Item | null): void;
+  /** Soltar una granada al suelo (delante del jugador). */ dropNade(g: GrenadeSpec): void;
 }
 
 export class InventoryScreen {
   private el = $("inventory");
   isOpen = false;
   private sel: number | null = null;
+  /** Granada elegida (uid), en lugar de un arma. */ private selNade: number | null = null;
   private filter = { rarity: "all", cls: "all", era: "all" };
   private sort: Sort = "rarity";
 
   constructor(private inv: Inventory, private thumbs: Thumbnails, private hooks: InventoryHooks) {
     this.el.addEventListener("click", (e) => this.click(e));
-    this.el.addEventListener("mouseover", (e) => { const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile"); if (tile && document.body.classList.contains("pad")) this.select(Number(tile.dataset.uid)); });
-    this.el.addEventListener("focusin", (e) => { const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile"); if (tile) this.select(Number(tile.dataset.uid), false); });
-    this.el.addEventListener("contextmenu", (e) => { e.preventDefault(); const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile"); if (tile) { this.select(Number(tile.dataset.uid)); this.quickEquip(); } });
+    this.el.addEventListener("mouseover", (e) => { const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile[data-uid]"); if (tile && document.body.classList.contains("pad")) this.select(Number(tile.dataset.uid)); });
+    this.el.addEventListener("focusin", (e) => { const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile[data-uid]"); if (tile) this.select(Number(tile.dataset.uid), false); });
+    this.el.addEventListener("contextmenu", (e) => { e.preventDefault(); const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile[data-uid]"); if (tile) { this.select(Number(tile.dataset.uid)); this.quickEquip(); } });
     inv.onChange(() => { if (this.isOpen) this.render(); });
     this.dragAndDrop();
   }
@@ -40,22 +42,36 @@ export class InventoryScreen {
   /** Arrastrar armas: entre las dos ranuras equipadas, a la mochila o a la zona de soltar (cae al suelo). */
   private dragAndDrop() {
     let dragged: number | null = null;
-    const target = (e: DragEvent) => (e.target as HTMLElement).closest<HTMLElement>("[data-eqslot], [data-packzone], [data-dropzone], [data-storezone]");
+    let draggedNade: number | null = null;
+    const target = (e: DragEvent) => (e.target as HTMLElement).closest<HTMLElement>(draggedNade != null ? "[data-nadeslot], [data-packzone], [data-dropzone]" : "[data-eqslot], [data-packzone], [data-dropzone], [data-storezone]");
     this.el.addEventListener("dragstart", (e) => {
+      // Granadas: a su ranura (equipar), a la mochila (quitar) o a la zona de soltar
+      const nt = (e.target as HTMLElement).closest<HTMLElement>(".tile[data-nade]");
+      if (nt) { draggedNade = Number(nt.dataset.nade); this.selNade = draggedNade; this.sel = null; // (sin redibujar: se cancelaría el arrastre)
+        e.dataTransfer?.setData("text/plain", "nade"); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; this.el.classList.add("dragging"); return; }
       const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile[data-uid]"); if (!tile) return;
       dragged = Number(tile.dataset.uid); this.select(dragged, false);
       e.dataTransfer?.setData("text/plain", String(dragged)); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
       this.el.classList.add("dragging");
     });
-    this.el.addEventListener("dragend", () => { dragged = null; this.el.classList.remove("dragging"); this.el.querySelectorAll(".over").forEach((x) => x.classList.remove("over")); });
+    this.el.addEventListener("dragend", () => { dragged = null; draggedNade = null; this.el.classList.remove("dragging"); this.el.querySelectorAll(".over").forEach((x) => x.classList.remove("over")); });
     this.el.addEventListener("dragover", (e) => {
-      const t = target(e); if (dragged == null || !t) return;
+      const t = target(e); if ((dragged == null && draggedNade == null) || !t) return;
       e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
       this.el.querySelectorAll(".over").forEach((x) => x !== t && x.classList.remove("over")); t.classList.add("over");
     });
     this.el.addEventListener("dragleave", (e) => { const t = target(e); if (t && !t.contains(e.relatedTarget as Node)) t.classList.remove("over"); });
     this.el.addEventListener("drop", (e) => {
-      const t = target(e); if (dragged == null || !t) return;
+      const t = target(e);
+      if (draggedNade != null && t) {
+        e.preventDefault(); const uid = draggedNade; draggedNade = null; this.el.classList.remove("dragging");
+        const k = this.inv.grenades.findIndex((g) => g.uid === uid); if (k < 0) return this.render();
+        if (t.dataset.nadeslot != null) this.inv.grenadeActive = k;
+        else if (t.dataset.dropzone != null) return this.nadeAction("drop");
+        else if (t.dataset.packzone != null && this.inv.grenadeActive === k) this.inv.grenadeActive = -1;
+        return this.render();
+      }
+      if (dragged == null || !t) return;
       e.preventDefault();
       const it = this.inv.byUid(dragged), from = it && this.inv.find(it.uid); dragged = null;
       this.el.classList.remove("dragging");
@@ -120,18 +136,16 @@ export class InventoryScreen {
           </div>
         </div>
         <h2>${t("ui.equipped")}</h2>
-        <div class="tiles eq">${i.equip.map((x, k) => `<div class="slotwrap" data-eqslot="${k}">${x ? tileHTML(x, { sel: x.uid === this.sel, slot: k, inHand: k === i.active, dim: !this.visible([x]).length }) : `<div class="tile empty"><span class="slotno">${k + 1}</span>${t("ui.empty")}</div>`}</div>`).join("")}</div>
+        <div class="tiles eq">${i.equip.map((x, k) => `<div class="slotwrap" data-eqslot="${k}">${x ? tileHTML(x, { sel: x.uid === this.sel, slot: k, inHand: k === i.active, dim: !this.visible([x]).length }) : `<div class="tile empty"><span class="slotno">${k + 1}</span>${t("ui.empty")}</div>`}</div>`).join("")}
+          <div class="slotwrap" data-nadeslot>${i.grenade ? this.nadeTileHTML(i.grenade, true) : `<div class="tile empty"><span class="slotno">G</span>${t("gr.slot")}</div>`}</div></div>
         <h2>${t("ui.backpack")} <small>${18 - free}/18</small></h2>
-        <div class="tiles" data-packzone>${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${packItems.length ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
+        <div class="tiles" data-packzone>${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${i.grenades.filter((g) => g !== i.grenade).map((g) => this.nadeTileHTML(g, false)).join("")}${packItems.length || i.grenades.length > (i.grenade ? 1 : 0) ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
         <div class="dropzone" data-dropzone>${t("ui.dropZone")}</div>
-        <h2>${t("gr.title")} <small>${i.grenades.length}/8</small></h2>
-        <div class="nades">${i.grenades.map((g, k) => `<div class="nade ${k === i.grenadeActive ? "on" : ""}" style="--c:${GRENADE_RARITY[g.rarity].color}"><img class="nthumb" data-nadethumb="${g.kind}:${g.rarity}" alt=""><b>${t(`gr.${g.kind}`)}</b><span>${t(`rarity.${g.rarity}`)} · ${t("gr.stats", { d: g.damage, r: g.radius, c: g.charges, s: g.recharge })}</span>
-          <button type="button" class="btn sm ${k === i.grenadeActive ? "ghost" : ""}" data-nadeeq="${k}">${k === i.grenadeActive ? t("gr.unequip") : t("gr.equip")}</button><button type="button" class="btn ghost sm" data-nadesell="${k}">${t("gr.sell", { c: Math.round(GRENADE_RARITY[g.rarity].price / 3) })}</button></div>`).join("") || `<div class="tile empty wide">${t("gr.noneOwned")}</div>`}</div>
         ${this.storageMode ? this.storageHTML() : ""}
       </section>
       <section class="panel detail">
-        ${it ? weaponCard(it.spec, cur && cur !== it ? cur.spec : null, cur && cur !== it ? t("ui.vsEquipped") : t("ui.equippedNow"), { wide: true }) : `<div class="card empty">${t("ui.noWeapons")}</div>`}
-        ${it ? this.actions(it) : ""}
+        ${this.nadeSel ? this.nadeCard(this.nadeSel) : it ? weaponCard(it.spec, cur && cur !== it ? cur.spec : null, cur && cur !== it ? t("ui.vsEquipped") : t("ui.equippedNow"), { wide: true }) : `<div class="card empty">${t("ui.noWeapons")}</div>`}
+        ${this.nadeSel ? "" : it ? this.actions(it) : ""}
       </section>`;
     $("inv-credits").textContent = `${i.credits} ${t("unit.cr")}`;
     $("inv-foot").innerHTML = `<span>${t("ui.bankCount", { n: i.bank.length })}</span>` +
@@ -139,6 +153,31 @@ export class InventoryScreen {
     this.el.querySelectorAll<HTMLElement>(".tile[data-uid]").forEach((x) => { x.draggable = true; });
     this.thumbs.fill(this.el, this.storageMode ? i.all : i.carried);
     fillNadeThumbs(this.el);
+  }
+
+  private get nadeSel() { return this.selNade == null ? null : this.inv.grenades.find((g) => g.uid === this.selNade) ?? null; }
+  /** Ficha de granada con el estilo de las armas (foto, rareza, tipo, daño y datos). */
+  private nadeTileHTML(g: GrenadeSpec, equipped: boolean) {
+    return `<button type="button" class="tile ${this.selNade === g.uid ? "sel" : ""} r-${g.rarity}" style="--c:${GRENADE_RARITY[g.rarity].color}" data-nade="${g.uid}" draggable="true" data-nav>
+      ${equipped ? `<span class="slotno">G</span>` : ""}<img class="thumb" data-nadethumb="${g.kind}:${g.rarity}" alt="">
+      <span class="lbl">${t("gr.title1")} · ${t(`rarity.${g.rarity}`)}</span><span class="nm">${t(`gr.${g.kind}`)}</span>
+      <span class="dm">${g.damage} <span class="ty">${t("gr.chargesShort", { c: g.charges })}</span></span></button>`;
+  }
+  private nadeCard(g: GrenadeSpec) {
+    const eq = this.inv.grenade === g;
+    return `<div class="card" style="--c:${GRENADE_RARITY[g.rarity].color}"><div class="nadebig"><img data-nadethumb="${g.kind}:${g.rarity}" alt=""></div>
+      <span class="lbl">${t("gr.title1")} · ${t(`rarity.${g.rarity}`)}</span><div class="nm">${t(`gr.${g.kind}`)}</div><p class="note">${t(`gr.desc.${g.kind}`)}</p>
+      <p>${t("gr.stats", { d: g.damage, r: g.radius, c: g.charges, s: g.recharge })}</p></div>
+      <div class="actions"><button type="button" class="btn" data-nact="eq">${eq ? t("gr.unequip") : t("gr.equip")}</button><button type="button" class="btn ghost" data-nact="drop">${t("ui.drop")}</button></div>
+      <p class="note">${t("gr.sellAtShop")}</p>`;
+  }
+  private selectNade(uid: number) { this.selNade = uid; this.sel = null; this.render(); }
+  private nadeAction(a: string) {
+    const g = this.nadeSel; if (!g) return;
+    const k = this.inv.grenades.indexOf(g);
+    if (a === "eq") this.inv.grenadeActive = this.inv.grenadeActive === k ? -1 : k;
+    if (a === "drop") { this.inv.grenades.splice(k, 1); if (this.inv.grenadeActive === k) this.inv.grenadeActive = -1; else if (this.inv.grenadeActive > k) this.inv.grenadeActive--; this.selNade = null; this.hooks.dropNade(g); }
+    this.render();
   }
 
   private storageHTML() {
@@ -167,6 +206,7 @@ export class InventoryScreen {
   }
 
   private select(uid: number, rerender = true) {
+    if (this.selNade != null) { this.selNade = null; this.sel = null; }
     if (this.sel === uid) return;
     this.sel = uid;
     if (rerender) { const f = document.activeElement as HTMLElement | null; const keep = f?.closest<HTMLElement>(".tile")?.dataset.uid; this.render(); if (keep) this.el.querySelector<HTMLElement>(`.tile[data-uid="${keep}"]`)?.focus({ preventScroll: true }); }
@@ -183,10 +223,10 @@ export class InventoryScreen {
   private click(e: Event) {
     const target = e.target as HTMLElement;
     if (target.closest("[data-close]")) return this.close();
-    const ne = target.closest<HTMLElement>("[data-nadeeq]");
-    if (ne) { const k = Number(ne.dataset.nadeeq); this.inv.grenadeActive = this.inv.grenadeActive === k ? -1 : k; return this.render(); }
-    const ns = target.closest<HTMLElement>("[data-nadesell]");
-    if (ns) { const k = Number(ns.dataset.nadesell), g = this.inv.grenades[k]; if (!g) return; this.inv.credits += Math.round(GRENADE_RARITY[g.rarity].price / 3); this.inv.grenades.splice(k, 1); if (this.inv.grenadeActive === k) this.inv.grenadeActive = -1; else if (this.inv.grenadeActive > k) this.inv.grenadeActive--; return this.render(); }
+    const nt = target.closest<HTMLElement>(".tile[data-nade]");
+    if (nt) return this.selectNade(Number(nt.dataset.nade));
+    const na = target.closest<HTMLElement>("[data-nact]");
+    if (na) return this.nadeAction(na.dataset.nact!);
     const tile = target.closest<HTMLElement>(".tile[data-uid]");
     if (tile) return this.select(Number(tile.dataset.uid));
     const chip = target.closest<HTMLElement>("[data-rar]");

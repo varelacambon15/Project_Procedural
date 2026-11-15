@@ -195,7 +195,7 @@ async function boot() {
     toast(it.spec.customName ? t("ui.renamed", { n: it.spec.customName }) : t("ui.nameRestored", { n: it.spec.name }));
     renderSlots(); if (invScreen.isOpen) invScreen.render(); if (bench.isOpen) bench.render();
   }
-  const invScreen = new InventoryScreen(inv, thumbs, { close: () => resume(), drop: (it) => dropItem(it), rename: (it) => void renameItem(it), toast, changed: onWeaponChanged });
+  const invScreen = new InventoryScreen(inv, thumbs, { close: () => resume(), drop: (it) => dropItem(it), dropNade: (g) => dropNade(g, player.pos.clone().add(new THREE.Vector3(-Math.sin(player.yaw) * 1.5, 0, -Math.cos(player.yaw) * 1.5)), true), rename: (it) => void renameItem(it), toast, changed: onWeaponChanged });
   const bench = new WorkshopScreen(inv, gen, view, thumbs, { close: () => { resume(); autosave(); }, changed: onWeaponChanged, rename: (it) => void renameItem(it), toast });
   const shop = new ShopScreen(inv, () => shopState, {
     close: () => { resume(); autosave(); }, toast, chime: (l) => lootChime(l), sold: (it) => { gun.forget(it.uid); onWeaponChanged(null); },
@@ -458,18 +458,19 @@ async function boot() {
   let gameTime = 0;
   const LEVEL: Record<string, number> = { comun: 0, poco: 1, rara: 2, epica: 3, legendaria: 4 };
   // Granadas en el suelo: esfera brillante con haz; se recogen al pasar por encima y caducan como el botín
-  const nadeDrops: { g: GrenadeSpec; mesh: THREE.Group; t: number }[] = [];
-  function dropNade(g: GrenadeSpec, at: THREE.Vector3) {
+  const nadeDrops: { g: GrenadeSpec; mesh: THREE.Group; t: number; wait: number }[] = [];
+  function dropNade(g: GrenadeSpec, at: THREE.Vector3, byPlayer = false) {
     const grp = new THREE.Group(), col = new THREE.Color(GRENADE_RARITY[g.rarity].color);
     const body = new THREE.Group(); grp.add(body); void loadGrenadeModel().then((m) => body.add(grenadeObject(m, g.kind, g.rarity, 0.22)));
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 8, 1, true), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })); beam.position.y = 1.1; grp.add(beam);
-    grp.position.copy(at).setY(0.2); scene.add(grp); nadeDrops.push({ g, mesh: grp, t: LOOT.expireSeconds });
+    grp.position.copy(at).setY(0.2); scene.add(grp); nadeDrops.push({ g, mesh: grp, t: LOOT.expireSeconds, wait: byPlayer ? 2.5 : 0 });
     lootChime(LEVEL[g.rarity] ?? 0);
   }
   function updateNadeDrops(dt: number) {
     for (const n of [...nadeDrops]) {
-      n.t -= dt; n.mesh.rotation.y += dt * 2; n.mesh.children[0].position.y = Math.sin(gameTime * 3) * 0.05;
-      const near = n.mesh.position.distanceTo(player.pos.clone().setY(0.2)) < 1.4;
+      n.t -= dt; n.wait = Math.max(0, n.wait - dt); n.mesh.rotation.y += dt * 2; n.mesh.children[0].position.y = Math.sin(gameTime * 3) * 0.05;
+      // (las que suelta el jugador no se recogen hasta que se aleja un momento)
+      const near = n.wait <= 0 && n.mesh.position.distanceTo(player.pos.clone().setY(0.2)) < 1.4;
       if (near && inv.grenades.length < 8) { inv.grenades.push(n.g); if (inv.grenadeActive < 0) inv.grenadeActive = inv.grenades.length - 1; toast(t("gr.found", { n: t(`gr.${n.g.kind}`), r: t(`rarity.${n.g.rarity}`) })); }
       if ((near && inv.grenades.includes(n.g)) || n.t <= 0) { scene.remove(n.mesh); nadeDrops.splice(nadeDrops.indexOf(n), 1); }
     }
