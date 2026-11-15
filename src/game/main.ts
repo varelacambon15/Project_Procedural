@@ -422,9 +422,12 @@ async function boot() {
     const moving = Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5);
     const spread = gun.spread(moving);
     const radius = 6 + Math.tan(THREE.MathUtils.degToRad(spread)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * innerHeight / 2;
-    ch.style.setProperty("--r", `${(Math.max(10, radius) + gun.crossKick * 9).toFixed(1)}px`);
+    // Escopeta: círculo algo más pequeño (su dispersión es muy grande y el aro llenaba la pantalla)
+    ch.style.setProperty("--r", `${((Math.max(10, radius) + gun.crossKick * 9) * (s?.type === "shotgun" ? 0.65 : 1)).toFixed(1)}px`);
     ch.dataset.type = s?.type ?? "fists";
-    ch.style.opacity = state !== "play" ? "0" : player.sprinting ? "0.9" : String(1 - gun.aimT * (gun.sight === "iron" ? 0.35 : 1));
+    // Francotirador: sin punto de mira salvo al apuntar (con su mira o con el zoom del arma)
+    const sniperHidden = s?.type === "sniper" && gun.aimT < 0.4;
+    ch.style.opacity = state !== "play" || sniperHidden ? "0" : player.sprinting ? "0.9" : String(1 - gun.aimT * (gun.sight === "iron" ? 0.35 : 1));
     ch.classList.toggle("sprint", state === "play" && player.sprinting);
     ch.classList.toggle("hit", gun.hitmarker > 0); ch.classList.toggle("crit", gun.critmarker > 0); ch.classList.toggle("kill", gun.killmarker > 0);
     document.body.classList.toggle("in-menu", state !== "play");
@@ -434,8 +437,9 @@ async function boot() {
   const php = new PlayerHealth();
   let waveHurt = false;
   const waves = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
-    onWaveEnd: (i, last) => {
-      contractEvent({ type: "wave", reached: i + 1, clean: !waveHurt }); waveHurt = false; toast(t("ui.waveDone", { n: i + 1 })); earn(SHOP.income.waveEnd); hooksWaveEnd(i, last); },
+    onWaveStart: (_i, mod) => { php.noRegen = mod === "noregen"; if (mod) toast(t("wm.start", { m: t(`wm.${mod}`), d: t(`wm.d.${mod}`) })); },
+    onWaveEnd: (i, last, reward) => {
+      contractEvent({ type: "wave", reached: i + 1, clean: !waveHurt }); waveHurt = false; toast(t("ui.waveDone", { n: i + 1 })); earn(Math.round(SHOP.income.waveEnd * reward)); hooksWaveEnd(i, last); },
     onAllDone: () => { toast(t("ui.wavesDone")); autosave(); },
     onPlayerHit: (dmg) => {
       waveHurt = true;
@@ -450,7 +454,7 @@ async function boot() {
     const el = $("phealth"); const show = state === "play";
     el.hidden = !show; if (!show) return;
     el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
-    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}` : "");
+    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : "");
   }
 
   // ---------- Botín de enemigos ----------

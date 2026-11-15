@@ -6,10 +6,16 @@ import { Dummy, KINDS, randomLook } from "./dummies";
 
 export interface WaveEvents {
   /** Se ha completado una oleada (para el botín de fin de oleada). */
-  onWaveEnd(index: number, last: Dummy | null): void;
+  onWaveEnd(index: number, last: Dummy | null, reward: number): void;
+  /** Empieza una oleada (con su modificador, si lo lleva). */
+  onWaveStart?(index: number, mod: WaveModifier | null): void;
   onAllDone(): void;
   onPlayerHit(dmg: number): void;
 }
+
+import { WAVE_MODIFIERS, type WaveModifier } from "./wavemods";
+const MOD_LIST = Object.keys(WAVE_MODIFIERS) as WaveModifier[];
+export type { WaveModifier };
 
 /** Oleada generada n (1, 2, 3…) tras las de diseño: más pequeños y normales, y grandes cada vez más a menudo. */
 function extraWave(n: number, wave: number): Record<string, number> {
@@ -34,6 +40,7 @@ export class Waves {
   private lastDead: Dummy | null = null;
   private ended = false;
   private orbs: Orb[] = [];
+  /** Modificador de la oleada en curso. */ mod: WaveModifier | null = null;
   private volleys: { d: Dummy; every: number; t: number; speed: number; dmg: number }[] = [];
 
   constructor(private scene: THREE.Scene, private dummies: Dummy[], private overlay: HTMLElement, private player: () => THREE.Vector3,
@@ -58,20 +65,26 @@ export class Waves {
     this.queue = [];
     for (const [k, n] of Object.entries(w)) for (let i = 0; i < n; i++) this.queue.push(k as keyof typeof KINDS);
     for (let i = this.queue.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [this.queue[i], this.queue[j]] = [this.queue[j], this.queue[i]]; }
+    // Modificador: 40 % de las oleadas desde la 3.ª, nunca con jefe
+    const boss = "warden" in w;
+    this.mod = this.index >= 2 && !boss && Math.random() < 0.4 ? MOD_LIST[Math.floor(Math.random() * MOD_LIST.length)] : null;
+    if (this.mod) for (let i = 0; i < WAVE_MODIFIERS[this.mod].extraSmall; i++) this.queue.push("small");
     this.spawnT = 0;
+    this.ev.onWaveStart?.(this.index, this.mod);
   }
 
   private spawn(kind: keyof typeof KINDS) {
     const k = KINDS[kind];
     const x = (Math.random() - 0.5) * data.spawnWidth;
-    const hp = k.health * data.healthScale * (1 + Math.max(0, this.index - data.waves.length + 1) * 0.08);
+    const M = this.mod ? WAVE_MODIFIERS[this.mod] : null;
+    const hp = k.health * data.healthScale * (1 + Math.max(0, this.index - data.waves.length + 1) * 0.08) * (M && !k.boss ? M.hp : 1);
     const d = new Dummy({ ...k, health: hp }, `wave-${kind}-${Math.random()}`, new THREE.Vector3(x, 0, data.spawnZ), this.overlay, this.onDamage, randomLook());
     d.respawn = false;
-    const sp = (data.speed as Record<string, number>)[kind] ?? 2.4, dmg = (data.damage as Record<string, number>)[kind] ?? 8;
+    const sp = ((data.speed as Record<string, number>)[kind] ?? 2.4) * (M && !k.boss ? M.speed : 1), dmg = ((data.damage as Record<string, number>)[kind] ?? 8) * (M ? M.dmg : 1);
     const rg = (data.ranged as Record<string, { range: number; interval: number; orbSpeed: number; orbDamage: number; volleyEvery?: number }>)[kind];
     // (lanzador: se para lejos y dispara esferas; jefe: golpea de cerca y además lanza ráfagas de esferas cada pocos s)
     d.chase = { target: this.player, speed: sp, range: rg?.range ?? data.attackRange, interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
-      onAttack: (x) => (rg && !k.boss ? this.orb(d, rg.orbSpeed, rg.orbDamage) : this.ev.onPlayerHit(x)) };
+      onAttack: (x) => (rg && !k.boss ? this.orb(d, rg.orbSpeed, rg.orbDamage * (M ? M.dmg : 1)) : this.ev.onPlayerHit(x)) };
     if (k.boss) { d.alwaysBar = true; if (rg?.volleyEvery) this.volleys.push({ d, every: rg.volleyEvery, t: 2, speed: rg.orbSpeed, dmg: rg.orbDamage }); }
     this.scene.add(d.group); this.dummies.push(d); this.alive.push(d);
   }
@@ -113,7 +126,7 @@ export class Waves {
       if (d.gone) { this.remove(d); this.alive.splice(this.alive.indexOf(d), 1); }
     }
     if (!this.queue.length && !this.alive.some((d) => d.alive)) {
-      if (!this.ended) { this.ended = true; this.ev.onWaveEnd(this.index, this.lastDead); this.pauseT = data.pauseBetween; this.lastDead = null; }
+      if (!this.ended) { this.ended = true; this.ev.onWaveEnd(this.index, this.lastDead, this.mod ? WAVE_MODIFIERS[this.mod].reward : 1); this.pauseT = data.pauseBetween; this.lastDead = null; }
       this.pauseT -= dt;
       if (this.pauseT <= 0 && this.active) { this.ended = false; this.next(); }
     }
@@ -123,7 +136,8 @@ export class Waves {
 /** Vida del jugador en la sala (solo para las oleadas): regenera tras unos segundos sin recibir daño. */
 export class PlayerHealth {
   max = data.player.health; value = data.player.health; private since = 99;
+  /** Sin regeneración (modificador de oleada). */ noRegen = false;
   hit(dmg: number) { this.value = Math.max(0, this.value - dmg); this.since = 0; return this.value <= 0; }
-  update(dt: number) { this.since += dt; if (this.since > data.player.regenDelay) this.value = Math.min(this.max, this.value + data.player.regenPerSecond * dt); }
+  update(dt: number) { this.since += dt; if (!this.noRegen && this.since > data.player.regenDelay) this.value = Math.min(this.max, this.value + data.player.regenPerSecond * dt); }
   reset() { this.value = this.max; this.since = 99; }
 }

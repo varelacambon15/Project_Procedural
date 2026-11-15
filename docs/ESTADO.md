@@ -131,7 +131,13 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
-## Ronda 28 (relevo): música y barras de vida
+## Ronda 28 (relevo): música, barras de vida, mira y modificadores
+
+- Punto de mira: flecha (chevrón) al esprintar; escopeta = círculo limpio (0,65× el radio, sin punto ni marcas);
+  francotirador sin mira salvo al apuntar (`aimT` ≥ 0,4).
+- Modificadores de oleada (`wavemods.ts`, `Waves.mod`): desde la 3.ª, 40 % de las oleadas sin jefe llevan uno:
+  rápidos (+50 % velocidad), duros (+80 % vida), enjambre (+10 pequeños), sin regeneración, golpes letales (+70 % daño).
+  Pagan ×1,3–1,5 los créditos de fin de oleada; aviso al empezar y nombre en la barra de vida del jugador.
 
 - Barras de vida (dummies.ts): ya no están siempre visibles, como en Borderlands o Destiny. Se ven al mirar al
   enemigo (cerca de la mira) o tras dañarlo: 5 s los normales, 9 s élites, resistentes y grandes, 12 s el jefe (que

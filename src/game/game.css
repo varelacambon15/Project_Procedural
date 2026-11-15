@@ -61,7 +61,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: #0d0e0f; col
 /* Escopeta: un círculo limpio (sin marcas ni punto) que se abre con la dispersión */
 #crosshair[data-type="shotgun"] .tk { display: none; }
 #crosshair[data-type="shotgun"] .ring { border-width: 2px; opacity: .95; }
-#crosshair[data-type="shotgun"] .dot { width: 2px; height: 2px; left: -1px; top: -1px; }
+#crosshair[data-type="shotgun"] .dot { display: none; }
 #crosshair.hit { --cc: #ffffff; }
 #crosshair.crit { --cc: #ffd84a; }
 #crosshair.kill { --cc: #ff5a4e; }
