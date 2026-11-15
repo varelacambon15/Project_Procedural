@@ -131,6 +131,23 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 23 (relevo): pack de sonidos
+
+Hecho:
+- `assets/sonidos/` (pack del usuario, OGG; LEEME.md y manifest.json). Selección en `src/game/sounds.ts` (sin DOM,
+  con tests en tests/sounds.test.ts); carga y reproducción en `audio.ts` (`initSounds`, `loadSamples`, `sample`,
+  `playSample`, `fadeOut`). Carga perezosa: el manifest al arrancar y las muestras de cada tipo al equipar un arma.
+- Disparo (`Gun.sampleShot`): muestra al azar del tipo (silenciada con silenciador), grave a 0,5, tono ±4 %,
+  volumen ±10 % × `volumen_sugerido`; un disparo a menos de 0,25 s del anterior corta su cola con fundido.
+  Si no hay muestra cargada, la síntesis de siempre (`layeredShot`). Lanzagranadas y lanzallamas: síntesis.
+- Recarga: variante fija por arma (`pickReload` por la semilla); cada paso suena en su fracción `en`.
+- Ciclo: `cycleKind` por `accion` (cerrojo, bombeo, martillo en revólver de acción simple); `gun.actionOf` lo da
+  main.ts. Seco con `seco`. Casquillo, melee (puños), recoger arma y explosión desde `efectos`.
+- `lejano` sin usar todavía: los enemigos no disparan (atacan cuerpo a cuerpo).
+- Pulgar de la mano derecha: cierre máximo sin atravesar la empuñadura (`fitCurls` devuelve también el pulgar).
+
+Pendiente: probar la mezcla de volúmenes en juego; `scifi_storm_psr` para armas sci-fi; corredera sin uso.
+
 ## Ronda 22 (relevo): pistolas y revólveres en mano, guardamonte de revólver
 
 Hecho (con el visto bueno del usuario sobre las capturas):

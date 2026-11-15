@@ -4,7 +4,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import * as THREE from "three";
-import { startMusic } from "./audio";
+import { initSounds, loadSamples, playSample, sample, soundManifest, startMusic } from "./audio";
 import showcaseWeapon from "../data/showcase-weapon.json";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RARITIES, WeaponGenerator } from "../weapons/generator";
@@ -72,6 +72,8 @@ const weaponDarkness = (spec: WeaponSpec | null | undefined) => {
 const applyLook = () => { world.setNight(settings.night); rim.intensity = (settings.night ? 0.8 : 0.4) + darkBoost * 1.1; rim.color.set(settings.night ? 0xc8b0ff : 0xbfd8ff); fill.intensity = settings.night ? 0.5 : 0; bloom.enabled = settings.bloom; bloom.strength = settings.night ? 0.55 : 0.3; renderer.toneMappingExposure = settings.night ? 1.25 : 1.0; };
 applyLook(); onSettings(applyLook);
 startMusic("./music/ambient-02.ogg");
+// Pack de sonidos (assets/sonidos): manifest ahora; las muestras de cada arma se cargan al equiparla
+void initSounds("./sonidos/").then((m) => { if (m) void loadSamples(["melee_cuchillo_swing", "melee_cuchillo_golpe", "melee_culatazo", "recoger_arma", "explosion"].flatMap((k) => m.efectos[k] ?? [])); });
 const draw = () => (settings.bloom ? composer.render() : renderer.render(scene, camera));
 function resize() { renderer.setSize(innerWidth, innerHeight); composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
@@ -143,6 +145,7 @@ async function boot() {
     hurt(dmg) { if (php.hit(dmg)) { waves.stop(); php.reset(); toast(t("ui.simReset")); } },
   });
   gun.env = weaponEnv;
+  gun.actionOf = (sp) => gen.byId.get(sp.parts[0].from)?.action;
   const pickups = new Pickups(scene, asm, world.colliders);
   // Compilación de shaders en segundo plano (KHR_parallel_shader_compile): armas nuevas sin congelar el juego
   const prewarm = (o: THREE.Object3D) => { o.updateMatrixWorld(true); return renderer.compileAsync(o, camera, scene); };
@@ -344,6 +347,7 @@ async function boot() {
   /** Recoge el arma del suelo a la que apunta el jugador. */
   function pickUp(p: Pickup) {
     if (!inv.add(p.item)) { toast(t("ui.packFull")); return; }
+    { const l = soundManifest?.efectos.recoger_arma; if (l?.length) playSample(sample(l[0]), 0.5); }
     const wasLoot = p.expires != null;
     pickups.remove(p);
     const where = inv.find(p.item.uid);

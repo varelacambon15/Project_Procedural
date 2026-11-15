@@ -163,6 +163,16 @@ class Hand {
       out.push(best);
       const c = this.cur.fingers[f]; ch[0].rotation.x = -c * 1.15; ch[1].rotation.x = -c * 1.3; ch[2].rotation.x = -c * 1.0;
     }
+    // Pulgar: el mayor cierre con el que ninguna de sus dos falanges entra en la empuñadura (antes la atravesaba)
+    let tBest = 0;
+    for (let c = 0; c <= 1.2; c += 0.05) {
+      this.thumb[0].rotation.x = -c * 0.6; this.thumb[1].rotation.x = -c * 1.0; this.g.updateMatrixWorld(true);
+      const d0 = dist(this.thumb[0].children[0].getWorldPosition(v)), d1 = dist(this.thumb[1].children[0].getWorldPosition(v));
+      if (Math.min(d0, d1) < 0.009) break;
+      tBest = c;
+    }
+    out.push(tBest);
+    this.thumb[0].rotation.x = -this.cur.thumb * 0.6; this.thumb[1].rotation.x = -this.cur.thumb * 1.0;
     return out;
   }
 }

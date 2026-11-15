@@ -1,0 +1,827 @@
+{
+ "version": 1,
+ "formato": "ogg-vorbis mono 44.1 kHz",
+ "nota": "Rutas relativas a esta carpeta. Cada archivo va normalizado a pico -2 dB (disparos) o -8 dB (foley): el volumen relativo entre tipos se da en volumen_sugerido.",
+ "tipos": {
+  "pistol": {
+   "disparo": [
+    "disparo/pistol/disparo_tac45.ogg",
+    "disparo/pistol/disparo_five7.ogg",
+    "disparo/pistol/disparo_b23r.ogg"
+   ],
+   "silenciado": [
+    "disparo/pistol/silenciado_five7.ogg"
+   ],
+   "grave": [
+    "grave/pistol.ogg"
+   ],
+   "lejano": [
+    "lejano/pistol/wpn_pistol_dist_00.ogg",
+    "lejano/pistol/wpn_pistol_dist_01.ogg",
+    "lejano/pistol/wpn_pistol_dist_02.ogg"
+   ],
+   "seco": [
+    "seco/pistol.ogg"
+   ],
+   "recarga": [
+    {
+     "id": "generica",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/pistol/generica/fly_pistol_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/pistol/generica/fly_pistol_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/pistol/generica/fly_pistol_sf.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "colt",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/pistol/colt/fly_colt45_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/pistol/colt/fly_colt45_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/pistol/colt/fly_colt45_slide_forward.ogg",
+       "en": 0.85
+      }
+     ]
+    }
+   ],
+   "accion": {
+    "corredera": [
+     "accion/corredera/fly_pistol_sb.ogg",
+     "accion/corredera/fly_pistol_sf.ogg"
+    ]
+   },
+   "volumen_sugerido": 0.55
+  },
+  "revolver": {
+   "disparo": [
+    "disparo/revolver/disparo_python.ogg",
+    "disparo/revolver/disparo_judge.ogg"
+   ],
+   "grave": [
+    "grave/revolver.ogg"
+   ],
+   "lejano": [
+    "lejano/revolver/wpn_pistol_dist_01.ogg",
+    "lejano/revolver/wpn_pistol_dist_01.ogg",
+    "lejano/revolver/wpn_pistol_dist_02.ogg"
+   ],
+   "seco": [
+    "seco/revolver.ogg"
+   ],
+   "recarga": [
+    {
+     "id": "python",
+     "pasos": [
+      {
+       "evento": "abrir_tambor",
+       "archivo": "recarga/revolver/python/fly_357_open.ogg",
+       "en": 0.12
+      },
+      {
+       "evento": "vaciar",
+       "archivo": "recarga/revolver/python/fly_357_empty.ogg",
+       "en": 0.3
+      },
+      {
+       "evento": "cargar",
+       "archivo": "recarga/revolver/python/fly_357_load.ogg",
+       "en": 0.6
+      },
+      {
+       "evento": "girar",
+       "archivo": "recarga/revolver/python/fly_357_spin.ogg",
+       "en": 0.8
+      },
+      {
+       "evento": "cerrar_tambor",
+       "archivo": "recarga/revolver/python/fly_357_close.ogg",
+       "en": 0.92
+      }
+     ]
+    },
+    {
+     "id": "judge",
+     "pasos": [
+      {
+       "evento": "vaciar",
+       "archivo": "recarga/revolver/judge/fly_judge_empty.ogg",
+       "en": 0.3
+      },
+      {
+       "evento": "cargar",
+       "archivo": "recarga/revolver/judge/fly_judge_load_00.ogg",
+       "en": 0.6
+      },
+      {
+       "evento": "cargar",
+       "archivo": "recarga/revolver/judge/fly_judge_load_01.ogg",
+       "en": 0.75
+      }
+     ]
+    }
+   ],
+   "accion": {
+    "martillo": [
+     "accion/martillo/fly_pistol_hammer.ogg"
+    ]
+   },
+   "volumen_sugerido": 0.8
+  },
+  "smg": {
+   "disparo": [
+    "disparo/smg/disparo_mp7.ogg",
+    "disparo/smg/disparo_qcw.ogg",
+    "disparo/smg/disparo_kap.ogg",
+    "disparo/smg/disparo_msmc.ogg",
+    "disparo/smg/disparo_evo.ogg",
+    "disparo/smg/disparo_vector.ogg"
+   ],
+   "silenciado": [
+    "disparo/smg/silenciado_msmc.ogg"
+   ],
+   "grave": [
+    "grave/smg.ogg"
+   ],
+   "lejano": [
+    "lejano/smg/wpn_smg_dist_00.ogg",
+    "lejano/smg/wpn_smg_dist_01.ogg",
+    "lejano/smg/wpn_smg_dist_02.ogg"
+   ],
+   "seco": [
+    "seco/smg.ogg"
+   ],
+   "recarga": [
+    {
+     "id": "mp5",
+     "pasos": [
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/smg/mp5/fly_mp5_mag_in.ogg",
+       "en": 0.5
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/smg/mp5/fly_mp5_charge.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "uzi",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/smg/uzi/fly_uzi_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/smg/uzi/fly_uzi_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/smg/uzi/fly_uzi_charge.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "mp7",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/smg/mp7/fly_mp7_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/smg/mp7/fly_mp7_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/smg/mp7/fly_mp7_charge.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "kiparis",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/smg/kiparis/fly_kiparis_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/smg/kiparis/fly_kiparis_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/smg/kiparis/fly_kiparis_charge.ogg",
+       "en": 0.85
+      }
+     ]
+    }
+   ],
+   "volumen_sugerido": 0.5
+  },
+  "rifle": {
+   "disparo": [
+    "disparo/rifle/disparo_an94.ogg",
+    "disparo/rifle/disparo_sa58.ogg",
+    "disparo/rifle/disparo_m27.ogg",
+    "disparo/rifle/disparo_xm8.ogg",
+    "disparo/rifle/disparo_tar21.ogg",
+    "disparo/rifle/disparo_pdw57.ogg",
+    "disparo/rifle/disparo_smr.ogg",
+    "disparo/rifle/disparo_scar.ogg",
+    "disparo/rifle/disparo_sig556.ogg",
+    "disparo/rifle/disparo_type95.ogg"
+   ],
+   "silenciado": [
+    "disparo/rifle/silenciado_m27.ogg"
+   ],
+   "grave": [
+    "grave/rifle.ogg"
+   ],
+   "lejano": [
+    "lejano/rifle/wpn_assault_dist_00.ogg",
+    "lejano/rifle/wpn_assault_dist_01.ogg",
+    "lejano/rifle/wpn_assault_dist_02.ogg",
+    "lejano/rifle/wpn_assault_dist_03.ogg"
+   ],
+   "seco": [
+    "seco/rifle.ogg"
+   ],
+   "recarga": [
+    {
+     "id": "generica",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/rifle/generica/fly_assault_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/rifle/generica/fly_assault_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/rifle/generica/fly_assault_charge.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "ak47",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/rifle/ak47/fly_ak47_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/rifle/ak47/fly_ak47_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/rifle/ak47/fly_ak47_charge.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "m16",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/rifle/m16/fly_m16_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/rifle/m16/fly_m16_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/rifle/m16/fly_m16_charge.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "m14",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/rifle/m14/fly_m14_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/rifle/m14/fly_m14_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/rifle/m14/fly_m14_bolt_release.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "fal",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/rifle/fal/fly_fnfal_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/rifle/fal/fly_fnfal_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/rifle/fal/fly_fnfal_button.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "galil",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/rifle/galil/fly_galil_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/rifle/galil/fly_galil_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/rifle/galil/fly_galil_futz.ogg",
+       "en": 0.85
+      }
+     ]
+    }
+   ],
+   "accion": {
+    "cerrojo": [
+     "accion/cerrojo/fly_m14_bolt_back.ogg",
+     "accion/cerrojo/fly_m14_bolt_release.ogg"
+    ]
+   },
+   "volumen_sugerido": 0.65
+  },
+  "shotgun": {
+   "disparo": [
+    "disparo/shotgun/disparo_ksg.ogg",
+    "disparo/shotgun/disparo_m1216.ogg",
+    "disparo/shotgun/disparo_r870.ogg"
+   ],
+   "silenciado": [
+    "disparo/shotgun/silenciado_s12.ogg"
+   ],
+   "grave": [
+    "grave/shotgun.ogg"
+   ],
+   "lejano": [
+    "lejano/shotgun/wpn_shotgun_dist_00.ogg",
+    "lejano/shotgun/wpn_shotgun_dist_01.ogg"
+   ],
+   "seco": [
+    "seco/shotgun.ogg"
+   ],
+   "recarga": [
+    {
+     "id": "bombeo",
+     "pasos": [
+      {
+       "evento": "cargar_cartucho",
+       "archivo": "recarga/shotgun/bombeo/load_00.ogg",
+       "en": 0.25
+      },
+      {
+       "evento": "cargar_cartucho",
+       "archivo": "recarga/shotgun/bombeo/load_01.ogg",
+       "en": 0.45
+      },
+      {
+       "evento": "cargar_cartucho",
+       "archivo": "recarga/shotgun/bombeo/load_02.ogg",
+       "en": 0.65
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/shotgun/bombeo/fly_shotgun_pump_back.ogg",
+       "en": 0.82
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/shotgun/bombeo/fly_shotgun_pump_forward.ogg",
+       "en": 0.92
+      }
+     ]
+    },
+    {
+     "id": "cargador",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/shotgun/cargador/fly_srm1216_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/shotgun/cargador/fly_srm1216_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/shotgun/cargador/fly_srm1216_twist.ogg",
+       "en": 0.85
+      }
+     ]
+    }
+   ],
+   "accion": {
+    "bombeo": [
+     "accion/bombeo/fly_shotgun_pump_back.ogg",
+     "accion/bombeo/fly_shotgun_pump_forward.ogg"
+    ]
+   },
+   "volumen_sugerido": 0.9
+  },
+  "sniper": {
+   "disparo": [
+    "disparo/sniper/disparo_ballista.ogg",
+    "disparo/sniper/disparo_dsr.ogg",
+    "disparo/sniper/disparo_svu.ogg",
+    "disparo/sniper/disparo_xpr50.ogg"
+   ],
+   "silenciado": [
+    "disparo/sniper/silenciado_ballista.ogg"
+   ],
+   "grave": [
+    "grave/sniper.ogg"
+   ],
+   "lejano": [
+    "lejano/sniper/wpn_rif_dist_00.ogg",
+    "lejano/sniper/wpn_rif_dist_01.ogg"
+   ],
+   "seco": [
+    "seco/sniper.ogg"
+   ],
+   "recarga": [
+    {
+     "id": "generica",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/sniper/generica/fly_sniper_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/sniper/generica/fly_sniper_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/sniper/generica/fly_sniper_bf.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "wa2000",
+     "pasos": [
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/sniper/wa2000/fly_wa2000_mag_out.ogg",
+       "en": 0.2
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/sniper/wa2000/fly_wa2000_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/sniper/wa2000/fly_sniper_bf.ogg",
+       "en": 0.85
+      }
+     ]
+    },
+    {
+     "id": "cerrojo_l96",
+     "pasos": [
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/sniper/cerrojo_l96/fly_l96a1_mag_in.ogg",
+       "en": 0.5
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/sniper/cerrojo_l96/fly_sniper_bb.ogg",
+       "en": 0.7
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/sniper/cerrojo_l96/fly_sniper_bf.ogg",
+       "en": 0.85
+      }
+     ]
+    }
+   ],
+   "accion": {
+    "cerrojo": [
+     "accion/cerrojo/fly_sniper_bb.ogg",
+     "accion/cerrojo/fly_sniper_bf.ogg",
+     "accion/cerrojo/fly_sniper_bu.ogg",
+     "accion/cerrojo/fly_sniper_bd.ogg"
+    ]
+   },
+   "volumen_sugerido": 1.0
+  },
+  "lmg": {
+   "disparo": [
+    "disparo/lmg/disparo_lsat.ogg",
+    "disparo/lmg/disparo_hamr.ogg",
+    "disparo/lmg/disparo_mk48.ogg",
+    "disparo/lmg/disparo_qbb.ogg"
+   ],
+   "silenciado": [
+    "disparo/lmg/silenciado_lsat.ogg"
+   ],
+   "grave": [
+    "grave/lmg.ogg"
+   ],
+   "lejano": [
+    "lejano/lmg/wpn_lmg_dist_00.ogg",
+    "lejano/lmg/wpn_lmg_dist_01.ogg",
+    "lejano/lmg/wpn_lmg_dist_02.ogg"
+   ],
+   "seco": [
+    "seco/lmg.ogg"
+   ],
+   "recarga": [
+    {
+     "id": "m60",
+     "pasos": [
+      {
+       "evento": "abrir_tapa",
+       "archivo": "recarga/lmg/m60/fly_m60_open.ogg",
+       "en": 0.1
+      },
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/lmg/m60/fly_m60_box_off.ogg",
+       "en": 0.28
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/lmg/m60/fly_m60_box_on.ogg",
+       "en": 0.5
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/lmg/m60/fly_m60_place_belt.ogg",
+       "en": 0.65
+      },
+      {
+       "evento": "cerrar_tapa",
+       "archivo": "recarga/lmg/m60/fly_m60_lid_close.ogg",
+       "en": 0.8
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/lmg/m60/fly_m60_charge.ogg",
+       "en": 0.92
+      }
+     ]
+    },
+    {
+     "id": "mk48",
+     "pasos": [
+      {
+       "evento": "abrir_tapa",
+       "archivo": "recarga/lmg/mk48/fly_mk48_open.ogg",
+       "en": 0.1
+      },
+      {
+       "evento": "cargador_fuera",
+       "archivo": "recarga/lmg/mk48/fly_mk48_mag_out.ogg",
+       "en": 0.3
+      },
+      {
+       "evento": "cargador_dentro",
+       "archivo": "recarga/lmg/mk48/fly_mk48_mag_in.ogg",
+       "en": 0.55
+      },
+      {
+       "evento": "cerrar_tapa",
+       "archivo": "recarga/lmg/mk48/fly_mk48_close.ogg",
+       "en": 0.8
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/lmg/mk48/fly_mk48_pull.ogg",
+       "en": 0.92
+      }
+     ]
+    }
+   ],
+   "volumen_sugerido": 0.75
+  },
+  "crossbow": {
+   "disparo": [
+    "disparo/crossbow/disparo_ballesta0.ogg",
+    "disparo/crossbow/disparo_ballesta1.ogg",
+    "disparo/crossbow/disparo_ballesta2.ogg"
+   ],
+   "seco": [
+    "seco/crossbow.ogg"
+   ],
+   "recarga": [
+    {
+     "id": "ballesta",
+     "pasos": [
+      {
+       "evento": "armar",
+       "archivo": "recarga/crossbow/ballesta/fly_crossbow_draw.ogg",
+       "en": 0.3
+      },
+      {
+       "evento": "cargar",
+       "archivo": "recarga/crossbow/ballesta/fly_crossbow_lay_bolt.ogg",
+       "en": 0.6
+      },
+      {
+       "evento": "armar",
+       "archivo": "recarga/crossbow/ballesta/fly_crossbow_latch.ogg",
+       "en": 0.85
+      }
+     ]
+    }
+   ],
+   "volumen_sugerido": 0.45
+  }
+ },
+ "efectos": {
+  "casquillo": [
+   "efectos/casquillo_0.ogg",
+   "efectos/casquillo_1.ogg",
+   "efectos/casquillo_2.ogg"
+  ],
+  "zoom_mira": [
+   "efectos/zoom_mira.ogg"
+  ],
+  "apuntar": [
+   "efectos/apuntar_rifle.ogg",
+   "efectos/apuntar_pistola.ogg"
+  ],
+  "sacar_arma": [
+   "efectos/sacar_rifle.ogg",
+   "efectos/sacar_hombro.ogg"
+  ],
+  "explosion": [
+   "explosion/granada.ogg",
+   "explosion/granada_cerca.ogg",
+   "explosion/cohete_0.ogg",
+   "explosion/cohete_1.ogg",
+   "explosion/cohete_cerca.ogg"
+  ],
+  "explosion_grave": [
+   "explosion/grave_granada.ogg",
+   "explosion/grave_cohete.ogg"
+  ],
+  "escombros": [
+   "explosion/escombros_dirt_0.ogg",
+   "explosion/escombros_dirt_1.ogg",
+   "explosion/escombros_dirt_2.ogg",
+   "explosion/escombros_rock_0.ogg",
+   "explosion/escombros_rock_1.ogg",
+   "explosion/escombros_rock_2.ogg",
+   "explosion/escombros_wood_0.ogg",
+   "explosion/escombros_wood_1.ogg",
+   "explosion/escombros_wood_2.ogg"
+  ],
+  "flash_aturdidora": [
+   "explosion/aturdidora_0.ogg",
+   "explosion/aturdidora_1.ogg",
+   "explosion/aturdidora_2.ogg"
+  ],
+  "humo": [
+   "explosion/humo_0.ogg",
+   "explosion/humo_inicio.ogg"
+  ],
+  "lanzar_granada": [
+   "efectos/granada_anilla.ogg",
+   "efectos/granada_lanzar.ogg"
+  ],
+  "rebote_granada": [
+   "efectos/rebote_metal_0.ogg",
+   "efectos/rebote_metal_1.ogg",
+   "efectos/rebote_metal_2.ogg",
+   "efectos/rebote_wood_0.ogg",
+   "efectos/rebote_wood_1.ogg",
+   "efectos/rebote_wood_2.ogg",
+   "efectos/rebote_earth_0.ogg",
+   "efectos/rebote_earth_1.ogg",
+   "efectos/rebote_earth_2.ogg"
+  ],
+  "melee_cuchillo_swing": [
+   "melee/cuchillo_swing_0.ogg",
+   "melee/cuchillo_swing_1.ogg",
+   "melee/cuchillo_swing_2.ogg",
+   "melee/cuchillo_swing_3.ogg"
+  ],
+  "melee_cuchillo_golpe": [
+   "melee/cuchillo_golpe_0.ogg",
+   "melee/cuchillo_golpe_1.ogg",
+   "melee/cuchillo_golpe_2.ogg",
+   "melee/cuchillo_golpe_3.ogg"
+  ],
+  "melee_culatazo": [
+   "melee/culatazo_0.ogg",
+   "melee/culatazo_1.ogg",
+   "melee/culatazo_2.ogg"
+  ],
+  "melee_espada_swing": [
+   "melee/espada_swing_0.ogg",
+   "melee/espada_swing_1.ogg",
+   "melee/espada_swing_2.ogg"
+  ],
+  "melee_hacha_golpe": [
+   "melee/hacha_golpe_0.ogg",
+   "melee/hacha_golpe_1.ogg",
+   "melee/hacha_golpe_2.ogg",
+   "melee/hacha_golpe_3.ogg"
+  ],
+  "recoger_municion": [
+   "objetos/municion_fly_ammo_pickup_00.ogg",
+   "objetos/municion_fly_ammo_pickup_01.ogg",
+   "objetos/municion_pickup_00.ogg",
+   "objetos/municion_pickup_01.ogg"
+  ],
+  "recoger_arma": [
+   "objetos/arma_fly_weapon_pickup_00.ogg",
+   "objetos/arma_fly_weapon_pickup_01.ogg"
+  ],
+  "recoger_granada": [
+   "objetos/granada_0.ogg"
+  ]
+ },
+ "scifi_storm_psr": {
+  "disparo": [
+   "scifi/storm_disparo_1.ogg",
+   "scifi/storm_disparo_2.ogg",
+   "scifi/storm_disparo_3.ogg",
+   "scifi/storm_disparo_4.ogg",
+   "scifi/storm_disparo_5.ogg"
+  ],
+  "carga": "scifi/storm_carga.ogg",
+  "apagado": "scifi/storm_apagado.ogg",
+  "recarga": [
+   "scifi/fly_metalstorm_mag_out.ogg",
+   "scifi/fly_metalstorm_mag_in.ogg",
+   "scifi/fly_metalstorm_bolt.ogg"
+  ]
+ }
+}

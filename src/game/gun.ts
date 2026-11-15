@@ -12,7 +12,8 @@ import type { Item } from "./inventory";
 import type { Dummy, Element, Zone } from "./dummies";
 import { mergeStatic } from "./merge";
 import { Arms, handBasis, type Curl, type HandPose } from "./arms";
-import { audio, out, out as masterOut } from "./audio";
+import { audio, fadeOut, loadSamples, out, out as masterOut, playSample, sample, soundManifest } from "./audio";
+import { cycleKind, cycleSounds, filesOfType, pickReload, pickShot, type RecargaVariante } from "./sounds";
 import { settings } from "./settings";
 import { CYCLE_TIME, ViewAnimator, animParams, boltCurve, ease, phaseAt, pumpCurve, tri, type AnimInput, type MovingPart, type Phase } from "./anim";
 
@@ -92,6 +93,11 @@ export class Gun {
   private shotCount = 0;
   private burstLeft = 0; private burstTimer = 0;
   private cycleT = 0; private cycleDur = 0.45;
+  /** Acción real del modelo del arma (campo accion de los packs), para el sonido del ciclo. Lo fija main.ts. */
+  actionOf: ((spec: NonNullable<Gun["spec"]>) => string | undefined) | null = null;
+  /** Sonido del último disparo (se corta con un fundido si llega otro en cadencia alta) y pasos de recarga sonados. */
+  private lastShot: ReturnType<typeof playSample> = null; private lastShotT = 0;
+  private reloadSnd: RecargaVariante | null = null; private reloadDone = 0;
   /** Cierre de cada dedo de la mano derecha ajustado a la empuñadura de esta arma (se calcula al equiparla). */ private fitCurl: number[] | null = null; private fitWait = 0;
   /** Recarga táctica (quedaban balas en el cargador): sin montar el arma. */ private tacReload = false;
   private inspectT = 0;
@@ -217,7 +223,8 @@ export class Gun {
     for (const role of ["slide", "pump", "charging"] as MovingPart[]) { const part = m.parts.find((p) => p.role === role); if (part) this.moving[role] = part; }
     // Shaders del arma compilados en segundo plano mientras se saca (sin tirón al aparecer)
     if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item || seq !== this.equipSeq) return; }
-    this.model = m; this.fitCurl = null; this.fitWait = 12;
+    this.model = m; this.fitCurl = null;
+    if (soundManifest) void loadSamples([...filesOfType(soundManifest, item.spec.type), ...(soundManifest.efectos.casquillo ?? [])]); this.fitWait = 12;
     // Rendimiento: dentro de cada pieza (que se anima entera) se fusionan sus mallas por material
     if (!m.group.userData.merged) { for (const p of m.parts) mergeStatic(p.object); m.group.userData.merged = true; }
     for (const c of [...this.holder.children]) if (c !== this.flash && c !== this.flashLight) this.holder.remove(c);
@@ -230,7 +237,9 @@ export class Gun {
     try {
       this.audio ??= audio();
       const a = this.audio, t = a.currentTime, g = a.createGain(); g.connect(out());
-      if (kind === "shot" && type) { this.layeredShot(a, type, quiet); return; }
+      if (kind === "shot" && type) { if (!this.sampleShot(type, quiet)) this.layeredShot(a, type, quiet); return; }
+      if (kind === "empty" && soundManifest && type) { const f = soundManifest.tipos[type === "bullpup" ? "rifle" : type]?.seco?.[0]; if (f && playSample(sample(f), 0.5)) return; }
+      if (kind === "boom" && soundManifest) { const l = soundManifest.efectos.explosion ?? [], f = l[Math.floor(Math.random() * l.length)]; if (playSample(sample(f), 0.7)) return; }
       if (kind === "shot" || kind === "boom") {
         const len = kind === "boom" ? 0.6 : type === "sniper" || type === "shotgun" || type === "revolver" ? 0.38 : 0.16;
         const buf = a.createBuffer(1, a.sampleRate * len, a.sampleRate), d = buf.getChannelData(0);
@@ -262,6 +271,22 @@ export class Gun {
    * Disparo por capas: ataque (chasquido), cuerpo (explosión filtrada por tipo), cola (eco, más larga bajo la
    * marquesina) y mecánica (cerrojo). Tono con variación aleatoria; el supresor apaga ataque y cuerpo.
    */
+  /**
+   * Disparo con muestras del pack: una al azar del tipo (silenciada si hay silenciador), más la capa grave a ~0,5, con
+   * tono ±4 % y volumen ±10 %. En cadencia alta corta la cola del anterior. false si no hay muestras (→ síntesis).
+   */
+  private sampleShot(type: WeaponType, quiet: boolean): boolean {
+    const m = soundManifest; if (!m) return false;
+    const p = pickShot(m, type, quiet); if (!p) return false;
+    const buf = sample(p.main); if (!buf) return false;
+    const a = audio(), now = a.currentTime;
+    if (this.lastShot && now - this.lastShotT < 0.25) fadeOut(this.lastShot, 0.025);
+    const rate = 0.96 + Math.random() * 0.08, vol = p.gain * (0.9 + Math.random() * 0.2) * (p.quiet ? 0.8 : 1);
+    this.lastShot = playSample(buf, vol, rate); this.lastShotT = now;
+    if (p.grave) playSample(sample(p.grave), vol * 0.5, rate);
+    return true;
+  }
+
   private layeredShot(a: AudioContext, type: WeaponType, quiet: boolean) {
     const t = a.currentTime, pitch = 0.94 + Math.random() * 0.12;
     const body: Record<string, [number, number, number]> = { pistol: [2400, 0.14, 0.32], revolver: [1500, 0.3, 0.42], smg: [2800, 0.12, 0.28], rifle: [2000, 0.18, 0.34], bullpup: [2100, 0.17, 0.33], shotgun: [1100, 0.34, 0.5], sniper: [1200, 0.42, 0.5], lmg: [1800, 0.2, 0.36] };
@@ -284,7 +309,9 @@ export class Gun {
     time *= this.fx?.reloadMult() ?? 1;
     this.reloadT = this.reloadDur = time; this.burstLeft = 0; this.inspectT = 0;
     this.tacReload = this.item.ammo > 0;
-    this.sfx("reload");
+    // Variante de recarga fija del arma (por su semilla); cada paso suena en su fracción del tiempo de recarga
+    this.reloadSnd = soundManifest ? pickReload(soundManifest, s.type, s.seed) : null; this.reloadDone = 0;
+    if (!this.reloadSnd) this.sfx("reload");
   }
 
   update(dt: number, c: Control) {
@@ -295,7 +322,11 @@ export class Gun {
     this.sprintT += ((c.sprinting ? 1 : 0) - this.sprintT) * Math.min(1, dt * 8);
     this.crossKick = Math.max(0, this.crossKick - dt * (2.2 + (this.spec?.stats.manejo ?? 60) / 40));
     this.hitmarker = Math.max(0, this.hitmarker - dt); this.critmarker = Math.max(0, this.critmarker - dt); this.killmarker = Math.max(0, this.killmarker - dt);
-    if (this.reloadT > 0) { this.reloadT -= dt; if (this.reloadT <= 0 && it && s) { it.ammo = s.stats.cargador; this.sfx("cycle"); this.fx?.reloadEnd(); } }
+    if (this.reloadT > 0 && this.reloadSnd) {
+      const frac = 1 - (this.reloadT - dt) / this.reloadDur, steps = this.reloadSnd.pasos;
+      while (this.reloadDone < steps.length && steps[this.reloadDone].en <= frac) { playSample(sample(steps[this.reloadDone].archivo), 0.55, 0.98 + Math.random() * 0.04); this.reloadDone++; }
+    }
+    if (this.reloadT > 0) { this.reloadT -= dt; if (this.reloadT <= 0 && it && s) { it.ammo = s.stats.cargador; if (!this.reloadSnd) this.sfx("cycle"); this.fx?.reloadEnd(); } }
     if (c.inspect && s && this.reloadT <= 0 && this.aimT < 0.2) this.inspectT = 2.6;
     this.inspectT = Math.max(0, this.inspectT - dt);
     // Calor: se enfría solo; sobrecalentada no dispara hasta enfriarse
@@ -321,7 +352,7 @@ export class Gun {
         if (it.ammo > 0) {
           if (mode === "burst") { this.burstLeft = (s.burst || 3) - 1; this.burstTimer = 60 / (s.stats.cadencia * 1.6); }
           this.fire(c.moving);
-        } else if (pressed) { this.sfx("empty"); this.startReload(); }
+        } else if (pressed) { this.sfx("empty", s?.type); this.startReload(); }
       }
     }
     if (!it && !this.pending) this.fistsInput(dt, c);
@@ -441,11 +472,12 @@ export class Gun {
       d.push(dir.clone().setY(0).normalize(), this.punchHeavy ? 1.4 : 0.5);
       this.spark(hit.point, dir.clone().negate(), this.punchHeavy ? 10 : 5, crit ? 0xffe08a : 0xcff6f8);
       if (crit) this.critmarker = 0.15; else this.hitmarker = 0.12;
+      { const l = soundManifest?.efectos[this.punchHeavy ? "melee_culatazo" : "melee_cuchillo_golpe"]; if (l?.length) playSample(sample(l[0]), 0.6); }
       if (alive && !d.alive) { this.killmarker = 0.35; this.sfx("kill"); this.hooks.onKill?.(d); } else this.sfx(crit ? "crit" : "hit");
       this.recoil += this.punchHeavy ? 0.03 : 0.014; this.recoilYaw += (Math.random() - 0.5) * 0.01; // sacudida de impacto
       return;
     }
-    this.sfx("cycle"); // golpe al aire
+    { const l = soundManifest?.efectos.melee_cuchillo_swing; if (!(l?.length && playSample(sample(l[Math.floor(Math.random() * l.length)]), 0.45))) this.sfx("cycle"); } // golpe al aire
   }
   /** Pose de los puños en guardia (espacio de la cámara) y animación del golpe, del esprint y de sacarlos. */
   private updateFists(dt: number) {
@@ -510,6 +542,8 @@ export class Gun {
   /** Casquillo expulsado por la ventana del cajón, con física simple. */
   private ejectCasing() {
     const s = this.spec!; const m = this.model; if (!m || s.type === "revolver") return;
+    // Casquillo al caer al suelo (efectos del pack)
+    { const l = soundManifest?.efectos.casquillo; if (l?.length) playSample(sample(l[Math.floor(Math.random() * l.length)]), 0.25, 0.95 + Math.random() * 0.1, audio().currentTime + 0.35 + Math.random() * 0.15); }
     const big = s.type === "sniper" || s.type === "shotgun";
     const geo = s.type === "shotgun" ? casingGeo.shell : big ? casingGeo.big : casingGeo.small;
     const mesh = new THREE.Mesh(geo, s.type === "shotgun" ? shellMat : brassMat);
@@ -637,7 +671,7 @@ export class Gun {
     }
     const fc = this.fitCurl;
     const trig = 0.52 + 0.3 * this.trigT - 0.1 * sp;
-    const right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? fc[0] - 0.12 + 0.15 * this.trigT - 0.1 * sp : trig, (fc?.[1] ?? 1.02) - 0.1 * sp, (fc?.[2] ?? 1.06) - 0.1 * sp, (fc?.[3] ?? 1.1) - 0.1 * sp], thumb: 0.62 - 0.15 * sp });
+    const right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? fc[0] - 0.12 + 0.15 * this.trigT - 0.1 * sp : trig, (fc?.[1] ?? 1.02) - 0.1 * sp, (fc?.[2] ?? 1.06) - 0.1 * sp, (fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
     // Hombros: siguen la mitad de los movimientos rápidos del arma (retroceso, balanceo) respecto a su media lenta
@@ -665,7 +699,16 @@ export class Gun {
     }
     this.shotCount++;
     if (!echo) this.hooks.onShot?.();
-    if (s.fireMode === "pump" || s.fireMode === "bolt") { this.cycleT = this.cycleDur = CYCLE_TIME[s.fireMode]; setTimeout(() => { this.sfx("cycle"); if (this.item === it) this.ejectCasing(); }, s.fireMode === "bolt" ? 380 : 170); }
+    if (s.fireMode === "pump" || s.fireMode === "bolt") {
+      this.cycleT = this.cycleDur = CYCLE_TIME[s.fireMode];
+      // Ciclo con las muestras del pack (cerrojo: atrás/adelante…; bombeo: atrás/adelante), repartidas por el gesto
+      const kind = cycleKind(this.actionOf?.(s), s.fireMode, s.type), files = soundManifest && kind ? cycleSounds(soundManifest, s.type, kind) : [];
+      if (files.length) { const a = audio(), t0 = a.currentTime + (s.fireMode === "bolt" ? 0.28 : 0.1), span = this.cycleDur * 0.6; files.forEach((f, k) => playSample(sample(f), 0.6, 1, t0 + (k / Math.max(1, files.length - 1)) * span * (files.length > 1 ? 1 : 0))); }
+      setTimeout(() => { if (!files.length) this.sfx("cycle"); if (this.item === it) this.ejectCasing(); }, s.fireMode === "bolt" ? 380 : 170);
+    } else if (soundManifest && cycleKind(this.actionOf?.(s), s.fireMode, s.type) === "martillo") {
+      // Revólver de acción simple: se amartilla tras cada disparo
+      const f = cycleSounds(soundManifest, s.type, "martillo")[0]; if (f) playSample(sample(f), 0.5, 1, audio().currentTime + 0.22);
+    }
     else if (!echo) this.ejectCasing();
     const quiet = !!accessory(s.muzzle)?.quiet;
     const sig = fx.sig;
