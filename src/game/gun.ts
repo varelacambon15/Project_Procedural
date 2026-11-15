@@ -285,8 +285,8 @@ export class Gun {
   private sampleShot(type: WeaponType, quiet: boolean): boolean {
     const m = soundManifest; if (!m) return false;
     const p = pickShot(m, type, quiet); if (!p) return false;
-    // Revólver: el disparo según el calibre (el del Judge es un estampido de cartucho de escopeta: solo pesados y mágnum)
-    if (type === "revolver") { const cal = this.spec?.tweaks?.pistol?.cyl?.cal, l = m.tipos.revolver?.disparo ?? []; const want = l.find((f) => (cal === "heavy" || cal === "magnum") === /judge/.test(f)); if (want) p.main = want; }
+    // Revólver: siempre el disparo del Python (el del Judge sonaba a escopeta; el usuario pondrá otro más adelante)
+    if (type === "revolver") { const py = m.tipos.revolver?.disparo.find((f) => /python/.test(f)); if (py) p.main = py; }
     const buf = sample(p.main); if (!buf) return false;
     const a = audio(), now = a.currentTime;
     if (this.lastShot && now - this.lastShotT < 0.25) fadeOut(this.lastShot, 0.025);
