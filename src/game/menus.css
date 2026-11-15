@@ -409,3 +409,12 @@ body.touch #vcursor { display: none; }
 }
 body.touch .foot { display: none; }
 body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family: var(--mono); font-size: 12px; padding: 4px 10px; }
+
+/* Tablero de contratos */
+.ct-list { display: grid; gap: 8px; align-content: start; overflow: auto; max-width: 900px; width: 100%; justify-self: center; }
+.ct-row { display: grid; grid-template-columns: minmax(0, 1fr) 180px 64px 90px; gap: 12px; align-items: center; padding: 10px 12px; background: var(--t-panel2); border: 1px solid var(--t-line); border-left: 3px solid var(--sim); }
+.ct-row.done { border-left-color: var(--amber); } .ct-row.claimed { opacity: 0.5; }
+.ct-what { font-size: 14px; } .ct-n { text-align: right; color: var(--t-dim); } .ct-cr { text-align: right; font-family: var(--display); color: var(--amber); font-size: 18px; }
+.ct-bar { height: 8px; background: rgba(255,255,255,.08); } .ct-bar i { display: block; height: 100%; background: var(--sim); }
+.ct-row.done .ct-bar i { background: var(--amber); }
+@media (max-height: 520px) and (orientation: landscape) { .ct-row { grid-template-columns: minmax(0, 1fr) 90px 48px 70px; gap: 6px; padding: 6px; } .ct-what { font-size: 12px; } }

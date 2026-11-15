@@ -4,6 +4,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import * as THREE from "three";
+import { applyEvent, claimAll, refreshContracts, type Contract, type ContractState } from "./contracts";
 import { initSounds, loadSamples, playSample, sample, soundManifest, startMusic } from "./audio";
 import showcaseWeapon from "../data/showcase-weapon.json";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -79,13 +80,14 @@ function resize() { renderer.setSize(innerWidth, innerHeight); composer.setPixel
 addEventListener("resize", resize); resize();
 
 // ---------- Estado ----------
-type State = "title" | "play" | "pause" | "inventory" | "workbench" | "shop";
+type State = "title" | "play" | "pause" | "inventory" | "workbench" | "shop" | "contracts";
 let state: State = "title";
 let inGame = false; // hay una partida empezada (nueva o cargada)
 const input = new Input(renderer.domElement);
 const player = new Player(world.colliders);
 const inv = new Inventory();
-let shopState: ShopState = newShopState();
+let contracts: ContractState = refreshContracts(null, new Date());
+  let shopState: ShopState = newShopState();
 let playSeconds = 0;
 const numbers = new DamageNumbers($("numbers"));
 const onDummyDamage = (_d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => { if (settings.damageNumbers) numbers.spawn(amount, color, crit, at); };
@@ -116,10 +118,18 @@ async function boot() {
   // Estadísticas de la sala (cuadro de datos de la pared)
   const sim = { shots: 0, hits: 0, log: [] as [number, number][], distance: null as number | null, ttk: null as number | null, firstHit: new Map<Dummy, number>(), lastShot: -100 };
   let shake = 0;
+  // Contratos: último impacto de cada enemigo (para saber con qué arma, a qué distancia y dónde murió)
+  const lastHit = new WeakMap<object, { head: boolean; dist: number; weapon: string | null }>();
+  const contractEvent = (e: Parameters<typeof applyEvent>[1]) => {
+    contracts = refreshContracts(contracts, new Date());
+    for (const c of applyEvent(contracts, e)) toast(t("ct.done", { what: contractText(c), c: c.reward }));
+  };
+  const contractText = (c: Contract) => t(`ct.${c.kind}`, { n: c.goal, w: c.weapon ? t(`type.${c.weapon}`) : t("ct.any"), d: c.dist ?? 0 });
   const gun = new Gun(camera, scene, asm, world.shootables, {
     dummies: () => dummies,
     lunge: (dir, dist) => player.lunge(dir, dist),
     onHit(d, zone, point, dmg, element, crit) {
+      lastHit.set(d, { head: zone === "head", dist: point.distanceTo(camera.position), weapon: gun.item ? (gun.spec?.type === "bullpup" ? "rifle" : gun.spec?.type ?? null) : null });
       const dealt = d.damage(dmg, element, crit, point);
       // Desmembramiento pixelado con impactos muy fuertes en cabeza o extremidades (francotirador, revólver, escopeta…),
       // solo con el golpe que lo mata (antes podía quitarle la cabeza y seguir vivo)
@@ -133,6 +143,7 @@ async function boot() {
       return dealt;
     },
     onKill(d) {
+      { const h = lastHit.get(d); contractEvent({ type: "kill", weapon: h?.weapon ?? null, head: !!h?.head, dist: h?.dist ?? 0, boss: !!d.kind.boss }); }
       if (d.kind.boss) toast(t("ui.bossDown"));
       const t0 = sim.firstHit.get(d); if (t0 != null) { sim.ttk = performance.now() / 1000 - t0; sim.firstHit.delete(d); }
       // Botín y créditos: solo los enemigos de las oleadas (los blancos de práctica reaparecen y no sueltan nada)
@@ -195,6 +206,27 @@ async function boot() {
     if (s === "inventory") invScreen.open(storage); else if (s === "workbench") bench.open(); else shop.open();
     nav.setRoot($(s === "workbench" ? "workbench" : s)); setTimeout(() => nav.first(), 0);
   }
+  /** Tablero de contratos: lista, progreso y cobro de los completados. */
+  function openContracts() {
+    contracts = refreshContracts(contracts, new Date());
+    state = "contracts"; input.unlock();
+    const el = $("contracts"); el.hidden = false;
+    const row = (c: Contract) => `<div class="ct-row${c.done ? " done" : ""}${c.claimed ? " claimed" : ""}"><span class="ct-what">${contractText(c)}</span>
+      <span class="ct-bar"><i style="width:${Math.round((c.progress / c.goal) * 100)}%"></i></span><span class="ct-n">${c.progress}/${c.goal}</span><span class="ct-cr">${c.claimed ? t("ct.claimed") : `${c.reward} CR`}</span></div>`;
+    const ready = contracts.list.filter((c) => c.done && !c.claimed).length;
+    el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">SIM//</span><h1>${t("ct.title")}</h1><span class="credits">${inv.credits} CR</span><button type="button" class="btn ghost sm" data-close="1">${t("ui.back")}</button></header>
+      <section class="panel ct-list"><h2>${t("ct.daily")}</h2>${contracts.list.filter((c) => c.period === "day").map(row).join("")}
+      <h2>${t("ct.weekly")}</h2>${contracts.list.filter((c) => c.period === "week").map(row).join("")}
+      <div class="actions"><button type="button" class="btn" data-claim="1" ${ready ? "" : "disabled"}>${t("ct.claim", { n: ready })}</button></div></section></div>`;
+    nav.setRoot(el); setTimeout(() => nav.first(), 0);
+  }
+  function closeContracts() { $("contracts").hidden = true; resume(); }
+  $("contracts").addEventListener("click", (e) => {
+    const tg = e.target as HTMLElement;
+    if (tg.closest("[data-close]")) return closeContracts();
+    if (tg.closest("[data-claim]")) { const n = claimAll(contracts); if (n) { earn(n); toast(t("ct.paid", { c: n })); autosave(); } openContracts(); }
+  });
+
   function openStart(panel?: "saves") {
     state = inGame ? "pause" : "title"; input.unlock(); if (inGame) autosave(); // guardar al pausar
     start.open(panel); nav.setRoot($("start")); setTimeout(() => (panel ? undefined : $("start").querySelector<HTMLElement>(".mainmenu button")?.focus()), 0);
@@ -222,7 +254,7 @@ async function boot() {
     const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i })), ...inv.storage.map((it, i) => ({ it, area: "storage" as const, index: i }))]
       .filter((x) => x.it).map((x) => ({ spec: x.it!.spec, ammo: x.it!.ammo, area: x.area, index: x.index }));
     return { version: SAVE_VERSION, savedAt: "", name, playSeconds: Math.round(playSeconds), credits: inv.credits, weapons, active: inv.active, bank: inv.bank, shop: shopState,
-      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel() };
+      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts };
   }
   function apply(d: SaveData) {
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
@@ -236,7 +268,7 @@ async function boot() {
     }
     inv.bank = d.bank; setAccUid(Math.max(0, ...d.bank.map((a) => a.uid)) + 1);
     inv.credits = d.credits; inv.active = inv.equip[d.active] ? d.active : Math.max(0, inv.equip.findIndex(Boolean));
-    shopState = d.shop; playSeconds = d.playSeconds;
+    shopState = d.shop; playSeconds = d.playSeconds; contracts = refreshContracts(d.contracts, new Date());
     replaceSettings(d.settings as Partial<Settings>); if (d.lang === "es" || d.lang === "en") setLang(d.lang as Lang); setPixelLevel(d.pixelLevel);
     inGame = true; php.reset(); inv.changed();
   }
@@ -383,10 +415,12 @@ async function boot() {
 
   // ---------- Oleadas de prueba y vida del jugador ----------
   const php = new PlayerHealth();
+  let waveHurt = false;
   const waves = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
-    onWaveEnd: (i, last) => { toast(t("ui.waveDone", { n: i + 1 })); earn(SHOP.income.waveEnd); hooksWaveEnd(i, last); },
+    onWaveEnd: (i, last) => { contractEvent({ type: "wave", reached: i + 1, clean: !waveHurt }); waveHurt = false; toast(t("ui.waveDone", { n: i + 1 })); earn(SHOP.income.waveEnd); hooksWaveEnd(i, last); },
     onAllDone: () => { toast(t("ui.wavesDone")); autosave(); },
     onPlayerHit: (dmg) => {
+      waveHurt = true;
       if (settings.screenShake) shake = Math.min(0.5, shake + 0.18);
       if (php.hit(dmg)) { waves.stop(); php.reset(); toast(t("ui.simReset")); }
       $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on");
@@ -429,7 +463,8 @@ async function boot() {
   // ---------- Navegación de menús: teclado ----------
   const back = () => {
     if (dialog.isOpen) return dialog.cancel();
-    if (state === "inventory") invScreen.close();
+    if (state === "contracts") closeContracts();
+    else if (state === "inventory") invScreen.close();
     else if (state === "workbench") bench.back();
     else if (state === "shop") shop.back();
     else if (state === "pause" || state === "title") start.back();
@@ -477,7 +512,7 @@ async function boot() {
       const near = ground ? null : nearInteractable();
       $("prompt").hidden = !ground && !near;
       if (ground) $("prompt").innerHTML = `${key}${t("ui.pickup")}`;
-      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : "ui.useBench")}`;
+      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : "ui.useBench")}`;
       // Ficha del arma del suelo comparada con la que llevas
       const card = $("pickcard");
       if (ground !== shownPickup) {
@@ -491,6 +526,7 @@ async function boot() {
           if (near.id === "chest") openScreen("shop");
           else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); waves.start(); toast(t("ui.wavesGo")); } }
           else if (near.id === "storage") openScreen("inventory", true);
+          else if (near.id === "contracts") openContracts();
           else { bench.inspect = false; openScreen("workbench"); }
         }
       }

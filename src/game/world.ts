@@ -18,7 +18,7 @@ export function decal<T extends THREE.Mesh>(m: T): T {
 }
 
 
-export interface Interactable { id: "chest" | "workbench" | "waves" | "storage"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
+export interface Interactable { id: "chest" | "workbench" | "waves" | "storage" | "contracts"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
 export interface RangeData { dps: number; ttk: number | null; accuracy: number | null; distance: number | null; message: string }
 export interface World {
   colliders: THREE.Box3[]; interactables: Interactable[]; chestLid: THREE.Object3D; chestGlow: THREE.PointLight; wavesRoom: { z0: number; z1: number }; shootables: THREE.Object3D[]; lanes: number[];
@@ -90,7 +90,11 @@ export function buildRange(scene: THREE.Scene): World {
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(W, BACK - FRONT), floor);
   fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, (BACK + FRONT) / 2); fl.receiveShadow = true; scene.add(fl); shootables.push(fl);
   box(1, H, BACK - FRONT, -W / 2 - 0.5, H / 2, (BACK + FRONT) / 2, wall);
-  box(1, H, BACK - FRONT, W / 2 + 0.5, H / 2, (BACK + FRONT) / 2, wall);
+  // Pared derecha con puerta (4 m) hacia la sala nueva, a la altura del vestíbulo
+  const SD0 = 16, SD1 = 20;
+  box(1, H, SD0 - FRONT, W / 2 + 0.5, H / 2, (SD0 + FRONT) / 2, wall);
+  box(1, H, BACK - SD1, W / 2 + 0.5, H / 2, (BACK + SD1) / 2, wall);
+  box(1, H - 3.4, SD1 - SD0, W / 2 + 0.5, (H + 3.4) / 2, (SD0 + SD1) / 2, wall, false);
   // Pared del fondo con puerta (4 m) hacia la sala de oleadas
   const DOOR = 2, DOOR_H = 3.2;
   box(W / 2 + 1 - DOOR, H, 1, -(W / 2 + 1 + DOOR) / 2, H / 2, BACK + 0.5, wall);
@@ -256,6 +260,33 @@ export function buildRange(scene: THREE.Scene): World {
   mat.rotation.x = -Math.PI / 2; mat.position.set(-W / 2 + 2.6, 0.008, 7.5); scene.add(decal(mat));
   { const m = sign(t("sign.training"), "#e07a2a", 4, 1); m.position.set(-W / 2 + 0.04, 3.2, 7.5); m.rotation.y = Math.PI / 2; scene.add(m); }
 
+  // ---------- Sala nueva (amplia y vacía, a la derecha del vestíbulo; se llenará más adelante) ----------
+  const NX0 = W / 2 + 1, NW = 60, NZ0 = -12, NZ1 = 48, NH = 9;
+  { const nf = new THREE.Mesh(new THREE.PlaneGeometry(NW, NZ1 - NZ0), floor); nf.rotation.x = -Math.PI / 2; nf.position.set(NX0 + NW / 2, 0, (NZ0 + NZ1) / 2); nf.receiveShadow = true; scene.add(nf); shootables.push(nf);
+    box(NW + 2, NH, 1, NX0 + NW / 2, NH / 2, NZ0 - 0.5, wall); box(NW + 2, NH, 1, NX0 + NW / 2, NH / 2, NZ1 + 0.5, wall);
+    box(1, NH, NZ1 - NZ0, NX0 + NW + 0.5, NH / 2, (NZ0 + NZ1) / 2, wall);
+    // (pared común con el vestíbulo: lo que sobresale por encima y a los lados del vestíbulo)
+    if (NH > H) box(1, NH - H, NZ1 - NZ0, NX0 - 0.5, H + (NH - H) / 2, (NZ0 + NZ1) / 2, wall, false);
+    if (NZ1 > BACK + 1) box(1, NH, NZ1 - BACK - 1, NX0 - 0.5, NH / 2, (NZ1 + BACK + 1) / 2, wall);
+    const nc = new THREE.Mesh(new THREE.PlaneGeometry(NW + 2, NZ1 - NZ0 + 2), dark); nc.rotation.x = Math.PI / 2; nc.position.set(NX0 + NW / 2, NH, (NZ0 + NZ1) / 2); scene.add(nc);
+    for (let z = NZ0 + 5; z < NZ1; z += 9) for (let x = NX0 + 6; x < NX0 + NW; x += 12) box(5, 0.06, 1.4, x, NH - 0.05, z, panelLight, false, false);
+    box(0.04, 0.25, NZ1 - NZ0, NX0 + NW - 0.03, 1.1, (NZ0 + NZ1) / 2, safety, false, false);
+    const m = sign(t("sign.newroom"), "#7a8a9a", 3.2, 0.8); m.position.set(W / 2 - 0.04, 4.2, (SD0 + SD1) / 2); m.rotation.y = -Math.PI / 2; scene.add(m); }
+
+  // ---------- Tablero de contratos (vestíbulo, entre la terminal y el almacén) ----------
+  const ctBoard = new THREE.Group(); ctBoard.position.set(-4, 0, 13.2);
+  { const add = (w: number, h: number, d: number, x: number, y: number, z: number, mm: THREE.Material) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mm); b.position.set(x, y, z); b.castShadow = true; ctBoard.add(b); return b; };
+    for (const sx of [-1.05, 1.05]) add(0.1, 2.4, 0.12, sx, 1.2, 0, steel);
+    add(2.2, 1.3, 0.08, 0, 1.6, 0, dark); add(2.3, 0.1, 0.3, 0, 0.05, 0, steel);
+    const c = document.createElement("canvas"); c.width = 128; c.height = 72; const g = c.getContext("2d")!;
+    g.fillStyle = "#0b0e10"; g.fillRect(0, 0, 128, 72); g.fillStyle = "#e8a040"; g.fillRect(0, 0, 128, 4); g.font = "bold 12px monospace"; g.fillText(t("sign.contracts"), 8, 20);
+    for (let i = 0; i < 4; i++) { g.fillStyle = "#2a5a60"; g.fillRect(8, 30 + i * 10, 112, 5); g.fillStyle = "#3fd0d8"; g.fillRect(8, 30 + i * 10, 20 + i * 22, 5); }
+    const tx = new THREE.CanvasTexture(c); tx.magFilter = THREE.NearestFilter; tx.colorSpace = THREE.SRGBColorSpace;
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 1.12), new THREE.MeshBasicMaterial({ map: tx })); scr.position.set(0, 1.6, 0.05); ctBoard.add(decal(scr));
+    add(2.0, 0.03, 0.03, 0, 0.92, 0.06, neonA); }
+  scene.add(ctBoard); colliders.push(new THREE.Box3(new THREE.Vector3(-5.2, 0, 13.0), new THREE.Vector3(-2.8, 2.4, 13.4)));
+  hang(t("sign.contracts"), "#e8a040", -4, 12.6, 3);
+
   // ---------- Sala de oleadas (detrás de la pared del fondo, entrando por la puerta) ----------
   const RW = 60, R0 = BACK + 1, R1 = BACK + 74, RH = 9; // (más grande: antes 46 × 56 m)
   const roomFloor = new THREE.Mesh(new THREE.PlaneGeometry(RW, R1 - R0), floor);
@@ -293,7 +324,7 @@ export function buildRange(scene: THREE.Scene): World {
   const key = new THREE.DirectionalLight(0xd8e2ec, 1.5);
   key.position.set(-10, 20, 12); key.target.position.set(0, 0, -20);
   key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
-  Object.assign(key.shadow.camera, { left: -60, right: 60, top: 80, bottom: -80, near: 1, far: 200 });
+  Object.assign(key.shadow.camera, { left: -60, right: 95, top: 80, bottom: -80, near: 1, far: 200 });
   key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03; // (sin acné de sombra que parpadee al moverse)
   scene.add(key, key.target);
   const lamps: { light: THREE.PointLight; mesh: THREE.Mesh; base: number; phase: number }[] = [];
@@ -356,6 +387,7 @@ export function buildRange(scene: THREE.Scene): World {
       { id: "workbench", position: new THREE.Vector3(12, 0, 13), radius: 2.4, label: "Banco", object: bench },
       { id: "waves", position: WAVES_AT, radius: 1.8, label: "Oleadas", object: wavesConsole },
       { id: "storage", position: new THREE.Vector3(4, 0, 12.6), radius: 2.0, label: "Almacén", object: storage },
+      { id: "contracts", position: new THREE.Vector3(-4, 0, 12.6), radius: 2.0, label: "Contratos", object: ctBoard },
     ],
     update(dt: number, data: RangeData) {
       // Parpadeo: la mayoría estables; de vez en cuando una lámpara titila un instante

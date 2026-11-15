@@ -131,6 +131,16 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 26 (relevo): contratos y sala B
+
+- Contratos (`src/game/contracts.ts`, tests/contracts.test.ts): 3 diarios (cambian cada día) y 2 semanales (cada
+  lunes), deterministas por fecha. Tipos: bajas con un tipo de arma, a la cabeza, a distancia, con los puños, llegar
+  a una oleada, oleadas sin daño, jefes de oleada. Avanzan con `contractEvent` en main.ts (último impacto de cada
+  enemigo en `lastHit`); al cumplirse, aviso; se cobran en el tablero del vestíbulo (x −4, interactuable
+  "contracts", pantalla `#contracts`). Se guardan en `SaveData.contracts` (opcional; partidas antiguas sin él).
+- Sala B: amplia (60 × 60 m) y vacía, a la derecha del vestíbulo (puerta en la pared derecha, z 16–20), sin luces
+  nuevas (paneles emisivos); se llenará más adelante.
+
 ## Ronda 25 (relevo): criba de modelos
 
 - `WHOLE_OUT` (generator.ts): 53 modelos que ya no salen como arma completa (criba del usuario); sus piezas siguen
