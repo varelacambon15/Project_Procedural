@@ -73,7 +73,7 @@ jobs:
           java-version: 17
       - run: npm ci
       - run: npm run build
-      - run: npm install --no-save @capacitor/core@6.2.0 @capacitor/cli@6.2.0 @capacitor/android@6.2.0
+      - run: npm install --no-save @capacitor/core@6.2.0 @capacitor/cli@6.2.0 @capacitor/android@6.2.0 @capacitor/app@6.0.2
       - run: npx cap add android && npx cap sync android
       - name: Pantalla completa y en horizontal
         run: |

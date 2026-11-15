@@ -429,6 +429,10 @@ async function boot() {
     else if (state === "shop") shop.back();
     else if (state === "pause" || state === "title") start.back();
   };
+  // Botón o gesto "atrás" de Android (APK): cierra el menú abierto; jugando, pausa. Sin esto, Android cerraba la app.
+  // (Plugin App de Capacitor, instalado al compilar la APK; en escritorio y navegador no existe y no hace nada)
+  const capApp = (window as unknown as { Capacitor?: { Plugins?: { App?: { addListener?: (ev: string, cb: () => void) => void } } } }).Capacitor?.Plugins?.App;
+  capApp?.addListener?.("backButton", () => { if (state === "play") { input.unlock(); openStart(); } else back(); });
   const activeScreen = () => (state === "inventory" ? invScreen : state === "workbench" ? bench : null);
   addEventListener("keydown", (e) => {
     if (state === "play" || dialog.isOpen) return;

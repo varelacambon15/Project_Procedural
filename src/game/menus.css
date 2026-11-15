@@ -374,3 +374,38 @@ body.nav-keys #vcursor { opacity: 0; }
 .brandcol { position: relative; z-index: 1; }
 body.touch #vcursor { display: none; }
 .holdat { display: grid; gap: 4px; font-size: 11px; color: var(--t-dim); margin: 4px 0 8px; } .holdat input { width: 100%; }
+
+/* Móvil apaisado (APK, alto ≤ 520 px): menús compactos. Dos columnas como en escritorio (en una sola, la ficha del arma
+   tapaba la lista y había dos desplazamientos anidados), letra más pequeña, sin la barra de teclas (no hay teclado) y
+   desplazamiento táctil dentro de cada columna */
+@media (max-height: 520px) and (orientation: landscape) {
+  .screen { padding: 6px max(8px, env(safe-area-inset-right, 0px)) 6px max(8px, env(safe-area-inset-left, 0px)); --gap: 8px; }
+  .term { gap: 6px; }
+  .termbar { gap: 8px; padding-bottom: 4px; }
+  .screen h1 { font-size: 20px; }
+  .screen h2 { font-size: 16px; }
+  .sim { display: none; }
+  .termbar .credits { font-size: 20px; }
+  .btn, .btn.sm { font-size: 16px; padding: 6px 12px; min-height: 36px; }
+  .inv2 { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); overflow: hidden; }
+  .shopgrid { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); overflow: hidden; }
+  .tiers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inv2 .list, .inv2 .detail, .shopgrid > *, #shop-tiers, .ws, .ws .side, .sub { overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+  .tile { min-height: 64px; padding: 6px; }
+  .tile .nm, .tile.small .nm { font-size: 16px; }
+  .card .nm { font-size: 20px; }
+  .card .big strong, .tier .price strong { font-size: 20px; }
+  .tier .tname { font-size: 16px; }
+  .chip, .cyc { padding: 6px 8px; }
+  .inv2 .tiles.store { max-height: none; }
+  .sc-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .ws { grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.5fr) minmax(0, 1.2fr); overflow: hidden; }
+  .ws > *, .ws .tiles.list { overflow: auto; overscroll-behavior: contain; min-height: 0; }
+  .ws .view { grid-template-rows: minmax(120px, 1fr) auto; }
+  .sc-head h2 { font-size: 18px; }
+  .sc-tile { padding: 6px; }
+  .sc-tile .nm { font-size: 14px; }
+  .sc-tile .btn { font-size: 14px; padding: 6px 4px; white-space: normal; }
+}
+body.touch .foot { display: none; }
+body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family: var(--mono); font-size: 12px; padding: 4px 10px; }

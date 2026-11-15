@@ -131,6 +131,23 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 20 (relevo, versión 0.8.5): menús en Android
+
+Hecho:
+- Menús en móvil apaisado (`@media (max-height: 520px) and (orientation: landscape)` al final de menus.css): dos o
+  tres columnas como en escritorio (en una sola, la ficha tapaba la lista y había desplazamientos anidados), letra
+  más pequeña, tienda con 3 ofertas por fila, banco en 3 columnas, desplazamiento táctil en cada columna.
+- En táctil (`body.touch`): sin la barra de teclas (Enter/Esc…) y el aviso abajo y pequeño dentro de los menús.
+- Botón/gesto "atrás" de Android: plugin `@capacitor/app` (se instala en release.yml) → `backButton` cierra el menú
+  abierto o pausa. Antes Android cerraba la app.
+- Nombres de los accesorios de la biblioteca y del pack 4 (salían como "Factory sight"): su tipo; nuevo `acc.bipod`.
+- Pruebas táctiles: `Input.synthesizeScrollGesture` no desplaza en el contenedor (ni en una página de control); usar
+  `Input.dispatchTouchEvent` (touchStart/touchMove/touchEnd) para comprobar el desplazamiento.
+
+Pendiente:
+- Revisar en un móvil real el resto de pantallas (ajustes, partidas guardadas, diálogos).
+- Acercar pistolas y revólveres (`gripZ` 0,29 → 0,25), pendiente del visto bueno. Miras de hierro (D).
+
 ## Ronda 19 (relevo, versión 0.8.4)
 
 Hecho:

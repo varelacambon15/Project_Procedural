@@ -65,6 +65,9 @@ export function accName(id: string) {
   const md = /^k-muzzledevice-(\w+)-0(\d)$/.exec(id);
   if (md) return `${t(`acc.${(KIT_ALIAS[id] ?? "acc:brake").slice(4)}`)} · ${md[1] === "556" ? "5.56" : md[1]}`;
   if (KIT_ALIAS[id]) return `${t(`acc.${KIT_ALIAS[id].slice(4)}`)} R`;
+  // Piezas de la biblioteca y de los packs del usuario (k-att-<tipo>-l…, k-device-foregrip-l…, k-bipod-l…): el tipo
+  const lib = /^k-(?:att|device|bipod)-?([a-z]*)-l/.exec(id);
+  if (lib) return id.startsWith("k-bipod") ? t("acc.bipod") : t(`acc.${ALIAS[lib[1]] ?? lib[1]}`);
   return t("acc.factory");
 }
 
