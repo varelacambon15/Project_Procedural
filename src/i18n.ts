@@ -71,7 +71,7 @@ const en: Dict = {
   "acc.suppressor-s": "Short suppressor", "acc.suppressor-l": "Long suppressor", "acc.compensator": "Compensator", "acc.brake": "Muzzle brake", "acc.flashhider": "Flash hider",
   "acc.reddot": "Red dot", "acc.holo": "Holographic", "acc.acog": "4x combat scope", "acc.scope6": "6x scope",
   // Muñecos
-  "dummy.small": "Small target", "dummy.large": "Large target", "dummy.basic": "Dummy", "dummy.armored": "Armored dummy", "dummy.shielded": "Shielded dummy", "dummy.elite": "Test elite", "dummy.boss": "Test colossus",
+  "dummy.caster": "Arc caster", "dummy.warden": "Simulation Warden", "dummy.small": "Small target", "dummy.large": "Large target", "dummy.basic": "Dummy", "dummy.armored": "Armored dummy", "dummy.shielded": "Shielded dummy", "dummy.elite": "Test elite", "dummy.boss": "Test colossus",
   // Interfaz del juego
   "ui.play": "Enter the range", "ui.resume": "Back to the range", "ui.pause": "Paused", "ui.title": "Proving Grounds",
   "ui.eyebrow": "Playable demo · Phase 1", "ui.language": "Language",
@@ -157,7 +157,7 @@ const es: Dict = {
   "role.body": "Cuerpo", "role.frame": "Armazón", "role.slide": "Corredera", "role.barrel": "Cañón", "role.magazine": "Cargador", "role.scope": "Mira", "role.muzzle": "Boca",
   "acc.suppressor-s": "Supresor corto", "acc.suppressor-l": "Supresor largo", "acc.compensator": "Compensador", "acc.brake": "Freno de boca", "acc.flashhider": "Apagallamas",
   "acc.reddot": "Punto rojo", "acc.holo": "Holográfica", "acc.acog": "Mira de combate 4x", "acc.scope6": "Visor 6x",
-  "dummy.small": "Blanco pequeño", "dummy.large": "Blanco grande", "dummy.basic": "Maniquí", "dummy.armored": "Maniquí blindado", "dummy.shielded": "Maniquí con escudo", "dummy.elite": "Élite de prueba", "dummy.boss": "Coloso de prueba",
+  "dummy.caster": "Lanzador de arcos", "dummy.warden": "Guardián de la simulación", "dummy.small": "Blanco pequeño", "dummy.large": "Blanco grande", "dummy.basic": "Maniquí", "dummy.armored": "Maniquí blindado", "dummy.shielded": "Maniquí con escudo", "dummy.elite": "Élite de prueba", "dummy.boss": "Coloso de prueba",
   "ui.play": "Entrar al campo", "ui.resume": "Volver al campo", "ui.pause": "Pausa", "ui.title": "Campo de Pruebas",
   "ui.eyebrow": "Demo jugable · Fase 1", "ui.language": "Idioma",
   "ui.intro": "Un campo de tiro para probar las armas procedurales. Abre una cápsula para conseguir armas nuevas, personalízalas en el banco de trabajo y pruébalas contra muñecos con escudo, armadura y vida. Los muñecos se levantan al caer.",

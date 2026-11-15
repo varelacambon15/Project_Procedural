@@ -35,10 +35,11 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: #0d0e0f; col
 .hpbar.status-acid .hptrack { box-shadow: 0 0 6px #9bd23c; }
 .hpbar.status-rad .hptrack { box-shadow: 0 0 6px #d8e04a; }
 /* Vida del jefe: arriba en el centro, solo mientras se combate con él */
-#bossbar { position: fixed; top: calc(18px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: min(560px, 80vw); pointer-events: none; }
+#bossbar { position: fixed; top: calc(22px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: min(880px, 82vw); pointer-events: none; }
 .hpbar.boss { width: 100%; }
 .hpbar.boss .hpname { font-family: var(--display); font-size: 18px; letter-spacing: 0; text-transform: uppercase; }
-.hpbar.boss .hptrack { height: 10px; }
+.hpbar.boss .hptrack { height: 14px; border: 1px solid rgba(255,255,255,.35); box-shadow: 0 0 12px rgba(255,90,60,.35); }
+.hpbar.boss .hpname { text-align: center; font-size: 22px; text-shadow: 0 2px 6px #000; margin-bottom: 4px; }
 
 .dmg { font-family: var(--display); font-weight: 400; font-size: 20px; text-shadow: 0 1px 0 #000, 0 0 6px rgba(0,0,0,.6); white-space: nowrap; }
 .dmg.crit { font-size: 30px; }

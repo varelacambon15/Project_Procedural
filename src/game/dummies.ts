@@ -16,6 +16,9 @@ export const KINDS: Record<string, Kind> = {
   sturdy: { key: "sturdy", health: 750, level: 12, scale: 1.04 },
   elite: { key: "elite", health: 1400, level: 15, scale: 1.08 },
   boss: { key: "boss", health: 7000, level: 20, scale: 1.7, boss: true },
+  // Oleadas: lanzador de esferas de energía (ataca a distancia) y jefe cada 5 oleadas
+  caster: { key: "caster", health: 420, level: 12, scale: 0.95 },
+  warden: { key: "warden", health: 9000, level: 25, scale: 2.0, boss: true },
 };
 
 const ELEMENT_COLOR: Record<string, string> = { fuego: "#f07a2a", electrico: "#5cc8f0", explosive: "#ffb060" };
@@ -130,6 +133,7 @@ export class Dummy {
 
   /** Segundos que quedan de "combate" (el jefe solo enseña su barra mientras se le está atacando). */
   engagedT = 0;
+  /** Jefe de oleada: su barra se ve siempre mientras vive (estilo jefe de shooter de botín). */ alwaysBar = false;
   get health() { return this.layers[this.layers.length - 1].value; }
   relabel() { this.bar.querySelector(".nm")!.textContent = t(`dummy.${this.kind.key}`); }
   setPath(a: THREE.Vector3, b: THREE.Vector3, speed: number) { this.path = { a, b, speed, t: Math.random() }; }
@@ -267,7 +271,7 @@ export class Dummy {
     if (this.kind.boss) {
       // Barra del jefe arriba, solo durante el combate con él (se oculta 12 s después del último golpe)
       this.engagedT = Math.max(0, this.engagedT - dt);
-      b.style.display = this.engagedT > 0 || (!this.alive && this.deadT < 2) ? "" : "none"; b.style.opacity = this.alive ? "1" : "0.4"; return;
+      b.style.display = this.engagedT > 0 || this.alwaysBar || (!this.alive && this.deadT < 2) ? "" : "none"; b.style.opacity = this.alive ? "1" : "0.4"; return;
     }
     const top = this.group.localToWorld(new THREE.Vector3(0, 2.45 * (this.kind.scale ?? 1), 0));
     const dist = top.distanceTo(camera.position);
