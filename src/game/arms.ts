@@ -144,6 +144,27 @@ class Hand {
     this.thumb[0].rotation.x = -this.cur.thumb * 0.6; this.thumb[1].rotation.x = -this.cur.thumb * 1.0;
   }
   snap(p: HandPose) { this.g.quaternion.copy(p.orient); this.set(p, 1); }
+  /**
+   * Cierre de cada dedo que deja sus falanges media y distal apoyadas en una superficie (`dist`: distancia en metros
+   * desde un punto del mundo a la empuñadura). Prueba cierres y se queda con el que las deja a ~8 mm (sin atravesar).
+   * Devuelve el cierre por dedo (índice incluido, aunque el gatillo lo sobrescribe).
+   */
+  fitCurls(dist: (p: THREE.Vector3) => number): number[] {
+    const out: number[] = [], v = new THREE.Vector3();
+    for (let f = 0; f < 4; f++) {
+      const ch = this.fingers[f]; let best = this.cur.fingers[f], bestCost = Infinity;
+      for (let c = 0.3; c <= 1.75; c += 0.05) {
+        ch[0].rotation.x = -c * 1.15; ch[1].rotation.x = -c * 1.3; ch[2].rotation.x = -c * 1.0;
+        this.g.updateMatrixWorld(true);
+        const dm = dist(ch[1].children[0].getWorldPosition(v)), dd = dist(ch[2].children[0].getWorldPosition(v));
+        const cost = Math.abs(dm - 0.008) + Math.abs(dd - 0.008) * 1.3 + (dd < 0.004 ? 0.02 : 0);
+        if (cost < bestCost) { bestCost = cost; best = c; }
+      }
+      out.push(best);
+      const c = this.cur.fingers[f]; ch[0].rotation.x = -c * 1.15; ch[1].rotation.x = -c * 1.3; ch[2].rotation.x = -c * 1.0;
+    }
+    return out;
+  }
 }
 
 class Arm {
@@ -196,4 +217,6 @@ export class Arms {
     this.left.set(ARM_DATA.shoulderL.clone().add(sh), left, ARM_DATA.poleL, dt);
   }
   set visible(v: boolean) { this.group.visible = v; }
+  /** Mano derecha (para ajustar el cierre de los dedos a la empuñadura de cada arma). */
+  get rightHand() { return this.right.hand; }
 }

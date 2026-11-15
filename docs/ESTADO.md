@@ -142,7 +142,8 @@ Hecho (con el visto bueno del usuario sobre las capturas):
   quedaba un hueco y parecía una grapa colgando) y es algo más grueso.
 
 Pendiente:
-- Dedos de la mano derecha en armas cortas: falanges gruesas que parecen bloques sueltos.
+- Dedos: cierre ajustado a cada empuñadura al equipar (`Hand.fitCurls`, `fitCurl` en gun.ts). Guardamonte de
+  revólver acotado al fondo del armazón (antes, gancho abierto con tambores cortos).
 
 ## Ronda 21 (relevo, versión 0.8.6): miras de hierro desmontables
 

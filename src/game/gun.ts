@@ -92,6 +92,7 @@ export class Gun {
   private shotCount = 0;
   private burstLeft = 0; private burstTimer = 0;
   private cycleT = 0; private cycleDur = 0.45;
+  /** Cierre de cada dedo de la mano derecha ajustado a la empuñadura de esta arma (se calcula al equiparla). */ private fitCurl: number[] | null = null; private fitWait = 0;
   /** Recarga táctica (quedaban balas en el cargador): sin montar el arma. */ private tacReload = false;
   private inspectT = 0;
   /** Efectos de rareza del arma en mano (módulos de datos por eventos; ver weapons/effects.ts). */
@@ -216,7 +217,7 @@ export class Gun {
     for (const role of ["slide", "pump", "charging"] as MovingPart[]) { const part = m.parts.find((p) => p.role === role); if (part) this.moving[role] = part; }
     // Shaders del arma compilados en segundo plano mientras se saca (sin tirón al aparecer)
     if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item || seq !== this.equipSeq) return; }
-    this.model = m;
+    this.model = m; this.fitCurl = null; this.fitWait = 12;
     // Rendimiento: dentro de cada pieza (que se anima entera) se fusionan sus mallas por material
     if (!m.group.userData.merged) { for (const p of m.parts) mergeStatic(p.object); m.group.userData.merged = true; }
     for (const c of [...this.holder.children]) if (c !== this.flash && c !== this.flashLight) this.holder.remove(c);
@@ -617,8 +618,26 @@ export class Gun {
     const pose = (at: THREE.Vector3, g: HandGrip, curl: Curl): HandPose => ({ pos: toCam(at).add(g.off.clone().applyQuaternion(hq)), orient: hq.clone().multiply(g.q), curl });
     // Índice siempre en el gatillo (sin disciplina de gatillo); al disparar aprieta un poco más
     const R = GRIPS.right, sp = this.sprintT;
+    // Dedos que rodean la empuñadura de verdad: unos fotogramas después de equipar (la mano ya está en su sitio) se busca
+    // el cierre de cada dedo que apoya sus falanges en la superficie de la empuñadura (antes era fijo y en armas de
+    // empuñadura fina los dedos quedaban flotando)
+    if (!this.fitCurl && this.fitWait > 0 && --this.fitWait === 0) {
+      const pts: THREE.Vector3[] = [];
+      m.group.updateMatrixWorld(true);
+      for (const p of m.parts) if (p.role === "grip" || p.role === "frame" || p.role === "body" || p.role === "receiver") p.object.traverse((o) => {
+        const mm = o as THREE.Mesh; if (!mm.isMesh) return; const pos = mm.geometry.attributes.position;
+        // (vértices y puntos dentro de cada triángulo: en caras grandes, solo con los vértices el dedo parecía lejos)
+        const idx = mm.geometry.index, n = idx ? idx.count : pos.count, at = (k: number) => new THREE.Vector3().fromBufferAttribute(pos, idx ? idx.getX(k) : k).applyMatrix4(mm.matrixWorld);
+        for (let t = 0; t + 2 < n; t += 3) {
+          const a = at(t), b = at(t + 1), c = at(t + 2); pts.push(a, b, c);
+          for (const [u, w] of [[1 / 3, 1 / 3], [0.6, 0.2], [0.2, 0.6], [0.2, 0.2]]) pts.push(a.clone().multiplyScalar(1 - u - w).addScaledVector(b, u).addScaledVector(c, w));
+        }
+      });
+      if (pts.length) this.fitCurl = this.arms.rightHand.fitCurls((q) => { let d = Infinity; for (const x of pts) { const e = x.distanceToSquared(q); if (e < d) d = e; } return Math.sqrt(d); });
+    }
+    const fc = this.fitCurl;
     const trig = 0.52 + 0.3 * this.trigT - 0.1 * sp;
-    const right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [trig, 1.02 - 0.1 * sp, 1.06 - 0.1 * sp, 1.1 - 0.1 * sp], thumb: 0.62 - 0.15 * sp });
+    const right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? fc[0] - 0.12 + 0.15 * this.trigT - 0.1 * sp : trig, (fc?.[1] ?? 1.02) - 0.1 * sp, (fc?.[2] ?? 1.06) - 0.1 * sp, (fc?.[3] ?? 1.1) - 0.1 * sp], thumb: 0.62 - 0.15 * sp });
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
     // Hombros: siguen la mitad de los movimientos rápidos del arma (retroceso, balanceo) respecto a su media lenta

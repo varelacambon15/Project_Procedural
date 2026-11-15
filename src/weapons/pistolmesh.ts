@@ -182,7 +182,10 @@ export function buildPistol(d: PistolDesign, look: PistolLook = {}): BuiltPistol
           // la empuñadura se iba hacia atrás y quedaba un hueco: el guardamonte parecía una grapa colgando del armazón)
           const tf = gripCorners(d).TF, ta = Math.tan(d.grip.angle), gtr = 0.0055;
           const yT = -fh + 0.001, yB = -fh - gd + gtr / 2, xAt = (y: number) => tf[0] + (y - tf[1]) * ta + gtr * 0.4;
-          const x1 = gx + gl - gtr / 2, r = Math.min(0.009, (x1 - xAt(yB)) * 0.4, (yT - yB) * 0.6);
+          // (la pata delantera sube al fondo plano del armazón, que acaba al final del tambor: con tambores cortos el
+          // guardamonte era más largo y su pata quedaba en el aire, como un gancho abierto)
+          const fr = revFrame(d), xFloor = Math.min(gripCorners(d).TF[0] + 0.05, fr.xc1 - 0.006) - 0.003;
+          const x1 = Math.min(gx + gl, xFloor) - gtr / 2, r = Math.min(0.009, (x1 - xAt(yB)) * 0.4, (yT - yB) * 0.6);
           const path: [number, number][] = [[xAt(yT), yT], [xAt(yB + 0.003), yB + 0.003], [xAt(yB) + 0.004, yB]];
           for (let k = 0; k <= 4; k++) { const t = -Math.PI / 2 + (k / 4) * (Math.PI / 2); path.push([x1 - r + Math.cos(t) * r, yB + r + Math.sin(t) * r]); }
           path.push([x1, yT]);
