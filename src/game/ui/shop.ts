@@ -5,7 +5,6 @@
 import { RARITIES, type WeaponGenerator } from "../../weapons/generator";
 import type { WeaponSpec, RarityId } from "../../weapons/types";
 import { t } from "../../i18n";
-import { accessoriesOf } from "../../weapons/accbank";
 import { displayName } from "../../weapons/naming";
 import { CRATES, SHOP, SHOWCASE, isFree, sellPrice, buyShowcase, crateOdds, ensureShowcase, openCrate, pityLeft, record, showcasePrice, showcaseRarities, showcaseSeed, type CrateId, type ShopState } from "../shop";
 import type { Inventory, Item } from "../inventory";
@@ -99,9 +98,9 @@ export class ShopScreen {
   private sellHTML() {
     const list = this.inv.carried;
     const rows = list.map((it) => {
-      const w = this.inv.find(it.uid)!, acc = accessoriesOf(it.spec).length;
+      const w = this.inv.find(it.uid)!;
       return `<div class="sell-row" style="--c:${it.spec.rarity.color}"><span class="nm">${esc(displayName(it.spec))}</span>
-        <span class="meta">${t(`rarity.${it.spec.rarity.id}`)} · ${t(`type.${it.spec.type}`)}${w.area === "equip" ? ` · ${t("ui.equipped")} ${w.index + 1}` : ""}${acc ? ` · ${t("shop.sellAcc", { n: acc })}` : ""}</span>
+        <span class="meta">${t(`rarity.${it.spec.rarity.id}`)} · ${t(`type.${it.spec.type}`)}${w.area === "equip" ? ` · ${t("ui.equipped")} ${w.index + 1}` : ""}</span>
         <button type="button" class="btn sm" data-sell="${it.uid}">${t("shop.sellFor", { c: sellPrice(it.spec) })}</button></div>`;
     }).join("");
     return `<div class="sell"><h2>${t("shop.sell")}</h2>${rows || `<p class="hint-sel">${t("shop.nothingToSell")}</p>`}</div>`;
@@ -122,10 +121,11 @@ export class ShopScreen {
     if (sellBtn) {
       const it = this.inv.byUid(Number(sellBtn.dataset.sell)), w = it && this.inv.find(it.uid);
       if (!it || !w || w.area === "storage") return;
-      const price = sellPrice(it.spec), acc = accessoriesOf(it.spec);
-      this.inv.credits += price; this.inv.bank.push(...acc); this.inv.remove(w);
+      // (vender = el arma se va con sus accesorios montados; al banco solo pasan los que se desmontan antes, o al desguazar)
+      const price = sellPrice(it.spec);
+      this.inv.credits += price; this.inv.remove(w);
       record(this.state(), { tier: "sell", rarity: it.spec.rarity.id, name: it.spec.customName || it.spec.name, price: -price, at: Date.now() });
-      this.hooks.toast(t(acc.length ? "shop.soldAcc" : "shop.soldMsg", { c: price, n: acc.length }));
+      this.hooks.toast(t("shop.soldMsg", { c: price }));
       this.hooks.sold(it); this.render(); return;
     }
     const slotBtn = target.closest<HTMLElement>("[data-buyslot]");
