@@ -13,6 +13,7 @@
   <div class="layer" id="numbers"></div>
   <div id="bossbar"></div>
   <div id="nadehud" hidden></div>
+  <div id="superhud" hidden></div>
   <div id="crosshair"><i class="ring"></i><i class="dot"></i><i class="arrow"></i><i class="tk" style="--a:45deg"></i><i class="tk" style="--a:135deg"></i><i class="tk" style="--a:225deg"></i><i class="tk" style="--a:315deg"></i></div>
 
   <div class="hud" id="hint"></div>
@@ -44,7 +45,7 @@
 
   <div class="screen" id="inventory" hidden>
     <div class="term">
-      <header class="termbar"><span class="sim">SIM//</span><h1 data-i18n="ui.inventory"></h1><span class="credits" id="inv-credits"></span><button type="button" class="btn ghost sm" data-close="1" data-i18n="ui.back"></button></header>
+      <header class="termbar"><span class="sim">SIM//</span><h1 data-i18n="ui.inventory"></h1><nav class="invtabs" id="inv-tabs"></nav><span class="credits" id="inv-credits"></span><button type="button" class="btn ghost sm" data-close="1" data-i18n="ui.back"></button></header>
       <div class="inv2" id="inv-body"></div>
       <footer class="foot" id="inv-foot"></footer>
     </div>

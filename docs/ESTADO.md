@@ -131,6 +131,18 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 29: manos redondeadas y súperes (habilidades)
+
+- **Manos** (`arms.ts`): dedos y pulgar ahora son cápsulas (`phalanx`), más finos y redondeados que las cajas anteriores.
+- **Súperes** (`supers.ts` datos puros + `supers.json` números + `superfx.ts` efectos): tres, elegibles en la **pestaña Habilidades** del inventario
+  (se guarda en `SaveData.superId`): **Sobrecarga** (9 s: +50 % daño, +35 % cadencia, sin gastar munición), **Onda de choque**
+  (explosión de 520 de daño en 15 m con empuje) y **Tormenta eléctrica** (7 s de rayos sobre enemigos cercanos que saltan a los vecinos).
+- **Carga**: +8 % por baja de oleada (+35 % jefe) y 1 / 240 s pasivo; no carga mientras se invoca o hay un efecto activo. Se invoca con **V**, cruceta arriba o el botón táctil ✦. Barra en pantalla (`#superhud`).
+- **Invocación en primera persona**: un único flujo (`SuperFx.cast`) reproduce la línea de tiempo del súper: manos (posición, giro, cierre de dedos),
+  FOV, inclinación de cámara y arma que baja (`Gun.superPose`, `Arms.override`); en el instante `hit` se dispara el efecto. Sin luces nuevas: mallas aditivas.
+  Para pulir una animación se editan las claves de `src/game/supers.json` (hay una nota `_help` con el significado de cada campo).
+- Tests: `tests/supers.test.ts` (datos coherentes, muestreo, medidor). Pendiente: panel de ajuste en directo (F9), sonidos propios y animaciones más finas.
+
 ## Ronda 28 (relevo): música, barras de vida, mira y modificadores
 
 - Punto de mira: flecha (chevrón) al esprintar; escopeta = círculo limpio (0,65× el radio, sin punto ni marcas);

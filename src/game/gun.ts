@@ -87,6 +87,9 @@ export class Gun {
   snap = false;
   /** Oculta el arma y los brazos (menús). */
   hidden = false;
+  /** Súper: pose de invocación (manda sobre las manos y baja el arma) y mejoras temporales de la sobrecarga. */
+  superPose: { right: HandPose; left: HandPose; lower: number } | null = null;
+  buff = { dmg: 1, rate: 1, freeAmmo: false };
   /** Para capturas y pruebas: fuerza campos de la entrada de animación (p. ej. { reload: 0.4, dt: 0 }). */
   poseOverride: Partial<AnimInput> | null = null;
   aimT = 0;
@@ -458,6 +461,10 @@ export class Gun {
     this.onTrigT = Math.max(0, this.onTrigT - dt);
     if (c.fire) this.onTrigT = 1.2;
     if (this.model) this.updateHands(dt); else if (fists) this.updateFists(dt);
+    // Invocación de un súper: las manos siguen la línea de tiempo y el arma baja fuera de la vista
+    this.arms.override = this.superPose ? { right: this.superPose.right, left: this.superPose.left } : null;
+    if (this.superPose) { this.arms.update({ right: this.superPose.right, left: this.superPose.left, dt }); this.arms.visible = !this.hidden; }
+    this.viewmodel.position.y = this.superPose ? -0.75 * this.superPose.lower : 0;
 
     // Efectos
     const fm = this.flash.material as THREE.MeshBasicMaterial;
@@ -749,8 +756,8 @@ export class Gun {
     const ammoFrac = it.ammo / s.stats.cargador;
     if (!echo) {
       // Balas por disparo (racimo gasta varias; en furia, ninguna) y calor (armas que se sobrecalientan)
-      it.ammo -= Math.min(it.ammo, fx.ammoPerShot());
-      this.cooldown = 60 / (s.stats.cadencia * fx.rateMult());
+      if (!this.buff.freeAmmo) it.ammo -= Math.min(it.ammo, fx.ammoPerShot());
+      this.cooldown = 60 / (s.stats.cadencia * fx.rateMult() * this.buff.rate);
       const hp = fx.heatPerShot(); if (hp) { this.heat = Math.min(1, this.heat + hp); if (this.heat >= 1) { this.overheatT = 2.2; this.sfx("empty"); } }
     }
     this.shotCount++;
@@ -793,7 +800,7 @@ export class Gun {
     const muzzle = this.flash.getWorldPosition(new THREE.Vector3());
     const q = this.camera.getWorldQuaternion(new THREE.Quaternion());
     const targets = [...this.hooks.dummies().filter((d) => d.alive).flatMap((d) => d.hitboxes), ...this.world];
-    const dmgMult = mods.dmg, forceCrit = mods.forceCrit, critMult = mods.critMult, pierceN = mods.pierce;
+    const dmgMult = mods.dmg * this.buff.dmg, forceCrit = mods.forceCrit, critMult = mods.critMult, pierceN = mods.pierce;
     const tracerColor = sig ? "#ffb347" : element === "fuego" ? "#ff7a2a" : element === "electrico" ? "#8fd8ff" : s.rarity.id === "comun" ? "#e9dcc0" : s.rarity.color;
     let firstHit: THREE.Vector3 | null = null, hitAny = false, firstTarget: Dummy | null = null;
     for (let p = 0; p < pellets; p++) {

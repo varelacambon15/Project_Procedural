@@ -29,7 +29,7 @@ export interface SaveData {
   /** Contratos diarios y semanales (opcional: partidas antiguas no lo tienen). */
   contracts?: import("./contracts").ContractState;
   /** Granadas y la equipada (opcional). */
-  grenades?: import("./grenades").GrenadeSpec[]; grenadeActive?: number;
+  grenades?: import("./grenades").GrenadeSpec[]; grenadeActive?: number; superId?: string;
 }
 
 // ---------- Migraciones: una función por versión, de N a N+1 ----------
@@ -99,6 +99,7 @@ export function parseSave(text: string | null): LoadResult {
     settings: isObj(raw.settings) ? raw.settings : {}, lang: typeof raw.lang === "string" ? raw.lang : "en", pixelLevel: num(raw.pixelLevel, 64),
     grenades: Array.isArray(raw.grenades) ? (raw.grenades as SaveData["grenades"])!.filter((g) => isObj(g) && typeof (g as Raw).kind === "string").slice(0, 8) : undefined,
     grenadeActive: typeof raw.grenadeActive === "number" ? raw.grenadeActive : -1,
+    superId: typeof raw.superId === "string" ? raw.superId : undefined,
     contracts: isObj(raw.contracts) && Array.isArray((raw.contracts as Raw).list) ? (raw.contracts as unknown as SaveData["contracts"]) : undefined,
   };
   return { ok: true, data, dropped: raw.weapons.length - weapons.length + ((raw.bank as unknown[] | undefined)?.length ?? 0) - bank.length };

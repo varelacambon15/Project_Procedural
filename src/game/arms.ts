@@ -6,6 +6,12 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
+/** Falange redondeada: cápsula a lo largo de -Z que empieza en el nudillo y mide `len` en total. */
+function phalanx(r: number, len: number, mat: THREE.Material, flat = 0.9) {
+  const g = new THREE.CapsuleGeometry(r, Math.max(0.001, len - 2 * r), 3, 8); g.rotateX(Math.PI / 2); g.scale(1, flat, 1);
+  const m = new THREE.Mesh(g, mat); m.position.z = -len / 2; return m;
+}
+
 /** Medidas del brazo (datos, no código): cambiar de modelo no obliga a rehacer el IK. */
 export const ARM_DATA = {
   upper: 0.33, fore: 0.3,
@@ -114,8 +120,8 @@ class Hand {
       const chain: THREE.Group[] = []; let parentG: THREE.Object3D = this.g;
       for (let k = 0; k < 3; k++) {
         const piv = new THREE.Group(); piv.position.set(k === 0 ? xs[f] * s : 0, k === 0 ? -0.002 : 0, k === 0 ? -0.04 : -lens[f][k - 1]);
-        const w = ws[f] * (1 - k * 0.08);
-        const ph = new THREE.Mesh(new RoundedBoxGeometry(w, w * 0.88, lens[f][k] + 0.003, 2, w * 0.38), glove); ph.position.z = -lens[f][k] / 2; piv.add(ph);
+        const w = ws[f] * (1 - k * 0.1) * 0.9;
+        piv.add(phalanx(w / 2, lens[f][k] + 0.004, glove));
         if (k === 0) { const pad = new THREE.Mesh(new THREE.BoxGeometry(w * 0.9, 0.003, lens[f][0] * 0.6), gloveArmor); pad.position.set(0, w * 0.5, -lens[f][0] * 0.5); piv.add(pad); }
         parentG.add(piv); chain.push(piv); parentG = piv;
       }
@@ -126,7 +132,7 @@ class Hand {
     let par: THREE.Object3D = tb;
     for (const [k, len] of [0.036, 0.03].entries()) {
       const piv = new THREE.Group(); piv.position.z = k === 0 ? 0 : -0.036;
-      const ph = new THREE.Mesh(new RoundedBoxGeometry(0.021 - k * 0.002, 0.019, len + 0.004, 1, 0.006), glove); ph.position.z = -len / 2; piv.add(ph);
+      piv.add(phalanx(0.0095 - k * 0.001, len + 0.005, glove, 0.95));
       par.add(piv); this.thumb.push(piv); par = piv;
     }
     // Mano algo más pequeña y fina que el primer modelo (se veía enorme en primera persona)
@@ -219,8 +225,11 @@ export class Arms {
     this.right = new Arm(this.group, 1); this.left = new Arm(this.group, -1);
   }
   /** Coloca las manos (coordenadas de la cámara). Si `left` es null, el brazo izquierdo baja fuera de la vista. */
+  /** Si está, manda sobre las manos del arma (animación de invocación de un súper). */
+  override: { right: HandPose; left: HandPose } | null = null;
   update(t: HandTargets) {
     const dt = t.dt ?? 1;
+    if (this.override) t = { ...t, right: this.override.right, left: this.override.left };
     const sh = t.shoulder ?? new THREE.Vector3();
     this.right.set(ARM_DATA.shoulderR.clone().add(sh), t.right, ARM_DATA.poleR, dt);
     const left = t.left ?? { pos: new THREE.Vector3(-0.24, -0.62, -0.08), orient: t.right.orient, curl: { fingers: [0.4, 0.45, 0.5, 0.55], thumb: 0.2 } };

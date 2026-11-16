@@ -151,6 +151,7 @@ body.in-menu #touch { display: none; }
 #touch .t-jump { right: calc(32px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
 #touch .t-crouch { right: calc(110px + env(safe-area-inset-right, 0px)); bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
 #touch .t-reload { right: calc(132px + env(safe-area-inset-right, 0px)); bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
+#touch .t-super { right: calc(250px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
 #touch .t-nade { right: calc(180px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
 #touch .t-use { right: calc(48px + env(safe-area-inset-right, 0px)); bottom: calc(218px + env(safe-area-inset-bottom, 0px)); }
 #touch .t-swap { right: calc(210px + env(safe-area-inset-right, 0px)); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
@@ -164,3 +165,15 @@ body.touch #weaponhud { bottom: auto; top: calc(12px + env(safe-area-inset-top, 
 #nadehud .pip { width: 12px; height: 12px; border: 1px solid currentColor; } #nadehud .pip.on { background: currentColor; }
 #nadehud .rc { width: 40px; height: 4px; background: rgba(255,255,255,.2); } #nadehud .rc i { display: block; height: 100%; background: #fff; }
 body.in-menu #nadehud { visibility: hidden; }
+
+/* Súper: barra de carga en pantalla y pestañas del inventario */
+#superhud { position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; font-family: var(--display); font-size: 14px; color: #fff; text-shadow: 0 1px 3px #000; pointer-events: none; opacity: .85; }
+#superhud .bar { width: 120px; height: 6px; background: rgba(255,255,255,.2); } #superhud .bar i { display: block; height: 100%; background: #9fb3c8; transition: width .2s; }
+#superhud.ready { opacity: 1; color: #ffd070; } #superhud.ready .bar i { background: #ffd070; animation: superpulse .8s infinite alternate; }
+#superhud.on { opacity: 1; color: #8fd8ff; } #superhud.on .bar i { background: #8fd8ff; }
+#superhud kbd { border: 1px solid currentColor; padding: 0 6px; }
+@keyframes superpulse { from { opacity: .55; } to { opacity: 1; } }
+.invtabs { display: flex; gap: 8px; } .invtabs[hidden] { display: none; }
+.tile.skill { min-height: 96px; align-items: center; justify-content: center; text-align: center; } .tile.skill .glyph { font-size: 34px; line-height: 1; display: block; margin-bottom: 4px; }
+.tiles.skills { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 10px; } .tile.skill .nm { overflow-wrap: normal; word-break: normal; }
+.skillbig { font-size: 64px; text-align: center; line-height: 1.2; }

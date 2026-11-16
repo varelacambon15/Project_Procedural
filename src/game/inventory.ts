@@ -19,6 +19,7 @@ export class Inventory {
   /** Granadas que tienes (hasta 8) y la equipada (−1: ninguna; sin granada equipada no se lanza nada). */
   grenades: import("./grenades").GrenadeSpec[] = [];
   grenadeActive = -1;
+  /** Súper elegido en la pestaña Habilidades. */ superId: import("./supers").SuperId = "shockwave";
   get grenade() { return this.grenades[this.grenadeActive] ?? null; }
   credits = 0;
   active = 0;

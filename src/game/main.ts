@@ -6,6 +6,8 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import * as THREE from "three";
 import { GRENADE_RARITY, GrenadePouch, makeGrenade, setGrenadeUid, type GrenadeRarity, type GrenadeSpec } from "./grenades";
 import { GrenadeFx } from "./grenadefx";
+import { SuperFx } from "./superfx";
+import { SUPERS, SUPER_IDS, SuperMeter, type SuperId } from "./supers";
 import { grenadeObject, loadGrenadeModel } from "./grenademodel";
 import { applyEvent, claimAll, refreshContracts, type Contract, type ContractState } from "./contracts";
 import { initSounds, loadSamples, playSample, sample, soundManifest, startMusic } from "./audio";
@@ -148,6 +150,7 @@ async function boot() {
     onKill(d) {
       { const h = lastHit.get(d); contractEvent({ type: "kill", weapon: h?.weapon ?? null, head: !!h?.head, dist: h?.dist ?? 0, boss: !!d.kind.boss }); }
       if (d.kind.boss) toast(t("ui.bossDown"));
+      if (!d.respawn && !sfx.casting && !sfx.activeId) meter.kill(!!d.kind.boss);
       const t0 = sim.firstHit.get(d); if (t0 != null) { sim.ttk = performance.now() / 1000 - t0; sim.firstHit.delete(d); }
       // Botín y créditos: solo los enemigos de las oleadas (los blancos de práctica reaparecen y no sueltan nada)
       if (!d.respawn) {
@@ -166,6 +169,24 @@ async function boot() {
     dummies: () => dummies,
     onHit(d, point, dmg, element) { const alive = d.alive; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); },
   });
+  // Súper: se carga con bajas (y algo con el tiempo); V / cruceta arriba / ✦ lo invoca con su animación en primera persona
+  const meter = new SuperMeter();
+  const sfx = new SuperFx(scene, {
+    dummies: () => dummies,
+    onHit(d, point, dmg, element) { const alive = d.alive; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); },
+    shake: (n) => { if (settings.screenShake) shake = Math.min(0.8, shake + n); },
+    sound(kind) {
+      const e = soundManifest?.efectos; if (!e) return;
+      if (kind === "boom") { const l = e.explosion_grave; if (l?.length) playSample(sample(l[0]), 0.7); const x = e.explosion; if (x?.length) playSample(sample(x[Math.floor(Math.random() * x.length)]), 0.5, 0.8); }
+      else { const l = e.flash_aturdidora; if (l?.length) playSample(sample(l[Math.floor(Math.random() * l.length)]), kind === "zap" ? 0.35 : 0.5, kind === "zap" ? 1.5 : 1); }
+    },
+  });
+  const superHud = () => {
+    const el = $("superhud"); el.hidden = state !== "play";
+    const left = sfx.activeLeft, pct = left > 0 ? Math.round((left / (SUPERS[sfx.activeId!].active ?? 1)) * 100) : Math.round(meter.charge * 100);
+    el.className = left > 0 ? "on" : meter.ready ? "ready" : "";
+    el.innerHTML = `<span>${t(`sp.${inv.superId}`)}</span><span class="bar"><i style="width:${pct}%"></i></span><b>${left > 0 ? Math.ceil(left) + " s" : meter.ready ? `<kbd>${input.device === "pad" ? "▲" : "V"}</kbd>` : pct + " %"}</b>`;
+  };
   const syncNade = () => { if (pouch.g !== inv.grenade) { const fresh = pouch.g == null; pouch.equip(inv.grenade); if (fresh && inv.grenade) pouch.charges = inv.grenade.charges; } };
   const nadeHud = () => {
     const el = $("nadehud"), g = inv.grenade; el.hidden = !g; if (!g) return;
@@ -269,7 +290,7 @@ async function boot() {
     const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i })), ...inv.storage.map((it, i) => ({ it, area: "storage" as const, index: i }))]
       .filter((x) => x.it).map((x) => ({ spec: x.it!.spec, ammo: x.it!.ammo, area: x.area, index: x.index }));
     return { version: SAVE_VERSION, savedAt: "", name, playSeconds: Math.round(playSeconds), credits: inv.credits, weapons, active: inv.active, bank: inv.bank, shop: shopState,
-      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive };
+      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, superId: inv.superId };
   }
   function apply(d: SaveData) {
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
@@ -285,6 +306,7 @@ async function boot() {
     inv.credits = d.credits; inv.active = inv.equip[d.active] ? d.active : Math.max(0, inv.equip.findIndex(Boolean));
     shopState = d.shop; playSeconds = d.playSeconds; contracts = refreshContracts(d.contracts, new Date());
     inv.grenades = d.grenades ?? []; inv.grenadeActive = inv.grenades[d.grenadeActive ?? -1] ? d.grenadeActive! : -1; setGrenadeUid(Math.max(0, ...inv.grenades.map((g) => g.uid)) + 1); pouch.equip(null);
+    inv.superId = (SUPER_IDS as string[]).includes(d.superId ?? "") ? (d.superId as SuperId) : "shockwave"; meter.charge = 0;
     replaceSettings(d.settings as Partial<Settings>); if (d.lang === "es" || d.lang === "en") setLang(d.lang as Lang); setPixelLevel(d.pixelLevel);
     inGame = true; php.reset(); inv.changed();
   }
@@ -549,6 +571,7 @@ async function boot() {
       if (f.pause) { input.unlock(); openStart(); }
       if (f.inventory) openScreen("inventory");
       syncNade();
+      if (f.super && !sfx.casting && !sfx.activeId) { if (meter.use()) sfx.cast(inv.superId); else toast(t("sp.notReady")); }
       if (f.grenade) {
         if (!inv.grenade) toast(t("gr.none"));
         else if (pouch.use()) { const dir = camera.getWorldDirection(new THREE.Vector3()); nades.throw(inv.grenade, camera.getWorldPosition(new THREE.Vector3()).addScaledVector(dir, 0.5).add(new THREE.Vector3(0, -0.15, 0)), dir); }
@@ -580,7 +603,7 @@ async function boot() {
       if (f.slot1 && inv.equip[0]) { inv.active = 0; inv.changed(); }
       if (f.slot2 && inv.equip[1]) { inv.active = 1; inv.changed(); }
       if (f.swap && inv.equip[1 - inv.active]) { inv.active = 1 - inv.active; inv.changed(); }
-      if (f.reload) gun.startReload();
+      if (f.reload && !sfx.casting) gun.startReload();
       // Asistencia de apuntado con mando: la mira se frena sobre un muñeco
       input.assist = 1;
       if (input.device === "pad") {
@@ -588,12 +611,15 @@ async function boot() {
         for (const d of dummies) { if (!d.alive) continue; const to = d.center.sub(camera.position); const dist = to.length(); if (fwd.angleTo(to) < Math.max(0.03, 0.6 / dist)) { input.assist = 0.45; break; } }
       }
       player.update(dt, f, gun.aimT > 0.5, 1 - gun.aimT * (1 - 1 / Math.max(1.5, gun.zoom)));
-      gun.update(dt, { fire: f.fire, aim: f.aim, moving: Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5), sprinting: player.sprinting, lookX: f.lookX, lookY: f.lookY, vy: player.vel.y, grounded: player.onGround, inspect: f.inspect });
+      gun.update(dt, { fire: f.fire && !sfx.casting, aim: f.aim && !sfx.casting, moving: Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5), sprinting: player.sprinting, lookX: f.lookX, lookY: f.lookY, vy: player.vel.y, grounded: player.onGround, inspect: f.inspect });
       const base = settings.fov, aimFov = gun.sight === "scope" || gun.sight === "irons" ? base / gun.zoom : gun.sight === "iron" ? base / 1.35 : base / 1.6;
-      camera.fov = THREE.MathUtils.lerp((player.sprinting ? base + 7 : base) + 9 * player.slideK, aimFov, gun.aimT); camera.updateProjectionMatrix();
+      camera.fov = THREE.MathUtils.lerp((player.sprinting ? base + 7 : base) + 9 * player.slideK, aimFov, gun.aimT);
+      const sp = sfx.pose(); gun.superPose = sp; gun.buff = sfx.buff;
+      if (sp) camera.fov += sp.fov;
+      camera.updateProjectionMatrix();
       playSeconds += dt; autosaveT += dt; if (autosaveT > 60) autosave(); // autoguardado cada minuto de juego
     } else {
-      $("prompt").hidden = true; $("pickcard").hidden = true; shownPickup = null;
+      $("prompt").hidden = true; $("pickcard").hidden = true; shownPickup = null; sfx.cancel(); gun.superPose = null; $("superhud").hidden = true;
       gun.update(dt, { fire: false, aim: false, moving: 0, sprinting: false, lookX: 0, lookY: 0, vy: 0, grounded: true, inspect: false });
       if (pad && !dialog.isOpen) {
         if (cursor.update(dt, pad.axes[0] ?? 0, pad.axes[1] ?? 0)) document.body.classList.remove("nav-keys");
@@ -616,6 +642,7 @@ async function boot() {
     }
     player.applyCamera(camera, gun.recoil);
     camera.rotation.y += gun.recoilYaw;
+    { const sp = sfx.pose(); if (sp) camera.rotation.z += THREE.MathUtils.degToRad(sp.roll); }
     if (shake > 0) { shake = Math.max(0, shake - dt * 1.6); camera.rotation.x += (Math.random() - 0.5) * shake * 0.04; camera.rotation.z += (Math.random() - 0.5) * shake * 0.03; }
 
     // Máquina: tapa y luz al entregar
@@ -633,6 +660,7 @@ async function boot() {
       // Las oleadas viven en su sala: salir por la puerta las detiene
       if (waves.active && (player.pos.z < world.wavesRoom.z0 || player.pos.z > world.wavesRoom.z1)) { waves.stop(); toast(t("ui.wavesLeft")); }
       waves.update(dt);
+      if (!sfx.casting) meter.update(dt); sfx.update(dt, player.pos); superHud();
       pouch.update(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
     healthHud();
@@ -664,7 +692,7 @@ async function boot() {
   frame();
   (window as unknown as Record<string, unknown>).__game = {
     debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
-    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn,
+    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };
 }

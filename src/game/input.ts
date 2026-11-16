@@ -11,6 +11,7 @@ export interface Frame {
   crouch: boolean;
   slot1: boolean; slot2: boolean; inspect: boolean;
   /** Lanzar granada (G / RB / botón táctil). */ grenade: boolean;
+  /** Invocar el súper (V / cruceta arriba / botón táctil). */ super: boolean;
   device: "kbm" | "pad";
 }
 
@@ -75,7 +76,7 @@ export class Input {
       lookX: this.mouse.dx * this.sensitivity, lookY: this.mouse.dy * this.sensitivity,
       fire: this.mouse.left, aim: this.mouse.right, sprint: k("ShiftLeft"), crouch: k("KeyC") || k("ControlLeft"),
       jump: kp("Space"), reload: kp("KeyR"), interact: kp("KeyE"), swap: this.mouse.wheel !== 0 || kp("KeyQ"),
-      inventory: kp("Tab") || kp("KeyI"), pause: kp("Escape"), slot1: kp("Digit1"), slot2: kp("Digit2"), inspect: kp("KeyF"), grenade: kp("KeyG"), device: this.device,
+      inventory: kp("Tab") || kp("KeyI"), pause: kp("Escape"), slot1: kp("Digit1"), slot2: kp("Digit2"), inspect: kp("KeyF"), grenade: kp("KeyG"), super: kp("KeyV"), device: this.device,
     };
     this.mouse.dx = this.mouse.dy = 0; this.mouse.wheel = 0; this.pressed.clear();
     const p = this.pad();
@@ -90,6 +91,7 @@ export class Input {
       f.interact ||= !!edges[1];
       f.inspect ||= !!edges[13]; // cruceta abajo
       f.grenade ||= !!edges[5]; // RB: granada
+      f.super ||= !!edges[12]; // cruceta arriba: súper
     }
     const t = this.touch;
     if (t.active) {
@@ -98,7 +100,7 @@ export class Input {
       f.fire ||= t.fire; f.aim ||= t.aim; f.sprint ||= t.sprint; f.crouch ||= t.crouch;
       const tp = (b: string) => t.pressed.has(b);
       f.jump ||= tp("jump"); f.reload ||= tp("reload"); f.interact ||= tp("use"); f.swap ||= tp("swap");
-      f.inventory ||= tp("inv"); f.pause ||= tp("pause"); f.inspect ||= tp("inspect"); f.grenade ||= tp("nade");
+      f.inventory ||= tp("inv"); f.pause ||= tp("pause"); f.inspect ||= tp("inspect"); f.grenade ||= tp("nade"); f.super ||= tp("super");
       t.pressed.clear();
     }
     const len = Math.hypot(f.moveX, f.moveZ); if (len > 1) { f.moveX /= len; f.moveZ /= len; }

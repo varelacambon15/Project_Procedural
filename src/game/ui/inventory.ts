@@ -1,6 +1,7 @@
 // Inventario: rejilla por rareza con filtros y orden, ficha del arma elegida comparada con la equipada y acciones
 // (equipar, a la mochila, renombrar, soltar, desguazar con confirmación suave). Teclado, ratón y mando.
 import { GRENADE_RARITY, type GrenadeSpec } from "../grenades";
+import { SUPERS, SUPER_IDS, type SuperId } from "../supers";
 import { fillNadeThumbs } from "./shop";
 import { RARITIES } from "../../weapons/generator";
 import { typeName } from "../../weapons/labels";
@@ -29,6 +30,7 @@ export class InventoryScreen {
   /** Granada elegida (uid), en lugar de un arma. */ private selNade: number | null = null;
   private filter = { rarity: "all", cls: "all", era: "all" };
   private sort: Sort = "rarity";
+  /** Pestaña: equipo (armas y granadas) o habilidades (súper). */ private tab: "gear" | "skills" = "gear";
 
   constructor(private inv: Inventory, private thumbs: Thumbnails, private hooks: InventoryHooks) {
     this.el.addEventListener("click", (e) => this.click(e));
@@ -92,7 +94,7 @@ export class InventoryScreen {
   /** En el puesto de almacén se ve también el almacén (el inventario normal solo enseña lo que llevas encima). */
   storageMode = false;
   open(storage = false) {
-    this.storageMode = storage; this.isOpen = true; this.el.hidden = false;
+    this.storageMode = storage; this.isOpen = true; this.el.hidden = false; if (storage) this.tab = "gear";
     this.el.classList.toggle("storage-mode", storage);
     this.el.querySelector("h1")!.textContent = t(storage ? "ui.storage" : "ui.inventory");
     const w = this.selected && this.inv.find(this.selected.uid);
@@ -120,7 +122,27 @@ export class InventoryScreen {
     return list.filter(ok).sort((a, b) => { const x = key(a), y = key(b); return x < y ? -1 : x > y ? 1 : 0; });
   }
 
+  private static GLYPH: Record<SuperId, string> = { overload: "⟐", shockwave: "◎", storm: "ϟ" };
+  /** Pestaña Habilidades: los tres súperes; elegir uno lo equipa. */
+  private renderSkills() {
+    const sel = this.inv.superId;
+    $("inv-body").innerHTML = `
+      <section class="panel list"><h2>${t("sp.title")}</h2>
+        <div class="tiles skills">${SUPER_IDS.map((id) => `<button type="button" class="tile skill ${id === sel ? "sel" : ""}" data-super="${id}" data-nav><span class="glyph">${InventoryScreen.GLYPH[id]}</span><span class="lbl">${id === sel ? "✓ " : ""}${t("sp.super")}</span><span class="nm">${t(`sp.${id}`)}</span></button>`).join("")}</div>
+        <p class="note">${t("sp.how")}</p></section>
+      <section class="panel detail"><div class="card"><div class="skillbig">${InventoryScreen.GLYPH[sel]}</div><span class="lbl">${t("sp.super")}</span><div class="nm">${t(`sp.${sel}`)}</div>
+        <p class="note">${t(`sp.d.${sel}`, { a: SUPERS[sel].active ?? 0, d: SUPERS[sel].damage ?? 0, r: SUPERS[sel].radius ?? 0 })}</p></div></section>`;
+    $("inv-credits").textContent = `${this.inv.credits} ${t("unit.cr")}`;
+    $("inv-foot").innerHTML = keyHint("Enter", "Ⓐ", t("sp.equip")) + keyHint("Esc", "Ⓑ", t("ui.back"));
+  }
+  private renderTabs() {
+    const el = $("inv-tabs"); el.hidden = this.storageMode;
+    el.innerHTML = (["gear", "skills"] as const).map((k) => `<button type="button" class="chip ${this.tab === k ? "on" : ""}" data-tab="${k}">${t(`sp.tab.${k}`)}</button>`).join("");
+  }
+
   render() {
+    this.renderTabs();
+    if (this.tab === "skills" && !this.storageMode) return this.renderSkills();
     const i = this.inv, it = this.selected, cur = i.current;
     const chips = ["all", ...ORDER].map((r) => `<button type="button" class="chip ${this.filter.rarity === r ? "on" : ""} ${r !== "all" ? `r-${r}` : ""}" data-rar="${r}" style="${r !== "all" ? `--c:${RARITIES.find((x) => x.id === r)!.color}` : ""}">${r === "all" ? t("ui.all") : t(`rarity.${r}`)}</button>`).join("");
     const packItems = this.visible(i.pack.filter((x): x is Item => !!x));
@@ -223,6 +245,10 @@ export class InventoryScreen {
   private click(e: Event) {
     const target = e.target as HTMLElement;
     if (target.closest("[data-close]")) return this.close();
+    const tb = target.closest<HTMLElement>("[data-tab]");
+    if (tb) { this.tab = tb.dataset.tab as "gear" | "skills"; this.render(); return this.el.querySelector<HTMLElement>(`[data-tab="${this.tab}"]`)?.focus({ preventScroll: true }); }
+    const sp = target.closest<HTMLElement>("[data-super]");
+    if (sp) { this.inv.superId = sp.dataset.super as SuperId; this.render(); return this.el.querySelector<HTMLElement>(`[data-super="${this.inv.superId}"]`)?.focus({ preventScroll: true }); }
     const nt = target.closest<HTMLElement>(".tile[data-nade]");
     if (nt) return this.selectNade(Number(nt.dataset.nade));
     const na = target.closest<HTMLElement>("[data-nact]");
