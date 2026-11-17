@@ -8,7 +8,7 @@ import type { KINDS } from "./dummies";
 
 /** Origen del mapa de la incursión (lejos del complejo; la niebla lo separa). */
 export const RAID_ORIGIN = new THREE.Vector3(700, 0, 0);
-const H = 6, CH = 4.2;
+const CH = 4.2;
 
 export interface RaidHooks {
   mobs: Waves; colliders: THREE.Box3[]; shootables: THREE.Object3D[];
@@ -82,6 +82,10 @@ export class Raid {
     const coverMat = new THREE.MeshStandardMaterial({ color: 0x5d636a, metalness: 0.4, roughness: 0.6 });
     const trimMat = new THREE.MeshStandardMaterial({ color: pal.trim, emissive: pal.trim, emissiveIntensity: 0.5 });
     const panel = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xf4f6ff, emissiveIntensity: 1.1 });
+    const pipeMat = new THREE.MeshStandardMaterial({ color: 0x5a6068, metalness: 0.6, roughness: 0.5 });
+    const accentMat = new THREE.MeshStandardMaterial({ color: pal.accent, emissive: pal.accent, emissiveIntensity: 0.9 });
+    const rackMat = new THREE.MeshStandardMaterial({ color: 0x1e2228, metalness: 0.5, roughness: 0.5 });
+    const ledA = new THREE.MeshStandardMaterial({ color: 0x113322, emissive: 0x3aff8a, emissiveIntensity: 1.2 }), ledB = new THREE.MeshStandardMaterial({ color: 0x0a2233, emissive: pal.accent, emissiveIntensity: 1.2 });
     const O = RAID_ORIGIN, g = this.group;
     const box = (w: number, h: number, d: number, x: number, y: number, z: number, mat: THREE.Material, collide = true) => {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(O.x + x, y, O.z + z); m.receiveShadow = true; g.add(m);
@@ -94,8 +98,15 @@ export class Raid {
     for (const room of map.rooms) {
       const { cx, cz, w, d } = room, doors = doorsOf(map, room);
       plane(w, d, cx, 0, cz, floorFor(w, d));
+      const H = room.h; // (cada sala con su altura)
       plane(w, d, cx, H, cz, ceilMat, false);
       for (let z = cz - d / 2 + 4; z < cz + d / 2; z += 8) for (let x = cx - w / 2 + 5; x < cx + w / 2; x += 10) box(4, 0.06, 1.2, x, H - 0.05, z, panel, false);
+      // Decoración de paredes: tuberías a lo largo y tiras de luz verticales (sin colisión)
+      for (const [s, alongX] of [[1, true], [-1, true], [1, false], [-1, false]] as const) {
+        const len = alongX ? w : d, off = (alongX ? d : w) / 2 - 0.25;
+        if (alongX) box(len - 1, 0.18, 0.18, cx, H - 0.9, cz + s * off, pipeMat, false); else box(0.18, 0.18, len - 1, cx + s * off, H - 0.9, cz, pipeMat, false);
+        for (let t = -len / 2 + 3; t < len / 2 - 2; t += 7) { if (Math.abs(t) < DOOR_W) continue; if (alongX) box(0.25, H - 2.2, 0.05, cx + t, (H - 2.2) / 2 + 0.6, cz + s * (off + 0.2), accentMat, false); else box(0.05, H - 2.2, 0.25, cx + s * (off + 0.2), (H - 2.2) / 2 + 0.6, cz + t, accentMat, false); }
+      }
       // Paredes: con hueco de puerta donde llega un pasillo
       const side = (s: "n" | "s" | "e" | "w") => {
         const alongX = s === "n" || s === "s", len = alongX ? w : d, pos = s === "n" ? cz + d / 2 + 0.5 : s === "s" ? cz - d / 2 - 0.5 : s === "e" ? cx + w / 2 + 0.5 : cx - w / 2 - 0.5;
@@ -110,7 +121,18 @@ export class Raid {
         if (alongX) box(len, 0.2, 0.05, cx, 1.1, pos + (s === "n" ? -0.53 : 0.53), trimMat, false); else box(0.05, 0.2, len, pos + (s === "e" ? -0.53 : 0.53), 1.1, cz, trimMat, false);
       };
       (["n", "s", "e", "w"] as const).forEach(side);
-      for (const c of room.covers) box(c.w, c.h, c.d, c.x, c.h / 2, c.z, coverMat);
+      for (const c of room.covers) {
+        if (c.kind === "pillar") {
+          const m = new THREE.Mesh(new THREE.CylinderGeometry(c.w / 2, c.w / 2 + 0.08, c.h, 14), wallMat); m.position.set(O.x + c.x, c.h / 2, O.z + c.z); m.receiveShadow = true; g.add(m); this.hooks.shootables.push(m);
+          const b = new THREE.Box3().setFromObject(m); this.boxes.push(b); this.hooks.colliders.push(b);
+          box(c.w + 0.25, 0.25, c.d + 0.25, c.x, 0.12, c.z, coverMat, false); box(c.w + 0.06, 0.12, c.d + 0.06, c.x, 1.1, c.z, trimMat, false);
+        } else if (c.kind === "rack") {
+          box(c.w, c.h, c.d, c.x, c.h / 2, c.z, rackMat);
+          for (let y = 0.45; y < c.h - 0.2; y += 0.42) for (const s of [-1, 1]) box(c.w * 0.86, 0.04, 0.02, c.x, y, c.z + s * (c.d / 2 + 0.005), y % 0.84 < 0.42 ? ledA : ledB, false);
+        } else if (c.kind === "barrier") {
+          box(c.w, c.h, c.d, c.x, c.h / 2, c.z, wallMat); box(c.w + 0.04, 0.08, c.d + 0.04, c.x, c.h + 0.02, c.z, trimMat, false);
+        } else { box(c.w, c.h, c.d, c.x, c.h / 2, c.z, coverMat); box(c.w + 0.02, 0.1, c.d + 0.02, c.x, c.h * 0.7, c.z, trimMat, false); }
+      }
       const st: RoomState = { room, started: false, cleared: room.kind === "start" || room.kind === "loot", queue: [], spawnT: 0, barriers: [] };
       if (room.kind === "loot") st.chest = this.chest(new THREE.Vector3(O.x + cx, 0, O.z + cz), pal.accent);
       if (room.kind === "boss") { const m = new THREE.Mesh(new THREE.RingGeometry(6, 6.4, 48), new THREE.MeshBasicMaterial({ color: 0xff4a3a, transparent: true, opacity: 0.6 })); m.rotation.x = -Math.PI / 2; m.position.set(O.x + cx, 0.02, O.z + cz); g.add(m); }
