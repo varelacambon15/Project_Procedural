@@ -444,3 +444,5 @@ body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family
 .tile.skillnode.maxed { border-color: var(--amber); } .tile.skillnode.locked { opacity: .45; } .tile.skillnode[aria-disabled="true"] { cursor: default; }
 .tiles.skills { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 @media (max-width: 760px) { .panel.tree .branches { grid-template-columns: 1fr; } .tiles.skills { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.tile.skill.locked { opacity: .55; } .tile.skill.locked .glyph { filter: grayscale(1); } .card .note.warn { color: #ffb070; }
+.dev-actions { display: flex; flex-wrap: wrap; gap: 6px; }

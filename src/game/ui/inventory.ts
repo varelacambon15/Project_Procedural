@@ -124,9 +124,9 @@ export class InventoryScreen {
     return list.filter(ok).sort((a, b) => { const x = key(a), y = key(b); return x < y ? -1 : x > y ? 1 : 0; });
   }
 
-  private static GLYPH: Record<SuperId, string> = { overload: "⟐", shockwave: "◎", storm: "ϟ", inferno: "♨", stasis: "❄", orbital: "⊕", seekers: "⁂", aegis: "⬡", deadeye: "◉", vortex: "@" };
+  private static GLYPH: Record<SuperId, string> = { overload: "⟐", shockwave: "◎", storm: "ϟ", inferno: "♨", stasis: "❄", orbital: "⊕", seekers: "⁂", aegis: "⬡", deadeye: "◉", vortex: "@", sentry: "⊤", zerog: "⇡", chrono: "⧗", leech: "♥", decoy: "♙" };
   /** Parámetros de la descripción de un súper. */
-  private static spArgs(id: SuperId) { const s = SUPERS[id]; return { a: s.active ?? 0, d: s.damage ?? 0, r: s.radius ?? 0, n: s.count ?? 0, g: Math.round((1 - (s.guard ?? 1)) * 100), v: Math.round(((s.vuln ?? 1) - 1) * 100), c: Math.round(((s.crit ?? 1) - 1) * 100) }; }
+  private static spArgs(id: SuperId) { const s = SUPERS[id]; return { s: Math.round((s.slow ?? 1) * 100), h: Math.round((s.heal ?? 0) * 100), a: s.active ?? 0, d: s.damage ?? 0, r: s.radius ?? 0, n: s.count ?? 0, g: Math.round((1 - (s.guard ?? 1)) * 100), v: Math.round(((s.vuln ?? 1) - 1) * 100), c: Math.round(((s.crit ?? 1) - 1) * 100) }; }
   /** Pestaña Progreso: nivel, experiencia y árbol de habilidades (tres ramas). */
   private renderTree() {
     const p = this.inv.progress, free = pointsFree(p), need = xpToNext(p.level), cost = respecCost(p);
@@ -145,15 +145,17 @@ export class InventoryScreen {
     $("inv-credits").textContent = `${this.inv.credits} ${t("unit.cr")}`;
     $("inv-foot").innerHTML = keyHint("Enter", "Ⓐ", t("pg.raise")) + keyHint("Esc", "Ⓑ", t("ui.back"));
   }
-  /** Pestaña Habilidades: los tres súperes; elegir uno lo equipa. */
+  /** Súper que se está mirando (puede estar bloqueado). */ private spView: SuperId | null = null;
+  /** Pestaña Habilidades: los súperes; elegir uno desbloqueado lo equipa (los bloqueados se ven, pero hace falta su módulo). */
   private renderSkills() {
-    const sel = this.inv.superId;
+    const eq = this.inv.superId, sel = this.spView ?? eq, have = this.inv.hasSuper(sel), n = SUPER_IDS.filter((id) => this.inv.hasSuper(id)).length;
     $("inv-body").innerHTML = `
       <section class="panel list"><h2>${t("sp.title")}</h2>
-        <div class="tiles skills">${SUPER_IDS.map((id) => `<button type="button" class="tile skill ${id === sel ? "sel" : ""}" data-super="${id}" data-nav><span class="glyph">${InventoryScreen.GLYPH[id]}</span><span class="lbl">${id === sel ? "✓ " : ""}${t("sp.super")}</span><span class="nm">${t(`sp.${id}`)}</span></button>`).join("")}</div>
+        <p class="note">${t("sp.owned", { n, of: SUPER_IDS.length })}</p>
+        <div class="tiles skills">${SUPER_IDS.map((id) => { const own = this.inv.hasSuper(id); return `<button type="button" class="tile skill ${id === sel ? "sel" : ""} ${own ? "" : "locked"}" data-super="${id}" data-nav><span class="glyph">${own ? InventoryScreen.GLYPH[id] : "🔒"}</span><span class="lbl">${own && id === eq && this.inv.hasSuper(eq) ? "✓ " + t("sp.equipped") : own ? t("sp.super") : t("sp.locked")}</span><span class="nm">${t(`sp.${id}`)}</span></button>`; }).join("")}</div>
         <p class="note">${t("sp.how")}</p></section>
       <section class="panel detail"><div class="card"><div class="skillbig">${InventoryScreen.GLYPH[sel]}</div><span class="lbl">${t("sp.super")}</span><div class="nm">${t(`sp.${sel}`)}</div>
-        <p class="note">${t(`sp.d.${sel}`, InventoryScreen.spArgs(sel))}</p></div></section>`;
+        <p class="note">${t(`sp.d.${sel}`, InventoryScreen.spArgs(sel))}</p>${have ? "" : `<p class="note warn">${t("sp.needModule")}</p>`}</div></section>`;
     $("inv-credits").textContent = `${this.inv.credits} ${t("unit.cr")}`;
     $("inv-foot").innerHTML = keyHint("Enter", "Ⓐ", t("sp.equip")) + keyHint("Esc", "Ⓑ", t("ui.back"));
   }
@@ -274,7 +276,7 @@ export class InventoryScreen {
     if (sk) { if (raise(this.inv.progress, sk.dataset.skill!)) this.hooks.perks?.(); this.render(); return this.el.querySelector<HTMLElement>(`[data-skill="${sk.dataset.skill}"]`)?.focus({ preventScroll: true }); }
     if (target.closest("[data-respec]")) { const c = respecCost(this.inv.progress); if (c && this.inv.credits >= c) { this.inv.credits -= c; respec(this.inv.progress); this.hooks.perks?.(); this.hooks.toast(t("pg.respecDone")); } return this.render(); }
     const sp = target.closest<HTMLElement>("[data-super]");
-    if (sp) { this.inv.superId = sp.dataset.super as SuperId; this.render(); return this.el.querySelector<HTMLElement>(`[data-super="${this.inv.superId}"]`)?.focus({ preventScroll: true }); }
+    if (sp) { const id = sp.dataset.super as SuperId; this.spView = id; if (this.inv.hasSuper(id)) { this.inv.superId = id; this.spView = null; } this.render(); return this.el.querySelector<HTMLElement>(`[data-super="${this.inv.superId}"]`)?.focus({ preventScroll: true }); }
     const nt = target.closest<HTMLElement>(".tile[data-nade]");
     if (nt) return this.selectNade(Number(nt.dataset.nade));
     const na = target.closest<HTMLElement>("[data-nact]");

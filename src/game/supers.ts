@@ -3,8 +3,8 @@
 // invocación en primera persona. Los números de cada animación están en supers.json (ajustables sin tocar código).
 import data from "./supers.json";
 
-export type SuperId = "overload" | "shockwave" | "storm" | "inferno" | "stasis" | "orbital" | "seekers" | "aegis" | "deadeye" | "vortex";
-export const SUPER_IDS: SuperId[] = ["overload", "shockwave", "storm", "inferno", "stasis", "orbital", "seekers", "aegis", "deadeye", "vortex"];
+export type SuperId = "overload" | "shockwave" | "storm" | "inferno" | "stasis" | "orbital" | "seekers" | "aegis" | "deadeye" | "vortex" | "sentry" | "zerog" | "chrono" | "leech" | "decoy";
+export const SUPER_IDS: SuperId[] = ["overload", "shockwave", "storm", "inferno", "stasis", "orbital", "seekers", "aegis", "deadeye", "vortex", "sentry", "zerog", "chrono", "leech", "decoy"];
 
 /** Clave de mano. `index` = cierre del índice (si falta, el de los demás dedos; sirve para señalar). */
 export interface HandKey { t: number; pos: [number, number, number]; rot: [number, number, number]; curl: number; thumb: number; index?: number }
@@ -16,6 +16,7 @@ export interface Timeline {
   vuln?: number; guard?: number; crit?: number;
   /** Enjambre: misiles. Vórtice: radio de atracción y daño de cada tic. */
   count?: number; pull?: number; tick?: number;
+  /** Sanguijuela: fracción del daño drenado que cura. Gravedad cero: altura. Dilatación: velocidad del resto. */ heal?: number; lift?: number; slow?: number;
   right: HandKey[]; left: HandKey[]; fov: [number, number][]; roll: [number, number][]; lower: [number, number][];
 }
 export const SUPERS = data as unknown as Record<SuperId, Timeline>;
@@ -51,4 +52,12 @@ export class SuperMeter {
   update(dt: number) { this.charge = Math.min(1, this.charge + dt * SuperMeter.PASSIVE * this.gain); }
   /** Gasta el medidor; false si no está lleno. */
   use(): boolean { if (!this.ready) return false; this.charge = 0; return true; }
+}
+
+/** Probabilidad de que caiga un módulo de súper (los súperes se desbloquean con módulos; no son fáciles de conseguir). */
+export const MODULE_CHANCE = { kill: 0.003, big: 0.012, boss: 0.06, raidChest: 0.06, raidBoss: 0.25, raidBossPerDifficulty: 0.1 };
+/** Súper al azar de los que faltan (null si ya los tienes todos). */
+export function rollModule(owned: readonly SuperId[], rnd: number): SuperId | null {
+  const left = SUPER_IDS.filter((id) => !owned.includes(id));
+  return left.length ? left[Math.floor(rnd * left.length)] : null;
 }

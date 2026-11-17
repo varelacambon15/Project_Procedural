@@ -63,6 +63,7 @@ export class Dummy {
   private stunT = 0;
   /** Estasis (súper): congelado sin temblar y recibe más daño mientras dura. */
   holdT = 0; vulnT = 0; vuln = 1;
+  /** Gravedad cero (súper): flota indefenso a cierta altura mientras dura. */ liftT = 0; liftH = 0;
   readonly bar: HTMLDivElement;
   private clip!: THREE.Plane; private scan!: THREE.Mesh; private top = 2.4;
   /** Reacciones visibles: brasas (fuego), chispas azules (eléctrico) y empuje (explosivo). */
@@ -97,6 +98,8 @@ export class Dummy {
   /** Empuje corto (onda de choque). */
   /** Congela al enemigo `sec` segundos; mientras, recibe `vuln` veces el daño. */
   freeze(sec: number, vuln = 1) { this.holdT = Math.max(this.holdT, sec); this.vulnT = Math.max(this.vulnT, sec); this.vuln = Math.max(vuln, 1); }
+  /** Lo levanta en el aire `sec` segundos a `h` m (luego cae de golpe). */
+  lift(sec: number, h: number) { this.liftT = Math.max(this.liftT, sec); this.liftH = h * (0.85 + Math.random() * 0.3); }
   /** Arrastra al enemigo por el suelo hacia un punto (vórtice), sin pasarse. */
   drag(to: THREE.Vector3, dist: number) { const v = to.clone().setY(0).sub(this.group.position.clone().setY(0)); const l = v.length(); if (l > 0.6) this.group.position.addScaledVector(v.normalize(), Math.min(dist, l - 0.6)); }
   push(dir: THREE.Vector3, amount: number) { this.pushV.addScaledVector(dir, amount * 6); }
@@ -214,11 +217,13 @@ export class Dummy {
     if (el === "electrico") this.stunT = Math.max(this.stunT, 0.3);
   }
 
-  private die() { this.alive = false; this.deadT = 0; this.burnT = 0; this.stunT = 0; this.holdT = 0; this.vulnT = 0; }
+  private die() { this.alive = false; this.deadT = 0; this.burnT = 0; this.stunT = 0; this.holdT = 0; this.vulnT = 0; this.liftT = 0; }
 
   update(dt: number, camera: THREE.Camera, viewW: number, viewH: number) {
     this.stunT = Math.max(0, this.stunT - dt); this.holdT = Math.max(0, this.holdT - dt); this.vulnT = Math.max(0, this.vulnT - dt);
-    const held = this.stunT > 0 || this.holdT > 0;
+    if (this.liftT > 0 && this.alive) { this.liftT -= dt; const y = this.group.position.y; this.group.position.y = y + (this.liftH - y) * Math.min(1, dt * 3); this.group.rotation.z = Math.sin(this.liftT * 2) * 0.25; }
+    else if (this.group.position.y > 0) { this.group.position.y = Math.max(0, this.group.position.y - dt * 16); if (this.group.position.y === 0) this.group.rotation.z = 0; }
+    const held = this.stunT > 0 || this.holdT > 0 || this.liftT > 0 || this.group.position.y > 0.05;
     if (this.chase && this.alive && !held) {
       // Avanza hacia el jugador por el suelo; al llegar, golpea cada cierto tiempo
       const c = this.chase, to = c.target().clone().setY(0).sub(this.group.position.clone().setY(0));

@@ -20,6 +20,8 @@ export interface StartHooks {
   exportSlot(slot: SlotId): Promise<void>; importSlot(slot: SlotId): Promise<void>;
   quit(): void; canQuit(): boolean;
   current(): WeaponSpec | null;
+  /** Atajos del modo desarrollador (subir niveles, créditos, módulos…). */
+  dev?(action: string): void;
 }
 export const VERSION: string = pkg.version;
 
@@ -71,6 +73,8 @@ export class StartScreen {
       ${range("music", 0, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}
       ${toggle("damageNumbers")}${toggle("impactFx")}${toggle("screenShake")}${toggle("arms")}${toggle("night")}${toggle("bloom")}
       <div class="row"><span>${t("ui.language")}</span><div class="seg">${LANGS.map((l) => `<button type="button" class="chip ${l.id === getLang() ? "on" : ""}" data-lang="${l.id}">${l.name}</button>`).join("")}</div></div>
+      <h3>${t("set.devTitle")}</h3>${toggle("dev")}
+      ${s.dev ? `<p class="note">${t("set.devNote")}</p><div class="row dev-actions">${["lvl1", "lvl10", "cr", "modules", "raid"].map((a) => `<button type="button" class="chip" data-dev="${a}">${t(`set.dev.${a}`)}</button>`).join("")}</div>` : ""}
       <p class="note">${t("set.saved")}</p></div>`;
   }
   private input(e: Event) {
@@ -122,6 +126,8 @@ export class StartScreen {
     }
     const tog = target.closest<HTMLElement>("[data-tog]")?.dataset.tog as keyof Settings | undefined;
     if (tog) { setSetting(tog, !settings[tog] as never); this.render(); this.el.querySelector<HTMLElement>(`[data-tog="${tog}"]`)?.focus(); return; }
+    const dv = target.closest<HTMLElement>("[data-dev]")?.dataset.dev;
+    if (dv) { this.hooks.dev?.(dv); return; }
     const px = target.closest<HTMLElement>("[data-px]")?.dataset.px;
     if (px) { setPixelLevel(Number(px)); this.render(); this.el.querySelector<HTMLElement>(`[data-px="${px}"]`)?.focus(); return; }
     const lang = target.closest<HTMLElement>("[data-lang]")?.dataset.lang;

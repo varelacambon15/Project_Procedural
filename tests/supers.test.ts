@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { SUPERS, SUPER_IDS, SuperMeter, sampleHand, track } from "../src/game/supers";
 
 describe("súperes: datos", () => {
-  it("hay diez y cada línea de tiempo es coherente", () => {
-    expect(SUPER_IDS).toHaveLength(10);
+  it("hay quince y cada línea de tiempo es coherente", () => {
+    expect(SUPER_IDS).toHaveLength(15);
     for (const id of SUPER_IDS) {
       const s = SUPERS[id];
       expect(s.hit).toBeGreaterThan(0); expect(s.hit).toBeLessThan(s.duration);
@@ -35,5 +35,14 @@ describe("súperes: muestreo y medidor", () => {
     expect(m.use()).toBe(true); expect(m.charge).toBe(0);
     m.kill(true); expect(m.charge).toBeCloseTo(SuperMeter.BOSS, 5);
     m.update(60); expect(m.charge).toBeGreaterThan(SuperMeter.BOSS);
+  });
+});
+
+import { rollModule } from "../src/game/supers";
+describe("súperes: módulos", () => {
+  it("dan un súper que aún no tienes, y nada cuando ya están todos", () => {
+    expect(rollModule([], 0)).toBe(SUPER_IDS[0]);
+    const some = SUPER_IDS.slice(0, 14); expect(rollModule(some, 0.5)).toBe(SUPER_IDS[14]);
+    expect(rollModule(SUPER_IDS, 0.3)).toBeNull();
   });
 });

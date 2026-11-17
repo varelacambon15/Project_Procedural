@@ -131,6 +131,19 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 31 (versión 0.11.0): 15 súperes con módulos y modo desarrollador
+
+- 5 súperes nuevas: Torreta centinela (se planta delante y dispara 20 s al más cercano), Gravedad cero (`Dummy.lift`:
+  flotan indefensos y caen con daño), Dilatación temporal (`sfx.timeScale`: enemigos, sus esferas y sus golpes a
+  cámara lenta; filtro de pantalla `body.chrono`), Sanguijuela (cables que drenan a 5 enemigos y curan) y Holograma
+  señuelo (`Waves.decoy`: los enemigos van a por él y luego estalla).
+- Módulos: las súperes se desbloquean (`inv.supersOwned`, `hasSuper`); probabilidades en `MODULE_CHANCE` (supers.ts):
+  0,3 % por baja, 1,2 % grandes, 6 % jefes, 6 % cofres de incursión, 25 % (+10 %/dificultad) jefe de incursión; la
+  primera incursión completada da uno seguro (`inv.raidsDone`). Repetido = 400 CR. Partidas anteriores conservan la
+  súper que tenían elegida. Sin módulo, el HUD del súper no aparece.
+- Modo desarrollador (Opciones → Desarrollador, `settings.dev`): todas las súperes y siempre cargadas; atajos +1 y +10
+  niveles, +10.000 CR, desbloquear todos los módulos y reiniciar la primera incursión.
+
 ## Ronda 30 (versión 0.10.0): niveles, 10 súperes e incursiones
 
 - **Niveles a lo Borderlands** (`src/game/progress.ts` puro + `src/data/progress.json` números; tests/progress.test.ts):

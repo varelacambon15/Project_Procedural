@@ -45,6 +45,8 @@ export class Waves {
   private volleys: { d: Dummy; every: number; t: number; speed: number; dmg: number }[] = [];
   /** Nivel del jugador (los enemigos se ajustan a él). Sin asignar, los de diseño (sin escalar). */
   playerLevel: (() => number) | null = null;
+  /** Señuelo (súper): si hay uno, los enemigos van a por él en lugar de a por el jugador. */
+  decoy: (() => THREE.Vector3 | null) | null = null;
 
   constructor(private scene: THREE.Scene, private dummies: Dummy[], private overlay: HTMLElement, private player: () => THREE.Vector3,
     private onDamage: ConstructorParameters<typeof Dummy>[4], private ev: WaveEvents) {}
@@ -89,7 +91,7 @@ export class Waves {
     const sp = ((data.speed as Record<string, number>)[kind] ?? 2.4) * (M && !k.boss ? M.speed : 1), dmg = ((data.damage as Record<string, number>)[kind] ?? 8) * (M ? M.dmg : 1) * dm;
     const rg = (data.ranged as Record<string, { range: number; interval: number; orbSpeed: number; orbDamage: number; volleyEvery?: number }>)[kind];
     // (lanzador: se para lejos y dispara esferas; jefe: golpea de cerca y además lanza ráfagas de esferas cada pocos s)
-    d.chase = { target: this.player, speed: sp, range: rg?.range ?? data.attackRange, interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
+    d.chase = { target: () => this.decoy?.() ?? this.player(), speed: sp, range: rg?.range ?? data.attackRange, interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
       onAttack: (x) => (rg && !k.boss ? this.orb(d, rg.orbSpeed, rg.orbDamage * (M ? M.dmg : 1) * dm) : this.ev.onPlayerHit(x)) };
     if (k.boss) { d.alwaysBar = true; if (rg?.volleyEvery) this.volleys.push({ d, every: rg.volleyEvery, t: 2, speed: rg.orbSpeed, dmg: rg.orbDamage * dm }); }
     this.scene.add(d.group); this.dummies.push(d); this.alive.push(d);
@@ -101,7 +103,7 @@ export class Waves {
   /** Lanza una esfera desde el pecho del enemigo hacia el jugador (con un poco de dispersión). */
   private orb(from: Dummy, speed: number, dmg: number, spread = 0) {
     if (!from.alive) return;
-    const at = from.center.clone(), target = this.player().clone().add(new THREE.Vector3(0, 1.4, 0));
+    const at = from.center.clone(), target = (this.decoy?.() ?? this.player()).clone().add(new THREE.Vector3(0, 1.4, 0));
     const dir = target.sub(at).normalize(); if (spread) dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), spread).normalize();
     // (sin luz: el número de luces de la escena es fijo; brillo con material básico y un halo aditivo)
     const m = new THREE.Mesh(orbGeo, new THREE.MeshBasicMaterial({ color: 0xc8f4ff }));

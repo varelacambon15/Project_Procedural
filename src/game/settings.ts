@@ -11,9 +11,10 @@ export interface Settings {
   night: boolean;        // campo de tiro de noche con neón (si no, de día)
   bloom: boolean;        // resplandor del neón y de los fogonazos (postproceso)
   mapV: number;          // versión del mapa (migración de ajustes)
+  dev: boolean;          // modo desarrollador: todos los súperes y su carga, y atajos para probar
 }
 const KEY = "pp.settings";
-const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: false, bloom: true, mapV: 2 };
+const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: false, bloom: true, mapV: 2, dev: false };
 const listeners = new Set<(s: Settings) => void>();
 
 function load(): Settings {

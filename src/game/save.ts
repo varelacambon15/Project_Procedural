@@ -32,6 +32,7 @@ export interface SaveData {
   grenades?: import("./grenades").GrenadeSpec[]; grenadeActive?: number; superId?: string;
   /** Nivel, experiencia y habilidades (opcional: las partidas antiguas empiezan al nivel de su mejor arma). */
   progress?: import("./progress").ProgressState;
+  /** Súperes desbloqueados con módulos e incursiones completadas (opcional). */ supersOwned?: string[]; raidsDone?: number;
 }
 
 // ---------- Migraciones: una función por versión, de N a N+1 ----------
