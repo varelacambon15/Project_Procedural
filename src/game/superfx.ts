@@ -71,7 +71,7 @@ export class SuperFx {
 
   cast(id: SuperId) {
     if (this.cast_ || this.busy) return false; this.cast_ = { id, t: 0, hit: false };
-    if (id === "zerog") this.hooks.levitate?.(SUPERS.zerog.duration + this.dur("zerog") + 0.3, SUPERS.zerog.float ?? 2.2); this.hooks.sound("cast"); return true; }
+    this.hooks.sound("cast"); return true; }
   /** Corta la invocación (muerte, cambio de pantalla). */
   cancel() { this.cast_ = null; }
   /** Quita todo lo que haya activo (torreta, señuelo, misiles…): al volver de una incursión o cargar partida. */
