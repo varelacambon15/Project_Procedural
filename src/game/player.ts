@@ -25,6 +25,9 @@ export class Player {
   private lungeV = new THREE.Vector3(); private lungeT = 0;
   lunge(dir: THREE.Vector3, dist: number, time = 0.12) { this.lungeV.copy(dir).setY(0).normalize().multiplyScalar(dist / time); this.lungeT = time; }
 
+  /** Levitación (súper Gravedad cero): flota a `floatH` m mientras dura; luego cae con la gravedad normal. */
+  floatT = 0; floatH = 2.2;
+  levitate(sec: number, h: number) { this.floatT = Math.max(this.floatT, sec); this.floatH = h; }
   constructor(private colliders: THREE.Box3[]) {}
 
   update(dt: number, f: Frame, aiming: boolean, lookScale: number) {
@@ -57,7 +60,8 @@ export class Player {
       this.vel.z += (wish.z - this.vel.z) * Math.min(1, accel * dt);
     }
     if (f.jump && this.onGround) { this.vel.y = 5.2; this.onGround = false; }
-    this.vel.y -= 16 * dt;
+    if (this.floatT > 0) { this.floatT -= dt; this.vel.y = (this.floatH - this.pos.y) * 2.5; this.onGround = false; }
+    else this.vel.y -= 16 * dt;
     this.move(this.vel.x * dt, 0); this.move(0, this.vel.z * dt);
     if (this.lungeT > 0) { const k = Math.min(dt, this.lungeT); this.lungeT -= dt; this.move(this.lungeV.x * k, 0); this.move(0, this.lungeV.z * k); }
     this.pos.y += this.vel.y * dt;

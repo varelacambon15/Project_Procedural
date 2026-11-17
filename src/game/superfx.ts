@@ -18,6 +18,8 @@ export interface SuperHooks {
   aim?(max: number): THREE.Vector3;
   /** Cura al jugador: por completo sin cantidad (Égida) o esa cantidad (Sanguijuela). */
   heal?(n?: number): void;
+  /** Hace flotar al jugador (Gravedad cero). */
+  levitate?(sec: number, h: number): void;
 }
 type VfxKind = "ring" | "flash" | "bolt" | "mark" | "beam" | "spin";
 interface Vfx { mesh: THREE.Mesh; t: number; dur: number; r: number; kind: VfxKind }
@@ -67,7 +69,9 @@ export class SuperFx {
   /** Fracción del daño que recibe el jugador (Égida). */
   get guard() { return this.active?.id === "aegis" ? SUPERS.aegis.guard ?? 1 : 1; }
 
-  cast(id: SuperId) { if (this.cast_ || this.busy) return false; this.cast_ = { id, t: 0, hit: false }; this.hooks.sound("cast"); return true; }
+  cast(id: SuperId) {
+    if (this.cast_ || this.busy) return false; this.cast_ = { id, t: 0, hit: false };
+    if (id === "zerog") this.hooks.levitate?.(SUPERS.zerog.duration + this.dur("zerog") + 0.3, SUPERS.zerog.float ?? 2.2); this.hooks.sound("cast"); return true; }
   /** Corta la invocación (muerte, cambio de pantalla). */
   cancel() { this.cast_ = null; }
   /** Quita todo lo que haya activo (torreta, señuelo, misiles…): al volver de una incursión o cargar partida. */
@@ -228,11 +232,16 @@ export class SuperFx {
         this.hooks.sound("zap"); break;
       }
       case "zerog": {
-        // Gravedad cero: los enemigos cercanos flotan indefensos (blancos fáciles) y luego caen de golpe
-        const r = tl.radius ?? 18, sec = this.dur(id);
-        this.spawn(new THREE.Mesh(ringGeo, add(col)), at, 0.9, r, "ring"); this.spawn(new THREE.Mesh(ringGeo, add(0xffffff)), at.clone().setY(1.5), 0.7, r * 0.6, "ring");
-        for (const d of this.alive()) if (d.center.distanceTo(o) < r && !d.kind.boss) { d.lift(sec, tl.lift ?? 3); this.spawn(new THREE.Mesh(discGeo, add(col)), d.group.position.clone().setY(0.04), sec, 0.8 * (d.kind.scale ?? 1), "mark"); }
-        this.hooks.shake(0.2); this.hooks.sound("zap"); break;
+        // Gravedad cero: tú flotas, eliges la zona donde miras y todos los enemigos de dentro suben indefensos;
+        // al acabar se estrellan contra el suelo (daño según su vida máxima)
+        const r = tl.radius ?? 8, sec = this.dur(id), p = this.aimAt(tl.range ?? 32, o).setY(0.05); this.active!.at = p;
+        this.spawn(new THREE.Mesh(discGeo, add(col)), p.clone(), sec, r, "mark");
+        this.spawn(new THREE.Mesh(ringGeo, add(0xffffff)), p.clone().setY(0.06), sec, r, "mark");
+        for (let i = 0; i < 3; i++) this.spawn(new THREE.Mesh(ringGeo, add(col)), p.clone().setY(0.5 + i * 1.6), 0.9 + i * 0.25, r * (1 - i * 0.15), "ring");
+        for (const d of this.alive()) if (Math.hypot(d.group.position.x - p.x, d.group.position.z - p.z) < r + 0.4 * (d.kind.scale ?? 1)) {
+          d.lift(sec, (tl.lift ?? 4) * (d.kind.boss ? 0.5 : 1)); this.spawn(new THREE.Mesh(sphereGeo, add(col)), d.center, 0.35, 0.8 * (d.kind.scale ?? 1), "flash");
+        }
+        this.hooks.shake(0.25); this.hooks.sound("zap"); break;
       }
       case "chrono":
         this.spawn(new THREE.Mesh(ringGeo, add(col)), at, 0.8, 30, "ring");
@@ -282,15 +291,16 @@ export class SuperFx {
     for (const d of list) { const dmg = (tl.tick ?? 30) * this.power; this.zap(from, d.center, COLOR.leech, 0.24); this.hooks.onHit(d, d.center, dmg, null); got += dmg; }
     if (got) this.hooks.heal?.(got * (tl.heal ?? 0.3));
   }
-  /** Fin de la gravedad cero: todos los que flotaban caen y se estrellan. */
+  /** Fin de la gravedad cero: todos los que flotaban caen y se estrellan (daño según su vida máxima). */
   private slam() {
-    const tl = SUPERS.zerog;
+    const tl = SUPERS.zerog, at = this.active?.at;
     for (const d of this.alive()) if (d.group.position.y > 0.5) {
-      d.liftT = 0; const p = d.group.position.clone().setY(0.05);
+      d.liftT = 0; const p = d.group.position.clone().setY(0.05), max = d.layers.reduce((a, l) => a + l.max, 0);
       this.spawn(new THREE.Mesh(ringGeo, add(COLOR.zerog)), p, 0.45, 2.2, "ring");
-      this.hooks.onHit(d, d.center, (tl.damage ?? 350) * this.power, "explosive");
+      this.hooks.onHit(d, d.center, Math.max((tl.damage ?? 350) * this.power, max * (d.kind.boss ? tl.bossFrac ?? 0.12 : tl.frac ?? 0.5)), "explosive");
     }
-    this.hooks.shake(0.35); this.hooks.sound("boom");
+    if (at) this.spawn(new THREE.Mesh(ringGeo, add(0xffffff)), at, 0.5, (tl.radius ?? 8) * 1.3, "ring");
+    this.hooks.shake(0.45); this.hooks.sound("boom");
   }
   /** Rayo quebrado entre dos puntos (tres tramos). */
   private zap(a: THREE.Vector3, b: THREE.Vector3, color = 0xb8e8ff, dur = 0.12) {

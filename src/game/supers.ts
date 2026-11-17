@@ -17,6 +17,7 @@ export interface Timeline {
   /** Enjambre: misiles. Vórtice: radio de atracción y daño de cada tic. */
   count?: number; pull?: number; tick?: number;
   /** Sanguijuela: fracción del daño drenado que cura. Gravedad cero: altura. Dilatación: velocidad del resto. */ heal?: number; lift?: number; slow?: number;
+  /** Gravedad cero: daño de la caída como fracción de la vida máxima (jefes aparte) y altura a la que flotas tú. */ frac?: number; bossFrac?: number; float?: number;
   right: HandKey[]; left: HandKey[]; fov: [number, number][]; roll: [number, number][]; lower: [number, number][];
 }
 export const SUPERS = data as unknown as Record<SuperId, Timeline>;

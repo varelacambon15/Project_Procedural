@@ -185,6 +185,7 @@ async function boot() {
       const d = dir.y < -0.02 ? Math.min(max, -o.y / dir.y) : max; return o.addScaledVector(dir, d).setY(0);
     },
     heal: (n) => { php.value = n == null ? php.max : Math.min(php.max, php.value + n); },
+    levitate: (sec, h) => player.levitate(sec, h),
     hand: () => camera.localToWorld(new THREE.Vector3(0.15, -0.15, -0.6)),
     sound(kind) {
       const e = soundManifest?.efectos; if (!e) return;
