@@ -97,7 +97,9 @@ let contracts: ContractState = refreshContracts(null, new Date());
   let shopState: ShopState = newShopState();
 let playSeconds = 0;
 const numbers = new DamageNumbers($("numbers"));
-const onDummyDamage = (_d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => { if (settings.damageNumbers) numbers.spawn(amount, color, crit, at); };
+const onDummyDamage = (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => { if (settings.damageNumbers) numbers.spawn(amount, color, crit, at, d); };
+/** Pausa mínima del mundo (hitstop) al matar o al hacer crítico: da peso a los impactos. */
+let hitstop = 0;
 const dummies: Dummy[] = spawnDummies(scene, world.lanes, $("bars"), onDummyDamage);
 const cursor = new MenuCursor();
 const nav = new MenuNav(cursor);
@@ -137,7 +139,10 @@ async function boot() {
     lunge: (dir, dist) => player.lunge(dir, dist),
     onHit(d, zone, point, dmg, element, crit) {
       lastHit.set(d, { head: zone === "head", dist: point.distanceTo(camera.position), weapon: gun.item ? (gun.spec?.type === "bullpup" ? "rifle" : gun.spec?.type ?? null) : null });
-      const dealt = d.damage(dmg, element, crit, point);
+      const wasAlive = d.alive, dealt = d.damage(dmg, element, crit, point);
+      // Respuesta física al impacto (retroceso por zona, partículas, marca, destello) y pausa mínima al matar o hacer crítico
+      d.react(zone, point, point.clone().sub(camera.position).normalize(), dmg, crit, settings.impactFx);
+      if (wasAlive && !d.alive) hitstop = Math.max(hitstop, d.kind.boss ? 0.12 : 0.05); else if (crit) hitstop = Math.max(hitstop, 0.025);
       // Desmembramiento pixelado con impactos muy fuertes en cabeza o extremidades (francotirador, revólver, escopeta…),
       // solo con el golpe que lo mata (antes podía quitarle la cabeza y seguir vivo)
       if (!d.alive && (zone === "head" || zone === "limb") && settings.impactFx && (dmg >= 120 || (zone === "head" && crit && dmg >= 80) || (gun.spec?.type === "shotgun" && dmg * 8 >= 150 && point.distanceTo(camera.position) < 7))) d.dismember(zone, point);
@@ -800,8 +805,9 @@ async function boot() {
       // Las oleadas viven en su sala: salir por la puerta las detiene
       if (waves.active && (player.pos.z < world.wavesRoom.z0 || player.pos.z > world.wavesRoom.z1)) { waves.stop(); toast(t("ui.wavesLeft")); }
       const ts = sfx.timeScale; // (Dilatación temporal: enemigos y esferas a cámara lenta)
-      waves.update(dt * ts);
-      if (raid.active) { mobs.update(dt * ts); raid.update(dt, player.pos); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
+      const wdt = hitstop > 0 ? 0 : dt;
+      waves.update(wdt * ts);
+      if (raid.active) { mobs.update(wdt * ts); raid.update(dt, player.pos); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
       if (!sfx.casting && !sfx.busy) meter.update(dt); sfx.update(dt, player.pos); superHud();
       pouch.update(dt * curPerks.nadeRecharge); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
@@ -817,7 +823,8 @@ async function boot() {
     $("scope").classList.toggle("on", scopeOn);
     const rd = $("reddot"); rd.dataset.kind = gun.sight;
     rd.style.opacity = state === "play" && (gun.sight === "dot" || gun.sight === "holo") ? String(Math.max(0, (gun.aimT - 0.6) / 0.4)) : "0";
-    for (const d of dummies) d.update(state === "play" ? dt * sfx.timeScale : dt, camera, innerWidth, innerHeight);
+    const stop = state === "play" && hitstop > 0; hitstop = Math.max(0, hitstop - dt);
+    for (const d of dummies) d.update(stop ? 0 : state === "play" ? dt * sfx.timeScale : dt, camera, innerWidth, innerHeight);
     numbers.update(dt, camera, innerWidth, innerHeight);
     if (state === "workbench" || state === "pause" || state === "title") view.update(dt);
     if (state === "shop") shop.update(dt);

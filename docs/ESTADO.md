@@ -131,6 +131,20 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 32 (versión 0.12.0): respuesta de los enemigos a los impactos
+
+- `Dummy.react(zone, point, dir, dmg, crit)` (llamado desde `gun.hooks.onHit` en main.ts): inclinación del cuerpo con
+  muelle según la dirección y la zona, cabeza que va hacia atrás, pierna que flexiona; destello emisivo (más fuerte y
+  amarillo con críticos); partículas por tipo (chispas en blindados/casco, fragmentos pixelados en la cabeza, polvo y
+  trozos en el resto); marcas de impacto pegadas a la pieza más cercana (máx. 14, se borran al morir).
+- Al morir: empuje en la dirección del disparo y caída hacia atrás mientras se desintegra (`deathOff/deathTilt`).
+  La peana de los muñecos de práctica va en el grupo (no se inclina ni se desintegra).
+- Barra de vida con el daño reciente en blanco (`.hptrack .lag`) que baja tras 0,4 s.
+- Sonidos de impacto sintetizados por zona (`Gun.hitSound`: cuerpo, cabeza, metal, baja).
+- Hitstop: el mundo se para 50 ms al matar (120 ms jefes) y 25 ms con críticos (`hitstop` en main.ts).
+- Números de daño: los seguidos al mismo enemigo se suman en uno; críticos más grandes con rebote.
+- Gravedad cero sin levitación del jugador (decisión del usuario).
+
 ## Ronda 31 (versión 0.11.0): 15 súperes con módulos y modo desarrollador
 
 - 5 súperes nuevas: Torreta centinela (se planta delante y dispara 20 s al más cercano), Gravedad cero (`Dummy.lift`:

@@ -48,6 +48,10 @@ export function randomLook(rnd: () => number = Math.random): DummyLook {
   return { suit: pick(SUITS), dark: pick([0x2c3036, 0x3a3f45, 0x24282c]), vest: pick([0x5c5e4a, 0x3d4a3a, 0x4a4f58, 0x6a5a40]), bulk: 0.92 + rnd() * 0.2, extras: [...extras] };
 }
 const BIT_GEO = new THREE.BoxGeometry(0.025, 0.025, 0.025);
+/** Marca de impacto (cuadradito oscuro, pixelado) y su versión metálica (más clara). */
+const MARK_GEO = new THREE.PlaneGeometry(0.035, 0.035);
+const markMat = new THREE.MeshBasicMaterial({ color: 0x1a1410, transparent: true, opacity: 0.85, polygonOffset: true, polygonOffsetFactor: -2 });
+const markMetal = new THREE.MeshBasicMaterial({ color: 0xc8c0b0, transparent: true, opacity: 0.9, polygonOffset: true, polygonOffsetFactor: -2 });
 
 export class Dummy {
   readonly group = new THREE.Group();
@@ -64,6 +68,63 @@ export class Dummy {
   /** Estasis (súper): congelado sin temblar y recibe más daño mientras dura. */
   holdT = 0; vulnT = 0; vuln = 1;
   /** Gravedad cero (súper): flota indefenso a cierta altura mientras dura. */ liftT = 0; liftH = 0;
+  // ---------- Respuesta a los impactos ----------
+  /** Inclinación del cuerpo por los impactos (muelle amortiguado): x = hacia atrás, z = de lado. */
+  private flinch = new THREE.Vector2(); private flinchV = new THREE.Vector2();
+  /** Cabezazo hacia atrás (impacto en la cabeza) y flexión de pierna (impacto en una pierna). */
+  private headKick = 0; private headKickV = 0; private limpT = 0; private limpSide = 1;
+  /** Empuje del cuerpo al morir, en la dirección del disparo, y caída hacia atrás. */
+  private deathV = new THREE.Vector3(); private deathOff = new THREE.Vector3(); private deathTilt = 0;
+  /** Destello blanco de los materiales al recibir un impacto (más fuerte con críticos). */
+  private hitGlow = 0; private glowColor = new THREE.Color(1, 1, 1); private mats: THREE.MeshStandardMaterial[] = [];
+  /** Marcas de impacto pegadas al cuerpo mientras vive (se borran al morir). */
+  private marks: THREE.Mesh[] = [];
+  /** Daño reciente en la barra: la parte perdida se queda un momento en blanco y luego baja. */
+  private lagW = 100; private lagHold = 0;
+  private home = new THREE.Vector3(); private heads: { m: THREE.Mesh; z: number }[] = [];
+  /** ¿Lleva blindaje? (los impactos suenan y saltan chispas metálicas) */
+  get armored() { return /^(sturdy|elite|large|boss|warden)$/.test(this.kind.key) || !!this.look?.extras.includes("vest"); }
+  get helmeted() { return /^(boss|warden)$/.test(this.kind.key) || !!this.look?.extras.includes("helmet"); }
+
+  /**
+   * Reacción a un impacto: el cuerpo se dobla hacia donde le das (cabeza atrás, torso encogido, pierna que flexiona),
+   * escalado con la fuerza; partículas según el enemigo y una marca en el punto. `dir` = dirección del disparo.
+   */
+  react(zone: Zone, point: THREE.Vector3, dir: THREE.Vector3, dmg: number, crit: boolean, fx = true) {
+    const sc = this.kind.scale ?? 1, mass = this.kind.boss ? 4 : sc * sc, s = Math.min(1, Math.max(0.15, dmg / 140)) / mass;
+    // Dirección del disparo en el espacio del muñeco: inclina hacia atrás (x) y de lado (z)
+    const local = dir.clone().applyQuaternion(this.group.quaternion.clone().invert());
+    const k = (zone === "head" ? 2.4 : zone === "limb" ? 1.2 : 1.8) * s;
+    this.flinchV.x += -local.z * k * 5; this.flinchV.y += local.x * k * 4;
+    if (zone === "head") this.headKickV += 3.2 * s;
+    if (zone === "limb" && point.y - this.group.position.y < 1.25 * sc) { this.limpT = 0.45; this.limpSide = this.group.worldToLocal(point.clone()).x < 0 ? -1 : 1; }
+    this.hitGlow = crit ? 1 : 0.65; this.glowColor.set(crit ? 0xfff0a0 : 0xffffff);
+    if (!this.alive && this.deadT === 0) { this.deathV.copy(local).setY(0).normalize().multiplyScalar(1.2 + 3.5 * Math.min(1, dmg / 200) / mass).setY(0); this.deathTilt = 0.01; }
+    if (!fx) return;
+    // Partículas: chispas en blindados (o casco), fragmentos pixelados en la cabeza, polvo y trozos en el resto
+    const metal = (zone === "head" && this.helmeted) || (zone === "body" && this.armored);
+    const lp = this.group.worldToLocal(point.clone()), back = local.clone().negate();
+    const n = Math.round((crit ? 10 : 6) * Math.min(1.6, 0.6 + s));
+    for (let i = 0; i < n; i++) {
+      const col = metal ? (Math.random() < 0.5 ? 0xffd27a : 0xfff4d0) : zone === "head" ? (Math.random() < 0.6 ? new THREE.Color(this.look?.suit ?? 0xd2702e).getHex() : 0xf0e6d8) : (Math.random() < 0.5 ? 0xb8b0a4 : new THREE.Color(this.look?.suit ?? 0xd2702e).getHex());
+      const m = new THREE.Mesh(BIT_GEO, new THREE.MeshBasicMaterial({ color: col, transparent: true }));
+      m.position.copy(lp); m.scale.setScalar(metal ? 0.7 : zone === "head" ? 1.6 : 1.1);
+      const v = back.clone().multiplyScalar(metal ? 2.5 : 1.4).add(new THREE.Vector3((Math.random() - 0.5) * 2, Math.random() * (metal ? 2 : 1.6), (Math.random() - 0.5) * 2));
+      this.group.add(m); this.fxBits.push({ m, v, t: metal ? 0.22 : 0.5 + Math.random() * 0.3, g: !metal });
+    }
+    // Marca de impacto: pegada a la pieza más cercana (se mueve con ella), máximo 14
+    if (this.alive) {
+      let best: THREE.Mesh | null = null, bd = Infinity;
+      for (const h of this.hitboxes) { if (!h.visible) continue; const d = h.getWorldPosition(new THREE.Vector3()).distanceToSquared(point); if (d < bd) { bd = d; best = h; } }
+      if (best) {
+        const mk = new THREE.Mesh(MARK_GEO, metal ? markMetal : markMat); best.add(mk);
+        mk.position.copy(best.worldToLocal(point.clone().addScaledVector(dir, -0.012)));
+        mk.lookAt(point.clone().addScaledVector(dir, -1)); // (la cara mira hacia el tirador)
+        const ws = new THREE.Vector3(); best.getWorldScale(ws); mk.scale.set(1 / ws.x, 1 / ws.y, 1 / ws.z).multiplyScalar(crit ? 1.4 : 1);
+        this.marks.push(mk); if (this.marks.length > 14) this.marks.shift()!.removeFromParent();
+      }
+    }
+  }
   readonly bar: HTMLDivElement;
   private clip!: THREE.Plane; private scan!: THREE.Mesh; private top = 2.4;
   /** Reacciones visibles: brasas (fuego), chispas azules (eléctrico) y empuje (explosivo). */
@@ -113,7 +174,7 @@ export class Dummy {
     this.look = look ?? null;
     this.onDamage = onDamage;
     this.layers = [{ id: "health", value: kind.health, max: kind.health }];
-    this.group.position.copy(pos);
+    this.group.position.copy(pos); this.home.copy(pos);
     this.body.scale.setScalar(kind.scale ?? 1);
     this.group.add(this.body);
     this.build(kind);
@@ -132,11 +193,13 @@ export class Dummy {
       }
       m.material = cache.get(src)!;
     });
+    for (const m of cache.values()) if ((m as THREE.MeshStandardMaterial).emissive) this.mats.push(m as THREE.MeshStandardMaterial);
+    this.body.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && m.userData.zone === "head") this.heads.push({ m, z: m.position.z }); });
     this.scan = new THREE.Mesh(new THREE.RingGeometry(0.36 * (kind.scale ?? 1), 0.42 * (kind.scale ?? 1), 32), new THREE.MeshBasicMaterial({ color: 0x9fe8ee, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
     this.scan.rotation.x = -Math.PI / 2; this.group.add(this.scan);
     this.bar = document.createElement("div");
     this.bar.className = "hpbar" + (kind.boss ? " boss" : "");
-    this.bar.innerHTML = `<div class="hpname"><b>${kind.level}</b> <span class="nm">${t(`dummy.${kind.key}`)}</span></div><div class="hptrack"><i class="hp"></i></div>`;
+    this.bar.innerHTML = `<div class="hpname"><b>${kind.level}</b> <span class="nm">${t(`dummy.${kind.key}`)}</span></div><div class="hptrack"><i class="lag"></i><i class="hp"></i></div>`;
     (kind.boss ? document.getElementById("bossbar")! : overlay).appendChild(this.bar);
   }
 
@@ -163,8 +226,8 @@ export class Dummy {
     const cap = (r: number, l: number) => new THREE.CapsuleGeometry(r, l, 4, 10);
     const L = this.look;
     if (!L) {
-      this.part(new THREE.CylinderGeometry(0.35, 0.42, 0.08, 16), standMat, 0, 0.04, 0, null);
-      this.part(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), standMat, 0, 0.3, 0, null);
+      // (la peana va fuera del cuerpo: no se inclina con los impactos ni se desintegra)
+      for (const [geo, y] of [[new THREE.CylinderGeometry(0.35, 0.42, 0.08, 16), 0.04], [new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), 0.3]] as const) { const m = new THREE.Mesh(geo, standMat); m.position.y = y * (kind.scale ?? 1); m.scale.setScalar(kind.scale ?? 1); m.castShadow = m.receiveShadow = true; this.group.add(m); }
       this.part(cap(0.085, 0.62), skin, -0.11, 0.98, 0, "limb");
       this.part(cap(0.085, 0.62), skin, 0.11, 0.98, 0, "limb");
     } else {
@@ -203,7 +266,7 @@ export class Dummy {
     this.flash = 0.08;
     // Barra visible tras el daño: jefe 12 s; élites, resistentes y grandes 9 s; el resto 5 s (luego se desvanece)
     this.engagedT = this.kind.boss ? 12 : /^(elite|sturdy|large)$/.test(this.kind.key) ? 9 : 5;
-    let left = amount * (this.vulnT > 0 ? this.vuln : 1), dealt = 0;
+    let left = amount * (this.vulnT > 0 ? this.vuln : 1), dealt = 0; this.lagHold = 0.4;
     for (const layer of this.layers) { if (left <= 0) break; const d = Math.min(layer.value, left); layer.value -= d; left -= d; dealt += d; }
     const color = element ? ELEMENT_COLOR[element] : crit ? "#ffd84a" : "#ffffff";
     this.onDamage(this, dealt, color, crit, at);
@@ -217,7 +280,7 @@ export class Dummy {
     if (el === "electrico") this.stunT = Math.max(this.stunT, 0.3);
   }
 
-  private die() { this.alive = false; this.deadT = 0; this.burnT = 0; this.stunT = 0; this.holdT = 0; this.vulnT = 0; this.liftT = 0; }
+  private die() { for (const m of this.marks) m.removeFromParent(); this.marks = []; this.alive = false; this.deadT = 0; this.burnT = 0; this.stunT = 0; this.holdT = 0; this.vulnT = 0; this.liftT = 0; }
 
   update(dt: number, camera: THREE.Camera, viewW: number, viewH: number) {
     this.stunT = Math.max(0, this.stunT - dt); this.holdT = Math.max(0, this.holdT - dt); this.vulnT = Math.max(0, this.vulnT - dt);
@@ -263,7 +326,17 @@ export class Dummy {
     // Empuje: muelle amortiguado que devuelve el cuerpo a su sitio
     this.pushOff.addScaledVector(this.pushV, dt); this.pushV.multiplyScalar(Math.max(0, 1 - dt * 6)); this.pushOff.multiplyScalar(Math.max(0, 1 - dt * 3));
     this.flash = Math.max(0, this.flash - dt);
-    this.body.position.set((this.flash > 0 || this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0) + this.pushOff.x, 0, this.pushOff.z);
+    // Reacción a los impactos: muelles de inclinación y cabeza, flexión de pierna, empuje y caída al morir
+    this.flinchV.addScaledVector(this.flinch, -110 * dt); this.flinchV.multiplyScalar(Math.max(0, 1 - 14 * dt)); this.flinch.addScaledVector(this.flinchV, dt);
+    this.flinch.clampScalar(-0.45, 0.45);
+    this.headKickV += -140 * this.headKick * dt; this.headKickV *= Math.max(0, 1 - 16 * dt); this.headKick = Math.min(0.12, this.headKick + this.headKickV * dt);
+    for (const h of this.heads) h.m.position.z = h.z - this.headKick;
+    this.limpT = Math.max(0, this.limpT - dt); const limp = Math.sin(Math.min(1, this.limpT / 0.45) * Math.PI);
+    if (!this.alive && this.deathTilt > 0) { this.deathTilt = Math.min(1.1, this.deathTilt + dt * 3.2 * (1.2 - this.deathTilt)); this.deathOff.addScaledVector(this.deathV, dt); this.deathV.multiplyScalar(Math.max(0, 1 - 5 * dt)); }
+    this.body.rotation.x = this.flinch.x - this.deathTilt * 0.9; this.body.rotation.z = this.flinch.y + limp * 0.08 * this.limpSide;
+    this.hitGlow = Math.max(0, this.hitGlow - dt * 9);
+    for (const m of this.mats) { m.emissive.copy(this.glowColor).multiplyScalar(this.hitGlow * 0.55); }
+    this.body.position.set((this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0) + this.pushOff.x + this.deathOff.x, -limp * 0.06, this.pushOff.z + this.deathOff.z);
     // Escaneo: al morir se desintegra de arriba abajo; al reaparecer se compila de abajo arriba
     const wy = this.group.getWorldPosition(new THREE.Vector3()).y;
     const sm = this.scan.material as THREE.MeshBasicMaterial;
@@ -274,13 +347,18 @@ export class Dummy {
       else if (this.deadT < 3.2) h = 0;
       else if (this.deadT < 4) h = this.top * ((this.deadT - 3.2) / 0.8);
       else if (!this.respawn) { this.gone = true; h = 0; }
-      else { this.alive = true; for (const l of this.layers) l.value = l.max; for (const m of this.severed) m.visible = true; this.severed = []; }
+      else { this.alive = true; for (const l of this.layers) l.value = l.max; for (const m of this.severed) m.visible = true; this.severed = []; this.deathTilt = 0; this.deathV.set(0, 0, 0); this.deathOff.set(0, 0, 0); }
       this.clip.constant = wy + h;
       this.scan.position.y = h; sm.opacity = h > 0.02 && h < this.top - 0.02 ? 0.9 : 0;
     } else { this.clip.constant = wy + this.top + 1; sm.opacity = 0; }
     const b = this.bar;
     const hp = this.layers[this.layers.length - 1];
-    b.querySelector<HTMLElement>(".hp")!.style.width = `${Math.max(0, (hp.value / hp.max) * 100)}%`;
+    const hpW = Math.max(0, (hp.value / hp.max) * 100);
+    b.querySelector<HTMLElement>(".hp")!.style.width = `${hpW}%`;
+    // Daño reciente: se queda en blanco ~0,4 s y luego baja hasta la vida actual
+    if (hpW > this.lagW || !this.alive && this.deadT > 1) this.lagW = hpW;
+    if (this.lagHold > 0) this.lagHold -= dt; else this.lagW += (hpW - this.lagW) * Math.min(1, dt * 6);
+    b.querySelector<HTMLElement>(".lag")!.style.width = `${Math.max(hpW, this.lagW)}%`;
     b.classList.toggle("status-fire", this.burnT > 0); b.classList.toggle("status-shock", this.stunT > 0); b.classList.toggle("status-frozen", this.holdT > 0);
     if (this.kind.boss) {
       // Barra del jefe arriba, solo durante el combate con él (se oculta 12 s después del último golpe)
@@ -305,16 +383,19 @@ export class Dummy {
 
 /** Números de daño flotantes. */
 export class DamageNumbers {
-  private items: { el: HTMLDivElement; pos: THREE.Vector3; t: number; vx: number }[] = [];
+  private items: { el: HTMLDivElement; pos: THREE.Vector3; t: number; vx: number; key?: object; crit: boolean; sum: number; color: string }[] = [];
   constructor(private overlay: HTMLElement) {}
-  spawn(amount: number, color: string, crit: boolean, at: THREE.Vector3) {
+  /** Número de daño. Los impactos seguidos al mismo enemigo (mismo tipo, crítico o no) se suman en un solo número que sube. */
+  spawn(amount: number, color: string, crit: boolean, at: THREE.Vector3, key?: object) {
     if (amount < 0.5) return;
+    const prev = key ? this.items.find((x) => x.key === key && x.crit === crit && x.t < 0.45 && x.color === color) : null;
+    if (prev) { prev.sum += amount; prev.el.textContent = String(Math.round(prev.sum)); prev.t = Math.min(prev.t, 0.12); prev.el.classList.remove("bump"); void prev.el.offsetWidth; prev.el.classList.add("bump"); return; }
     const el = document.createElement("div");
     el.className = "dmg" + (crit ? " crit" : "");
     el.textContent = String(Math.round(amount));
     el.style.color = color;
     this.overlay.appendChild(el);
-    this.items.push({ el, pos: at.clone(), t: 0, vx: (Math.random() - 0.5) * 0.6 });
+    this.items.push({ el, pos: at.clone(), t: 0, vx: (Math.random() - 0.5) * 0.6, key, crit, sum: amount, color });
     if (this.items.length > 60) this.items.shift()!.el.remove();
   }
   update(dt: number, camera: THREE.Camera, w: number, h: number) {

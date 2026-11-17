@@ -245,6 +245,20 @@ export class Gun {
     this.flashLight.position.copy(this.flash.position);
   }
 
+  /** Sonido de impacto según dónde y en qué: golpe seco en el cuerpo, chasquido agudo en la cabeza, tañido metálico en blindaje, crujido al matar. */
+  private hitSound(kind: "body" | "head" | "metal" | "kill") {
+    try {
+      this.audio ??= audio();
+      const a = this.audio, t = a.currentTime, g = a.createGain(); g.connect(out());
+      const noise = (len: number, decay: number) => { const b = a.createBuffer(1, Math.ceil(a.sampleRate * len), a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, decay); const s = a.createBufferSource(); s.buffer = b; return s; };
+      const tone = (type: OscillatorType, f0: number, f1: number, len: number, vol: number) => { const o = a.createOscillator(), og = a.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + len); og.gain.setValueAtTime(vol, t); og.gain.exponentialRampToValueAtTime(0.0008, t + len); o.connect(og); og.connect(g); o.start(t); o.stop(t + len + 0.02); };
+      g.gain.value = 1;
+      if (kind === "body") { const n = noise(0.07, 3), f = a.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 900; n.connect(f); const ng = a.createGain(); ng.gain.value = 0.22; f.connect(ng); ng.connect(g); n.start(t); tone("sine", 170, 70, 0.08, 0.16); }
+      else if (kind === "head") { const n = noise(0.05, 4), f = a.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 2500; n.connect(f); const ng = a.createGain(); ng.gain.value = 0.16; f.connect(ng); ng.connect(g); n.start(t); tone("triangle", 2300, 1500, 0.12, 0.09); tone("sine", 240, 90, 0.07, 0.12); }
+      else if (kind === "metal") { tone("sine", 980, 940, 0.18, 0.07); tone("sine", 1510, 1460, 0.14, 0.05); tone("square", 3100, 2600, 0.03, 0.02); const n = noise(0.03, 4); const ng = a.createGain(); ng.gain.value = 0.1; n.connect(ng); ng.connect(g); n.start(t); }
+      else { const n = noise(0.16, 2), f = a.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1400; n.connect(f); const ng = a.createGain(); ng.gain.value = 0.2; f.connect(ng); ng.connect(g); n.start(t); tone("sine", 140, 45, 0.2, 0.2); tone("square", 700, 1600, 0.1, 0.035); }
+    } catch { /* sin audio */ }
+  }
   private sfx(kind: "shot" | "reload" | "hit" | "crit" | "kill" | "empty" | "cycle" | "boom" | "sig", type?: WeaponType, quiet = false) {
     try {
       this.audio ??= audio();
@@ -538,7 +552,7 @@ export class Gun {
       this.spark(hit.point, dir.clone().negate(), this.punchHeavy ? 10 : 5, crit ? 0xffe08a : 0xcff6f8);
       if (crit) this.critmarker = 0.15; else this.hitmarker = 0.12;
       { const l = soundManifest?.efectos[this.punchHeavy ? "melee_culatazo" : "melee_cuchillo_golpe"]; if (l?.length) playSample(sample(l[0]), 0.6); }
-      if (alive && !d.alive) { this.killmarker = 0.35; this.sfx("kill"); this.hooks.onKill?.(d); } else this.sfx(crit ? "crit" : "hit");
+      if (alive && !d.alive) { this.killmarker = 0.35; this.hitSound("kill"); this.hooks.onKill?.(d); } else this.hitSound(zone === "head" ? "head" : "body");
       this.recoil += this.punchHeavy ? 0.03 : 0.014; this.recoilYaw += (Math.random() - 0.5) * 0.01; // sacudida de impacto
       return;
     }
@@ -883,14 +897,14 @@ export class Gun {
     this.spark(point, this.camera.position.clone().sub(point).normalize(), crit ? 6 : 3, element === "fuego" ? 0xffa060 : element === "electrico" ? 0xbfe8ff : crit ? 0xffe08a : 0xcff6f8);
     if (crit) this.critmarker = 0.15; else this.hitmarker = 0.12;
     if (alive && !d.alive) {
-      this.killmarker = 0.35; this.sfx("kill");
+      this.killmarker = 0.35; this.hitSound("kill");
       this.hooks.onKill?.(d);
       const s = this.spec!;
       // Enemigo inestable (cadáver inestable): explota al morir
       const un = this.unstable.get(d); this.unstable.delete(d);
       if (un != null && performance.now() / 1000 < un) this.explode(d.center, s.stats.dano * 1.2, "explosive", d);
       if (this.fx) this.runFx(this.fx.kill({ target: d, point: d.center, baseDmg: s.stats.dano, mag: s.stats.cargador }), 0);
-    } else if (sound) this.sfx(crit ? "crit" : "hit");
+    } else if (sound) this.hitSound(zone === "head" ? (d.helmeted ? "metal" : "head") : zone === "body" && d.armored ? "metal" : "body");
   }
   private nearest(from: Dummy, at: THREE.Vector3, max: number, skip: Dummy[] = []) {
     return this.hooks.dummies().filter((d) => d !== from && d.alive && !skip.includes(d) && d.center.distanceTo(at) < max)
