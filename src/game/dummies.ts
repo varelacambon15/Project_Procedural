@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { t } from "../i18n";
 
 export type Element = "fuego" | "electrico" | "explosive" | null;
-export type Zone = "head" | "body" | "limb";
+export type Zone = "head" | "body" | "limb" | "shield";
 /** Capa de protección. Por ahora solo existe "health". */
 export interface Layer { id: "health"; value: number; max: number }
 /** Forma del enemigo: humanoide (por defecto) o robots de la simulación. */
@@ -13,6 +13,9 @@ export type Shape = "humanoid" | "drone" | "spider" | "roller" | "turret";
 interface Kind {
   key: string; health: number; level: number; scale?: number; boss?: boolean;
   shape?: Shape; /** Altura a la que vuela (drones). */ fly?: number;
+  /** Colores propios (médico, comandante, fallo). */ paint?: { suit: number; dark: number; vest: number };
+  /** Fallo de código: se teletransporta a saltos y es intocable mientras salta. */ glitch?: boolean;
+  /** Soldados: arma que llevan (fusil o fusil de francotirador). Guardián: escudo frontal. */ gun?: "rifle" | "sniper"; shield?: boolean;
   /** Altura del centro (para apuntar, súperes) y de la barra de vida, en m sin escalar. */ cy?: number; top?: number;
 }
 export const KINDS: Record<string, Kind> = {
@@ -30,6 +33,14 @@ export const KINDS: Record<string, Kind> = {
   spider: { key: "spider", health: 380, level: 12, shape: "spider", cy: 0.55, top: 1.2 },
   roller: { key: "roller", health: 120, level: 9, shape: "roller", cy: 0.4, top: 1.0 },
   turret: { key: "turret", health: 600, level: 12, shape: "turret", cy: 1.15, top: 1.9 },
+  // Pesados y tiradores
+  guardian: { key: "guardian", health: 1800, level: 14, scale: 1.25, shield: true },
+  gunner: { key: "gunner", health: 360, level: 11, gun: "rifle" },
+  sniper: { key: "sniper", health: 240, level: 12, scale: 0.97, gun: "sniper" },
+  // Apoyo y anomalías
+  medic: { key: "medic", health: 320, level: 11, paint: { suit: 0xe8ecef, dark: 0x2f6b4a, vest: 0x3fbf7a } },
+  commander: { key: "commander", health: 1600, level: 15, scale: 1.12, paint: { suit: 0x2e3440, dark: 0x14171c, vest: 0xc99a2e } },
+  glitch: { key: "glitch", health: 420, level: 13, glitch: true, paint: { suit: 0x1a2a3a, dark: 0x0a0f14, vest: 0x3fd0d8 } },
 };
 
 const ELEMENT_COLOR: Record<string, string> = { fuego: "#f07a2a", electrico: "#5cc8f0", explosive: "#ffb060" };
@@ -116,7 +127,7 @@ export class Dummy {
     if (!this.alive && this.deadT === 0) { this.deathV.copy(local).setY(0).normalize().multiplyScalar(1.2 + 3.5 * Math.min(1, dmg / 200) / mass).setY(0); this.deathTilt = 0.01; }
     if (!fx) return;
     // Partículas: chispas en blindados (o casco), fragmentos pixelados en la cabeza, polvo y trozos en el resto
-    const metal = (zone === "head" && this.helmeted) || (zone === "body" && this.armored);
+    const metal = zone === "shield" || (zone === "head" && this.helmeted) || (zone === "body" && this.armored);
     const lp = this.group.worldToLocal(point.clone()), back = local.clone().negate();
     const n = Math.round((crit ? 10 : 6) * Math.min(1.6, 0.6 + s));
     for (let i = 0; i < n; i++) {
@@ -185,7 +196,7 @@ export class Dummy {
   private look: DummyLook | null = null;
   private legs: THREE.Object3D[] = []; private walkT = Math.random() * 6;
   constructor(readonly kind: Kind, readonly id: string, pos: THREE.Vector3, overlay: HTMLElement, onDamage: (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => void, look?: DummyLook) {
-    this.look = look ?? null;
+    this.look = look ? (kind.paint ? { ...look, ...kind.paint, extras: kind.key === "commander" ? ["helmet", "vest", "pads"] : kind.key === "medic" ? ["pack"] : look.extras } : look) : null;
     this.onDamage = onDamage;
     this.layers = [{ id: "health", value: kind.health, max: kind.health }];
     this.group.position.copy(pos); this.home.copy(pos);
@@ -273,6 +284,22 @@ export class Dummy {
       if (L.extras.includes("pads")) for (const x of [-0.3, 0.3]) this.part(new THREE.BoxGeometry(0.16, 0.08, 0.2), vest, x, 1.86, 0, "limb");
       if (L.bulk !== 1) this.body.scale.x *= L.bulk;
     }
+    // Soldados: arma en las manos, apuntando al frente (fusil corto o fusil largo con mira)
+    if (kind.gun) {
+      const g = new THREE.Group(); g.position.set(0.12, 1.55, 0.26); this.body.add(g);
+      const long = kind.gun === "sniper";
+      const pieces: [number, number, number, number, number, number][] = [[0.07, 0.11, 0.42, 0, 0, 0], [0.035, 0.035, long ? 0.62 : 0.32, 0, 0.02, long ? 0.5 : 0.36], [0.06, 0.12, 0.2, 0, -0.01, -0.28], [0.05, 0.13, 0.06, 0, -0.1, 0.05]];
+      if (long) pieces.push([0.05, 0.05, 0.24, 0, 0.09, 0.02]); else pieces.push([0.05, 0.16, 0.07, 0, -0.12, 0.14]);
+      for (const [w, h, d, x, y, z] of pieces) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), robotDark); m.position.set(x, y, z); m.castShadow = true; g.add(m); }
+      for (const [x, rz] of [[-0.3, 0.18], [0.3, -0.18]] as const) { const arm = this.body.children.find((o) => o.position.x === x && o.position.y === 1.58); if (arm) { arm.rotation.set(-1.1, 0, rz * 0.4); arm.position.set(x * 0.75, 1.55, 0.18); } }
+    }
+    // Guardián: placas de armadura y un escudo frontal grande (las balas rebotan; hay que rodearlo o darle en las piernas)
+    if (kind.shield) {
+      for (const [w, h, d, x, y, z] of [[0.52, 0.5, 0.36, 0, 1.68, 0], [0.24, 0.12, 0.3, -0.3, 1.88, 0], [0.24, 0.12, 0.3, 0.3, 1.88, 0]] as const) this.part(new THREE.BoxGeometry(w, h, d), robotMetal, x, y, z, "body");
+      const sh = this.part(new THREE.BoxGeometry(0.9, 1.3, 0.08), robotPlate, -0.05, 1.3, 0.42, "shield");
+      this.part(new THREE.BoxGeometry(0.6, 0.06, 0.02), new THREE.MeshStandardMaterial({ color: 0x220806, emissive: 0xff7a2a, emissiveIntensity: 1.4 }), -0.05, 1.75, 0.47, null);
+      sh.rotation.x = -0.06;
+    }
   }
 
   get center() { return this.group.localToWorld(new THREE.Vector3(0, (this.kind.cy ?? 1.5) * (this.kind.scale ?? 1), 0)); }
@@ -282,6 +309,11 @@ export class Dummy {
   private rotors: THREE.Object3D[] = []; private spiderLegs: { g: THREE.Group; ph: number; side: number }[] = [];
   private rollBall: THREE.Object3D | null = null; private turretHead: THREE.Object3D | null = null; private blink: THREE.MeshStandardMaterial | null = null;
   /** Salto de la araña (se abalanza al acercarse). */ private pounceT = 0; private pounceCd = 2;
+  /** Aura del comandante: más velocidad y daño mientras dura. */ buffT = 0;
+  /** Fallo de código: tiempo hasta el siguiente salto y salto en curso (intocable). */ private glitchT = 2 + Math.random() * 2; private phaseT = 0;
+  /** Cura (médico): no pasa de la vida máxima. Devuelve lo curado. */
+  heal(n: number) { if (!this.alive) return 0; const l = this.layers[this.layers.length - 1], h = Math.min(n, l.max - l.value); l.value += h; return h; }
+  get hurt() { const l = this.layers[this.layers.length - 1]; return 1 - l.value / l.max; }
   private add(o: THREE.Object3D, parent: THREE.Object3D, zone: Zone | null) {
     parent.add(o); o.traverse((x) => { const m = x as THREE.Mesh; if (m.isMesh) { m.castShadow = true; if (zone) { m.userData = { dummy: this, zone }; this.hitboxes.push(m); } } }); return o;
   }
@@ -348,6 +380,7 @@ export class Dummy {
   /** Aplica daño a las capas, de fuera adentro (hoy, solo vida). Devuelve el daño infligido. */
   damage(amount: number, element: Element, crit: boolean, at: THREE.Vector3): number {
     if (!this.alive) return 0;
+    if (this.phaseT > 0) return 0; // (fallo de código saltando: las balas lo atraviesan)
     this.flash = 0.08;
     // Barra visible tras el daño: jefe 12 s; élites, resistentes y grandes 9 s; el resto 5 s (luego se desvanece)
     this.engagedT = this.kind.boss ? 12 : /^(elite|sturdy|large)$/.test(this.kind.key) ? 9 : 5;
@@ -381,12 +414,12 @@ export class Dummy {
       // Araña: se abalanza cuando está cerca (salto rápido)
       this.pounceCd -= dt; if (this.kind.shape === "spider" && d < 7 && d > c.range && this.pounceCd <= 0) { this.pounceT = 0.35; this.pounceCd = 3 + Math.random() * 2; }
       this.pounceT = Math.max(0, this.pounceT - dt);
-      const sp = c.speed * (this.pounceT > 0 ? 4 : 1);
+      const sp = c.speed * (this.pounceT > 0 ? 4 : 1) * (this.buffT > 0 ? 1.25 : 1);
       if (d > c.range) { this.group.position.addScaledVector(to.clone().normalize(), Math.min(d - c.range, sp * dt)); moving = 1; }
       else {
         // A distancia (dron): se mueve de lado mientras dispara, para no ser un blanco fijo
-        if (this.kind.shape === "drone") { const side = new THREE.Vector3(to.z, 0, -to.x).normalize(); this.group.position.addScaledVector(side, Math.sin(this.walkT * 0.6) * c.speed * 0.6 * dt); moving = 0.5; }
-        if (c.cd <= 0) { c.cd = c.interval; c.onAttack(c.damage); this.flash = 0.1; }
+        if (this.kind.shape === "drone" || this.kind.gun === "rifle") { const side = new THREE.Vector3(to.z, 0, -to.x).normalize(); this.group.position.addScaledVector(side, Math.sin(this.walkT * 0.6) * c.speed * 0.6 * dt); moving = 0.5; }
+        if (c.cd <= 0) { c.cd = c.interval; c.onAttack(c.damage * (this.buffT > 0 ? 1.3 : 1)); this.flash = 0.1; }
       }
       if (this.turretHead) this.turretHead.rotation.y = Math.atan2(to.x, to.z) - this.group.rotation.y; else this.group.rotation.y = Math.atan2(to.x, to.z);
       // Andar: las piernas se balancean (más rápido cuanto más rápido avanza)
@@ -394,6 +427,18 @@ export class Dummy {
       else this.legs.forEach((l) => (l.rotation.x *= 0.85));
     }
     if (this.kind.shape && this.kind.shape !== "humanoid") { this.walkT += dt * (1 + moving * 4); this.animRobot(dt, moving, toTarget); }
+    this.buffT = Math.max(0, this.buffT - dt);
+    // Fallo de código: parpadea y cada pocos segundos salta a otro sitio cerca del jugador (intocable durante el salto)
+    if (this.kind.glitch && this.alive) {
+      this.glitchT -= dt; this.phaseT = Math.max(0, this.phaseT - dt);
+      if (this.glitchT <= 0 && this.chase && !held) {
+        this.glitchT = 2.2 + Math.random() * 1.6; this.phaseT = 0.35;
+        const to = this.chase.target().clone().setY(0).sub(this.group.position.clone().setY(0)), side = new THREE.Vector3(to.z, 0, -to.x).normalize();
+        this.group.position.addScaledVector(to.normalize(), Math.min(6, to.length() * 0.4)).addScaledVector(side, (Math.random() - 0.5) * 8);
+      }
+      this.body.visible = this.phaseT <= 0 && !(Math.random() < 0.06);
+      for (const m of this.mats) if (!this.glowSkip.has(m)) m.emissive.setRGB(0.1, 0.6 + Math.random() * 0.4, 0.7).multiplyScalar(Math.random() < 0.15 ? 1.6 : 0.4);
+    }
     if (this.path && this.alive && !held) {
       this.path.t += dt * this.path.speed / this.path.a.distanceTo(this.path.b);
       const k = 0.5 - 0.5 * Math.cos(this.path.t * Math.PI);

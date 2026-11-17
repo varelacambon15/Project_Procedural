@@ -139,6 +139,8 @@ async function boot() {
     lunge: (dir, dist) => player.lunge(dir, dist),
     onHit(d, zone, point, dmg, element, crit) {
       lastHit.set(d, { head: zone === "head", dist: point.distanceTo(camera.position), weapon: gun.item ? (gun.spec?.type === "bullpup" ? "rifle" : gun.spec?.type ?? null) : null });
+      // Escudo del guardián: casi todo rebota (chispas); sus piernas son su punto débil
+      if (zone === "shield") { dmg *= 0.08; crit = false; } else if (d.kind.shield && zone === "limb") dmg *= 1.5;
       const wasAlive = d.alive, dealt = d.damage(dmg, element, crit, point);
       // Respuesta física al impacto (retroceso por zona, partículas, marca, destello) y pausa mínima al matar o hacer crítico
       d.react(zone, point, point.clone().sub(camera.position).normalize(), dmg, crit, settings.impactFx);

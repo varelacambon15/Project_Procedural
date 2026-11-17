@@ -131,6 +131,20 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 33 (versión 0.13.0): enemigos nuevos (inspirados en las familias de Coded Arms, sin bichos)
+
+- Robots (`Kind.shape`, `Dummy.buildRobot/animRobot`): dron centinela (vuela a 3,2 m, dispara esferas y se mueve de
+  lado; ojo = punto débil), araña robot (seis patas que dan pasos, se abalanza), bomba rodante (luz que parpadea más
+  rápido al acercarse; explota al llegar sin dar recompensa, o sobre los suyos si la matas: `selfDestruct`,
+  `gun.explode`) y torreta desplegada (estática, cabeza que gira; núcleo trasero = punto débil).
+- Guardián con escudo (`Kind.shield`, zona "shield": 8 % del daño y chispas; piernas ×1,5), tirador (`gun: "rifle"`,
+  ráfagas de 3 balas rápidas, se mueve de lado) y francotirador (`gun: "sniper"`: láser rojo 1,2 s y bala a 110 m/s,
+  esquivable moviéndose).
+- Médico (cura al aliado más herido con un rayo verde), comandante (aura de 10 m: +25 % velocidad y +30 % daño a los
+  suyos, `buffT`) y fallo de código (salta cada 2–4 s y es intocable mientras salta).
+- Aparecen en oleadas generadas (`extraWave`) y en las salas de incursión (`roomEnemies`). Nombres en i18n `dummy.*`.
+- Arreglado: el destello de impacto de la ronda 32 apagaba la rejilla luminosa de los muñecos (`baseEm`).
+
 ## Ronda 32 (versión 0.12.0): respuesta de los enemigos a los impactos
 
 - `Dummy.react(zone, point, dir, dmg, crit)` (llamado desde `gun.hooks.onHit` en main.ts): inclinación del cuerpo con

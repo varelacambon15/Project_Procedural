@@ -27,6 +27,12 @@ function extraWave(n: number, wave: number): Record<string, number> {
   const w: Record<string, number> = { small: 3 + Math.floor(n * 0.8), basic: 3 + n, caster: 1 + Math.floor(n / 2), large: Math.floor(n / 2), drone: 1 + Math.floor(n / 2), roller: Math.floor((n + 1) / 2) };
   if (n >= 2) w.spider = 1 + Math.floor(n / 3);
   if (n >= 3) w.turret = Math.floor(n / 3);
+  w.gunner = 1 + Math.floor(n / 2);
+  if (n >= 2) w.sniper = Math.floor(n / 3) + 1;
+  if (n >= 4) w.guardian = Math.floor(n / 4);
+  if (n >= 2) w.medic = 1 + Math.floor(n / 4);
+  if (n >= 3) w.glitch = Math.floor(n / 3);
+  if (n >= 5) w.commander = 1;
   if (n >= 2) w.sturdy = 1 + Math.floor(n / 3);
   if (n >= 4) w.elite = Math.floor(n / 4);
   return w;
@@ -35,6 +41,7 @@ function extraWave(n: number, wave: number): Record<string, number> {
 /** Esfera de energía lanzada por un enemigo: va en línea recta hacia donde estaba el jugador; se puede esquivar. */
 interface Orb { mesh: THREE.Mesh; v: THREE.Vector3; t: number; dmg: number }
 const orbGeo = new THREE.SphereGeometry(0.22, 12, 8), orbHalo = new THREE.SphereGeometry(0.38, 10, 6);
+const bulletGeo = new THREE.BoxGeometry(0.04, 0.04, 0.5), laserGeo = new THREE.BoxGeometry(0.012, 0.012, 1);
 
 export class Waves {
   active = false;
@@ -47,6 +54,9 @@ export class Waves {
   private orbs: Orb[] = [];
   /** Modificador de la oleada en curso. */ mod: WaveModifier | null = null;
   private volleys: { d: Dummy; every: number; t: number; speed: number; dmg: number }[] = [];
+  /** Ráfagas de los soldados (balas que quedan) y punterías del francotirador (láser antes de disparar). */
+  private bursts: { d: Dummy; n: number; t: number; speed: number; dmg: number }[] = [];
+  private aims: { d: Dummy; t: number; line: THREE.Mesh; speed: number; dmg: number }[] = [];
   /** Nivel del jugador (los enemigos se ajustan a él). Sin asignar, los de diseño (sin escalar). */
   playerLevel: (() => number) | null = null;
   /** Señuelo (súper): si hay uno, los enemigos van a por él en lugar de a por el jugador. */
@@ -66,6 +76,8 @@ export class Waves {
     this.alive = [];
     for (const o of this.orbs) this.scene.remove(o.mesh); this.orbs = [];
     this.volleys = []; // (si no, el jefe ya retirado seguía lanzando ráfagas)
+    this.bursts = []; for (const a of this.aims) this.scene.remove(a.line); this.aims = [];
+    for (const b of this.beams) this.scene.remove(b.m); this.beams = [];
   }
 
   private next() {
@@ -98,8 +110,13 @@ export class Waves {
     d.chase = { target: () => this.decoy?.() ?? this.player(), speed: sp, range: rg?.range ?? (k.shape === "roller" ? 1.4 : data.attackRange), interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
       onAttack: (x) => {
         if (k.shape === "roller") { this.ev.onPlayerHit(x); this.ev.onSelfDestruct?.(d); return; } // (el kamikaze explota al llegar)
-        if (rg && !k.boss) this.orb(d, rg.orbSpeed, rg.orbDamage * (M ? M.dmg : 1) * dm); else this.ev.onPlayerHit(x);
+        const od = (rg?.orbDamage ?? 0) * (M ? M.dmg : 1) * dm;
+        if (kind === "medic") { this.healBeam(d); return; }
+        if (k.gun === "rifle" && rg) { this.bursts.push({ d, n: 3, t: 0, speed: rg.orbSpeed, dmg: od }); return; }
+        if (k.gun === "sniper" && rg) { this.aimAt(d, rg.orbSpeed, od); return; }
+        if (rg && !k.boss) this.orb(d, rg.orbSpeed, od); else this.ev.onPlayerHit(x);
       } };
+    if (kind === "commander") { const ring = new THREE.Mesh(new THREE.RingGeometry(9.6, 10, 48), new THREE.MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; d.group.add(ring); }
     if (k.boss) { d.alwaysBar = true; if (rg?.volleyEvery) this.volleys.push({ d, every: rg.volleyEvery, t: 2, speed: rg.orbSpeed, dmg: rg.orbDamage * dm }); }
     this.scene.add(d.group); this.dummies.push(d); this.alive.push(d);
     return d;
@@ -108,17 +125,35 @@ export class Waves {
   get living() { return this.alive.filter((d) => d.alive).length; }
 
   /** Lanza una esfera desde el pecho del enemigo hacia el jugador (con un poco de dispersión). */
-  private orb(from: Dummy, speed: number, dmg: number, spread = 0) {
+  private orb(from: Dummy, speed: number, dmg: number, spread = 0, bullet = false) {
     if (!from.alive) return;
     const at = from.center.clone(), target = (this.decoy?.() ?? this.player()).clone().add(new THREE.Vector3(0, 1.4, 0));
+    if (bullet) at.y += 0.05 * (from.kind.scale ?? 1); // (las balas salen del arma, a la altura del pecho)
     const dir = target.sub(at).normalize(); if (spread) dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), spread).normalize();
     // (sin luz: el número de luces de la escena es fijo; brillo con material básico y un halo aditivo)
-    const m = new THREE.Mesh(orbGeo, new THREE.MeshBasicMaterial({ color: 0xc8f4ff }));
-    m.add(new THREE.Mesh(orbHalo, new THREE.MeshBasicMaterial({ color: 0x4ad8ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })));
+    const m = new THREE.Mesh(bullet ? bulletGeo : orbGeo, new THREE.MeshBasicMaterial({ color: bullet ? 0xffe2a0 : 0xc8f4ff }));
+    if (bullet) m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+    else m.add(new THREE.Mesh(orbHalo, new THREE.MeshBasicMaterial({ color: 0x4ad8ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })));
     m.position.copy(at).addScaledVector(dir, 0.6 * (from.kind.scale ?? 1));
     this.scene.add(m); this.orbs.push({ mesh: m, v: dir.multiplyScalar(speed), t: 5, dmg });
   }
 
+  /** Médico: cura al aliado más herido cerca (rayo verde visible). */
+  private healBeam(d: Dummy) {
+    const t = this.alive.filter((x) => x !== d && x.alive && x.hurt > 0.02 && x.center.distanceTo(d.center) < 11).sort((a, b) => b.hurt - a.hurt)[0];
+    if (!t) return;
+    t.heal(t.layers[t.layers.length - 1].max * 0.06);
+    const line = new THREE.Mesh(laserGeo, new THREE.MeshBasicMaterial({ color: 0x4aff9a, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const a = d.center, b = t.center; line.scale.set(4, 4, a.distanceTo(b)); line.position.copy(a).lerp(b, 0.5); line.lookAt(b);
+    this.scene.add(line); this.beams.push({ m: line, t: 0.3 });
+  }
+  private beams: { m: THREE.Mesh; t: number }[] = [];
+  /** Francotirador: un láser rojo te sigue 1,2 s y luego dispara una bala muy rápida (moverse la esquiva). */
+  private aimAt(d: Dummy, speed: number, dmg: number) {
+    if (this.aims.some((a) => a.d === d)) return;
+    const line = new THREE.Mesh(laserGeo, new THREE.MeshBasicMaterial({ color: 0xff2a1a, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.scene.add(line); this.aims.push({ d, t: 1.2, line, speed, dmg });
+  }
   /** Quita los cuerpos que ya han desaparecido (con las oleadas paradas, p. ej. en una incursión). */
   private tidy() { for (const d of [...this.alive]) if (d.gone) { this.remove(d); this.alive.splice(this.alive.indexOf(d), 1); } }
   private remove(d: Dummy) {
@@ -134,6 +169,20 @@ export class Waves {
       const p = o.mesh.position, hit = Math.abs(p.x - eye.x) < 0.55 && Math.abs(p.z - eye.z) < 0.55 && p.y > eye.y - 1.2 && p.y < eye.y + 0.6;
       if (hit) this.ev.onPlayerHit(o.dmg);
       if (hit || o.t <= 0 || p.y < 0) { this.scene.remove(o.mesh); this.orbs.splice(this.orbs.indexOf(o), 1); }
+    }
+    for (const b of [...this.beams]) { b.t -= dt; (b.m.material as THREE.MeshBasicMaterial).opacity = Math.max(0, b.t / 0.3) * 0.8; if (b.t <= 0) { this.scene.remove(b.m); this.beams.splice(this.beams.indexOf(b), 1); } }
+    // Comandante: los suyos a menos de 10 m van más rápido y pegan más fuerte (anillo bajo él)
+    for (const c of this.alive) if (c.alive && c.kind.key === "commander") { for (const o of this.alive) if (o !== c && o.alive && o.group.position.distanceTo(c.group.position) < 10) o.buffT = 0.3; }
+    for (const b of [...this.bursts]) {
+      b.t -= dt; if (b.t > 0) continue;
+      if (!b.d.alive || b.n <= 0) { this.bursts.splice(this.bursts.indexOf(b), 1); continue; }
+      b.n--; b.t = 0.13; this.orb(b.d, b.speed, b.dmg, (Math.random() - 0.5) * 0.06, true);
+    }
+    for (const a of [...this.aims]) {
+      a.t -= dt; const from = a.d.center.add(new THREE.Vector3(0, 0.05, 0)), to = (this.decoy?.() ?? this.player()).clone().add(new THREE.Vector3(0, 1.4, 0)), len = from.distanceTo(to);
+      a.line.scale.set(1, 1, len); a.line.position.copy(from).lerp(to, 0.5); a.line.lookAt(to);
+      (a.line.material as THREE.MeshBasicMaterial).opacity = 0.25 + 0.5 * (1 - a.t / 1.2) * (Math.sin(a.t * 40) > -0.3 ? 1 : 0.4);
+      if (a.t <= 0 || !a.d.alive) { this.scene.remove(a.line); this.aims.splice(this.aims.indexOf(a), 1); if (a.d.alive) this.orb(a.d, a.speed, a.dmg, 0, true); }
     }
     for (const v of [...this.volleys]) {
       if (!v.d.alive || !this.alive.includes(v.d)) { this.volleys.splice(this.volleys.indexOf(v), 1); continue; }

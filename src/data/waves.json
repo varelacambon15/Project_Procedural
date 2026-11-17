@@ -13,7 +13,13 @@
     "drone": 3.4,
     "spider": 5.0,
     "roller": 6.5,
-    "turret": 0
+    "turret": 0,
+    "guardian": 1.5,
+    "gunner": 2.6,
+    "sniper": 2.2,
+    "medic": 2.6,
+    "commander": 2.4,
+    "glitch": 3.0
   },
   "damage": {
     "small": 6,
@@ -26,7 +32,13 @@
     "drone": 8,
     "spider": 12,
     "roller": 30,
-    "turret": 7
+    "turret": 7,
+    "guardian": 24,
+    "gunner": 5,
+    "sniper": 28,
+    "medic": 6,
+    "commander": 20,
+    "glitch": 14
   },
   "healthScale": 1,
   "attackRange": 1.6,
@@ -89,6 +101,24 @@
       "interval": 0.9,
       "orbSpeed": 18,
       "orbDamage": 7
+    },
+    "gunner": {
+      "range": 16,
+      "interval": 2.2,
+      "orbSpeed": 38,
+      "orbDamage": 5
+    },
+    "sniper": {
+      "range": 42,
+      "interval": 4.2,
+      "orbSpeed": 110,
+      "orbDamage": 28
+    },
+    "medic": {
+      "range": 11,
+      "interval": 0.5,
+      "orbSpeed": 0,
+      "orbDamage": 0
     }
   },
   "bossEvery": 5

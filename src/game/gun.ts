@@ -904,7 +904,7 @@ export class Gun {
       const un = this.unstable.get(d); this.unstable.delete(d);
       if (un != null && performance.now() / 1000 < un) this.explode(d.center, s.stats.dano * 1.2, "explosive", d);
       if (this.fx) this.runFx(this.fx.kill({ target: d, point: d.center, baseDmg: s.stats.dano, mag: s.stats.cargador }), 0);
-    } else if (sound) this.hitSound(zone === "head" ? (d.helmeted ? "metal" : "head") : zone === "body" && d.armored ? "metal" : "body");
+    } else if (sound) this.hitSound(zone === "head" ? (d.helmeted ? "metal" : "head") : zone === "shield" || (zone === "body" && d.armored) ? "metal" : "body");
   }
   private nearest(from: Dummy, at: THREE.Vector3, max: number, skip: Dummy[] = []) {
     return this.hooks.dummies().filter((d) => d !== from && d.alive && !skip.includes(d) && d.center.distanceTo(at) < max)

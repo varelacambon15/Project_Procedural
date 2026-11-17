@@ -27,7 +27,7 @@ export function roomEnemies(r: () => number, step: number, total: number, diffic
   const out: string[] = [];
   for (let i = 0; i < n; i++) {
     const x = r(), late = step / Math.max(1, total);
-    out.push(x < 0.2 ? "small" : x < 0.38 ? "basic" : x < 0.48 ? "drone" : x < 0.56 ? "spider" : x < 0.63 ? "roller" : x < 0.68 ? "turret" : x < 0.77 ? "caster" : x < 0.87 ? "sturdy" : x < 0.94 + late * 0.02 ? "large" : "elite");
+    out.push(x < 0.2 ? "small" : x < 0.38 ? "basic" : x < 0.48 ? "drone" : x < 0.56 ? "spider" : x < 0.63 ? "roller" : x < 0.68 ? "turret" : x < 0.73 ? "gunner" : x < 0.76 ? "sniper" : x < 0.79 ? "medic" : x < 0.82 ? "glitch" : x < 0.84 ? "caster" : x < 0.89 ? "sturdy" : x < 0.93 ? "guardian" : x < 0.96 + late * 0.02 ? "large" : "elite");
   }
   return out;
 }
@@ -82,6 +82,7 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   const nFights = fights.length;
   fights.forEach((f, k) => (f.enemies = roomEnemies(r, k, nFights, opt.difficulty)));
   const boss = rooms.find((x) => x.kind === "boss")!;
+  for (const f of fights) if (f.enemies.length >= 9 && r() < 0.4) f.enemies[0] = "commander";
   boss.enemies = ["warden", ...roomEnemies(r, nFights, nFights, opt.difficulty).slice(0, 3 + opt.difficulty * 2)];
   return { seed, rooms, corridors, palette: Math.floor(r() * 3) };
 }
