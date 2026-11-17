@@ -18,7 +18,7 @@ export function decal<T extends THREE.Mesh>(m: T): T {
 }
 
 
-export interface Interactable { id: "chest" | "workbench" | "waves" | "storage" | "contracts"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
+export interface Interactable { id: "chest" | "workbench" | "waves" | "storage" | "contracts" | "raid"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
 export interface RangeData { dps: number; ttk: number | null; accuracy: number | null; distance: number | null; message: string }
 export interface World {
   colliders: THREE.Box3[]; interactables: Interactable[]; chestLid: THREE.Object3D; chestGlow: THREE.PointLight; wavesRoom: { z0: number; z1: number }; shootables: THREE.Object3D[]; lanes: number[];
@@ -272,6 +272,20 @@ export function buildRange(scene: THREE.Scene): World {
     for (let z = NZ0 + 5; z < NZ1; z += 9) for (let x = NX0 + 6; x < NX0 + NW; x += 12) box(5, 0.06, 1.4, x, NH - 0.05, z, panelLight, false, false);
     box(0.04, 0.25, NZ1 - NZ0, NX0 + NW - 0.03, 1.1, (NZ0 + NZ1) / 2, safety, false, false);
     const m = sign(t("sign.newroom"), "#7a8a9a", 3.2, 0.8); m.position.set(W / 2 - 0.04, 4.2, (SD0 + SD1) / 2); m.rotation.y = -Math.PI / 2; scene.add(m); }
+  // Ordenador de incursiones (sala B, frente a la puerta): elige las opciones y lanza la incursión
+  const raidPc = new THREE.Group(); raidPc.position.set(NX0 + 9, 0, 18); raidPc.rotation.y = -Math.PI / 2;
+  { const add = (w: number, h: number, d: number, x: number, y: number, z: number, mm: THREE.Material) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mm); b.position.set(x, y, z); b.castShadow = true; b.receiveShadow = true; raidPc.add(b); return b; };
+    add(1.6, 0.95, 0.8, 0, 0.475, 0, steel); add(1.7, 0.06, 0.9, 0, 0.98, 0.02, dark);
+    add(0.12, 0.6, 0.12, 0, 1.3, -0.25, steel); add(1.5, 0.9, 0.08, 0, 1.75, -0.22, dark);
+    const c = document.createElement("canvas"); c.width = 128; c.height = 80; const g = c.getContext("2d")!;
+    g.fillStyle = "#081014"; g.fillRect(0, 0, 128, 80); g.fillStyle = "#3fd0d8"; g.fillRect(0, 0, 128, 4); g.font = "bold 13px monospace"; g.fillText(t("sign.raid"), 8, 22);
+    g.strokeStyle = "#3fd0d8"; for (let i = 0; i < 6; i++) { const x = 10 + i * 19; g.strokeRect(x, 36 + (i % 2) * 14, 14, 10); if (i) { g.beginPath(); g.moveTo(x - 5, 41 + ((i - 1) % 2) * 14); g.lineTo(x, 41 + (i % 2) * 14); g.stroke(); } }
+    g.fillStyle = "#e8a040"; g.fillRect(105, 50, 14, 10);
+    const tx = new THREE.CanvasTexture(c); tx.magFilter = THREE.NearestFilter; tx.colorSpace = THREE.SRGBColorSpace;
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.36, 0.8), new THREE.MeshBasicMaterial({ map: tx })); scr.position.set(0, 1.75, -0.175); raidPc.add(decal(scr));
+    add(1.5, 0.03, 0.03, 0, 1.0, 0.43, neonC); }
+  scene.add(raidPc); colliders.push(new THREE.Box3(new THREE.Vector3(NX0 + 8.5, 0, 17.1), new THREE.Vector3(NX0 + 9.5, 2.3, 18.9)));
+  { const m = sign(t("sign.raid"), "#3fd0d8", 3.2, 0.8); m.position.set(NX0 + 9.6, 3.4, 18); m.rotation.y = -Math.PI / 2; scene.add(m); }
 
   // ---------- Tablero de contratos (vestíbulo, entre la terminal y el almacén) ----------
   const ctBoard = new THREE.Group(); ctBoard.position.set(-4, 0, 13.2);
@@ -388,6 +402,7 @@ export function buildRange(scene: THREE.Scene): World {
       { id: "waves", position: WAVES_AT, radius: 1.8, label: "Oleadas", object: wavesConsole },
       { id: "storage", position: new THREE.Vector3(4, 0, 12.6), radius: 2.0, label: "Almacén", object: storage },
       { id: "contracts", position: new THREE.Vector3(-4, 0, 12.6), radius: 2.0, label: "Contratos", object: ctBoard },
+      { id: "raid", position: new THREE.Vector3(W / 2 + 1 + 8, 0, 18), radius: 2.2, label: "Incursión", object: raidPc },
     ],
     update(dt: number, data: RangeData) {
       // Parpadeo: la mayoría estables; de vez en cuando una lámpara titila un instante

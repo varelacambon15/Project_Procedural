@@ -26,6 +26,7 @@ import { buildRange, type Interactable } from "./world";
 import { PIXEL_LEVELS, pixelLevel, setPixelLevel } from "../weapons/textures";
 import { onSettings, replaceSettings, setSetting, settings, type Settings } from "./settings";
 import { PlayerHealth, Waves } from "./waves";
+import { Raid } from "./raid";
 import { spawnDummies, DamageNumbers, type Dummy } from "./dummies";
 import { Player } from "./player";
 import { Gun } from "./gun";
@@ -86,7 +87,7 @@ function resize() { renderer.setSize(innerWidth, innerHeight); composer.setPixel
 addEventListener("resize", resize); resize();
 
 // ---------- Estado ----------
-type State = "title" | "play" | "pause" | "inventory" | "workbench" | "shop" | "contracts";
+type State = "title" | "play" | "pause" | "inventory" | "workbench" | "shop" | "contracts" | "raidmenu";
 let state: State = "title";
 let inGame = false; // hay una partida empezada (nueva o cargada)
 const input = new Input(renderer.domElement);
@@ -290,6 +291,7 @@ async function boot() {
 
   // ---------- Partida: nueva, guardar, cargar ----------
   function newGame() {
+    if (raid.active) raid.end();
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
     // Se empieza sin nada: puños y 0 créditos. El primer dinero sale de golpear o disparar a los muñecos de práctica.
     inv.credits = SHOP.newGameCredits; practice.acc = 0; practice.window = []; shopState = newShopState(); playSeconds = 0; inGame = true;
@@ -303,6 +305,7 @@ async function boot() {
       settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, superId: inv.superId, progress: inv.progress };
   }
   function apply(d: SaveData) {
+    if (raid.active) returnHub(false);
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
     for (const w of d.weapons) {
       const spec = w.spec;
@@ -512,15 +515,77 @@ async function boot() {
   function hurtPlayer(dmg: number) {
     dmg *= sfx.guard * curPerks.guard;
     if (curPerks.secondWind && !windUsed && php.value - dmg <= 0) { windUsed = true; php.value = php.max * 0.4; toast(t("pg.secondWind")); return; }
-    if (php.hit(dmg)) { waves.stop(); php.reset(); windUsed = false; toast(t("ui.simReset")); }
+    if (php.hit(dmg)) {
+      windUsed = false;
+      if (raid.active) { toast(t("rd.lost")); returnHub(false); return; }
+      waves.stop(); php.reset(); toast(t("ui.simReset"));
+    }
   }
+  // ---------- Incursiones (ordenador de la sala B) ----------
+  const mobs = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
+    onWaveEnd() {}, onAllDone() {},
+    onPlayerHit: (dmg) => { if (settings.screenShake) shake = Math.min(0.5, shake + 0.18); hurtPlayer(dmg); $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on"); },
+  });
+  mobs.playerLevel = () => inv.progress.level;
+  let raidOpt: { rooms: number; difficulty: 0 | 1 | 2 } = { rooms: 6, difficulty: 0 }, raidReturnT = -1;
+  const RAID_DIFF = [{ rarity: "rara", cr: 1, xp: 0.3 }, { rarity: "epica", cr: 1.6, xp: 0.45 }, { rarity: "legendaria", cr: 2.4, xp: 0.6 }] as const;
+  const raid = new Raid(scene, {
+    mobs, colliders: world.colliders, shootables: world.shootables, toast,
+    onClear: (n, of) => toast(t("rd.cleared", { n, of: of - 1 })),
+    onChest: (at) => { for (let i = 0; i < 2; i++) dropLoot("big", at.clone().add(new THREE.Vector3((i - 0.5) * 0.8, 0, 0))); toast(t("rd.chest")); },
+    onWin: () => {
+      const D = RAID_DIFF[raidOpt.difficulty], k = raidOpt.rooms / 6;
+      const rarity = (D.rarity === "legendaria" && Math.random() < 0.5 ? "epica" : D.rarity) as RarityId;
+      const it = makeItem(rollWeapon(rarity));
+      if (!inv.add(it)) { const i = inv.storage.indexOf(null); if (i >= 0) { inv.storage[i] = it; inv.changed(); } }
+      const cr = Math.round((120 + 12 * inv.progress.level) * D.cr * k * curPerks.fortune); earn(cr);
+      gainXp(xpToNext(inv.progress.level) * D.xp * k);
+      lootChime(4); toast(t("rd.won", { n: it.spec.name, c: cr }));
+      raidReturnT = 6;
+    },
+  });
+  /** Vuelve al vestíbulo (sala B, junto al ordenador) al ganar o morir. Al ganar, el botín del suelo viene contigo. */
+  function returnHub(won: boolean) {
+    const loot = won ? pickups.list.filter((p) => raid.contains(p.root.position)) : [];
+    raid.end(); raidReturnT = -1; sfx.cancel();
+    const pc = world.interactables.find((i) => i.id === "raid")!.position;
+    player.pos.set(pc.x - 2.5, 0, pc.z); player.vel.set(0, 0, 0); player.yaw = Math.PI / 2; player.pitch = 0;
+    loot.forEach((p, i) => { p.root.position.set(pc.x - 4.5, 1.1, pc.z - 2 + i * 0.9); p.vel.set(0, 0, 0); p.resting = false; });
+    php.reset(); autosave();
+  }
+  function startRaid() {
+    const at = raid.start((Math.random() * 2 ** 31) | 0, raidOpt);
+    mobs.index = raidOpt.difficulty * 5; // (nivel de los enemigos: +1 por cada 5)
+    player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
+    php.reset(); waves.stop(); toast(t("rd.go"));
+  }
+  function openRaidMenu() {
+    state = "raidmenu"; input.unlock();
+    const el = $("raidmenu"); el.hidden = false;
+    const chip = (k: string, v: number, on: boolean, label: string) => `<button type="button" class="chip ${on ? "on" : ""}" data-${k}="${v}" data-nav>${label}</button>`;
+    el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">SIM//</span><h1>${t("rd.title")}</h1><span class="credits">${t("pg.lv")} ${inv.progress.level}</span><button type="button" class="btn ghost sm" data-close="1">${t("ui.back")}</button></header>
+      <section class="panel ct-list"><p class="note">${t("rd.desc")}</p>
+      <h2>${t("rd.length")}</h2><div class="chips">${[4, 6, 8].map((n) => chip("rooms", n, raidOpt.rooms === n, t(`rd.len${n}`, { n }))).join("")}</div>
+      <h2>${t("rd.difficulty")}</h2><div class="chips">${[0, 1, 2].map((d) => chip("diff", d, raidOpt.difficulty === d, t(`rd.diff${d}`))).join("")}</div>
+      <p class="note">${t(`rd.diffd${raidOpt.difficulty}`)}</p>
+      <div class="actions"><button type="button" class="btn" data-go="1" data-nav>${t("rd.start")}</button></div></section></div>`;
+    nav.setRoot(el); setTimeout(() => el.querySelector<HTMLElement>("[data-go]")?.focus(), 0);
+  }
+  function closeRaidMenu() { $("raidmenu").hidden = true; resume(); }
+  $("raidmenu").addEventListener("click", (e) => {
+    const tg = e.target as HTMLElement;
+    if (tg.closest("[data-close]")) return closeRaidMenu();
+    const r = tg.closest<HTMLElement>("[data-rooms]"); if (r) { raidOpt.rooms = Number(r.dataset.rooms); return openRaidMenu(); }
+    const d = tg.closest<HTMLElement>("[data-diff]"); if (d) { raidOpt.difficulty = Number(d.dataset.diff) as 0 | 1 | 2; return openRaidMenu(); }
+    if (tg.closest("[data-go]")) { closeRaidMenu(); startRaid(); }
+  });
   const hooksWaveEnd = (_i: number, last: Dummy | null) => dropLoot("waveEnd", last?.group.position ?? new THREE.Vector3(0, 0, 8));
   function healthHud() {
     // Vida del jugador: siempre visible abajo a la izquierda, con cifras (y la oleada en curso encima)
     const el = $("phealth"); const show = state === "play";
     el.hidden = !show; if (!show) return;
     el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
-    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : "");
+    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}` : "");
   }
 
   // ---------- Botín de enemigos ----------
@@ -572,6 +637,7 @@ async function boot() {
   const back = () => {
     if (dialog.isOpen) return dialog.cancel();
     if (state === "contracts") closeContracts();
+    else if (state === "raidmenu") closeRaidMenu();
     else if (state === "inventory") invScreen.close();
     else if (state === "workbench") bench.back();
     else if (state === "shop") shop.back();
@@ -626,7 +692,7 @@ async function boot() {
       const near = ground ? null : nearInteractable();
       $("prompt").hidden = !ground && !near;
       if (ground) $("prompt").innerHTML = `${key}${t("ui.pickup")}`;
-      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : "ui.useBench")}`;
+      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : near.id === "raid" ? "rd.use" : "ui.useBench")}`;
       // Ficha del arma del suelo comparada con la que llevas
       const card = $("pickcard");
       if (ground !== shownPickup) {
@@ -641,6 +707,7 @@ async function boot() {
           else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); waves.start(); toast(t("ui.wavesGo")); } }
           else if (near.id === "storage") openScreen("inventory", true);
           else if (near.id === "contracts") openContracts();
+          else if (near.id === "raid") openRaidMenu();
           else { bench.inspect = false; openScreen("workbench"); }
         }
       }
@@ -705,6 +772,7 @@ async function boot() {
       // Las oleadas viven en su sala: salir por la puerta las detiene
       if (waves.active && (player.pos.z < world.wavesRoom.z0 || player.pos.z > world.wavesRoom.z1)) { waves.stop(); toast(t("ui.wavesLeft")); }
       waves.update(dt);
+      if (raid.active) { mobs.update(dt); raid.update(dt, player.pos); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
       if (!sfx.casting && !sfx.busy) meter.update(dt); sfx.update(dt, player.pos); superHud();
       pouch.update(dt * curPerks.nadeRecharge); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
@@ -737,7 +805,7 @@ async function boot() {
   frame();
   (window as unknown as Record<string, unknown>).__game = {
     debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
-    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world,
+    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, returnHub, mobs, openRaidMenu,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };
 }

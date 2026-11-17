@@ -131,6 +131,34 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 30 (versión 0.10.0): niveles, 10 súperes e incursiones
+
+- **Niveles a lo Borderlands** (`src/game/progress.ts` puro + `src/data/progress.json` números; tests/progress.test.ts):
+  nivel 1–100 con experiencia (bajas de oleada e incursión según tipo y nivel del enemigo, oleadas superadas,
+  contratos cobrados). Las armas nuevas salen a ±2/+1 niveles del jugador (`rollWeaponLevel`, en `rollWeapon` y en el
+  escaparate con la semilla); un arma de nivel superior hace menos daño (−12 %/nivel, mínimo 40 %; aviso en la ficha).
+  Los enemigos de oleada van al nivel del jugador (+1 cada 5 oleadas): vida `enemyHealthMult` y daño
+  `enemyDamageMult`; la vida del jugador sube un 3 % por nivel. Partidas antiguas: empiezan al nivel de su mejor arma.
+  HUD `#xphud` arriba a la izquierda. Se guarda en `SaveData.progress` (`inv.progress`).
+- **Árbol de habilidades** (pestaña Progreso del inventario): un punto por nivel; ramas Tirador, Superviviente y
+  Táctico (rangos de 8 y una habilidad final que pide 15 puntos en la rama). Efectos en `perks()` → `applyPerks` en
+  main.ts (`gun.perks`, `PlayerHealth.setMax/regenMult/delayMult`, `meter.gain`, `sfx.power/span`,
+  `player.speedMult`, recarga de granadas, Segundo aliento en `hurtPlayer`). Reiniciar cuesta 25 CR × nivel.
+- **10 súperes**: Nova ígnea, Estasis (`Dummy.freeze`, más daño recibido), Bombardeo orbital (punto al que se mira:
+  hook `aim`), Enjambre buscador (misiles), Égida (cura y −65 % de daño: `sfx.guard`), Ojo letal (críticos
+  asegurados: `buff.crit`), Vórtice (atrae con `Dummy.drag` y colapsa). Animaciones en supers.json (`index` = cierre
+  del índice para señalar). Viñetas de pantalla para Ojo letal y Égida (`body.deadeye/aegis`).
+- **Incursiones** (ordenador de la sala B, interactuable "raid"): `raidgen.ts` (puro, tests/raid.test.ts) genera una
+  cadena de salas en cuadrícula de 46 m con pasillos, salas laterales de botín (cofre que suelta 2 armas), coberturas
+  y el jefe (`warden`) al final; `raid.ts` lo construye en x = 700 (sin luces nuevas), cierra las puertas con
+  barreras al entrar en una sala de combate y las abre al acabar. Enemigos con un segundo `Waves` (`mobs`,
+  `spawnAt`). Opciones: duración 4/6/8 salas y dificultad Normal/Difícil/Pesadilla (+0/+1/+2 niveles, más enemigos,
+  premio raro/épico/legendario). Al ganar: arma, créditos y experiencia y vuelta al vestíbulo en 6 s (el botín del
+  suelo viene contigo); al morir, vuelta al vestíbulo sin perder nada.
+
+Pendiente: ajustar el ritmo de subida de nivel y la dificultad con partidas reales; más variedad visual en las salas
+de incursión (decoración, alturas, tipos de sala) y enemigos propios de incursión; sonidos propios de los súperes.
+
 ## Ronda 29: manos redondeadas y súperes (habilidades)
 
 - **Manos** (`arms.ts`): dedos y pulgar ahora son cápsulas (`phalanx`), más finos y redondeados que las cajas anteriores.

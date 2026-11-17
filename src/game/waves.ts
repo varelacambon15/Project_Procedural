@@ -76,14 +76,15 @@ export class Waves {
     this.ev.onWaveStart?.(this.index, this.mod);
   }
 
-  private spawn(kind: keyof typeof KINDS) {
+  private spawn(kind: keyof typeof KINDS) { this.spawnAt(kind, new THREE.Vector3((Math.random() - 0.5) * data.spawnWidth, 0, data.spawnZ)); }
+  /** Crea un enemigo de oleada en un punto (también lo usan las incursiones). */
+  spawnAt(kind: keyof typeof KINDS, pos: THREE.Vector3): Dummy {
     const k = KINDS[kind];
-    const x = (Math.random() - 0.5) * data.spawnWidth;
     const M = this.mod ? WAVE_MODIFIERS[this.mod] : null;
     const lv = this.playerLevel ? enemyLevel(this.playerLevel(), kind, this.index) : k.level;
     const lm = this.playerLevel ? enemyHealthMult(lv) : 1, dm = this.playerLevel ? enemyDamageMult(lv) : 1;
     const hp = k.health * lm * data.healthScale * (1 + Math.max(0, this.index - data.waves.length + 1) * 0.08) * (M && !k.boss ? M.hp : 1);
-    const d = new Dummy({ ...k, health: hp, level: lv }, `wave-${kind}-${Math.random()}`, new THREE.Vector3(x, 0, data.spawnZ), this.overlay, this.onDamage, randomLook());
+    const d = new Dummy({ ...k, health: hp, level: lv }, `wave-${kind}-${Math.random()}`, pos, this.overlay, this.onDamage, randomLook());
     d.respawn = false;
     const sp = ((data.speed as Record<string, number>)[kind] ?? 2.4) * (M && !k.boss ? M.speed : 1), dmg = ((data.damage as Record<string, number>)[kind] ?? 8) * (M ? M.dmg : 1) * dm;
     const rg = (data.ranged as Record<string, { range: number; interval: number; orbSpeed: number; orbDamage: number; volleyEvery?: number }>)[kind];
@@ -92,7 +93,10 @@ export class Waves {
       onAttack: (x) => (rg && !k.boss ? this.orb(d, rg.orbSpeed, rg.orbDamage * (M ? M.dmg : 1) * dm) : this.ev.onPlayerHit(x)) };
     if (k.boss) { d.alwaysBar = true; if (rg?.volleyEvery) this.volleys.push({ d, every: rg.volleyEvery, t: 2, speed: rg.orbSpeed, dmg: rg.orbDamage * dm }); }
     this.scene.add(d.group); this.dummies.push(d); this.alive.push(d);
+    return d;
   }
+  /** Enemigos vivos de este gestor. */
+  get living() { return this.alive.filter((d) => d.alive).length; }
 
   /** Lanza una esfera desde el pecho del enemigo hacia el jugador (con un poco de dispersión). */
   private orb(from: Dummy, speed: number, dmg: number, spread = 0) {
@@ -106,6 +110,8 @@ export class Waves {
     this.scene.add(m); this.orbs.push({ mesh: m, v: dir.multiplyScalar(speed), t: 5, dmg });
   }
 
+  /** Quita los cuerpos que ya han desaparecido (con las oleadas paradas, p. ej. en una incursión). */
+  private tidy() { for (const d of [...this.alive]) if (d.gone) { this.remove(d); this.alive.splice(this.alive.indexOf(d), 1); } }
   private remove(d: Dummy) {
     this.scene.remove(d.group); d.bar.remove();
     const i = this.dummies.indexOf(d); if (i >= 0) this.dummies.splice(i, 1);
@@ -124,7 +130,7 @@ export class Waves {
       if (!v.d.alive || !this.alive.includes(v.d)) { this.volleys.splice(this.volleys.indexOf(v), 1); continue; }
       v.t -= dt; if (v.t <= 0) { v.t = v.every; for (const a of [-0.22, -0.11, 0, 0.11, 0.22]) this.orb(v.d, v.speed, v.dmg, a); }
     }
-    if (!this.active) return;
+    if (!this.active) { this.tidy(); return; }
     if (this.queue.length) { this.spawnT -= dt; if (this.spawnT <= 0) { this.spawnT = data.spawnInterval; this.spawn(this.queue.shift()!); } }
     for (const d of [...this.alive]) {
       if (!d.alive) this.lastDead = d;
