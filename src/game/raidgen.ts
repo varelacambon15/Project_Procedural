@@ -27,7 +27,7 @@ export function roomEnemies(r: () => number, step: number, total: number, diffic
   const out: string[] = [];
   for (let i = 0; i < n; i++) {
     const x = r(), late = step / Math.max(1, total);
-    out.push(x < 0.32 ? "small" : x < 0.62 ? "basic" : x < 0.75 ? "caster" : x < 0.86 ? "sturdy" : x < 0.94 + late * 0.02 ? "large" : "elite");
+    out.push(x < 0.2 ? "small" : x < 0.38 ? "basic" : x < 0.48 ? "drone" : x < 0.56 ? "spider" : x < 0.63 ? "roller" : x < 0.68 ? "turret" : x < 0.77 ? "caster" : x < 0.87 ? "sturdy" : x < 0.94 + late * 0.02 ? "large" : "elite");
   }
   return out;
 }

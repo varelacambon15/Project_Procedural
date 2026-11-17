@@ -920,7 +920,7 @@ export class Gun {
       this.applyHit(n, "body", n.center, dmg, null, false, false); n.applyStatus("electrico", dmg); src = n.center;
     }
   }
-  private explode(at: THREE.Vector3, dmg: number, element: Element, except?: Dummy, color = 0xffb060) {
+  explode(at: THREE.Vector3, dmg: number, element: Element, except?: Dummy, color = 0xffb060) {
     const m = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 8), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1, depthWrite: false }));
     m.position.copy(at); this.scene.add(m); this.bursts.push({ mesh: m, t: 0.35 });
     // Onda de choque: anillo que se abre a ras de suelo

@@ -9,7 +9,11 @@
     "caster": 2.0,
     "warden": 1.5,
     "sturdy": 2.2,
-    "elite": 2.6
+    "elite": 2.6,
+    "drone": 3.4,
+    "spider": 5.0,
+    "roller": 6.5,
+    "turret": 0
   },
   "damage": {
     "small": 6,
@@ -18,7 +22,11 @@
     "caster": 10,
     "warden": 28,
     "sturdy": 12,
-    "elite": 14
+    "elite": 14,
+    "drone": 8,
+    "spider": 12,
+    "roller": 30,
+    "turret": 7
   },
   "healthScale": 1,
   "attackRange": 1.6,
@@ -69,6 +77,18 @@
       "orbSpeed": 13,
       "orbDamage": 18,
       "volleyEvery": 3.5
+    },
+    "drone": {
+      "range": 13,
+      "interval": 1.6,
+      "orbSpeed": 15,
+      "orbDamage": 8
+    },
+    "turret": {
+      "range": 70,
+      "interval": 0.9,
+      "orbSpeed": 18,
+      "orbDamage": 7
     }
   },
   "bossEvery": 5

@@ -12,6 +12,8 @@ export interface WaveEvents {
   onWaveStart?(index: number, mod: WaveModifier | null): void;
   onAllDone(): void;
   onPlayerHit(dmg: number): void;
+  /** Un kamikaze ha llegado al jugador y explota (efecto y daño a los de alrededor). */
+  onSelfDestruct?(d: Dummy): void;
 }
 
 import { WAVE_MODIFIERS, type WaveModifier } from "./wavemods";
@@ -22,7 +24,9 @@ export type { WaveModifier };
 function extraWave(n: number, wave: number): Record<string, number> {
   // Más variedad: lanzadores, resistentes y élites según avanza; cada `bossEvery` oleadas, el jefe con escolta corta
   if (wave % data.bossEvery === 0) return { warden: 1, basic: 2 + Math.floor(n / 2), caster: 1 + Math.floor(n / 3) };
-  const w: Record<string, number> = { small: 3 + Math.floor(n * 0.8), basic: 3 + n, caster: 1 + Math.floor(n / 2), large: Math.floor(n / 2) };
+  const w: Record<string, number> = { small: 3 + Math.floor(n * 0.8), basic: 3 + n, caster: 1 + Math.floor(n / 2), large: Math.floor(n / 2), drone: 1 + Math.floor(n / 2), roller: Math.floor((n + 1) / 2) };
+  if (n >= 2) w.spider = 1 + Math.floor(n / 3);
+  if (n >= 3) w.turret = Math.floor(n / 3);
   if (n >= 2) w.sturdy = 1 + Math.floor(n / 3);
   if (n >= 4) w.elite = Math.floor(n / 4);
   return w;
@@ -91,8 +95,11 @@ export class Waves {
     const sp = ((data.speed as Record<string, number>)[kind] ?? 2.4) * (M && !k.boss ? M.speed : 1), dmg = ((data.damage as Record<string, number>)[kind] ?? 8) * (M ? M.dmg : 1) * dm;
     const rg = (data.ranged as Record<string, { range: number; interval: number; orbSpeed: number; orbDamage: number; volleyEvery?: number }>)[kind];
     // (lanzador: se para lejos y dispara esferas; jefe: golpea de cerca y además lanza ráfagas de esferas cada pocos s)
-    d.chase = { target: () => this.decoy?.() ?? this.player(), speed: sp, range: rg?.range ?? data.attackRange, interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
-      onAttack: (x) => (rg && !k.boss ? this.orb(d, rg.orbSpeed, rg.orbDamage * (M ? M.dmg : 1) * dm) : this.ev.onPlayerHit(x)) };
+    d.chase = { target: () => this.decoy?.() ?? this.player(), speed: sp, range: rg?.range ?? (k.shape === "roller" ? 1.4 : data.attackRange), interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
+      onAttack: (x) => {
+        if (k.shape === "roller") { this.ev.onPlayerHit(x); this.ev.onSelfDestruct?.(d); return; } // (el kamikaze explota al llegar)
+        if (rg && !k.boss) this.orb(d, rg.orbSpeed, rg.orbDamage * (M ? M.dmg : 1) * dm); else this.ev.onPlayerHit(x);
+      } };
     if (k.boss) { d.alwaysBar = true; if (rg?.volleyEvery) this.volleys.push({ d, every: rg.volleyEvery, t: 2, speed: rg.orbSpeed, dmg: rg.orbDamage * dm }); }
     this.scene.add(d.group); this.dummies.push(d); this.alive.push(d);
     return d;

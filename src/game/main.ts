@@ -157,6 +157,7 @@ async function boot() {
     onKill(d) {
       { const h = lastHit.get(d); contractEvent({ type: "kill", weapon: h?.weapon ?? null, head: !!h?.head, dist: h?.dist ?? 0, boss: !!d.kind.boss }); }
       if (d.kind.boss) toast(t("ui.bossDown"));
+      if (d.kind.key === "roller") gun.explode(d.center, 220, "explosive", d); // (el kamikaze revienta sobre los suyos)
       if (!d.respawn && !sfx.casting && !sfx.busy) meter.kill(!!d.kind.boss);
       const t0 = sim.firstHit.get(d); if (t0 != null) { sim.ttk = performance.now() / 1000 - t0; sim.firstHit.delete(d); }
       // Botín y créditos: solo los enemigos de las oleadas (los blancos de práctica reaparecen y no sueltan nada)
@@ -531,6 +532,7 @@ async function boot() {
     onWaveEnd: (i, last, reward) => {
       contractEvent({ type: "wave", reached: i + 1, clean: !waveHurt }); waveHurt = false; toast(t("ui.waveDone", { n: i + 1 })); earn(Math.round(SHOP.income.waveEnd * reward * curPerks.fortune)); gainXp(waveXp(i + 1, inv.progress.level) * reward); windUsed = false; hooksWaveEnd(i, last); },
     onAllDone: () => { toast(t("ui.wavesDone")); autosave(); },
+    onSelfDestruct: (d) => selfDestruct(d),
     onPlayerHit: (dmg) => {
       waveHurt = true;
       if (settings.screenShake) shake = Math.min(0.5, shake + 0.18);
@@ -539,6 +541,8 @@ async function boot() {
     },
   });
   waves.playerLevel = () => inv.progress.level;
+  /** Kamikaze que llega al jugador: explota (también daña a los suyos) y desaparece sin dar recompensa. */
+  function selfDestruct(d: Dummy) { const at = d.center; d.damage(1e9, null, false, at); gun.explode(at, 140, "explosive", d); if (settings.screenShake) shake = Math.min(0.8, shake + 0.35); }
   /** Daño al jugador: Égida y resistencia del árbol; Segundo aliento salva una vez por oleada. */
   function hurtPlayer(dmg: number) {
     dmg *= sfx.guard * curPerks.guard;
@@ -551,7 +555,7 @@ async function boot() {
   }
   // ---------- Incursiones (ordenador de la sala B) ----------
   const mobs = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
-    onWaveEnd() {}, onAllDone() {},
+    onWaveEnd() {}, onAllDone() {}, onSelfDestruct: (d) => selfDestruct(d),
     onPlayerHit: (dmg) => { if (settings.screenShake) shake = Math.min(0.5, shake + 0.18); hurtPlayer(dmg); $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on"); },
   });
   mobs.playerLevel = () => inv.progress.level;
