@@ -89,7 +89,9 @@ export class Gun {
   hidden = false;
   /** Súper: pose de invocación (manda sobre las manos y baja el arma) y mejoras temporales de la sobrecarga. */
   superPose: { right: HandPose; left: HandPose; lower: number } | null = null;
-  buff = { dmg: 1, rate: 1, freeAmmo: false };
+  buff = { dmg: 1, rate: 1, freeAmmo: false, crit: false, critMult: 1 };
+  /** Árbol de habilidades y nivel: daño, cadencia, daño crítico y probabilidad de no gastar bala. */
+  perks = { dmg: 1, rate: 1, critMult: 1, ammoSave: 0 };
   /** Para capturas y pruebas: fuerza campos de la entrada de animación (p. ej. { reload: 0.4, dt: 0 }). */
   poseOverride: Partial<AnimInput> | null = null;
   aimT = 0;
@@ -756,8 +758,8 @@ export class Gun {
     const ammoFrac = it.ammo / s.stats.cargador;
     if (!echo) {
       // Balas por disparo (racimo gasta varias; en furia, ninguna) y calor (armas que se sobrecalientan)
-      if (!this.buff.freeAmmo) it.ammo -= Math.min(it.ammo, fx.ammoPerShot());
-      this.cooldown = 60 / (s.stats.cadencia * fx.rateMult() * this.buff.rate);
+      if (!this.buff.freeAmmo && !(this.perks.ammoSave > 0 && Math.random() < this.perks.ammoSave)) it.ammo -= Math.min(it.ammo, fx.ammoPerShot());
+      this.cooldown = 60 / (s.stats.cadencia * fx.rateMult() * this.buff.rate * this.perks.rate);
       const hp = fx.heatPerShot(); if (hp) { this.heat = Math.min(1, this.heat + hp); if (this.heat >= 1) { this.overheatT = 2.2; this.sfx("empty"); } }
     }
     this.shotCount++;
@@ -800,7 +802,7 @@ export class Gun {
     const muzzle = this.flash.getWorldPosition(new THREE.Vector3());
     const q = this.camera.getWorldQuaternion(new THREE.Quaternion());
     const targets = [...this.hooks.dummies().filter((d) => d.alive).flatMap((d) => d.hitboxes), ...this.world];
-    const dmgMult = mods.dmg * this.buff.dmg, forceCrit = mods.forceCrit, critMult = mods.critMult, pierceN = mods.pierce;
+    const dmgMult = mods.dmg * this.buff.dmg * this.perks.dmg, forceCrit = mods.forceCrit || this.buff.crit, critMult = mods.critMult * this.buff.critMult * this.perks.critMult, pierceN = mods.pierce;
     const tracerColor = sig ? "#ffb347" : element === "fuego" ? "#ff7a2a" : element === "electrico" ? "#8fd8ff" : s.rarity.id === "comun" ? "#e9dcc0" : s.rarity.color;
     let firstHit: THREE.Vector3 | null = null, hitAny = false, firstTarget: Dummy | null = null;
     for (let p = 0; p < pellets; p++) {

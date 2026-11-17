@@ -1,5 +1,6 @@
 // Piezas comunes de la interfaz: ficha de arma, losetas, fotos de armas, visor 3D, cursor circular y navegación por
 // direcciones (mando y teclado). Estética de terminal de la simulación (ver menus.css).
+import { overPenalty } from "../progress";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { TYPE_INFO } from "../../weapons/generator";
@@ -31,6 +32,8 @@ const STATS: [StatKey, (v: number) => string][] = [
  * Ficha de arma legible en 5 segundos: nombre, rareza, clase y era; daño grande; barras de estadísticas con la
  * diferencia (verde/rojo) respecto a `cmp`; y los efectos en una línea cada uno.
  */
+/** Nivel del jugador (para avisar en la ficha de las armas de nivel superior). */
+export const CARD = { playerLevel: 0 };
 export function weaponCard(s: WeaponSpec, cmp?: WeaponSpec | null, title = "", opts: { wide?: boolean } = {}) {
   const base = TYPE_INFO[s.type as keyof typeof TYPE_INFO].base;
   const delta = (k: StatKey) => {
@@ -43,7 +46,7 @@ export function weaponCard(s: WeaponSpec, cmp?: WeaponSpec | null, title = "", o
   return `<div class="card ${opts.wide ? "wide" : ""}" style="--c:${s.rarity.color}">
     ${title ? `<span class="vs">${title}</span>` : ""}
     <span class="rar">${rarityName(s)} · ${typeName(s.type)} · ${eraName(s)} · ${t("label.level")} ${s.level}</span>
-    <span class="nm">${nameOf(s)}</span>${renamed}
+    <span class="nm">${nameOf(s)}</span>${renamed}${CARD.playerLevel && s.level > CARD.playerLevel ? `<span class="over">${t("label.over", { p: Math.round((1 - overPenalty(s.level, CARD.playerLevel)) * 100) })}</span>` : ""}
     <span class="meta">${archName(s)} · ${modeName(s)}${calName(s) ? ` · ${calName(s)}` : ""}${s.hold ? ` · ${holdName(s)}` : ""}</span>
     <div class="big"><strong>${damageText(s)}</strong><span>${t("label.damage")}</span>${cmp && Math.abs(dd) >= 0.5 ? `<span class="${dd > 0 ? "up" : "down"}">${dd > 0 ? "+" : ""}${Math.round(dd)}</span>` : ""}</div>
     <div class="stats">${STATS.map(([k, f]) => {

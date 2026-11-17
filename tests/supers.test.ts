@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { SUPERS, SUPER_IDS, SuperMeter, sampleHand, track } from "../src/game/supers";
 
 describe("súperes: datos", () => {
-  it("hay tres y cada línea de tiempo es coherente", () => {
-    expect(SUPER_IDS).toHaveLength(3);
+  it("hay diez y cada línea de tiempo es coherente", () => {
+    expect(SUPER_IDS).toHaveLength(10);
     for (const id of SUPER_IDS) {
       const s = SUPERS[id];
       expect(s.hit).toBeGreaterThan(0); expect(s.hit).toBeLessThan(s.duration);

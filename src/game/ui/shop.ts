@@ -27,6 +27,8 @@ export interface ShopHooks {
   equipNow(spec: WeaponSpec): void;
   /** Reloj del escaparate: tiempo de juego (se pausa con el juego y se guarda). */
   gameTime(): number;
+  /** Nivel de un arma del escaparate (por su semilla, ajustado al nivel del jugador) y nivel del jugador. */
+  weaponLevel?(seed: number): number; playerLevel?(): number;
 }
 
 export class ShopScreen {
@@ -47,9 +49,13 @@ export class ShopScreen {
   /** Armas del escaparate de la ronda actual (deterministas: misma semilla y ronda, mismas armas). */
   private showcase() {
     const sc = ensureShowcase(this.state(), this.hooks.gameTime());
-    const key = `${sc.seed}:${sc.round}`;
+    const key = `${sc.seed}:${sc.round}:${this.hooks.playerLevel?.() ?? 0}`;
     if (this.stock?.key !== key) {
-      this.stock = { key, specs: showcaseRarities(sc).map((r, i) => this.gen.generate(showcaseSeed(sc, i), undefined, r)) };
+      this.stock = { key, specs: showcaseRarities(sc).map((r, i) => {
+        const seed = showcaseSeed(sc, i), w = this.gen.generate(seed, undefined, r);
+        if (this.hooks.weaponLevel) { w.level = this.hooks.weaponLevel(seed); this.gen.refresh(w); }
+        return w;
+      }) };
       this.sel = -1;
     }
     return { sc, specs: this.stock.specs };

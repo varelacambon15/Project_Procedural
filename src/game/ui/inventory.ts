@@ -2,6 +2,7 @@
 // (equipar, a la mochila, renombrar, soltar, desguazar con confirmación suave). Teclado, ratón y mando.
 import { GRENADE_RARITY, type GrenadeSpec } from "../grenades";
 import { SUPERS, SUPER_IDS, type SuperId } from "../supers";
+import { BRANCHES, SKILLS, branchPoints, canRaise, pointsFree, raise, rank, respec, respecCost, xpToNext, MAX_LEVEL } from "../progress";
 import { fillNadeThumbs } from "./shop";
 import { RARITIES } from "../../weapons/generator";
 import { typeName } from "../../weapons/labels";
@@ -21,6 +22,7 @@ const ERAS = ["all", "classic", "modern", "rustic", "scifi"];
 export interface InventoryHooks {
   close(): void; drop(it: Item): void; rename(it: Item): void; toast(m: string): void; changed(it: Item | null): void;
   /** Soltar una granada al suelo (delante del jugador). */ dropNade(g: GrenadeSpec): void;
+  /** Ha cambiado el árbol de habilidades (aplicar sus efectos). */ perks?(): void;
 }
 
 export class InventoryScreen {
@@ -30,7 +32,7 @@ export class InventoryScreen {
   /** Granada elegida (uid), en lugar de un arma. */ private selNade: number | null = null;
   private filter = { rarity: "all", cls: "all", era: "all" };
   private sort: Sort = "rarity";
-  /** Pestaña: equipo (armas y granadas) o habilidades (súper). */ private tab: "gear" | "skills" = "gear";
+  /** Pestaña: equipo (armas y granadas) o habilidades (súper). */ private tab: "gear" | "skills" | "tree" = "gear";
 
   constructor(private inv: Inventory, private thumbs: Thumbnails, private hooks: InventoryHooks) {
     this.el.addEventListener("click", (e) => this.click(e));
@@ -122,7 +124,27 @@ export class InventoryScreen {
     return list.filter(ok).sort((a, b) => { const x = key(a), y = key(b); return x < y ? -1 : x > y ? 1 : 0; });
   }
 
-  private static GLYPH: Record<SuperId, string> = { overload: "⟐", shockwave: "◎", storm: "ϟ" };
+  private static GLYPH: Record<SuperId, string> = { overload: "⟐", shockwave: "◎", storm: "ϟ", inferno: "♨", stasis: "❄", orbital: "⊕", seekers: "⁂", aegis: "⬡", deadeye: "◉", vortex: "@" };
+  /** Parámetros de la descripción de un súper. */
+  private static spArgs(id: SuperId) { const s = SUPERS[id]; return { a: s.active ?? 0, d: s.damage ?? 0, r: s.radius ?? 0, n: s.count ?? 0, g: Math.round((1 - (s.guard ?? 1)) * 100), v: Math.round(((s.vuln ?? 1) - 1) * 100), c: Math.round(((s.crit ?? 1) - 1) * 100) }; }
+  /** Pestaña Progreso: nivel, experiencia y árbol de habilidades (tres ramas). */
+  private renderTree() {
+    const p = this.inv.progress, free = pointsFree(p), need = xpToNext(p.level), cost = respecCost(p);
+    const node = (b: string, n: (typeof SKILLS)["gunner"][number]) => {
+      const r = rank(p, n.id), ok = canRaise(p, n.id), locked = (n.req ?? 0) > branchPoints(p, b as "gunner");
+      return `<button type="button" class="tile skillnode ${r >= n.max ? "maxed" : ""} ${locked ? "locked" : ""}" data-skill="${n.id}" data-nav ${ok ? "" : "aria-disabled=\"true\""}>
+        <span class="nm">${t(`pg.s.${n.id}`)}</span><span class="lbl">${t(`pg.d.${n.id}`, { v: Math.round(n.per * 1000) / 10 })}</span>
+        <span class="rk">${locked ? t("pg.req", { n: n.req ?? 0 }) : `${r} / ${n.max}`}</span></button>`;
+    };
+    $("inv-body").innerHTML = `
+      <section class="panel tree"><h2>${t("pg.lv")} ${p.level}${p.level >= MAX_LEVEL ? ` · ${t("pg.max")}` : ` · ${p.xp} / ${need} XP`}</h2>
+        <p class="note">${t("pg.points", { n: free })}</p>
+        <div class="branches">${BRANCHES.map((b) => `<div class="branch"><h3>${t(`pg.b.${b}`)} <small>${branchPoints(p, b)}</small></h3>${SKILLS[b].map((n) => node(b, n)).join("")}</div>`).join("")}</div>
+        <div class="actions"><button type="button" class="btn ghost sm" data-respec="1" ${cost && this.inv.credits >= cost ? "" : "disabled"}>${t("pg.respec", { c: cost })}</button></div>
+        <p class="note">${t("pg.how")}</p></section>`;
+    $("inv-credits").textContent = `${this.inv.credits} ${t("unit.cr")}`;
+    $("inv-foot").innerHTML = keyHint("Enter", "Ⓐ", t("pg.raise")) + keyHint("Esc", "Ⓑ", t("ui.back"));
+  }
   /** Pestaña Habilidades: los tres súperes; elegir uno lo equipa. */
   private renderSkills() {
     const sel = this.inv.superId;
@@ -131,18 +153,19 @@ export class InventoryScreen {
         <div class="tiles skills">${SUPER_IDS.map((id) => `<button type="button" class="tile skill ${id === sel ? "sel" : ""}" data-super="${id}" data-nav><span class="glyph">${InventoryScreen.GLYPH[id]}</span><span class="lbl">${id === sel ? "✓ " : ""}${t("sp.super")}</span><span class="nm">${t(`sp.${id}`)}</span></button>`).join("")}</div>
         <p class="note">${t("sp.how")}</p></section>
       <section class="panel detail"><div class="card"><div class="skillbig">${InventoryScreen.GLYPH[sel]}</div><span class="lbl">${t("sp.super")}</span><div class="nm">${t(`sp.${sel}`)}</div>
-        <p class="note">${t(`sp.d.${sel}`, { a: SUPERS[sel].active ?? 0, d: SUPERS[sel].damage ?? 0, r: SUPERS[sel].radius ?? 0 })}</p></div></section>`;
+        <p class="note">${t(`sp.d.${sel}`, InventoryScreen.spArgs(sel))}</p></div></section>`;
     $("inv-credits").textContent = `${this.inv.credits} ${t("unit.cr")}`;
     $("inv-foot").innerHTML = keyHint("Enter", "Ⓐ", t("sp.equip")) + keyHint("Esc", "Ⓑ", t("ui.back"));
   }
   private renderTabs() {
     const el = $("inv-tabs"); el.hidden = this.storageMode;
-    el.innerHTML = (["gear", "skills"] as const).map((k) => `<button type="button" class="chip ${this.tab === k ? "on" : ""}" data-tab="${k}">${t(`sp.tab.${k}`)}</button>`).join("");
+    el.innerHTML = (["gear", "skills", "tree"] as const).map((k) => `<button type="button" class="chip ${this.tab === k ? "on" : ""}" data-tab="${k}">${t(`sp.tab.${k}`)}</button>`).join("");
   }
 
   render() {
     this.renderTabs();
     if (this.tab === "skills" && !this.storageMode) return this.renderSkills();
+    if (this.tab === "tree" && !this.storageMode) return this.renderTree();
     const i = this.inv, it = this.selected, cur = i.current;
     const chips = ["all", ...ORDER].map((r) => `<button type="button" class="chip ${this.filter.rarity === r ? "on" : ""} ${r !== "all" ? `r-${r}` : ""}" data-rar="${r}" style="${r !== "all" ? `--c:${RARITIES.find((x) => x.id === r)!.color}` : ""}">${r === "all" ? t("ui.all") : t(`rarity.${r}`)}</button>`).join("");
     const packItems = this.visible(i.pack.filter((x): x is Item => !!x));
@@ -246,7 +269,10 @@ export class InventoryScreen {
     const target = e.target as HTMLElement;
     if (target.closest("[data-close]")) return this.close();
     const tb = target.closest<HTMLElement>("[data-tab]");
-    if (tb) { this.tab = tb.dataset.tab as "gear" | "skills"; this.render(); return this.el.querySelector<HTMLElement>(`[data-tab="${this.tab}"]`)?.focus({ preventScroll: true }); }
+    if (tb) { this.tab = tb.dataset.tab as "gear" | "skills" | "tree"; this.render(); return this.el.querySelector<HTMLElement>(`[data-tab="${this.tab}"]`)?.focus({ preventScroll: true }); }
+    const sk = target.closest<HTMLElement>("[data-skill]");
+    if (sk) { if (raise(this.inv.progress, sk.dataset.skill!)) this.hooks.perks?.(); this.render(); return this.el.querySelector<HTMLElement>(`[data-skill="${sk.dataset.skill}"]`)?.focus({ preventScroll: true }); }
+    if (target.closest("[data-respec]")) { const c = respecCost(this.inv.progress); if (c && this.inv.credits >= c) { this.inv.credits -= c; respec(this.inv.progress); this.hooks.perks?.(); this.hooks.toast(t("pg.respecDone")); } return this.render(); }
     const sp = target.closest<HTMLElement>("[data-super]");
     if (sp) { this.inv.superId = sp.dataset.super as SuperId; this.render(); return this.el.querySelector<HTMLElement>(`[data-super="${this.inv.superId}"]`)?.focus({ preventScroll: true }); }
     const nt = target.closest<HTMLElement>(".tile[data-nade]");

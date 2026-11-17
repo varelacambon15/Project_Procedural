@@ -3,14 +3,19 @@
 // invocación en primera persona. Los números de cada animación están en supers.json (ajustables sin tocar código).
 import data from "./supers.json";
 
-export type SuperId = "overload" | "shockwave" | "storm";
-export const SUPER_IDS: SuperId[] = ["overload", "shockwave", "storm"];
+export type SuperId = "overload" | "shockwave" | "storm" | "inferno" | "stasis" | "orbital" | "seekers" | "aegis" | "deadeye" | "vortex";
+export const SUPER_IDS: SuperId[] = ["overload", "shockwave", "storm", "inferno", "stasis", "orbital", "seekers", "aegis", "deadeye", "vortex"];
 
-export interface HandKey { t: number; pos: [number, number, number]; rot: [number, number, number]; curl: number; thumb: number }
+/** Clave de mano. `index` = cierre del índice (si falta, el de los demás dedos; sirve para señalar). */
+export interface HandKey { t: number; pos: [number, number, number]; rot: [number, number, number]; curl: number; thumb: number; index?: number }
 export interface Timeline {
   duration: number; hit: number; cost: number;
   /** Segundos que dura el efecto tras invocar (sobrecarga, tormenta). */ active?: number;
   damage?: number; radius?: number; rate?: number; interval?: number; range?: number;
+  /** Estasis: daño extra que reciben los congelados. Égida: fracción del daño que se recibe. Ojo letal: daño crítico. */
+  vuln?: number; guard?: number; crit?: number;
+  /** Enjambre: misiles. Vórtice: radio de atracción y daño de cada tic. */
+  count?: number; pull?: number; tick?: number;
   right: HandKey[]; left: HandKey[]; fov: [number, number][]; roll: [number, number][]; lower: [number, number][];
 }
 export const SUPERS = data as unknown as Record<SuperId, Timeline>;
@@ -28,9 +33,10 @@ export function track(k: [number, number][], t: number): number {
 export function sampleHand(keys: HandKey[], t: number): Omit<HandKey, "t"> {
   const pick = (a: HandKey, b: HandKey, u: number) => {
     const m = (x: number, y: number) => x + (y - x) * u;
-    return { pos: a.pos.map((v, i) => m(v, b.pos[i])) as HandKey["pos"], rot: a.rot.map((v, i) => m(v, b.rot[i])) as HandKey["rot"], curl: m(a.curl, b.curl), thumb: m(a.thumb, b.thumb) };
+    return { pos: a.pos.map((v, i) => m(v, b.pos[i])) as HandKey["pos"], rot: a.rot.map((v, i) => m(v, b.rot[i])) as HandKey["rot"], curl: m(a.curl, b.curl), thumb: m(a.thumb, b.thumb), index: m(a.index ?? a.curl, b.index ?? b.curl) };
   };
   if (t <= keys[0].t) return pick(keys[0], keys[0], 0);
+  const last = keys[keys.length - 1]; if (t >= last.t) return pick(last, last, 0); // (exacto al final: sin error de redondeo)
   for (let i = 1; i < keys.length; i++) if (t <= keys[i].t) return pick(keys[i - 1], keys[i], ease((t - keys[i - 1].t) / (keys[i].t - keys[i - 1].t)));
   const l = keys[keys.length - 1]; return pick(l, l, 0);
 }
@@ -38,10 +44,11 @@ export function sampleHand(keys: HandKey[], t: number): Omit<HandKey, "t"> {
 /** Medidor del súper: sube con las bajas (y un poco con el tiempo) y se gasta al invocarlo. */
 export class SuperMeter {
   charge = 0;
+  /** Multiplicador de carga (habilidades del árbol). */ gain = 1;
   static readonly PER_KILL = 0.08; static readonly BOSS = 0.35; static readonly PASSIVE = 1 / 240;
   get ready() { return this.charge >= 1; }
-  kill(boss = false) { this.charge = Math.min(1, this.charge + (boss ? SuperMeter.BOSS : SuperMeter.PER_KILL)); }
-  update(dt: number) { this.charge = Math.min(1, this.charge + dt * SuperMeter.PASSIVE); }
+  kill(boss = false) { this.charge = Math.min(1, this.charge + (boss ? SuperMeter.BOSS : SuperMeter.PER_KILL) * this.gain); }
+  update(dt: number) { this.charge = Math.min(1, this.charge + dt * SuperMeter.PASSIVE * this.gain); }
   /** Gasta el medidor; false si no está lleno. */
   use(): boolean { if (!this.ready) return false; this.charge = 0; return true; }
 }

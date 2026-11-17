@@ -1,0 +1,36 @@
+{
+  "_doc": "Niveles a lo Borderlands. xp: experiencia para pasar del nivel L al L+1 = base + mult * (L-1)^exp. kill: experiencia por baja de oleada según el tipo (se multiplica por 1 + perLevel*(nivel del enemigo-1)). wave: base + perWave * número de oleada. weapon: las armas salen entre spread[0] y spread[1] niveles respecto al jugador; por cada nivel por encima del jugador, -overPenalty de daño (mínimo minMult). enemy: nivel de los enemigos de oleada = nivel del jugador + offset (y +1 cada waveStep oleadas). player: vida extra por nivel y daño extra de los enemigos por nivel. skills: árbol de habilidades (rangos, valor por rango, puntos de la rama necesarios).",
+  "maxLevel": 100,
+  "xp": { "base": 100, "mult": 40, "exp": 1.35 },
+  "kill": { "small": 6, "basic": 10, "caster": 12, "sturdy": 16, "large": 24, "elite": 30, "warden": 220, "perLevel": 0.05 },
+  "wave": { "base": 20, "perWave": 6 },
+  "contractXpPerCredit": 1,
+  "weapon": { "spread": [-2, 1], "overPenalty": 0.12, "minMult": 0.4, "refLevel": 12 },
+  "enemy": { "offset": { "small": -1, "basic": 0, "caster": 0, "sturdy": 0, "large": 1, "elite": 1, "warden": 2 }, "waveStep": 5 },
+  "player": { "healthPerLevel": 0.03, "enemyDamagePerLevel": 0.03 },
+  "respecPerLevel": 25,
+  "skills": {
+    "gunner": [
+      { "id": "g_dmg", "max": 8, "stat": "dmg", "per": 0.02 },
+      { "id": "g_rate", "max": 8, "stat": "rate", "per": 0.015 },
+      { "id": "g_crit", "max": 8, "stat": "critMult", "per": 0.05 },
+      { "id": "g_ammo", "max": 8, "stat": "ammoSave", "per": 0.02 },
+      { "id": "g_master", "max": 1, "stat": "master", "per": 1, "req": 15 }
+    ],
+    "survivor": [
+      { "id": "s_hp", "max": 8, "stat": "health", "per": 0.04 },
+      { "id": "s_regen", "max": 8, "stat": "regen", "per": 0.08 },
+      { "id": "s_guard", "max": 8, "stat": "guard", "per": 0.025 },
+      { "id": "s_delay", "max": 8, "stat": "regenDelay", "per": 0.06 },
+      { "id": "s_wind", "max": 1, "stat": "secondWind", "per": 1, "req": 15 }
+    ],
+    "tactician": [
+      { "id": "t_charge", "max": 8, "stat": "superGain", "per": 0.05 },
+      { "id": "t_power", "max": 8, "stat": "superPower", "per": 0.05 },
+      { "id": "t_span", "max": 8, "stat": "superSpan", "per": 0.04 },
+      { "id": "t_nade", "max": 8, "stat": "nadeRecharge", "per": 0.05 },
+      { "id": "t_speed", "max": 8, "stat": "speed", "per": 0.015 },
+      { "id": "t_fortune", "max": 1, "stat": "fortune", "per": 1, "req": 15 }
+    ]
+  }
+}

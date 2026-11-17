@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import data from "../data/waves.json";
 import { Dummy, KINDS, randomLook } from "./dummies";
+import { enemyDamageMult, enemyHealthMult, enemyLevel } from "./progress";
 
 export interface WaveEvents {
   /** Se ha completado una oleada (para el botín de fin de oleada). */
@@ -42,6 +43,8 @@ export class Waves {
   private orbs: Orb[] = [];
   /** Modificador de la oleada en curso. */ mod: WaveModifier | null = null;
   private volleys: { d: Dummy; every: number; t: number; speed: number; dmg: number }[] = [];
+  /** Nivel del jugador (los enemigos se ajustan a él). Sin asignar, los de diseño (sin escalar). */
+  playerLevel: (() => number) | null = null;
 
   constructor(private scene: THREE.Scene, private dummies: Dummy[], private overlay: HTMLElement, private player: () => THREE.Vector3,
     private onDamage: ConstructorParameters<typeof Dummy>[4], private ev: WaveEvents) {}
@@ -77,15 +80,17 @@ export class Waves {
     const k = KINDS[kind];
     const x = (Math.random() - 0.5) * data.spawnWidth;
     const M = this.mod ? WAVE_MODIFIERS[this.mod] : null;
-    const hp = k.health * data.healthScale * (1 + Math.max(0, this.index - data.waves.length + 1) * 0.08) * (M && !k.boss ? M.hp : 1);
-    const d = new Dummy({ ...k, health: hp }, `wave-${kind}-${Math.random()}`, new THREE.Vector3(x, 0, data.spawnZ), this.overlay, this.onDamage, randomLook());
+    const lv = this.playerLevel ? enemyLevel(this.playerLevel(), kind, this.index) : k.level;
+    const lm = this.playerLevel ? enemyHealthMult(lv) : 1, dm = this.playerLevel ? enemyDamageMult(lv) : 1;
+    const hp = k.health * lm * data.healthScale * (1 + Math.max(0, this.index - data.waves.length + 1) * 0.08) * (M && !k.boss ? M.hp : 1);
+    const d = new Dummy({ ...k, health: hp, level: lv }, `wave-${kind}-${Math.random()}`, new THREE.Vector3(x, 0, data.spawnZ), this.overlay, this.onDamage, randomLook());
     d.respawn = false;
-    const sp = ((data.speed as Record<string, number>)[kind] ?? 2.4) * (M && !k.boss ? M.speed : 1), dmg = ((data.damage as Record<string, number>)[kind] ?? 8) * (M ? M.dmg : 1);
+    const sp = ((data.speed as Record<string, number>)[kind] ?? 2.4) * (M && !k.boss ? M.speed : 1), dmg = ((data.damage as Record<string, number>)[kind] ?? 8) * (M ? M.dmg : 1) * dm;
     const rg = (data.ranged as Record<string, { range: number; interval: number; orbSpeed: number; orbDamage: number; volleyEvery?: number }>)[kind];
     // (lanzador: se para lejos y dispara esferas; jefe: golpea de cerca y además lanza ráfagas de esferas cada pocos s)
     d.chase = { target: this.player, speed: sp, range: rg?.range ?? data.attackRange, interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
-      onAttack: (x) => (rg && !k.boss ? this.orb(d, rg.orbSpeed, rg.orbDamage * (M ? M.dmg : 1)) : this.ev.onPlayerHit(x)) };
-    if (k.boss) { d.alwaysBar = true; if (rg?.volleyEvery) this.volleys.push({ d, every: rg.volleyEvery, t: 2, speed: rg.orbSpeed, dmg: rg.orbDamage }); }
+      onAttack: (x) => (rg && !k.boss ? this.orb(d, rg.orbSpeed, rg.orbDamage * (M ? M.dmg : 1) * dm) : this.ev.onPlayerHit(x)) };
+    if (k.boss) { d.alwaysBar = true; if (rg?.volleyEvery) this.volleys.push({ d, every: rg.volleyEvery, t: 2, speed: rg.orbSpeed, dmg: rg.orbDamage * dm }); }
     this.scene.add(d.group); this.dummies.push(d); this.alive.push(d);
   }
 
@@ -135,9 +140,13 @@ export class Waves {
 
 /** Vida del jugador en la sala (solo para las oleadas): regenera tras unos segundos sin recibir daño. */
 export class PlayerHealth {
+  static readonly BASE = data.player.health;
   max = data.player.health; value = data.player.health; private since = 99;
   /** Sin regeneración (modificador de oleada). */ noRegen = false;
+  /** Nivel y habilidades: regeneración más rápida y espera más corta. */ regenMult = 1; delayMult = 1;
+  /** Cambia la vida máxima (nivel, habilidades) manteniendo la proporción de vida actual. */
+  setMax(m: number) { m = Math.round(m); if (m === this.max) return; this.value = (this.value / this.max) * m; this.max = m; }
   hit(dmg: number) { this.value = Math.max(0, this.value - dmg); this.since = 0; return this.value <= 0; }
-  update(dt: number) { this.since += dt; if (!this.noRegen && this.since > data.player.regenDelay) this.value = Math.min(this.max, this.value + data.player.regenPerSecond * dt); }
+  update(dt: number) { this.since += dt; if (!this.noRegen && this.since > data.player.regenDelay * this.delayMult) this.value = Math.min(this.max, this.value + data.player.regenPerSecond * this.regenMult * (this.max / data.player.health) * dt); }
   reset() { this.value = this.max; this.since = 99; }
 }

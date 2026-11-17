@@ -5,6 +5,7 @@ import type { Frame } from "./input";
 const SLIDE = 0.9; // duración del deslizamiento (s)
 
 export class Player {
+  /** Velocidad extra (árbol de habilidades). */ speedMult = 1;
   readonly pos = new THREE.Vector3(0, 0, 6);
   readonly vel = new THREE.Vector3();
   yaw = 0; pitch = 0;
@@ -40,7 +41,7 @@ export class Player {
     this.slideK += ((this.slideT > 0 ? 1 : 0) - this.slideK) * Math.min(1, dt * 10);
     this.sprinting = f.sprint && f.moveZ > 0.3 && !aiming && !f.crouch && this.slideT <= 0;
     this.wasSprinting = this.sprinting;
-    const speed = aiming ? 2.6 : this.sprinting ? 7.2 : this.crouchK > 0.5 ? 2.4 : 4.6;
+    const speed = (aiming ? 2.6 : this.sprinting ? 7.2 : this.crouchK > 0.5 ? 2.4 : 4.6) * this.speedMult;
     const fwd = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
     const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
     const wish = fwd.multiplyScalar(f.moveZ).add(right.multiplyScalar(f.moveX)).multiplyScalar(speed);

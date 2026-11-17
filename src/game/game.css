@@ -32,6 +32,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: #0d0e0f; col
 .hptrack .sh { background: var(--shield); z-index: 2; }
 .hpbar.status-fire .hptrack { box-shadow: 0 0 6px #f07a2a; }
 .hpbar.status-shock .hptrack { box-shadow: 0 0 6px #5cc8f0; }
+.hpbar.status-frozen .hptrack { box-shadow: 0 0 8px #bfeaff; background: #20384a; }
 .hpbar.status-acid .hptrack { box-shadow: 0 0 6px #9bd23c; }
 .hpbar.status-rad .hptrack { box-shadow: 0 0 6px #d8e04a; }
 /* Vida del jefe: arriba en el centro, solo mientras se combate con él */
@@ -177,3 +178,14 @@ body.in-menu #nadehud { visibility: hidden; }
 .tile.skill { min-height: 96px; align-items: center; justify-content: center; text-align: center; } .tile.skill .glyph { font-size: 34px; line-height: 1; display: block; margin-bottom: 4px; }
 .tiles.skills { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 10px; } .tile.skill .nm { overflow-wrap: normal; word-break: normal; }
 .skillbig { font-size: 64px; text-align: center; line-height: 1.2; }
+
+/* Nivel y experiencia: arriba a la izquierda */
+#xphud { position: fixed; left: 16px; top: calc(14px + env(safe-area-inset-top, 0px)); display: flex; align-items: center; gap: 8px; font-family: var(--display); font-size: 14px; color: #fff; text-shadow: 0 1px 3px #000; pointer-events: none; }
+#xphud b { color: var(--amber); font-size: 16px; }
+#xphud .bar { width: 150px; height: 6px; background: rgba(255,255,255,.18); } #xphud .bar i { display: block; height: 100%; background: #b88cff; transition: width .3s; }
+#xphud small { opacity: .75; font-size: 11px; }
+
+/* Súperes activos: viñeta roja (Ojo letal) y verde (Égida) */
+body.deadeye::after, body.aegis::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+body.deadeye::after { box-shadow: inset 0 0 180px rgba(255, 40, 60, .45); }
+body.aegis::after { box-shadow: inset 0 0 160px rgba(80, 255, 190, .35); }

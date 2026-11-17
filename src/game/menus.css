@@ -429,3 +429,18 @@ body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family
 .nade.on { outline: 1px solid var(--c); }
 .sc-tile .nadeimg img { object-fit: contain; }
 .card .nadebig { display: grid; place-items: center; height: 140px; } .card .nadebig img { max-height: 140px; }
+
+/* Ficha: arma de nivel superior al jugador */
+.card .over { display: block; color: #ff6b5a; font-size: 12px; margin-top: 2px; }
+/* Árbol de habilidades */
+.panel.tree { grid-column: 1 / -1; }
+.tile.skillnode .lbl, .tile.skillnode .nm { white-space: normal; overflow: visible; text-overflow: clip; text-transform: none; }
+.panel.tree .branches { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.panel.tree .branch { display: flex; flex-direction: column; gap: 6px; }
+.panel.tree h3 { margin: 0 0 4px; font-family: var(--display); font-size: 15px; display: flex; justify-content: space-between; }
+.tile.skillnode { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; text-align: left; padding: 8px 10px; min-height: 0; }
+.tile.skillnode .nm { font-size: 14px; } .tile.skillnode .lbl { grid-column: 1 / -1; font-size: 11px; opacity: .75; }
+.tile.skillnode .rk { grid-row: 1; grid-column: 2; font-family: var(--display); color: var(--amber); }
+.tile.skillnode.maxed { border-color: var(--amber); } .tile.skillnode.locked { opacity: .45; } .tile.skillnode[aria-disabled="true"] { cursor: default; }
+.tiles.skills { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 760px) { .panel.tree .branches { grid-template-columns: 1fr; } .tiles.skills { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

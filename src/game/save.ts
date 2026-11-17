@@ -30,6 +30,8 @@ export interface SaveData {
   contracts?: import("./contracts").ContractState;
   /** Granadas y la equipada (opcional). */
   grenades?: import("./grenades").GrenadeSpec[]; grenadeActive?: number; superId?: string;
+  /** Nivel, experiencia y habilidades (opcional: las partidas antiguas empiezan al nivel de su mejor arma). */
+  progress?: import("./progress").ProgressState;
 }
 
 // ---------- Migraciones: una función por versión, de N a N+1 ----------

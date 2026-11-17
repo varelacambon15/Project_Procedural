@@ -61,6 +61,8 @@ export class Dummy {
   private burnT = 0; private burnDps = 0; private burnTick = 0;
   /** Aturdimiento breve de la descarga eléctrica (no se apila). */
   private stunT = 0;
+  /** Estasis (súper): congelado sin temblar y recibe más daño mientras dura. */
+  holdT = 0; vulnT = 0; vuln = 1;
   readonly bar: HTMLDivElement;
   private clip!: THREE.Plane; private scan!: THREE.Mesh; private top = 2.4;
   /** Reacciones visibles: brasas (fuego), chispas azules (eléctrico) y empuje (explosivo). */
@@ -93,6 +95,10 @@ export class Dummy {
   }
   private emitT = 0; private pushV = new THREE.Vector3(); private pushOff = new THREE.Vector3();
   /** Empuje corto (onda de choque). */
+  /** Congela al enemigo `sec` segundos; mientras, recibe `vuln` veces el daño. */
+  freeze(sec: number, vuln = 1) { this.holdT = Math.max(this.holdT, sec); this.vulnT = Math.max(this.vulnT, sec); this.vuln = Math.max(vuln, 1); }
+  /** Arrastra al enemigo por el suelo hacia un punto (vórtice), sin pasarse. */
+  drag(to: THREE.Vector3, dist: number) { const v = to.clone().setY(0).sub(this.group.position.clone().setY(0)); const l = v.length(); if (l > 0.6) this.group.position.addScaledVector(v.normalize(), Math.min(dist, l - 0.6)); }
   push(dir: THREE.Vector3, amount: number) { this.pushV.addScaledVector(dir, amount * 6); }
   private path: { a: THREE.Vector3; b: THREE.Vector3; speed: number; t: number } | null = null;
   private onDamage: (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => void;
@@ -194,7 +200,7 @@ export class Dummy {
     this.flash = 0.08;
     // Barra visible tras el daño: jefe 12 s; élites, resistentes y grandes 9 s; el resto 5 s (luego se desvanece)
     this.engagedT = this.kind.boss ? 12 : /^(elite|sturdy|large)$/.test(this.kind.key) ? 9 : 5;
-    let left = amount, dealt = 0;
+    let left = amount * (this.vulnT > 0 ? this.vuln : 1), dealt = 0;
     for (const layer of this.layers) { if (left <= 0) break; const d = Math.min(layer.value, left); layer.value -= d; left -= d; dealt += d; }
     const color = element ? ELEMENT_COLOR[element] : crit ? "#ffd84a" : "#ffffff";
     this.onDamage(this, dealt, color, crit, at);
@@ -208,11 +214,12 @@ export class Dummy {
     if (el === "electrico") this.stunT = Math.max(this.stunT, 0.3);
   }
 
-  private die() { this.alive = false; this.deadT = 0; this.burnT = 0; this.stunT = 0; }
+  private die() { this.alive = false; this.deadT = 0; this.burnT = 0; this.stunT = 0; this.holdT = 0; this.vulnT = 0; }
 
   update(dt: number, camera: THREE.Camera, viewW: number, viewH: number) {
-    this.stunT = Math.max(0, this.stunT - dt);
-    if (this.chase && this.alive && this.stunT <= 0) {
+    this.stunT = Math.max(0, this.stunT - dt); this.holdT = Math.max(0, this.holdT - dt); this.vulnT = Math.max(0, this.vulnT - dt);
+    const held = this.stunT > 0 || this.holdT > 0;
+    if (this.chase && this.alive && !held) {
       // Avanza hacia el jugador por el suelo; al llegar, golpea cada cierto tiempo
       const c = this.chase, to = c.target().clone().setY(0).sub(this.group.position.clone().setY(0));
       const d = to.length(); c.cd = Math.max(0, c.cd - dt);
@@ -223,7 +230,7 @@ export class Dummy {
       if (this.legs.length && d > c.range) { this.walkT += dt * c.speed * 3.2; this.legs.forEach((l, i) => (l.rotation.x = Math.sin(this.walkT + i * Math.PI) * 0.5)); }
       else this.legs.forEach((l) => (l.rotation.x *= 0.85));
     }
-    if (this.path && this.alive && this.stunT <= 0) {
+    if (this.path && this.alive && !held) {
       this.path.t += dt * this.path.speed / this.path.a.distanceTo(this.path.b);
       const k = 0.5 - 0.5 * Math.cos(this.path.t * Math.PI);
       this.group.position.lerpVectors(this.path.a, this.path.b, k);
@@ -269,7 +276,7 @@ export class Dummy {
     const b = this.bar;
     const hp = this.layers[this.layers.length - 1];
     b.querySelector<HTMLElement>(".hp")!.style.width = `${Math.max(0, (hp.value / hp.max) * 100)}%`;
-    b.classList.toggle("status-fire", this.burnT > 0); b.classList.toggle("status-shock", this.stunT > 0);
+    b.classList.toggle("status-fire", this.burnT > 0); b.classList.toggle("status-shock", this.stunT > 0); b.classList.toggle("status-frozen", this.holdT > 0);
     if (this.kind.boss) {
       // Barra del jefe arriba, solo durante el combate con él (se oculta 12 s después del último golpe)
       this.engagedT = Math.max(0, this.engagedT - dt);
