@@ -18,6 +18,8 @@ export interface SuperHooks {
   aim?(max: number): THREE.Vector3;
   /** Cura al jugador: por completo sin cantidad (Égida) o esa cantidad (Sanguijuela). */
   heal?(n?: number): void;
+  /** Sonido propio de cada súper en el instante en que se desata. */
+  sig?(id: SuperId): void;
   /** Hace flotar al jugador (Gravedad cero). */
   levitate?(sec: number, h: number): void;
 }
@@ -150,6 +152,7 @@ export class SuperFx {
   private aimAt(max: number, o: THREE.Vector3) { return this.hooks.aim?.(max) ?? o.clone(); }
 
   private trigger(id: SuperId, o: THREE.Vector3) {
+    this.hooks.sig?.(id);
     const tl = SUPERS[id], at = o.clone().setY(0.05), col = COLOR[id];
     if (LASTING.has(id)) this.active = { id, t: 0, next: 0, at: at.clone() };
     switch (id) {

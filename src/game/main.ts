@@ -11,7 +11,7 @@ import { MODULE_CHANCE, SUPER_IDS, SuperMeter, rollModule, type SuperId } from "
 import { PROGRESS, addXp, killXp, migrateProgress, overPenalty, perks as skillPerks, playerHealthMult, rollWeaponLevel, waveXp, xpToNext, MAX_LEVEL } from "./progress";
 import { grenadeObject, loadGrenadeModel } from "./grenademodel";
 import { applyEvent, claimAll, refreshContracts, type Contract, type ContractState } from "./contracts";
-import { initSounds, loadSamples, playSample, sample, soundManifest, startMusic } from "./audio";
+import { audio, initSounds, loadSamples, out, playSample, sample, soundManifest, startMusic } from "./audio";
 import showcaseWeapon from "../data/showcase-weapon.json";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RARITIES, WeaponGenerator } from "../weapons/generator";
@@ -194,6 +194,7 @@ async function boot() {
     },
     heal: (n) => { php.value = n == null ? php.max : Math.min(php.max, php.value + n); },
     levitate: (sec, h) => player.levitate(sec, h),
+    sig: (id) => superSig(id),
     hand: () => camera.localToWorld(new THREE.Vector3(0.15, -0.15, -0.6)),
     sound(kind) {
       const e = soundManifest?.efectos; if (!e) return;
@@ -201,6 +202,36 @@ async function boot() {
       else { const l = e.flash_aturdidora; if (l?.length) playSample(sample(l[Math.floor(Math.random() * l.length)]), kind === "zap" ? 0.35 : kind === "shot" ? 0.08 : 0.5, kind === "zap" ? 1.5 : kind === "shot" ? 2.6 : 1); }
     },
   });
+  /**
+   * Firma sonora de cada súper (sintetizada): tono base, forma de onda, barrido de frecuencia, ruido y duración.
+   * Suena al desatarse, por encima de los efectos del pack (explosión, descarga).
+   */
+  const SIG: Record<SuperId, { f0: number; f1: number; wave: OscillatorType; len: number; noise: number; lp: number; vol: number; chord?: number[] }> = {
+    overload: { f0: 120, f1: 520, wave: "sawtooth", len: 0.7, noise: 0.1, lp: 2400, vol: 0.12, chord: [1.5] },
+    shockwave: { f0: 90, f1: 35, wave: "sine", len: 0.8, noise: 0.5, lp: 900, vol: 0.3 },
+    storm: { f0: 900, f1: 200, wave: "square", len: 0.5, noise: 0.4, lp: 4000, vol: 0.07 },
+    inferno: { f0: 180, f1: 70, wave: "sawtooth", len: 0.9, noise: 0.7, lp: 1600, vol: 0.12 },
+    stasis: { f0: 1400, f1: 2600, wave: "sine", len: 1.1, noise: 0.15, lp: 6000, vol: 0.08, chord: [1.26, 1.5] },
+    orbital: { f0: 2200, f1: 600, wave: "triangle", len: 0.6, noise: 0.05, lp: 5000, vol: 0.09, chord: [0.5] },
+    seekers: { f0: 600, f1: 1400, wave: "square", len: 0.35, noise: 0.2, lp: 3000, vol: 0.06 },
+    aegis: { f0: 330, f1: 440, wave: "triangle", len: 1.0, noise: 0, lp: 3000, vol: 0.12, chord: [1.25, 1.5] },
+    deadeye: { f0: 1800, f1: 1600, wave: "sine", len: 0.5, noise: 0, lp: 6000, vol: 0.08, chord: [2] },
+    vortex: { f0: 300, f1: 60, wave: "sawtooth", len: 1.2, noise: 0.3, lp: 1200, vol: 0.12, chord: [0.75] },
+    sentry: { f0: 500, f1: 900, wave: "square", len: 0.3, noise: 0.1, lp: 2500, vol: 0.06, chord: [1.5] },
+    zerog: { f0: 200, f1: 800, wave: "sine", len: 1.4, noise: 0.1, lp: 3000, vol: 0.14, chord: [1.5, 2] },
+    chrono: { f0: 800, f1: 100, wave: "triangle", len: 1.5, noise: 0.05, lp: 2000, vol: 0.12, chord: [0.5] },
+    leech: { f0: 140, f1: 90, wave: "sawtooth", len: 0.9, noise: 0.2, lp: 900, vol: 0.12, chord: [1.06] },
+    decoy: { f0: 700, f1: 1100, wave: "triangle", len: 0.6, noise: 0.05, lp: 4000, vol: 0.08, chord: [1.33] },
+  };
+  function superSig(id: SuperId) {
+    try {
+      const a = audio(), t0 = a.currentTime, s = SIG[id], g = a.createGain(), f = a.createBiquadFilter();
+      f.type = "lowpass"; f.frequency.value = s.lp; f.connect(g); g.connect(out());
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(s.vol, t0 + 0.03); g.gain.exponentialRampToValueAtTime(0.0008, t0 + s.len);
+      for (const k of [1, ...(s.chord ?? [])]) { const o = a.createOscillator(); o.type = s.wave; o.frequency.setValueAtTime(s.f0 * k, t0); o.frequency.exponentialRampToValueAtTime(s.f1 * k, t0 + s.len); o.connect(f); o.start(t0); o.stop(t0 + s.len + 0.05); }
+      if (s.noise) { const b = a.createBuffer(1, Math.ceil(a.sampleRate * s.len), a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2) * s.noise; const n = a.createBufferSource(); n.buffer = b; n.connect(f); n.start(t0); }
+    } catch { /* sin audio */ }
+  }
   const superHud = () => {
     const el = $("superhud"); el.hidden = state !== "play" || !inv.hasSuper(inv.superId);
     document.body.classList.toggle("chrono", state === "play" && sfx.activeId === "chrono");
