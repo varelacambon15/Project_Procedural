@@ -182,7 +182,7 @@ body.in-menu #nadehud { visibility: hidden; }
 /* Nivel y experiencia: arriba a la izquierda */
 #xphud { position: fixed; left: 16px; top: calc(14px + env(safe-area-inset-top, 0px)); display: flex; align-items: center; gap: 8px; font-family: var(--display); font-size: 14px; color: #fff; text-shadow: 0 1px 3px #000; pointer-events: none; }
 #xphud b { color: var(--amber); font-size: 16px; }
-#xphud .bar { width: 150px; height: 6px; background: rgba(255,255,255,.18); } #xphud .bar i { display: block; height: 100%; background: #b88cff; transition: width .3s; }
+#xphud .bar { width: 150px; height: 7px; background: rgba(10,12,16,.55); box-shadow: 0 0 0 1px rgba(184,140,255,.55); } #xphud .bar i { display: block; height: 100%; min-width: 2px; background: #b88cff; transition: width .3s; }
 #xphud small { opacity: .75; font-size: 11px; }
 
 /* Súperes activos: viñeta roja (Ojo letal) y verde (Égida) */
