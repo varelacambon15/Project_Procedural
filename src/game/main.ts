@@ -399,7 +399,7 @@ async function boot() {
   function earn(n: number) { if (!n) return; inv.credits += n; creditsHud(); }
   function creditsHud() { $("crhud").textContent = `${inv.credits} ${t("unit.cr")}`; }
   // ---------- Nivel y habilidades ----------
-  let curPerks = skillPerks(inv.progress), windUsed = false, xpShown = "";
+  let curPerks = skillPerks(inv.progress), windUsed = false, xpShown = "", xpShowT = 0;
   /** Aplica el árbol y el nivel: arma, vida, regeneración, súper, granadas y velocidad. */
   function applyPerks() {
     const p = curPerks = skillPerks(inv.progress); CARD.playerLevel = inv.progress.level;
@@ -409,15 +409,16 @@ async function boot() {
     xpShown = "";
   }
   function gainXp(n: number) {
-    const up = addXp(inv.progress, n * curPerks.fortune);
+    const up = addXp(inv.progress, n * curPerks.fortune); xpShowT = 4; // (la barra se ve unos segundos al ganar experiencia)
     if (up) {
       applyPerks(); php.value = php.max; lootChime(3);
       toast(t("pg.levelUp", { l: inv.progress.level, p: up }));
       if (invScreen.isOpen) invScreen.render();
     }
   }
-  function xpHud() {
+  function xpHud(dt = 0) {
     const el = $("xphud"); el.hidden = state !== "play"; if (el.hidden) return;
+    xpShowT = Math.max(0, xpShowT - dt); el.classList.toggle("showbar", xpShowT > 0);
     const p = inv.progress, need = xpToNext(p.level), key = `${p.level}:${p.xp}:${getLang()}`;
     if (key === xpShown) return; xpShown = key;
     const max = p.level >= MAX_LEVEL;
@@ -776,7 +777,7 @@ async function boot() {
       if (!sfx.casting && !sfx.busy) meter.update(dt); sfx.update(dt, player.pos); superHud();
       pouch.update(dt * curPerks.nadeRecharge); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
-    healthHud(); xpHud();
+    healthHud(); xpHud(dt);
     {
       const now = performance.now() / 1000;
       while (sim.log.length && now - sim.log[0][0] > 3) sim.log.shift();
