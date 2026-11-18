@@ -80,7 +80,7 @@ function material(f: Paint, slot: Slot, tex?: TexKind, bright = 1): THREE.MeshSt
   }
   return m;
 }
-const keep = (m: THREE.Material) => /Lens|Glass/i.test(m.name) || (m as THREE.MeshBasicMaterial).isMeshBasicMaterial;
+const keep = (m: THREE.Material) => /Lens|Glass|legendvein/i.test(m.name) || (m as THREE.MeshBasicMaterial).isMeshBasicMaterial;
 const isWoodSrc = (m: THREE.Material) => /Wood|Handle|Brown/i.test(m.name);
 const lum = (m: THREE.Material) => { const c = (m as THREE.MeshStandardMaterial).color; return c ? 0.3 * c.r + 0.59 * c.g + 0.11 * c.b : 0.5; };
 

@@ -131,6 +131,27 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 34 (versión 0.14.0): controles, arena de oleadas, estética de simulación y pulidos
+
+- Controles (Opciones → Controles): correr/apuntar/agacharse en modo mantener o alternar, invertir eje vertical,
+  sensibilidad al apuntar y del mando, teclas configurables (`settings.binds`, `Input.binds`) y botones del mando
+  configurables (`settings.padBinds`, `DEFAULT_PAD`): por defecto como Call of Duty (Ⓧ pulsar = recargar, mantener =
+  recoger/usar con progreso en el aviso; Ⓐ saltar, Ⓑ agacharse, Ⓨ cambiar, RB granada, LB súper, L3 correr).
+  Arreglado: en mando, saltar, recargar y cambiar de arma no tenían botón.
+- Oleadas: arena generada (`arenagen.ts` puro + `arena.ts`): coberturas al azar al empezar (cajas, muros, pilares,
+  barreras, pilones de datos) y cada 5 oleadas, tras el jefe, se reconfigura un poco (suben, se hunden o se deslizan;
+  cambia el color de acento). Se lanza desde el ordenador de la sala de oleadas, como antes.
+- Incursión: salas con estilo (cajas, pilares, filas de servidores, ruedo), altura propia y decoración de paredes;
+  suelos con rejilla del color de acento. Firma sonora sintetizada de cada súper (`SIG` en main.ts).
+- Estética de simulación (Coded Arms) del complejo, de día: rejilla luminosa fina en el suelo, pistas de circuito en
+  las paredes (emisivo, sin luces) y partículas de datos que suben; de noche se apaga (la ciudad tiene sus neones).
+- Manos: palma más redondeada con talón, base del pulgar y nudillos. Legendarias: vetas luminosas finas del color de
+  la rareza en el cajón y el cañón (material `legendvein`, se respeta en `applyFinish`).
+- Bípodes del pack 4: ya estaban integrados (ronda 18).
+
+Pendiente: realismo de pistolas; pulgar (comprobar en juego); armas lejanas caso por caso; ajuste de progresión y
+dificultad con partidas reales; nuevas súperes (el usuario elegirá de la lista).
+
 ## Ronda 33 (versión 0.13.0): enemigos nuevos (inspirados en las familias de Coded Arms, sin bichos)
 
 - Robots (`Kind.shape`, `Dummy.buildRobot/animRobot`): dron centinela (vuela a 3,2 m, dispara esferas y se mueve de

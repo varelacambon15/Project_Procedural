@@ -554,6 +554,19 @@ export class WeaponAssembler {
           tick.position.set(c.x - L * 0.2 + L * 0.6, c.y + (b.max.y - c.y) * 0.35 - 0.004, z); mk.add(tick);
         }
         add(mk, "charging", proc("sim-mark"), [0, 0, 0]);
+        // Legendarias: vetas de energía finas y luminosas en los costados del cajón y a lo largo del cañón
+        // (el único color propio del arma; discreto, sin luces)
+        if (spec.rarity.id === "legendaria") {
+          const vein = new THREE.MeshStandardMaterial({ name: "legendvein", color: spec.rarity.color, emissive: spec.rarity.color, emissiveIntensity: 1.6, roughness: 0.4 });
+          const vg = new THREE.Group(), Lr = (b.max.x - b.min.x) * 0.62, y0 = c.y - (c.y - b.min.y) * 0.15;
+          for (const z of [b.max.z + 0.0008, b.min.z - 0.0008]) {
+            const v = new THREE.Mesh(new THREE.BoxGeometry(Lr, 0.0016, 0.0012), vein); v.position.set(c.x, y0, z); vg.add(v);
+            for (const k of [-0.35, 0.05, 0.4]) { const br = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.0016, 0.0012), vein); br.position.set(c.x + Lr * k, y0 + 0.004, z); br.rotation.z = 0.6; vg.add(br); }
+          }
+          const bp = spec.type === "pistol" || spec.type === "revolver" ? undefined : parts.find((p) => p.role === "barrel"); // (en pistolas el cañón va dentro de la corredera)
+          if (bp) { const bb = new THREE.Box3().setFromObject(bp.object), bc = bb.getCenter(new THREE.Vector3()); const v = new THREE.Mesh(new THREE.BoxGeometry((bb.max.x - bb.min.x) * 0.7, 0.0014, 0.0014), vein); v.position.set(bc.x, bb.max.y + 0.0006, bc.z); vg.add(v); }
+          add(vg, "charging", proc("legend-vein"), [0, 0, 0]);
+        }
       }
     }
 
