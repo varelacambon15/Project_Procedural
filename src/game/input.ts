@@ -18,6 +18,13 @@ export interface Frame {
 const DZ = 0.16;
 const stick = (v: number, curve: number) => { const a = Math.abs(v); if (a < DZ) return 0; return Math.sign(v) * Math.pow((a - DZ) / (1 - DZ), curve); };
 
+/** Acciones del teclado y su tecla por defecto (el ratón dispara y apunta). */
+export const DEFAULT_BINDS: Record<string, string> = {
+  forward: "KeyW", back: "KeyS", left: "KeyA", right: "KeyD", jump: "Space", sprint: "ShiftLeft", crouch: "KeyC",
+  reload: "KeyR", use: "KeyE", swap: "KeyQ", slot1: "Digit1", slot2: "Digit2", inspect: "KeyF", grenade: "KeyG", super: "KeyV", inventory: "KeyI",
+};
+export const BIND_ORDER = Object.keys(DEFAULT_BINDS);
+
 export class Input {
   private keys = new Set<string>();
   private pressed = new Set<string>();
@@ -25,6 +32,14 @@ export class Input {
   private padPrev: boolean[] = [];
   device: "kbm" | "pad" = "kbm";
   sensitivity = 0.0022;
+  /** Modos de alternar (pulsar para activar/desactivar) e inversión del eje vertical (ajustes). */
+  toggles = { sprint: false, aim: false, crouch: false }; invertY = false;
+  private held = { sprint: false, aim: false, crouch: false }; private on = { sprint: false, aim: false, crouch: false };
+  /** Teclas por acción (se pueden cambiar en Controles). */
+  binds: Record<string, string> = { ...DEFAULT_BINDS };
+  /** Acción a la espera de tecla nueva (menú de controles). */
+  private capture: ((code: string) => void) | null = null;
+  captureKey(f: (code: string) => void) { this.capture = f; }
   padSensitivity = 3.2;
   /** Factor de asistencia de apuntado (lo pone el juego cuando la mira pasa por un objetivo). */
   assist = 1;
@@ -35,6 +50,7 @@ export class Input {
 
   constructor(private canvas: HTMLCanvasElement) {
     addEventListener("keydown", (e) => {
+      if (this.capture) { e.preventDefault(); const f = this.capture; this.capture = null; if (e.code !== "Escape") f(e.code); else f(""); return; }
       if (e.repeat) return;
       this.keys.add(e.code); this.pressed.add(e.code); this.device = "kbm";
       if (["Tab", "Space"].includes(e.code)) e.preventDefault();
@@ -70,13 +86,13 @@ export class Input {
   }
 
   read(dt: number, edges: boolean[]): Frame {
-    const k = (c: string) => this.keys.has(c), kp = (c: string) => this.pressed.has(c);
+    const B = this.binds, k = (a: string) => this.keys.has(B[a]) || (a === "crouch" && this.keys.has("ControlLeft")), kp = (a: string) => this.pressed.has(B[a]);
     const f: Frame = {
-      moveX: (k("KeyD") ? 1 : 0) - (k("KeyA") ? 1 : 0), moveZ: (k("KeyW") ? 1 : 0) - (k("KeyS") ? 1 : 0),
+      moveX: (k("right") ? 1 : 0) - (k("left") ? 1 : 0), moveZ: (k("forward") ? 1 : 0) - (k("back") ? 1 : 0),
       lookX: this.mouse.dx * this.sensitivity, lookY: this.mouse.dy * this.sensitivity,
-      fire: this.mouse.left, aim: this.mouse.right, sprint: k("ShiftLeft"), crouch: k("KeyC") || k("ControlLeft"),
-      jump: kp("Space"), reload: kp("KeyR"), interact: kp("KeyE"), swap: this.mouse.wheel !== 0 || kp("KeyQ"),
-      inventory: kp("Tab") || kp("KeyI"), pause: kp("Escape"), slot1: kp("Digit1"), slot2: kp("Digit2"), inspect: kp("KeyF"), grenade: kp("KeyG"), super: kp("KeyV"), device: this.device,
+      fire: this.mouse.left, aim: this.mouse.right, sprint: k("sprint"), crouch: k("crouch"),
+      jump: kp("jump"), reload: kp("reload"), interact: kp("use"), swap: this.mouse.wheel !== 0 || kp("swap"),
+      inventory: kp("inventory") || this.pressed.has("Tab"), pause: this.pressed.has("Escape"), slot1: kp("slot1"), slot2: kp("slot2"), inspect: kp("inspect"), grenade: kp("grenade"), super: kp("super"), device: this.device,
     };
     this.mouse.dx = this.mouse.dy = 0; this.mouse.wheel = 0; this.pressed.clear();
     const p = this.pad();
@@ -104,6 +120,15 @@ export class Input {
       t.pressed.clear();
     }
     const len = Math.hypot(f.moveX, f.moveZ); if (len > 1) { f.moveX /= len; f.moveZ /= len; }
+    // Alternar: cada pulsación (flanco) cambia el estado; correr se apaga al dejar de avanzar
+    for (const a of ["sprint", "aim", "crouch"] as const) {
+      const now = f[a], edge = now && !this.held[a]; this.held[a] = now;
+      if (!this.toggles[a] || (a === "aim" && t.active)) continue; // (el táctil ya alterna el apuntado)
+      if (edge) this.on[a] = !this.on[a];
+      if (a === "sprint" && f.moveZ < 0.3) this.on.sprint = false;
+      f[a] = this.on[a];
+    }
+    if (this.invertY) f.lookY = -f.lookY;
     return f;
   }
 }

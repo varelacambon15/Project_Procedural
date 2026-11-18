@@ -21,7 +21,7 @@ import { displayName, rename } from "../weapons/naming";
 import { setAccUid } from "../weapons/accbank";
 import type { Manifest, RarityId, WeaponSpec } from "../weapons/types";
 import { getLang, onLang, setLang, t, type Lang } from "../i18n";
-import { Input } from "./input";
+import { DEFAULT_BINDS, Input } from "./input";
 import { buildRange, type Interactable } from "./world";
 import { PIXEL_LEVELS, pixelLevel, setPixelLevel } from "../weapons/textures";
 import { onSettings, replaceSettings, setSetting, settings, type Settings } from "./settings";
@@ -105,7 +105,11 @@ const cursor = new MenuCursor();
 const nav = new MenuNav(cursor);
 const saves = new SaveManager(platformStorage());
 onLang(() => dummies.forEach((d) => d.relabel()));
-const applySens = () => { input.sensitivity = 0.0022 * settings.sensitivity; input.padSensitivity = 3.2 * settings.sensitivity; };
+const applySens = () => {
+  input.sensitivity = 0.0022 * settings.sensitivity; input.padSensitivity = 3.2 * settings.sensitivity * settings.padSens;
+  input.toggles = { sprint: settings.sprintToggle, aim: settings.aimToggle, crouch: settings.crouchToggle }; input.invertY = settings.invertY;
+  input.binds = { ...DEFAULT_BINDS, ...settings.binds };
+};
 applySens(); onSettings(applySens);
 
 let toastTimer = 0;
@@ -289,6 +293,7 @@ async function boot() {
     exportSlot: (slot) => exportSlot(slot), importSlot: (slot) => importSlot(slot),
     quit: () => quit(), canQuit: () => inGame || !!(window as unknown as { ppApp?: unknown }).ppApp,
     current: () => inv.current?.spec ?? showcase,
+    bindKey: (action, done) => input.captureKey((code) => { if (code) setSetting("binds", { ...settings.binds, [action]: code }); done(); }),
     dev(a) {
       if (!inGame) { toast(t("set.dev.needGame")); return; }
       if (a === "lvl1" || a === "lvl10") { const p = inv.progress, n = a === "lvl1" ? 1 : 10; let need = 0; for (let l = p.level; l < Math.min(MAX_LEVEL, p.level + n); l++) need += xpToNext(l); gainXp(Math.max(0, need - p.xp)); toast(t("pg.levelUp", { l: inv.progress.level, p: n })); }
@@ -791,7 +796,7 @@ async function boot() {
         const fwd = camera.getWorldDirection(new THREE.Vector3());
         for (const d of dummies) { if (!d.alive) continue; const to = d.center.sub(camera.position); const dist = to.length(); if (fwd.angleTo(to) < Math.max(0.03, 0.6 / dist)) { input.assist = 0.45; break; } }
       }
-      player.update(dt, f, gun.aimT > 0.5, 1 - gun.aimT * (1 - 1 / Math.max(1.5, gun.zoom)));
+      player.update(dt, f, gun.aimT > 0.5, (1 - gun.aimT * (1 - 1 / Math.max(1.5, gun.zoom))) * (1 + (settings.adsSens - 1) * gun.aimT));
       gun.update(dt, { fire: f.fire && !sfx.casting, aim: f.aim && !sfx.casting, moving: Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5), sprinting: player.sprinting, lookX: f.lookX, lookY: f.lookY, vy: player.vel.y, grounded: player.onGround, inspect: f.inspect });
       const base = settings.fov, aimFov = gun.sight === "scope" || gun.sight === "irons" ? base / gun.zoom : gun.sight === "iron" ? base / 1.35 : base / 1.6;
       camera.fov = THREE.MathUtils.lerp((player.sprinting ? base + 7 : base) + 9 * player.slideK, aimFov, gun.aimT);
