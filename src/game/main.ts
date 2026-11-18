@@ -71,7 +71,7 @@ const world = buildRange(scene);
 // Cámara del arma (como en los shooters, «viewmodel FOV»): arma y brazos se dibujan encima con un campo de visión más
 // estrecho, retrasada para que el tamaño aparente no cambie; con el campo de visión del mundo (75°) las armas largas se
 // deformaban (culata enorme, boca diminuta y el cañón «subiendo» hacia el centro). Mismo eje: al apuntar sigue centrada.
-const VM_FOV = 56, VM_BACK = 0.03;
+const VM_FOV = 62, VM_BACK = 0.03;
 const vmCam = new THREE.PerspectiveCamera(VM_FOV, 1, 0.02, 30); vmCam.position.z = VM_BACK; vmCam.layers.set(1); camera.add(vmCam);
 class ViewmodelPass extends RenderPass {
   override render(r: THREE.WebGLRenderer, w: THREE.WebGLRenderTarget, rd: THREE.WebGLRenderTarget, dt: number, mask: boolean) { const bg = scene.background; scene.background = null; super.render(r, w, rd, dt, mask); scene.background = bg; }
