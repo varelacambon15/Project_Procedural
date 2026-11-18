@@ -680,6 +680,9 @@ export class WeaponAssembler {
       : fb ? new THREE.Vector3(fb.min.x + (fb.max.x - fb.min.x) * 0.35, fb.min.y + (fb.max.y - fb.min.y) * 0.15, 0)
       // Sin guardamanos aparte (armas de una pieza): justo delante del cargador, bajo el cajón; nunca a media altura del
       // largo total (con la culata incluida caía sobre el cañón)
+      // (fusiles, escopetas, LMG… de una pieza: la mano va al guardamanos, a un 40 % del tramo empuñadura→boca y a unos
+      // 22-28 cm de la empuñadura; antes quedaba a 16 cm, pegada a ella, como agarrando una pistola)
+      : spec.type !== "smg" ? new THREE.Vector3(grip.x + Math.min(0.28, Math.max(0.2, (box.max.x - grip.x) * 0.4)), Math.max(box.min.y + H * 0.35, grip.y), 0)
       : magBox && magBox.max.x > grip.x ? new THREE.Vector3(Math.max(magBox.max.x + 0.035, grip.x + 0.1), Math.max(grip.y, magBox.max.y - 0.005), 0)
       : new THREE.Vector3(Math.min(box.min.x + L * 0.68, grip.x + 0.16), Math.max(box.min.y + H * 0.35, grip.y), 0);
     const magwell = magBox ? new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.min.y + (magBox.max.y - magBox.min.y) * 0.2, 0) : grip.clone().add(new THREE.Vector3(L * 0.1, -H * 0.1, 0));
@@ -708,7 +711,9 @@ export class WeaponAssembler {
     // Armas largas: la palma de apoyo, en la cara inferior real del guardamanos o del cuerpo a esa altura (leída de la
     // forma), no a media altura (se veía la mano en el costado o por encima)
     if (!handgun) for (const a of [support, anchors.front]) if (a) { const b = bottomAt(parts, a.x); if (b !== null && a.y > b + 0.006 && a.y - b < 0.05) a.y = b + 0.006; }
-    const smg = spec.type === "smg", end = thickEnd(parts, box, grip.x);
+    // (solo en subfusiles: en fusiles de una pieza el cargador cuenta como cuerpo y el guardamanos, más fino, quedaba fuera:
+    // la mano de apoyo se quedaba junto a la empuñadura, como con una pistola)
+    const smg = spec.type === "smg", end = smg ? thickEnd(parts, box, grip.x) : null;
     const reach = Math.min(smg ? 0.17 : 0.26, (box.max.x - grip.x) * 0.55, end !== null ? Math.max(0.06, end - 0.02 - grip.x) : Infinity);
     for (const a of [support, anchors.front]) if (a) { if (a.x > grip.x + reach) a.x = grip.x + reach; if (smg && !fb && a.x < grip.x + reach * 0.8) a.x = grip.x + reach * 0.8; if (a.y > grip.y + 0.06) a.y = grip.y + 0.06; }
     return { grip, support, magwell, charge, anchors };

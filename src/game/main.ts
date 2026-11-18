@@ -72,7 +72,8 @@ const world = buildRange(scene);
 // y la cámara algo retrasada, para que se vean proporcionados (con el campo de visión del mundo, el cajón y la culata
 // salían enormes y deformados y la boca diminuta). Mismo eje que la cámara del mundo: al apuntar la mira sigue centrada.
 const VM_FOV = 46, VM_BACK = 0.12;
-const vmCam = new THREE.PerspectiveCamera(VM_FOV, 1, 0.01, 30); vmCam.position.z = VM_BACK; vmCam.layers.set(1); camera.add(vmCam);
+// (plano cercano cerca del ojo: la culata que pasa por detrás no tapa la vista)
+const vmCam = new THREE.PerspectiveCamera(VM_FOV, 1, VM_BACK - 0.03, 30); vmCam.position.z = VM_BACK; vmCam.layers.set(1); camera.add(vmCam);
 /** Pasada del arma: sin fondo (ya está el mundo debajo) y con su propia profundidad. */
 class ViewmodelPass extends RenderPass {
   override render(r: THREE.WebGLRenderer, w: THREE.WebGLRenderTarget, rd: THREE.WebGLRenderTarget, dt: number, mask: boolean) { const bg = scene.background; scene.background = null; super.render(r, w, rd, dt, mask); scene.background = bg; }
