@@ -899,7 +899,8 @@ export class Gun {
         const f = Math.min(1, Math.max(0, hold?.at ?? 0.5)), x0 = h.grip.x + 0.07, x1 = Math.min(m.muzzle.x - 0.04, h.grip.x + 0.42);
         return new THREE.Vector3(x0 + (x1 - x0) * f, (A.front ?? h.support).y, 0);
       }
-      return (A[s] ?? A.grip ?? h.support).clone();
+      // (anclaje que el arma no tiene: en armas largas, al guardamanos; nunca a la empuñadura, que era agarrarla como una pistola)
+      return (A[s] ?? (this.spec?.type === "pistol" || this.spec?.type === "revolver" ? A.grip : null) ?? h.support).clone();
     };
     const rest = h.grip.clone().add(new THREE.Vector3(-0.05, -0.24, -0.12));
     const hipP = at(hold?.hip ?? "front"), adsP = at(hold?.ads ?? "front");
@@ -909,6 +910,13 @@ export class Gun {
     // (y nunca más allá del 55 % del tramo empuñadura→boca: en armas cortas como la MP5K agarraba el cañón)
     const sReach = this.spec?.type === "smg" ? Math.min(0.15, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.32)) : Math.min(0.3, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5));
     if (base && base.x - h.grip.x > sReach) base.x = h.grip.x + sReach;
+    // …y nunca pegada a la empuñadura cuando agarra el guardamanos (en armas por código el guardamanos empezaba junto a
+    // la empuñadura y la mano izquierda quedaba encima de la derecha, como con una pistola)
+    const sup0 = (k > 0.5 ? hold?.ads : hold?.hip) ?? "front";
+    if (base && (sup0 === "front" || sup0 === "pump" || sup0 === "frame") && this.spec?.type !== "pistol" && this.spec?.type !== "revolver") {
+      const sMin = Math.min(sReach, this.spec?.type === "smg" ? Math.max(0.11, (m.muzzle.x - h.grip.x) * 0.3) : Math.max(0.2, (m.muzzle.x - h.grip.x) * 0.32));
+      if (base.x - h.grip.x < sMin) base.x = h.grip.x + sMin;
+    }
     const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
     let left: THREE.Vector3 | null = base;
     const ph = this.reloadPhase, style = this.anim.reloadOverride?.style ?? this.anim.p.reload.style;
