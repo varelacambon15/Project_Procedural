@@ -239,7 +239,7 @@ export class Arms {
     if (this.override) t = { ...t, right: this.override.right, left: this.override.left };
     const sh = t.shoulder ?? new THREE.Vector3();
     this.right.set(ARM_DATA.shoulderR.clone().add(sh), t.right, ARM_DATA.poleR, dt);
-    const left = t.left ?? { pos: new THREE.Vector3(-0.24, -0.62, -0.08), orient: t.right.orient, curl: { fingers: [0.4, 0.45, 0.5, 0.55], thumb: 0.2 } };
+    const left = t.left ?? { pos: new THREE.Vector3(-0.3, -0.75, 0.75), orient: t.right.orient, curl: { fingers: [0.4, 0.45, 0.5, 0.55], thumb: 0.2 } };
     this.left.set(ARM_DATA.shoulderL.clone().add(sh), left, ARM_DATA.poleL, dt);
   }
   set visible(v: boolean) { this.group.visible = v; }
