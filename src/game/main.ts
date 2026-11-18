@@ -71,7 +71,7 @@ const world = buildRange(scene);
 // Cámara del arma (como en los shooters): el arma y los brazos se dibujan encima con un campo de visión más estrecho
 // y la cámara algo retrasada, para que se vean proporcionados (con el campo de visión del mundo, el cajón y la culata
 // salían enormes y deformados y la boca diminuta). Mismo eje que la cámara del mundo: al apuntar la mira sigue centrada.
-const VM_FOV = 50, VM_BACK = 0.27;
+const VM_FOV = 46, VM_BACK = 0.12;
 const vmCam = new THREE.PerspectiveCamera(VM_FOV, 1, 0.01, 30); vmCam.position.z = VM_BACK; vmCam.layers.set(1); camera.add(vmCam);
 /** Pasada del arma: sin fondo (ya está el mundo debajo) y con su propia profundidad. */
 class ViewmodelPass extends RenderPass {
