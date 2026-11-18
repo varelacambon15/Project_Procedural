@@ -342,7 +342,7 @@ export class WeaponGenerator {
     for (let k = 0; k < 5; k++) {
       const w = this.generateOne(seed + k * 104729, wanted, forceRarity);
       const sim = w.lineage?.similarity ?? 0;
-      if ((w.layout !== "modular-long" && w.layout !== "body") || sim <= SIMILARITY_RANGE[1]) return k ? { ...w, seed } : w;
+      if ((w.layout !== "modular-long" && w.layout !== "body") || sim <= SIMILARITY_RANGE[1] || (w.type === "revolver" && w.layout === "body" && (w.tweaks.body ?? 1) < 0.8)) return k ? { ...w, seed } : w;
       if (!best || sim < (best.lineage?.similarity ?? 1)) best = w;
     }
     return { ...best!, seed };
@@ -806,7 +806,7 @@ export class WeaponGenerator {
     const cands: { tw: Tweaks; bl: number; sim: number; d: number; ch: string[] }[] = [];
     let amp = 1;
     // Cambios llamativos solo en una parte de las armas (si no, el generador los usaría siempre para alejarse de la base)
-    const rare = { nostock: r() < 0.3, hgStock: r() < 0.4, front: r() < 0.4 };
+    const rare = { nostock: r() < 0.3, hgStock: r() < 0.4, front: r() < 0.4 }; const snubOk = r() < 0.4;
     for (let i = 0; i < 110; i++) {
       // Si la mejor tirada hasta ahora se aleja demasiado de la base, las siguientes cambian con menos amplitud
       if (best && best.sim < lo && i % 6 === 5) amp = Math.max(0.35, amp * 0.7);
@@ -830,7 +830,10 @@ export class WeaponGenerator {
       const ch = changesOf(layout, tw, bl, swaps);
       const sim = similarity(ref, this.silhouette(layout, parts, tw, bl));
       // Mínimo 3 cambios; dentro de eso, el parecido más cercano al rango buscado
-      const d = (ch.length < 3 ? 1 : 0) + (sim < lo ? lo - sim : sim > hi ? sim - hi : 0);
+      // (revólver entero recortado: el cañón corto cambia poco la silueta, pero es otra arma; con 3 cambios vale, si no el
+      // filtro solo aceptaba cañones larguísimos y todos los de la misma base salían iguales)
+      const snub = snubOk && layout === "body" && type === "revolver" && (tw.body ?? 1) < 0.8 && sim > hi;
+      const d = (ch.length < 3 ? 1 : 0) + (snub ? 0 : sim < lo ? lo - sim : sim > hi ? sim - hi : 0);
       const c = { tw, bl, sim, d, ch }; cands.push(c);
       if (!best || d < best.d) best = c;
       if (d === 0) break;
@@ -883,7 +886,7 @@ export class WeaponGenerator {
     } else if (layout === "body") {
       // Las recortadas no se alargan (dejarían de ser recortadas): solo se pueden acortar un poco
       const sawed = /sawed|sawoff|mini|shotgun-03/.test(parts[0].from);
-      ops.push({ id: "barrel", run: () => { if (!tw.pfront) tw.body = sawed ? 0.82 + r() * 0.1 : long ? away(0.75, 1.4) : away(0.82, 1.32); } });
+      ops.push({ id: "barrel", run: () => { if (!tw.pfront) tw.body = sawed ? 0.82 + r() * 0.1 : long ? away(0.75, 1.4) : type === "revolver" && r() < 0.45 ? 0.58 + r() * 0.14 : away(0.82, 1.32); } });
       // Armas enteras largas: se corta el cuerpo y se pone culata o guardamanos por código (solo si la sección es fina)
       const prof = base?.profiles?.body;
       // Armas cortas: culata de hombro opcional (pistolas ametralladoras, carabinas de revólver)
@@ -955,7 +958,8 @@ export class WeaponGenerator {
     const wantAdd = (k: Addon["kind"]) => ops.push({ id: `add-${k}`, run: () => { tw.adds = [...(tw.adds ?? []), { kind: k, x0: 0, x1: 0, y: 0, h: 0 }]; } });
     const sawedGun = /sawed|sawoff|mini|shotgun-03/.test(parts[0].from);
     if (layout === "body") {
-      if (type === "revolver") { wantAdd("rib"); wantAdd("lug"); }
+      // Revólveres enteros: banda, refuerzo y camisa como alternativas (antes salían siempre las dos primeras juntas)
+      if (type === "revolver") { const pick = (["rib", "lug", "jacket"] as const).filter(() => r() < 0.6); for (const k of pick.length ? pick : (["lug"] as const)) wantAdd(k); }
       if (type === "pistol") wantAdd("lug");
       if (type === "shotgun") { if (!sawedGun) wantAdd("shield"); wantAdd("rib"); }
       // (sin cubrecañón en subfusiles: los que lo llevan ya lo traen de serie; añadido quedaba como una caja pegada).

@@ -138,7 +138,10 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
    martillo a mano en cada disparo y cargar por la portilla, cartucho a cartucho).
 2. Armaduras equipables: casco, torso y parte inferior, con variantes, efectos y valores de reducción de daño. Los
    diseños los pasará el usuario más adelante (preparar el sistema: ranuras, botín, inventario, efectos).
-3. Hecho (ronda 37): la pausa, el inventario y los demás menús paran el mundo.
+3. Repasar las armas una a una (agarre, tamaño, encuadre) con hojas por tipo y corregir; el usuario mandará correcciones
+   por modelo. Variedad en las bases de modelo entero (SMG sobre todo).
+4. Pulir las animaciones de recarga (no están mal, pero se pueden mejorar).
+5. Hecho (ronda 37): la pausa, el inventario y los demás menús paran el mundo.
 
 ## Ronda 36 (versión 0.16.0): pack 5, sonidos nuevos, animaciones por tipo y visor
 
