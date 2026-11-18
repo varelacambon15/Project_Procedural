@@ -668,6 +668,10 @@ export class WeaponAssembler {
       pump: pb ? new THREE.Vector3((pb.min.x + pb.max.x) / 2, pb.min.y + (pb.max.y - pb.min.y) * 0.2, 0) : null,
       custom: null, // (agarre libre: lo calcula gun.ts a partir de la posición elegida)
     };
+    // La mano de apoyo nunca agarra la punta del cañón: como mucho a ~55 % del tramo empuñadura→boca y a un antebrazo
+    // de distancia (armas cortas tipo MP5K: justo delante del cargador)
+    const reach = Math.min(spec.type === "smg" ? 0.2 : 0.3, (box.max.x - grip.x) * 0.55);
+    for (const a of [support, anchors.front]) if (a && a.x > grip.x + reach) a.x = grip.x + reach;
     return { grip, support, magwell, charge, anchors };
   }
 }

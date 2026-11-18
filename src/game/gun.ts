@@ -812,7 +812,9 @@ export class Gun {
     let base: THREE.Vector3 | null = hipP && adsP ? hipP.lerp(adsP, k) : adsP ? (k < 0.03 ? null : rest.clone().lerp(adsP, k)) : hipP ? (k > 0.97 ? null : hipP.lerp(rest, k)) : null;
     if (!hold && !base) base = h.support.clone();
     // La mano de apoyo no se estira más allá de un brazo cómodo (en armas largas se iba a la punta del guardamanos)
-    if (base && base.x - h.grip.x > 0.34) base.x = h.grip.x + 0.34;
+    // (y nunca más allá del 55 % del tramo empuñadura→boca: en armas cortas como la MP5K agarraba el cañón)
+    const sReach = Math.min(0.34, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.55));
+    if (base && base.x - h.grip.x > sReach) base.x = h.grip.x + sReach;
     const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
     let left: THREE.Vector3 | null = base;
     const ph = this.reloadPhase, style = this.anim.reloadOverride?.style ?? this.anim.p.reload.style;
