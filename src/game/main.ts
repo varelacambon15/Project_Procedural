@@ -68,8 +68,23 @@ scene.add(camera);
 const rim = new THREE.DirectionalLight(0xbfd8ff, 0.4); rim.position.set(0.8, 0.6, -1.2); camera.add(rim); camera.add(rim.target); rim.target.position.set(0, -0.2, 0.5);
 const world = buildRange(scene);
 // Postproceso: resplandor (bloom) sobre lo que brilla de verdad (neón, fogonazos); fuerte de noche, suave de día
+// Cámara del arma (como en los shooters, «viewmodel FOV»): arma y brazos se dibujan encima con un campo de visión más
+// estrecho, retrasada para que el tamaño aparente no cambie; con el campo de visión del mundo (75°) las armas largas se
+// deformaban (culata enorme, boca diminuta y el cañón «subiendo» hacia el centro). Mismo eje: al apuntar sigue centrada.
+const VM_FOV = 56, VM_BACK = 0.03;
+const vmCam = new THREE.PerspectiveCamera(VM_FOV, 1, 0.02, 30); vmCam.position.z = VM_BACK; vmCam.layers.set(1); camera.add(vmCam);
+class ViewmodelPass extends RenderPass {
+  override render(r: THREE.WebGLRenderer, w: THREE.WebGLRenderTarget, rd: THREE.WebGLRenderTarget, dt: number, mask: boolean) { const bg = scene.background; scene.background = null; super.render(r, w, rd, dt, mask); scene.background = bg; }
+}
+const vmPass = new ViewmodelPass(scene, vmCam); vmPass.clear = false; vmPass.clearDepth = true;
+let lightSync = 0;
+function syncLayers() {
+  for (const c of camera.children) { if (c === vmCam) continue; c.traverse((o) => { const want = (o as THREE.Light).isLight ? 3 : 2; if (o.layers.mask !== want) o.layers.mask = want; }); }
+  if (--lightSync <= 0) { lightSync = 45; scene.traverse((o) => { if ((o as THREE.Light).isLight) o.layers.enable(1); }); }
+}
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
+composer.addPass(vmPass);
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.8, 0.5, 0.82);
 composer.addPass(bloom); composer.addPass(new OutputPass());
 // Relleno de la vista en primera persona: de noche el arma y los brazos recogen el rebote del neón (cian arriba, magenta abajo)
@@ -86,8 +101,14 @@ applyLook(); onSettings(applyLook);
 startMusic("./music/ambient-03.ogg");
 // Pack de sonidos (assets/sonidos): manifest ahora; las muestras de cada arma se cargan al equiparla
 void initSounds("./sonidos/").then((m) => { if (m) void loadSamples(["melee_cuchillo_swing", "melee_cuchillo_golpe", "melee_culatazo", "recoger_arma", "explosion"].flatMap((k) => m.efectos[k] ?? [])); });
-const draw = () => (settings.bloom ? composer.render() : renderer.render(scene, camera));
-function resize() { renderer.setSize(innerWidth, innerHeight); composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+const draw = () => {
+  syncLayers();
+  if (settings.bloom) { composer.render(); return; }
+  renderer.render(scene, camera);
+  const ac = renderer.autoClear, bg = scene.background; renderer.autoClear = false; renderer.clearDepth(); scene.background = null;
+  renderer.render(scene, vmCam); scene.background = bg; renderer.autoClear = ac;
+};
+function resize() { renderer.setSize(innerWidth, innerHeight); composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); vmCam.aspect = camera.aspect; vmCam.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
 
 // ---------- Estado ----------
