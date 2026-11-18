@@ -314,7 +314,8 @@ export class Dummy {
       // Armadura: casco con visor luminoso, hombreras con emblema, chaleco con bolsas, cinturón y mochila de energía
       const visor = new THREE.MeshStandardMaterial({ color: 0x220806, emissive: VISOR[kind.key] ?? 0xff3a1e, emissiveIntensity: 1.8 });
       this.part(new THREE.SphereGeometry(0.155, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), armorMat, 0, 2.15, 0, "head").scale.set(1.04, 1, 1.1);
-      this.part(new THREE.BoxGeometry(0.24, 0.07, 0.06), visor, 0, 2.15, 0.125, null);
+      // Visor: una banda curva continua por delante del casco (antes una caja que el casco tapaba en el centro y parecían dos ojos)
+      { const v = this.part(new THREE.CylinderGeometry(0.168, 0.168, 0.065, 20, 1, true, -0.85, 1.7), visor, 0, 2.15, 0, null); v.scale.set(1.04, 1, 1.1); (visor as THREE.MeshStandardMaterial).side = THREE.DoubleSide; }
       this.part(new THREE.BoxGeometry(0.2, 0.06, 0.08), armorMat, 0, 2.06, 0.1, null); // (protector de la mandíbula)
       for (const x of [-0.3, 0.3]) {
         this.part(new THREE.BoxGeometry(0.2, 0.09, 0.24), armorMat, x, 1.9, 0, "limb").rotation.z = -Math.sign(x) * 0.25;
@@ -384,7 +385,8 @@ export class Dummy {
       this.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), robotPlate), 0, 0.58, -0.18), B, "body").scale.set(1, 0.7, 1.2);
       this.add(at(box(0.34, 0.2, 0.34, robotMetal), 0, 0.56, 0.2), B, "body");
       const head = this.add(at(box(0.22, 0.15, 0.18, robotDark), 0, 0.58, 0.44), B, "head");
-      for (const x of [-0.055, 0.055]) this.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), eyeMat), x, 0.02, 0.1), head, "head");
+      // (visor continuo en lugar de dos ojos)
+      this.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.02), eyeMat), 0, 0.02, 0.095), head, "head");
       for (let i = 0; i < 6; i++) {
         const side = i < 3 ? -1 : 1, k = i % 3, g = at(new THREE.Group(), side * 0.2, 0.58, 0.28 - k * 0.24); g.rotation.y = side * (0.5 - k * 0.5) * -1; B.add(g);
         const upper = new THREE.Group(); upper.rotation.z = side * 0.6; g.add(upper); // (muslo hacia arriba y afuera)
