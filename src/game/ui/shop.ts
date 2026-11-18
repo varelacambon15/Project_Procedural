@@ -8,6 +8,7 @@ import { t } from "../../i18n";
 import { displayName } from "../../weapons/naming";
 import { GRENADE_RARITY, makeGrenade, type GrenadeKind, type GrenadeRarity } from "../grenades";
 import { grenadeThumb } from "../grenademodel";
+import { grenadeCard } from "./common";
 import { CRATES, SHOP, SHOWCASE, isFree, sellPrice, buyShowcase, crateOdds, ensureShowcase, openCrate, pityLeft, record, showcasePrice, showcaseRarities, showcaseSeed, type CrateId, type ShopState } from "../shop";
 import type { Inventory, Item } from "../inventory";
 import { $, esc, keyHint, weaponCard, type Thumbnails } from "./common";
@@ -90,7 +91,8 @@ export class ShopScreen {
         <div class="floor">${t("shop.floor")} <b style="color:${color(top)}">${t(`rarity.${top}`)}</b>${id === "advanced" ? ` · ${t("shop.pity", { n: pityLeft(st) })}` : ""}</div>
         <div class="odds">${bars}</div>${btn}</div>`;
     }).join("");
-    const detail = this.sel >= 0 ? weaponCard(specs[this.sel], this.inv.current?.spec ?? null, this.inv.current ? t("ui.compared") : "") : `<p class="hint-sel">${t("shop.pick")}</p>`;
+    const ng = this.sel >= 0 ? this.nadeAt(this.sel) : null;
+    const detail = ng ? grenadeCard(ng, this.inv.grenade ? t("ui.compared") : "", this.inv.grenade) : this.sel >= 0 ? weaponCard(specs[this.sel], this.inv.current?.spec ?? null, this.inv.current ? t("ui.compared") : "") : `<p class="hint-sel">${t("shop.pick")}</p>`;
     $("shop-tiers").innerHTML = `<div class="sc-head"><h2>${t("shop.showcase")}</h2><span class="timer">${t("shop.refreshIn", { t: mmss(Math.max(0, sc.refreshAt - this.hooks.gameTime())) })}</span></div>
       <div class="sc-row">${tiles}</div><div class="crates">${crates}</div>${this.sellHTML()}`;
     $("shop-detail").innerHTML = detail;
@@ -113,8 +115,9 @@ export class ShopScreen {
     const g = this.nadeAt(i)!, cr = this.inv.credits, price = GRENADE_RARITY[g.rarity].price;
     const btn = sold ? `<span class="soldtag">${t("shop.soldOut")}</span>` : cr < price ? `<button type="button" class="btn ghost sm" disabled>${t("shop.short", { c: price - cr })}</button>`
       : `<button type="button" class="btn sm" data-buynade="${i}">${t("shop.buy", { c: price })}</button>`;
-    return `<div class="sc-tile ${sold ? "sold" : ""}" style="--c:${GRENADE_RARITY[g.rarity].color}"><div class="img nadeimg"><img data-nadethumb="${g.kind}:${g.rarity}" alt=""></div><b class="nm">${t("gr.title1")}: ${t(`gr.${g.kind}`)}</b>
-      <span class="meta">${t(`rarity.${g.rarity}`)} · ${t("gr.stats", { d: g.damage, r: g.radius, c: g.charges, s: g.recharge })}</span><span class="meta">${t(`gr.desc.${g.kind}`)}</span>
+    // (mismo formato que las armas: foto, nombre en el color de la rareza, rareza y tipo, precio; la ficha a la derecha)
+    return `<div class="sc-tile ${sold ? "sold" : ""} ${this.sel === i ? "sel" : ""}" data-slot="${i}" style="--c:${GRENADE_RARITY[g.rarity].color}"><div class="img"><img data-nadethumb="${g.kind}:${g.rarity}" alt=""></div>
+      <b class="nm">${t(`gr.${g.kind}`)}</b><span class="meta">${t(`rarity.${g.rarity}`)} · ${t("gr.title1")} · ${g.damage} ${t("label.damage").toLowerCase()}</span>
       <div class="price"><strong>${price}</strong> ${t("unit.cr")}</div>${btn}</div>`;
   }
   /** Vender: las armas que llevas encima (equipadas y mochila), con su precio; un clic vende. */

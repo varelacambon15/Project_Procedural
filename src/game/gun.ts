@@ -35,7 +35,7 @@ export interface ShotHooks {
   /** Embestida corta hacia el objetivo del cuerpo a cuerpo. */
   lunge?(dir: THREE.Vector3, dist: number): void;
 }
-export interface Control { fire: boolean; aim: boolean; moving: number; sprinting: boolean; lookX: number; lookY: number; vy: number; grounded: boolean; inspect: boolean }
+export interface Control { fire: boolean; aim: boolean; moving: number; sprinting: boolean; lookX: number; lookY: number; vy: number; grounded: boolean; inspect: boolean; /** Patada (R3 / Z): cuerpo a cuerpo con o sin arma. */ kick?: boolean }
 
 /**
  * Recarga como máquina de fases con nombre. Duraciones en fracción del tiempo total de recarga, que ya se escala con
@@ -136,6 +136,8 @@ export class Gun {
   private leftLocal: THREE.Vector3 | null = null;
   // ---------- Puños (sin arma equipada) ----------
   /** Progreso del golpe en curso (0 = ninguno), mano que golpea, golpe fuerte (al esprintar), golpe ya resuelto. */
+  /** Patada: pierna en primera persona que entra desde abajo; golpe fuerte con empuje (vale con puños o con arma). */
+  private kickT = 0; private kickCd = 0; private kickDone = false; private leg: THREE.Group | null = null;
   private punchT = 0; private punchDur = 0.34; private punchSide: 1 | -1 = -1; private punchHeavy = false; private punchDone = false;
   private fistCd = 0; private fistTime = 0;
   private reloadPhase: Phase | null = null;
@@ -431,6 +433,7 @@ export class Gun {
       }
     }
     if (!it && !this.pending) this.fistsInput(dt, c);
+    this.kickInput(dt, c);
     this.triggerHeld = c.fire;
     this.sprayT += dt; if (this.sprayT > 0.35) this.sprayIndex = 0;
     this.updateCasings(dt);
@@ -535,6 +538,50 @@ export class Gun {
     // El golpe se resuelve cuando el puño llega al final del recorrido
     if (this.punchT > 0 && !this.punchDone && this.punchT >= this.punchDur * 0.28) { this.punchDone = true; this.punchResolve(); }
   }
+  private kickInput(dt: number, c: Control) {
+    this.kickCd -= dt;
+    if (c.kick && this.kickCd <= 0 && this.kickT <= 0 && this.equipT <= 0) {
+      this.kickT = 1e-4; this.kickDone = false; this.kickCd = 0.85; this.hooks.onShot?.();
+      { const l = soundManifest?.efectos.melee_cuchillo_swing; if (l?.length) playSample(sample(l[0]), 0.35, 0.7); }
+    }
+    const DUR = 0.55;
+    if (this.kickT > 0) { this.kickT += dt; if (!this.kickDone && this.kickT >= DUR * 0.38) { this.kickDone = true; this.meleeHit(2.5, 55, 2.4, true); } if (this.kickT >= DUR) this.kickT = 0; }
+    // Pierna: muslo y bota que suben desde abajo, se estiran al frente y vuelven
+    if (!this.leg) {
+      // (en el espacio de la pierna: el tobillo en el origen, la espinilla hacia +Z (hacia el jugador), la bota hacia −Z)
+      const g = new THREE.Group(), pants = new THREE.MeshStandardMaterial({ color: 0x3e4652, roughness: 0.9 }), boot = new THREE.MeshStandardMaterial({ color: 0x2e2822, roughness: 0.7 });
+      const shin = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.5, 4, 12).rotateX(Math.PI / 2), pants); shin.position.set(0, 0.03, 0.32); g.add(shin);
+      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.068, 0.07, 12).rotateX(Math.PI / 2), boot); cuff.position.set(0, 0.03, 0.06); g.add(cuff);
+      const upper = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.1, 0.2), boot); upper.position.set(0, 0, -0.06); g.add(upper);
+      const toe = new THREE.Mesh(new THREE.SphereGeometry(0.058, 12, 8), boot); toe.scale.set(1, 0.75, 1.1); toe.position.set(0, -0.012, -0.16); g.add(toe);
+      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.025, 0.3), new THREE.MeshStandardMaterial({ color: 0x141210, roughness: 0.95 })); sole.position.set(0, -0.06, -0.08); g.add(sole);
+      const lace = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.012, 0.12), new THREE.MeshStandardMaterial({ color: 0x8a7a5a, roughness: 0.9 })); lace.position.set(0, 0.052, -0.04); g.add(lace);
+      g.traverse((o) => { o.renderOrder = 9; }); g.visible = false; this.camera.add(g); this.leg = g;
+    }
+    const k = this.kickT > 0 ? this.kickT / DUR : 0, ext = k <= 0 ? 0 : k < 0.38 ? ease(k / 0.38) : 1 - ease((k - 0.38) / 0.62);
+    this.leg.visible = k > 0 && !this.hidden;
+    // (la pierna apunta hacia abajo con la bota abajo; al patear gira hacia delante y sube hasta el centro de la vista)
+    // (sube desde abajo y se estira al frente, con la puntera algo hacia arriba en el golpe)
+    this.leg.position.set(0.12 - 0.07 * ext, -0.85 + 0.55 * ext, -0.35 - 0.4 * ext);
+    this.leg.rotation.set(-0.9 + 1.05 * ext, -0.05, 0.1 - 0.08 * ext);
+  }
+  /** Golpe cuerpo a cuerpo genérico (patada): rayos en abanico delante de la cámara. */
+  private meleeHit(reach: number, dmg: number, push: number, kick: boolean) {
+    const eye = this.camera.getWorldPosition(new THREE.Vector3()), q = this.camera.getWorldQuaternion(new THREE.Quaternion());
+    const targets = this.hooks.dummies().filter((d) => d.alive).flatMap((d) => d.hitboxes);
+    for (const [ox, oy] of [[0, 0], [0.1, 0], [-0.1, 0], [0, -0.12], [0, 0.08]]) {
+      const dir = new THREE.Vector3(ox, oy, -1).normalize().applyQuaternion(q);
+      this.ray.set(eye, dir); this.ray.far = reach;
+      const hit = this.ray.intersectObjects(targets, false)[0]; if (!hit) continue;
+      const d = hit.object.userData.dummy as Dummy, zone = hit.object.userData.zone as Zone, alive = d.alive;
+      this.hooks.onHit(d, zone, hit.point, dmg, null, false);
+      d.push(dir.clone().setY(0).normalize(), push);
+      this.spark(hit.point, dir.clone().negate(), 10, 0xcff6f8); this.hitmarker = 0.15;
+      { const l = soundManifest?.efectos.melee_culatazo; if (l?.length) playSample(sample(l[0]), 0.7, kick ? 0.8 : 1); }
+      if (alive && !d.alive) { this.killmarker = 0.35; this.hitSound("kill"); this.hooks.onKill?.(d); } else this.hitSound("body");
+      this.recoil += 0.03; return;
+    }
+  }
   private punchResolve() {
     const eye = this.camera.getWorldPosition(new THREE.Vector3()), q = this.camera.getWorldQuaternion(new THREE.Quaternion());
     const targets = this.hooks.dummies().filter((d) => d.alive).flatMap((d) => d.hitboxes);
@@ -551,7 +598,8 @@ export class Gun {
       d.push(dir.clone().setY(0).normalize(), this.punchHeavy ? 1.4 : 0.5);
       this.spark(hit.point, dir.clone().negate(), this.punchHeavy ? 10 : 5, crit ? 0xffe08a : 0xcff6f8);
       if (crit) this.critmarker = 0.15; else this.hitmarker = 0.12;
-      { const l = soundManifest?.efectos[this.punchHeavy ? "melee_culatazo" : "melee_cuchillo_golpe"]; if (l?.length) playSample(sample(l[0]), 0.6); }
+      // (puñetazo: golpe sordo, no el de cuchillo; el fuerte, más grave)
+      { const l = soundManifest?.efectos.melee_culatazo; if (l?.length) playSample(sample(l[0]), this.punchHeavy ? 0.65 : 0.5, this.punchHeavy ? 0.85 : 1.15 + Math.random() * 0.1); }
       if (alive && !d.alive) { this.killmarker = 0.35; this.hitSound("kill"); this.hooks.onKill?.(d); } else this.hitSound(zone === "head" ? "head" : "body");
       this.recoil += this.punchHeavy ? 0.03 : 0.014; this.recoilYaw += (Math.random() - 0.5) * 0.01; // sacudida de impacto
       return;

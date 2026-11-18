@@ -1,9 +1,10 @@
 // Inventario: rejilla por rareza con filtros y orden, ficha del arma elegida comparada con la equipada y acciones
 // (equipar, a la mochila, renombrar, soltar, desguazar con confirmación suave). Teclado, ratón y mando.
-import { GRENADE_RARITY, type GrenadeSpec } from "../grenades";
+import { type GrenadeSpec } from "../grenades";
 import { SUPERS, SUPER_IDS, type SuperId } from "../supers";
 import { BRANCHES, SKILLS, branchPoints, canRaise, pointsFree, raise, rank, respec, respecCost, xpToNext, MAX_LEVEL } from "../progress";
 import { fillNadeThumbs } from "./shop";
+import { grenadeCard, grenadeTile } from "./common";
 import { RARITIES } from "../../weapons/generator";
 import { typeName } from "../../weapons/labels";
 /** Clase para filtrar: el bullpup va con los fusiles. */
@@ -205,16 +206,11 @@ export class InventoryScreen {
   private get nadeSel() { return this.selNade == null ? null : this.inv.grenades.find((g) => g.uid === this.selNade) ?? null; }
   /** Ficha de granada con el estilo de las armas (foto, rareza, tipo, daño y datos). */
   private nadeTileHTML(g: GrenadeSpec, equipped: boolean) {
-    return `<button type="button" class="tile ${this.selNade === g.uid ? "sel" : ""} r-${g.rarity}" style="--c:${GRENADE_RARITY[g.rarity].color}" data-nade="${g.uid}" draggable="true" data-nav>
-      ${equipped ? `<span class="slotno">G</span>` : ""}<img class="thumb" data-nadethumb="${g.kind}:${g.rarity}" alt="">
-      <span class="lbl">${t("gr.title1")} · ${t(`rarity.${g.rarity}`)}</span><span class="nm">${t(`gr.${g.kind}`)}</span>
-      <span class="dm">${g.damage} <span class="ty">${t("gr.chargesShort", { c: g.charges })}</span></span></button>`;
+    return grenadeTile(g, { sel: this.selNade === g.uid, slot: equipped ? "G" : "", attrs: `data-nade="${g.uid}" draggable="true"` });
   }
   private nadeCard(g: GrenadeSpec) {
     const eq = this.inv.grenade === g;
-    return `<div class="card" style="--c:${GRENADE_RARITY[g.rarity].color}"><div class="nadebig"><img data-nadethumb="${g.kind}:${g.rarity}" alt=""></div>
-      <span class="lbl">${t("gr.title1")} · ${t(`rarity.${g.rarity}`)}</span><div class="nm">${t(`gr.${g.kind}`)}</div><p class="note">${t(`gr.desc.${g.kind}`)}</p>
-      <p>${t("gr.stats", { d: g.damage, r: g.radius, c: g.charges, s: g.recharge })}</p></div>
+    return `${grenadeCard(g, eq ? t("ui.equippedNow") : "", eq ? null : this.inv.grenade)}
       <div class="actions"><button type="button" class="btn" data-nact="eq">${eq ? t("gr.unequip") : t("gr.equip")}</button><button type="button" class="btn ghost" data-nact="drop">${t("ui.drop")}</button></div>
       <p class="note">${t("gr.sellAtShop")}</p>`;
   }

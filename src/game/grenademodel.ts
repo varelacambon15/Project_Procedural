@@ -47,10 +47,10 @@ export function grenadeThumb(kind: GrenadeKind, rarity: GrenadeRarity): Promise<
   const key = `${kind}:${rarity}`;
   if (!thumbs.has(key)) thumbs.set(key, loadGrenadeModel().then((model) => {
     rr ??= new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-    rr.setSize(160, 120); rr.setClearColor(0x000000, 0);
+    rr.setSize(320, 140); rr.setClearColor(0x000000, 0);
     const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xffffff, 0x404040, 2.2)); const d = new THREE.DirectionalLight(0xffffff, 2); d.position.set(2, 3, 4); sc.add(d);
-    const o = grenadeObject(model, kind, rarity, 1); o.rotation.set(0.25, -0.6, 0.15); sc.add(o);
-    const cam = new THREE.PerspectiveCamera(30, 160 / 120, 0.1, 10); cam.position.set(0, 0.1, 2.6); cam.lookAt(0, 0, 0);
+    const o = grenadeObject(model, kind, rarity, 1); o.rotation.set(0.15, -0.7, -1.2); sc.add(o); // (de lado, como las fotos de las armas)
+    const cam = new THREE.PerspectiveCamera(24, 320 / 140, 0.1, 10); cam.position.set(0, 0.05, 2.9); cam.lookAt(0, 0, 0);
     rr.render(sc, cam); return rr.domElement.toDataURL("image/png");
   }));
   return thumbs.get(key)!;

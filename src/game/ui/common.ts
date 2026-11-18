@@ -1,6 +1,7 @@
 // Piezas comunes de la interfaz: ficha de arma, losetas, fotos de armas, visor 3D, cursor circular y navegación por
 // direcciones (mando y teclado). Estética de terminal de la simulación (ver menus.css).
 import { overPenalty } from "../progress";
+import { GRENADE_RARITY, type GrenadeSpec } from "../grenades";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { TYPE_INFO } from "../../weapons/generator";
@@ -298,4 +299,25 @@ export class MenuNav {
     if (best) this.focus(best);
   }
   activate() { const c = this.current; if (c) c.click(); else this.first(); }
+}
+
+/** Ficha de granada con el mismo formato que la de las armas: foto, rareza, nombre, daño grande y barras de datos. */
+export function grenadeCard(g: GrenadeSpec, title = "", cmp: GrenadeSpec | null = null) {
+  const col = GRENADE_RARITY[g.rarity].color;
+  const bar = (k: string, v: number, max: number, txt: string, better: number | null) => `<span class="k">${t(k)}</span><span class="meter"><i style="width:${Math.max(4, Math.min(100, (v / max) * 100))}%"></i></span><span class="v">${txt}</span>${better == null || Math.abs(better) < 0.01 ? `<span class="d"></span>` : `<span class="d ${better > 0 ? "up" : "down"}">${better > 0 ? "▲" : "▼"}</span>`}`;
+  const dd = cmp ? g.damage - cmp.damage : 0;
+  return `<div class="card" style="--c:${col}">${title ? `<span class="vs">${title}</span>` : ""}
+    <span class="rar">${t(`rarity.${g.rarity}`)} · ${t("gr.title1")}</span>
+    <span class="nm">${t(`gr.${g.kind}`)}</span><span class="meta">${t(`gr.desc.${g.kind}`)}</span>
+    <div class="nadebig"><img data-nadethumb="${g.kind}:${g.rarity}" alt=""></div>
+    <div class="big"><strong>${g.damage}</strong><span>${t("label.damage")}</span>${cmp && Math.abs(dd) >= 1 ? `<span class="${dd > 0 ? "up" : "down"}">${dd > 0 ? "+" : ""}${Math.round(dd)}</span>` : ""}</div>
+    <div class="stats">${bar("gr.k.radius", g.radius, 10, `${g.radius} m`, cmp ? g.radius - cmp.radius : null)}${bar("gr.k.charges", g.charges, 4, `${g.charges}`, cmp ? g.charges - cmp.charges : null)}${bar("gr.k.recharge", 30 - g.recharge, 30, `${g.recharge} s`, cmp ? cmp.recharge - g.recharge : null)}</div>
+  </div>`;
+}
+/** Loseta de granada con el formato de las de armas. */
+export function grenadeTile(g: GrenadeSpec, o: { sel?: boolean; slot?: string; attrs?: string } = {}) {
+  return `<button type="button" class="tile ${o.sel ? "sel" : ""} r-${g.rarity}" style="--c:${GRENADE_RARITY[g.rarity].color}" ${o.attrs ?? ""} data-nav>
+    ${o.slot ? `<span class="slotno">${o.slot}</span>` : ""}<img class="thumb" data-nadethumb="${g.kind}:${g.rarity}" alt="">
+    <span class="lbl">${t("gr.title1")} · ${t(`rarity.${g.rarity}`)}</span><span class="nm">${t(`gr.${g.kind}`)}</span>
+    <span class="dm">${g.damage} <span class="ty">${t("gr.chargesShort", { c: g.charges })}</span></span></button>`;
 }

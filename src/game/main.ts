@@ -37,10 +37,10 @@ import { Pickups, type Pickup } from "./pickups";
 import { LOOT, LootDirector, type LootSource } from "../weapons/loot";
 import { lootChime } from "./audio";
 import { installPixelFont } from "./pixelfont";
-import { CARD, $, MenuCursor, MenuNav, ModelView, Thumbnails, esc, weaponCard, type Dir } from "./ui/common";
+import { CARD, grenadeCard, $, MenuCursor, MenuNav, ModelView, Thumbnails, esc, weaponCard, type Dir } from "./ui/common";
 import { InventoryScreen } from "./ui/inventory";
 import { WorkshopScreen } from "./ui/workshop";
-import { ShopScreen } from "./ui/shop";
+import { ShopScreen, fillNadeThumbs } from "./ui/shop";
 import { StartScreen } from "./ui/start";
 import { TextDialog } from "./ui/dialog";
 import { AUTO, SLOTS, SAVE_VERSION, SaveManager, type SaveData, type SlotId } from "./save";
@@ -153,7 +153,11 @@ async function boot() {
       if (wasAlive && !d.alive) hitstop = Math.max(hitstop, d.kind.boss ? 0.12 : 0.05); else if (crit) hitstop = Math.max(hitstop, 0.025);
       // Desmembramiento pixelado con impactos muy fuertes en cabeza o extremidades (francotirador, revólver, escopeta…),
       // solo con el golpe que lo mata (antes podía quitarle la cabeza y seguir vivo)
-      if (!d.alive && (zone === "head" || zone === "limb") && settings.impactFx && (dmg >= 120 || (zone === "head" && crit && dmg >= 80) || (gun.spec?.type === "shotgun" && dmg * 8 >= 150 && point.distanceTo(camera.position) < 7))) d.dismember(zone, point);
+      if (!d.alive && (zone === "head" || zone === "limb") && settings.impactFx && (dmg >= 120 || (zone === "head" && crit && dmg >= 80) || (gun.spec?.type === "shotgun" && dmg * 8 >= 150 && point.distanceTo(camera.position) < 7))) {
+        // Desmembramiento: que se note (pausa más larga, sacudida y crujido grave)
+        d.dismember(zone, point); hitstop = Math.max(hitstop, 0.13); if (settings.screenShake) shake = Math.min(0.8, shake + 0.2);
+        { const l = soundManifest?.efectos.explosion_grave; if (l?.length) playSample(sample(l[0]), 0.35, 1.6); }
+      }
       const now = performance.now() / 1000;
       sim.hits++; sim.log.push([now, dealt]); sim.distance = point.distanceTo(camera.position);
       if (!sim.firstHit.has(d)) sim.firstHit.set(d, now);
@@ -686,10 +690,24 @@ async function boot() {
     for (const n of [...nadeDrops]) {
       n.t -= dt; n.wait = Math.max(0, n.wait - dt); n.mesh.rotation.y += dt * 2; n.mesh.children[0].position.y = Math.sin(gameTime * 3) * 0.05;
       // (las que suelta el jugador no se recogen hasta que se aleja un momento)
-      const near = n.wait <= 0 && n.mesh.position.distanceTo(player.pos.clone().setY(0.2)) < 1.4;
-      if (near && inv.grenades.length < 8) { inv.grenades.push(n.g); if (inv.grenadeActive < 0) inv.grenadeActive = inv.grenades.length - 1; toast(t("gr.found", { n: t(`gr.${n.g.kind}`), r: t(`rarity.${n.g.rarity}`) })); }
-      if ((near && inv.grenades.includes(n.g)) || n.t <= 0) { scene.remove(n.mesh); nadeDrops.splice(nadeDrops.indexOf(n), 1); }
+      if (n.t <= 0) { scene.remove(n.mesh); nadeDrops.splice(nadeDrops.indexOf(n), 1); }
     }
+  }
+  /** Granada del suelo a la que se mira (como las armas: se recoge con usar). */
+  function nadeTarget(look: THREE.Vector3) {
+    let best: (typeof nadeDrops)[number] | null = null, bd = 1e9;
+    for (const n of nadeDrops) {
+      if (n.wait > 0) continue; const to = n.mesh.position.clone().sub(camera.position), d = to.length();
+      if (d < 3 && to.normalize().dot(look) > 0.86 && d < bd) { bd = d; best = n; }
+    }
+    return best;
+  }
+  function pickNade(n: (typeof nadeDrops)[number]) {
+    if (inv.grenades.length >= 8) { toast(t("gr.full")); return; }
+    inv.grenades.push(n.g); if (inv.grenadeActive < 0) inv.grenadeActive = inv.grenades.length - 1;
+    toast(t("gr.found", { n: t(`gr.${n.g.kind}`), r: t(`rarity.${n.g.rarity}`) }));
+    { const l = soundManifest?.efectos.recoger_granada; if (l?.length) playSample(sample(l[0]), 0.6); }
+    scene.remove(n.mesh); nadeDrops.splice(nadeDrops.indexOf(n), 1);
   }
   function dropLoot(source: LootSource, at: THREE.Vector3) {
     const onGround = pickups.list.filter((p) => p.expires != null).length;
@@ -744,7 +762,7 @@ async function boot() {
 
   // ---------- Bucle ----------
   const clock = new THREE.Clock();
-  let shownPickup: Pickup | null = null;
+  let shownPickup: object | null = null;
   const debug = { fire: false, aim: false }; // usado por las pruebas automáticas
   let frameNo = 0;
   function frame() {
@@ -771,21 +789,24 @@ async function boot() {
       const key = input.device === "pad" ? `<kbd class="hold" style="--p:${Math.round(input.useHold * 100)}%">${PAD_NAMES[input.padBinds.useReload]}</kbd>${t("ui.holdBtn")} ` : `<kbd>${input.binds.use.replace(/^Key/, "")}</kbd>`;
       const look = camera.getWorldDirection(new THREE.Vector3());
       const ground = pickups.target(camera.position, look);
-      const near = ground ? null : nearInteractable();
-      $("prompt").hidden = !ground && !near;
+      const gnade = ground ? null : nadeTarget(look);
+      const near = ground || gnade ? null : nearInteractable();
+      $("prompt").hidden = !ground && !near && !gnade;
       if (ground) $("prompt").innerHTML = `${key}${t("ui.pickup")}`;
+      else if (gnade) $("prompt").innerHTML = `${key}${t("ui.pickupNade")}`;
       else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : near.id === "raid" ? "rd.use" : "ui.useBench")}`;
       // Ficha del arma del suelo comparada con la que llevas
       const card = $("pickcard");
-      if (ground !== shownPickup) {
-        shownPickup = ground;
-        card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : "";
-        card.hidden = !ground;
+      if ((ground ?? gnade) !== shownPickup) {
+        shownPickup = ground ?? gnade;
+        card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : gnade ? grenadeCard(gnade.g, inv.grenade ? t("ui.compared") : "", inv.grenade) : "";
+        card.hidden = !ground && !gnade; if (gnade) fillNadeThumbs(card);
       }
       // Ⓧ del mando: mantener = recoger o usar lo que hay cerca (pulsar y soltar recarga)
-      if (f.holdUse && (ground || near)) f.interact = true;
+      if (f.holdUse && (ground || near || gnade)) f.interact = true;
       if (f.interact) {
         if (ground) pickUp(ground);
+        else if (gnade) pickNade(gnade);
         else if (near) {
           if (near.id === "chest") openScreen("shop");
           else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); arena.set(generateArena((Math.random() * 2 ** 31) | 0, arena.bounds), true, player.pos); waves.start(); toast(t("ui.wavesGo")); } }
@@ -806,7 +827,7 @@ async function boot() {
         for (const d of dummies) { if (!d.alive) continue; const to = d.center.sub(camera.position); const dist = to.length(); if (fwd.angleTo(to) < Math.max(0.03, 0.6 / dist)) { input.assist = 0.45; break; } }
       }
       player.update(dt, f, gun.aimT > 0.5, (1 - gun.aimT * (1 - 1 / Math.max(1.5, gun.zoom))) * (1 + (settings.adsSens - 1) * gun.aimT));
-      gun.update(dt, { fire: f.fire && !sfx.casting, aim: f.aim && !sfx.casting, moving: Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5), sprinting: player.sprinting, lookX: f.lookX, lookY: f.lookY, vy: player.vel.y, grounded: player.onGround, inspect: f.inspect });
+      gun.update(dt, { kick: f.kick && !sfx.casting, fire: f.fire && !sfx.casting, aim: f.aim && !sfx.casting, moving: Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5), sprinting: player.sprinting, lookX: f.lookX, lookY: f.lookY, vy: player.vel.y, grounded: player.onGround, inspect: f.inspect });
       const base = settings.fov, aimFov = gun.sight === "scope" || gun.sight === "irons" ? base / gun.zoom : gun.sight === "iron" ? base / 1.35 : base / 1.6;
       camera.fov = THREE.MathUtils.lerp((player.sprinting ? base + 7 : base) + 9 * player.slideK, aimFov, gun.aimT);
       const sp = sfx.pose(); gun.superPose = sp; gun.buff = sfx.buff;

@@ -98,7 +98,7 @@ export class Dummy {
   /** Cabezazo hacia atrás (impacto en la cabeza) y flexión de pierna (impacto en una pierna). */
   private headKick = 0; private headKickV = 0; private limpT = 0; private limpSide = 1;
   /** Empuje del cuerpo al morir, en la dirección del disparo, y caída hacia atrás. */
-  private deathV = new THREE.Vector3(); private deathOff = new THREE.Vector3(); private deathTilt = 0;
+  private deathV = new THREE.Vector3(); private deathOff = new THREE.Vector3(); private deathTilt = 0; private deathDir = new THREE.Vector2(0, 1);
   /** Destello blanco de los materiales al recibir un impacto (más fuerte con críticos). */
   private hitGlow = 0; private glowColor = new THREE.Color(1, 1, 1); private mats: THREE.MeshStandardMaterial[] = [];
   /** Marcas de impacto pegadas al cuerpo mientras vive (se borran al morir). */
@@ -124,7 +124,7 @@ export class Dummy {
     if (zone === "head") this.headKickV += 3.2 * s;
     if (zone === "limb" && point.y - this.group.position.y < 1.25 * sc) { this.limpT = 0.45; this.limpSide = this.group.worldToLocal(point.clone()).x < 0 ? -1 : 1; }
     this.hitGlow = crit ? 1 : 0.65; this.glowColor.set(crit ? 0xfff0a0 : 0xffffff);
-    if (!this.alive && this.deadT === 0) { this.deathV.copy(local).setY(0).normalize().multiplyScalar(1.2 + 3.5 * Math.min(1, dmg / 200) / mass).setY(0); this.deathTilt = 0.01; }
+    if (!this.alive && this.deadT === 0) { const f = local.clone().setY(0).normalize(); this.deathDir.set(f.x, f.z); this.deathV.copy(f).multiplyScalar(0.8 + 2.5 * Math.min(1, dmg / 200) / mass); this.deathTilt = 0.01; }
     if (!fx) return;
     // Partículas: chispas en blindados (o casco), fragmentos pixelados en la cabeza, polvo y trozos en el resto
     const metal = zone === "shield" || (zone === "head" && this.helmeted) || (zone === "body" && this.armored);
@@ -153,7 +153,7 @@ export class Dummy {
   readonly bar: HTMLDivElement;
   private clip!: THREE.Plane; private scan!: THREE.Mesh; private top = 2.4;
   /** Reacciones visibles: brasas (fuego), chispas azules (eléctrico) y empuje (explosivo). */
-  private fxBits: { m: THREE.Mesh; v: THREE.Vector3; t: number; g?: boolean }[] = [];
+  private fxBits: { m: THREE.Mesh; v: THREE.Vector3; t: number; g?: boolean; spin?: THREE.Vector3 }[] = [];
   /** Piezas arrancadas (se restauran al reaparecer). */
   private severed: THREE.Mesh[] = [];
   /**
@@ -170,14 +170,23 @@ export class Dummy {
     if (zone === "head") for (const m of this.body.children as THREE.Mesh[]) if (m.isMesh && m.visible && m !== hit && m.position.y > 2.05) { m.visible = false; this.severed.push(m); }
     const color = ((hit.material as THREE.MeshStandardMaterial).color ?? new THREE.Color(0xd2702e)).getHex();
     const c = this.group.worldToLocal(hit.getWorldPosition(new THREE.Vector3()));
-    const n = zone === "head" ? 34 : 24;
+    // La pieza arrancada sale volando entera (girando, con gravedad) en la dirección del impacto
+    const away = this.group.worldToLocal(at.clone()).sub(c).negate().setY(0).normalize();
+    const chunk = new THREE.Mesh(hit.geometry, (hit.material as THREE.Material).clone()); (chunk.material as THREE.Material).transparent = true;
+    hit.getWorldScale(chunk.scale); chunk.scale.divide(this.group.getWorldScale(new THREE.Vector3())); chunk.position.copy(c); this.group.add(chunk);
+    this.fxBits.push({ m: chunk, g: true, t: 2.2, v: away.multiplyScalar(3 + Math.random() * 2).add(new THREE.Vector3(0, 3.5 + Math.random() * 2, 0)), spin: new THREE.Vector3((Math.random() - 0.5) * 18, (Math.random() - 0.5) * 18, (Math.random() - 0.5) * 18) });
+    // Muñón de datos: un brillo cian donde estaba la pieza, y un fogonazo de cuadrados luminosos
+    const stump = new THREE.Mesh(new THREE.SphereGeometry(zone === "head" ? 0.08 : 0.06, 10, 8), new THREE.MeshBasicMaterial({ color: 0x9fe8ee, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    stump.position.copy(c); this.group.add(stump); this.fxBits.push({ m: stump, v: new THREE.Vector3(), t: 1.0 });
+    for (let i = 0; i < 18; i++) { const g = new THREE.Mesh(BIT_GEO, new THREE.MeshBasicMaterial({ color: 0xbff8ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); g.scale.setScalar(2.2); g.position.copy(c); this.group.add(g); this.fxBits.push({ m: g, t: 0.35 + Math.random() * 0.3, v: new THREE.Vector3((Math.random() - 0.5) * 7, (Math.random() - 0.2) * 6, (Math.random() - 0.5) * 7) }); }
+    const n = zone === "head" ? 60 : 44;
     for (let i = 0; i < n; i++) {
       const big = Math.random() < 0.35;
       const m = new THREE.Mesh(BIT_GEO, new THREE.MeshBasicMaterial({ color: Math.random() < 0.75 ? color : i % 2 ? 0x2c3036 : 0x9fe8ee, transparent: true }));
-      if (big) m.scale.setScalar(1.8);
+      m.scale.setScalar(big ? 2.6 : 1.4);
       m.position.copy(c).add(new THREE.Vector3((Math.random() - 0.5) * 0.15, (Math.random() - 0.5) * 0.15, (Math.random() - 0.5) * 0.15));
       this.group.add(m);
-      this.fxBits.push({ m, g: true, t: 1.4 + Math.random() * 0.8, v: new THREE.Vector3((Math.random() - 0.5) * 3, 1 + Math.random() * 3, (Math.random() - 0.5) * 3) });
+      this.fxBits.push({ m, g: true, t: 1.8 + Math.random() * 1.0, v: new THREE.Vector3((Math.random() - 0.5) * 4.5, 1.5 + Math.random() * 4, (Math.random() - 0.5) * 4.5), spin: big ? new THREE.Vector3(Math.random() * 10, Math.random() * 10, 0) : undefined });
     }
   }
   private emitT = 0; private pushV = new THREE.Vector3(); private pushOff = new THREE.Vector3();
@@ -271,6 +280,7 @@ export class Dummy {
     this.part(cap(0.19, 0.38), skin, 0, 1.68, 0, "body").scale.set(1.15, 1, 0.75);
     const armL = this.part(cap(0.065, 0.5), skin, -0.3, 1.58, 0, "limb"); armL.rotation.z = 0.18;
     const armR = this.part(cap(0.065, 0.5), skin, 0.3, 1.58, 0, "limb"); armR.rotation.z = -0.18;
+    if (L) this.armsH = [armL, armR];
     this.part(new THREE.CylinderGeometry(0.06, 0.07, 0.1, 10), skinDark, 0, 1.98, 0, "body");
     this.part(new THREE.SphereGeometry(0.13, 16, 12), skin, 0, 2.13, 0, "head").scale.set(1, 1.12, 1.02);
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.08, 24), new THREE.MeshBasicMaterial({ color: 0xe8a040 }));
@@ -310,6 +320,7 @@ export class Dummy {
   private rollBall: THREE.Object3D | null = null; private turretHead: THREE.Object3D | null = null; private blink: THREE.MeshStandardMaterial | null = null;
   /** Salto de la araña (se abalanza al acercarse). */ private pounceT = 0; private pounceCd = 2;
   /** Aura del comandante: más velocidad y daño mientras dura. */ buffT = 0;
+  /** Brazos de los humanoides (balanceo al andar y zarpazo al atacar). */ private armsH: THREE.Mesh[] = []; private attackT = 0;
   /** Fallo de código: tiempo hasta el siguiente salto y salto en curso (intocable). */ private glitchT = 2 + Math.random() * 2; private phaseT = 0;
   /** Cura (médico): no pasa de la vida máxima. Devuelve lo curado. */
   heal(n: number) { if (!this.alive) return 0; const l = this.layers[this.layers.length - 1], h = Math.min(n, l.max - l.value); l.value += h; return h; }
@@ -342,11 +353,13 @@ export class Dummy {
       for (const x of [-0.055, 0.055]) this.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), eyeMat), x, 0.02, 0.1), head, "head");
       for (let i = 0; i < 6; i++) {
         const side = i < 3 ? -1 : 1, k = i % 3, g = at(new THREE.Group(), side * 0.2, 0.58, 0.28 - k * 0.24); g.rotation.y = side * (0.5 - k * 0.5) * -1; B.add(g);
-        const upper = new THREE.Group(); upper.rotation.z = side * -0.6; g.add(upper);
+        const upper = new THREE.Group(); upper.rotation.z = side * 0.6; g.add(upper); // (muslo hacia arriba y afuera)
         const seg1 = box(0.42, 0.075, 0.075, robotMetal); seg1.position.x = side * 0.21; this.add(seg1, upper, "limb");
-        const knee = at(new THREE.Group(), side * 0.42, 0, 0); upper.add(knee); knee.rotation.z = side * 1.45;
-        const seg2 = box(0.5, 0.06, 0.06, robotDark); seg2.position.x = side * 0.25; this.add(seg2, knee, "limb");
-        this.spiderLegs.push({ g, ph: (k + (side > 0 ? 1 : 0)) % 2 ? Math.PI : 0, side });
+        const knee = at(new THREE.Group(), side * 0.42, 0, 0); upper.add(knee); knee.rotation.z = -side * 1.85; // (y la tibia baja hasta el suelo)
+        this.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), robotMetal), 0, 0, 0), knee, "limb");
+        const seg2 = box(0.86, 0.06, 0.06, robotDark); seg2.position.x = side * 0.43; this.add(seg2, knee, "limb");
+        const foot = at(new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.08, 6), robotMetal), side * 0.88, 0, 0); foot.rotation.z = side * Math.PI / 2; this.add(foot, knee, "limb");
+        g.userData.y0 = g.rotation.y; this.spiderLegs.push({ g, ph: (k + (side > 0 ? 1 : 0)) % 2 ? Math.PI : 0, side });
       }
       this.blink = eyeMat;
     } else if (shape === "roller") {
@@ -372,7 +385,9 @@ export class Dummy {
   private animRobot(dt: number, moving: number, toTarget: number) {
     for (const r of this.rotors) r.rotation.y += dt * 40;
     if (this.kind.fly && this.alive && this.liftT <= 0) this.group.position.y = this.kind.fly + Math.sin(this.walkT * 0.7) * 0.18;
-    for (const l of this.spiderLegs) { const p = this.walkT * 2.2 + l.ph; l.g.rotation.x = Math.sin(p) * 0.35 * moving; l.g.position.y = 0.58 + Math.max(0, Math.cos(p)) * 0.06 * moving; }
+    // Patas en trípode alterno: cada pata avanza levantada y apoya hacia atrás; el cuerpo se balancea un poco
+    for (const l of this.spiderLegs) { const p = this.walkT * 2.6 + l.ph; l.g.rotation.y = l.g.userData.y0 + Math.sin(p) * 0.4 * moving; l.g.rotation.z = Math.max(0, Math.cos(p)) * 0.25 * moving * l.side; }
+    if (this.spiderLegs.length) this.body.position.y += Math.abs(Math.sin(this.walkT * 2.6)) * 0.03 * moving;
     if (this.rollBall) this.rollBall.rotation.x += dt * moving * 9;
     if (this.blink) { const rate = this.kind.shape === "roller" ? 2 + 14 * Math.max(0, 1 - toTarget / 14) : 1.5; this.blink.emissiveIntensity = this.alive ? 0.8 + 1.4 * (0.5 + 0.5 * Math.sin(this.walkT * rate)) : 0; }
   }
@@ -419,7 +434,7 @@ export class Dummy {
       else {
         // A distancia (dron): se mueve de lado mientras dispara, para no ser un blanco fijo
         if (this.kind.shape === "drone" || this.kind.gun === "rifle") { const side = new THREE.Vector3(to.z, 0, -to.x).normalize(); this.group.position.addScaledVector(side, Math.sin(this.walkT * 0.6) * c.speed * 0.6 * dt); moving = 0.5; }
-        if (c.cd <= 0) { c.cd = c.interval; c.onAttack(c.damage * (this.buffT > 0 ? 1.3 : 1)); this.flash = 0.1; }
+        if (c.cd <= 0) { c.cd = c.interval; c.onAttack(c.damage * (this.buffT > 0 ? 1.3 : 1)); this.flash = 0.1; this.attackT = 0.4; }
       }
       if (this.turretHead) this.turretHead.rotation.y = Math.atan2(to.x, to.z) - this.group.rotation.y; else this.group.rotation.y = Math.atan2(to.x, to.z);
       // Andar: las piernas se balancean (más rápido cuanto más rápido avanza)
@@ -428,6 +443,14 @@ export class Dummy {
     }
     if (this.kind.shape && this.kind.shape !== "humanoid") { this.walkT += dt * (1 + moving * 4); this.animRobot(dt, moving, toTarget); }
     this.buffT = Math.max(0, this.buffT - dt);
+    // Brazos: se balancean al andar (al revés que las piernas) y el derecho lanza un zarpazo al atacar
+    if (this.armsH.length && this.alive && !this.kind.gun && !this.kind.shield) {
+      this.attackT = Math.max(0, this.attackT - dt);
+      const walk = moving ? Math.sin(this.walkT) * 0.45 : 0, a = this.attackT > 0 ? Math.sin((1 - this.attackT / 0.4) * Math.PI) : 0;
+      this.armsH[0].rotation.x += (walk - this.armsH[0].rotation.x) * Math.min(1, dt * 10);
+      this.armsH[1].rotation.x += (-walk - 1.7 * a - this.armsH[1].rotation.x) * Math.min(1, dt * 14);
+      if (a > 0) this.pushOff.z += a * 0.004; // (se echa hacia delante al golpear)
+    }
     // Fallo de código: parpadea y cada pocos segundos salta a otro sitio cerca del jugador (intocable durante el salto)
     if (this.kind.glitch && this.alive) {
       this.glitchT -= dt; this.phaseT = Math.max(0, this.phaseT - dt);
@@ -461,6 +484,7 @@ export class Dummy {
     }
     for (let i = this.fxBits.length - 1; i >= 0; i--) {
       const b = this.fxBits[i]; b.t -= dt; b.m.position.addScaledVector(b.v, dt); (b.m.material as THREE.MeshBasicMaterial).opacity = Math.min(1, b.t * 3);
+      if (b.spin) { b.m.rotation.x += b.spin.x * dt; b.m.rotation.y += b.spin.y * dt; b.m.rotation.z += b.spin.z * dt; if (b.m.position.y <= 0.03) b.spin.multiplyScalar(0.9); }
       if (b.g) { b.v.y -= 9.8 * dt; if (b.m.position.y < 0.02) { b.m.position.y = 0.02; b.v.y *= -0.3; b.v.x *= 0.6; b.v.z *= 0.6; } }
       if (b.t <= 0) { this.group.remove(b.m); this.fxBits.splice(i, 1); }
     }
@@ -473,8 +497,16 @@ export class Dummy {
     this.headKickV += -140 * this.headKick * dt; this.headKickV *= Math.max(0, 1 - 16 * dt); this.headKick = Math.min(0.12, this.headKick + this.headKickV * dt);
     for (const h of this.heads) h.m.position.z = h.z - this.headKick;
     this.limpT = Math.max(0, this.limpT - dt); const limp = Math.sin(Math.min(1, this.limpT / 0.45) * Math.PI);
-    if (!this.alive && this.deathTilt > 0) { this.deathTilt = Math.min(1.1, this.deathTilt + dt * 3.2 * (1.2 - this.deathTilt)); this.deathOff.addScaledVector(this.deathV, dt); this.deathV.multiplyScalar(Math.max(0, 1 - 5 * dt)); }
-    this.body.rotation.x = this.flinch.x - this.deathTilt * 0.9; this.body.rotation.z = this.flinch.y + limp * 0.08 * this.limpSide;
+    // Muerte: cae hacia donde le dispararon (rodillas que ceden, golpe contra el suelo con un pequeño rebote)
+    if (!this.alive && this.deathTilt === 0 && !this.kind.shape) this.deathTilt = 0.01; // (muertes sin disparo: fuego, súper…)
+    if (!this.alive && this.deathTilt > 0) {
+      const k = Math.min(1, this.deadT / 0.62), fall = k < 0.85 ? Math.pow(k / 0.85, 1.8) : 1 - Math.sin((k - 0.85) / 0.15 * Math.PI) * 0.06;
+      this.deathTilt = 0.01 + fall * (this.kind.shape ? 0.5 : 1.42);
+      this.deathOff.addScaledVector(this.deathV, dt); this.deathV.multiplyScalar(Math.max(0, 1 - 4 * dt));
+      this.legs.forEach((l) => (l.rotation.x = -Math.min(0.9, k * 1.6) * 0.6));
+    }
+    const dt2 = this.deathTilt > 0.02 ? this.deathTilt : 0;
+    this.body.rotation.x = this.flinch.x + dt2 * this.deathDir.y; this.body.rotation.z = this.flinch.y + limp * 0.08 * this.limpSide - dt2 * this.deathDir.x;
     this.hitGlow = Math.max(0, this.hitGlow - dt * 9);
     for (let i = 0; i < this.mats.length; i++) { const m = this.mats[i]; if (this.glowSkip.has(m)) continue; m.emissive.copy(this.baseEm[i]).lerp(this.glowColor, this.hitGlow * 0.55); }
     this.body.position.set((this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0) + this.pushOff.x + this.deathOff.x, -limp * 0.06, this.pushOff.z + this.deathOff.z);
@@ -484,9 +516,11 @@ export class Dummy {
     if (!this.alive) {
       this.deadT += dt;
       let h = this.top;
-      if (this.deadT < 0.7) h = this.top * (1 - this.deadT / 0.7);
-      else if (this.deadT < 3.2) h = 0;
-      else if (this.deadT < 4) h = this.top * ((this.deadT - 3.2) / 0.8);
+      // (primero cae; luego se desintegra de arriba abajo)
+      if (this.deadT < 0.85) h = this.top + 1;
+      else if (this.deadT < 1.55) h = this.top * (1 - (this.deadT - 0.85) / 0.7);
+      else if (this.deadT < 4.0) h = 0;
+      else if (this.deadT < 4.8) h = this.top * ((this.deadT - 4.0) / 0.8);
       else if (!this.respawn) { this.gone = true; h = 0; }
       else { this.alive = true; for (const l of this.layers) l.value = l.max; for (const m of this.severed) m.visible = true; this.severed = []; this.deathTilt = 0; this.deathV.set(0, 0, 0); this.deathOff.set(0, 0, 0); }
       this.clip.constant = wy + h;
