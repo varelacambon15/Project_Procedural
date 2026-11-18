@@ -1,7 +1,7 @@
 // Tipos compartidos del sistema de armas. Los textos visibles se obtienen con i18n a partir de los ids.
 
 export type WeaponType = "pistol" | "revolver" | "smg" | "rifle" | "bullpup" | "shotgun" | "sniper" | "launcher" | "flamethrower" | "lmg" | "accessory";
-export type PartRole = "body" | "slide" | "frame" | "barrel" | "magazine" | "scope" | "muzzle" | "receiver" | "stock" | "grip" | "front" | "trigger" | "charging" | "pump" | "device";
+export type PartRole = "body" | "slide" | "frame" | "barrel" | "magazine" | "scope" | "muzzle" | "receiver" | "stock" | "grip" | "front" | "trigger" | "charging" | "pump" | "device" | "accessory";
 export type FireMode = "auto" | "semi" | "burst" | "pump" | "bolt";
 
 /** Tipos estándar de unión: una pieza solo encaja en una unión del mismo tipo. */
@@ -142,6 +142,11 @@ export interface Tweaks {
   /** Añadidos de era y de kit de modernización (posiciones antes de centrar). */
   eraAdds?: EraAdds | null;
   device?: { id: string; at: [number, number] } | null;
+  /** Ranura 4 («accesorio»): linterna o láser. `side` = en el costado del guardamanos (armas largas); si no, bajo el
+   *  armazón (pistolas). La altura y el costado exactos los resuelve el ensamblador sobre las piezas montadas. */
+  light?: { id: string; at: [number, number]; side: boolean } | null;
+  /** Punto de montaje del accesorio que queda libre al desmontarlo. */
+  lightZone?: { at: [number, number]; side: boolean } | null;
   /** Bípode real (pieza del pack del usuario) colgado del guardamanos, desplegado. */
   bipod?: { id: string; at: [number, number] } | null;
   /** Punto de montaje bajo el raíl que queda libre al desmontar el accesorio (se puede volver a montar uno). */

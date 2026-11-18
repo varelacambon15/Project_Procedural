@@ -6,9 +6,11 @@ import { computeStats, powerScore, type WeaponGenerator } from "./generator";
 import { accessory } from "./accessories";
 import { fits, swap, type PartItem } from "./workshop";
 import type { RarityId, WeaponSpec } from "./types";
+import { isLight } from "./lights";
 
-export type AccKind = "optic" | "muzzle" | "device";
-export const ACC_KINDS: AccKind[] = ["optic", "muzzle", "device"];
+/** Zonas: 1 mira, 2 boca, 3 bajo el cañón (empuñaduras, bípodes…), 4 accesorio (linternas y láseres). */
+export type AccKind = "optic" | "muzzle" | "device" | "light";
+export const ACC_KINDS: AccKind[] = ["optic", "muzzle", "device", "light"];
 /** Accesorio del banco: su identificador de pieza y la rareza del arma de la que salió. */
 export interface AccItem { uid: number; kind: AccKind; id: string; rarity: RarityId }
 
@@ -32,6 +34,7 @@ export function inBand(gen: WeaponGenerator, w: WeaponSpec) {
 export function mountedAcc(w: WeaponSpec, kind: AccKind): string | null {
   if (kind === "optic") return w.optic && w.optic !== w.parts[0].from ? w.optic : null;
   if (kind === "muzzle") return w.muzzle;
+  if (kind === "light") return w.tweaks.light?.id || null;
   if (w.layout === "kit") return w.parts.find((p) => p.role === "device")?.from ?? null;
   return w.tweaks.device?.id || null;
 }
@@ -43,9 +46,12 @@ export function accZones(gen: WeaponGenerator, w: WeaponSpec): AccKind[] {
   if (!integrated && (gen.opticOptions(w).length || w.optic)) out.push("optic");
   if (gen.muzzleOptions(w).length || w.muzzle) out.push("muzzle");
   if (deviceHost(gen, w)) out.push("device");
+  if (w.tweaks.light || w.tweaks.lightZone) out.push("light");
   return out;
 }
 function deviceHost(gen: WeaponGenerator, w: WeaponSpec) {
+  // (las armas cortas ya no tienen bajo el cañón: lo que llevaban ahí era su linterna o láser, ahora en la ranura 4)
+  if (w.type === "pistol" || w.type === "revolver") return false;
   if (w.layout === "kit") return w.parts.some((p) => gen.kit.byId.get(p.from)?.sockets.Device);
   return !!(w.tweaks.device?.id || w.tweaks.deviceZone);
 }
@@ -78,6 +84,8 @@ function fitsZone(gen: WeaponGenerator, w: WeaponSpec, a: Pick<AccItem, "kind" |
   // Mira y boca: las mismas listas que usa el generador (accesorios propios, del kit y reales del pack de accesorios)
   if (a.kind === "optic") return gen.opticOptions(w).includes(a.id) || fits(gen, w, "scope", { uid: 0, role: "scope", from: a.id });
   if (a.kind === "muzzle") return gen.muzzleOptions(w).includes(a.id);
+  if (a.kind === "light") return isLight(a.id) && gen.lightPool().some((x) => x.id === a.id);
+  if (isLight(a.id)) return false;
   const part = gen.kit.byId.get(a.id); if (!part || part.slot !== "Device") return false;
   if (w.layout === "kit") return fits(gen, w, "device", { uid: 0, role: "device", from: a.id });
   const long = w.type !== "pistol" && w.type !== "revolver"; // la misma regla que el generador
@@ -85,6 +93,11 @@ function fitsZone(gen: WeaponGenerator, w: WeaponSpec, a: Pick<AccItem, "kind" |
 }
 
 function mountRaw(gen: WeaponGenerator, w: WeaponSpec, a: Pick<AccItem, "kind" | "id"> | null, kind: AccKind = a!.kind) {
+  if (kind === "light") {
+    const z = w.tweaks.light ? { at: w.tweaks.light.at, side: w.tweaks.light.side } : w.tweaks.lightZone!;
+    w.tweaks = { ...w.tweaks, light: a ? { id: a.id, ...z } : null, lightZone: z };
+    gen.refresh(w); return;
+  }
   if (kind === "device" && w.layout !== "kit") {
     const at = w.tweaks.device?.at ?? w.tweaks.deviceZone!;
     w.tweaks = { ...w.tweaks, device: a ? { id: a.id, at } : null, deviceZone: at };

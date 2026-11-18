@@ -12,6 +12,7 @@ import { CAL_EFFECT, PISTOL_ARCHES, PISTOL_MUTATIONS, STRUCTURAL, archDesign, ar
 import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
 import { ensureGrip } from "./grip";
 import { recipeStatMods } from "./effects";
+import { isLight, PROC_LIGHTS } from "./lights";
 import { NO_TWEAKS, type AssetEntry, type IronSet, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Addon, type Rarity, type RarityId, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
@@ -726,9 +727,9 @@ export class WeaponGenerator {
       if (wantStock) { tw.pstock = pistolStock(r, d); ch.push(`stock-${tw.pstock.kind}`); }
       // Accesorio real bajo el raíl del armazón (linterna o láser), si lo hay y la era lo admite
       if (d.frame.rail && era !== "classic" && d.mag.kind !== "front" && (!d.frame.vgrip || d.frame.vgrip === "none") && r() < 0.3) {
-        const devs = this.kit.options("Device", "any").filter((x) => !/foregrip/.test(x.id));
         const fx = d.frame.full ? d.slide.len + d.barrel.ext : d.slide.len * d.frame.dust;
-        if (devs.length) { tw.device = { id: pick(r, devs).id, at: [fx - 0.03, -d.frame.h - 0.006] }; ch.push("device"); }
+        const at: [number, number] = [fx - 0.03, -d.frame.h - 0.006];
+        tw.light = { id: pick(r, this.lightPool()).id, at, side: false }; tw.lightZone = { at, side: false }; ch.push("device");
       }
       const sim = similarity(ref, this.silhouette("modular-pistol", parts, tw, 1));
       const nStruct = ch.filter((c) => STRUCTURAL.has(c) || c.startsWith("stock-")).length;
@@ -853,7 +854,7 @@ export class WeaponGenerator {
   private rollOps(r: Rng, type: BaseType, layout: WeaponSpec["layout"], parts: PartPick[], tw0: Tweaks, barrelLength: number, swaps: number, amp = 1, rare: { nostock: boolean; hgStock: boolean; front?: boolean } = { nostock: true, hgStock: true, front: true }, era: Era = "modern"): { tw: Tweaks; barrelLength: number } {
     const long = type !== "pistol" && type !== "revolver";
     let wantBipod = false;
-    const tw: Tweaks = { ...tw0, rail: null, drum: false, device: null, nostock: false, magLen: 1, stockH: 1, fold: false, pstock: null, pfront: null, cutRear: null, cutFront: null, adds: null };
+    const tw: Tweaks = { ...tw0, rail: null, drum: false, device: null, light: null, lightZone: null, nostock: false, magLen: 1, stockH: 1, fold: false, pstock: null, pfront: null, cutRear: null, cutFront: null, adds: null };
     let bl = barrelLength;
     // Valor al azar en [lo, hi] pero lejos de 1: cada cambio elegido se tiene que notar
     // `amp` < 1 acerca el rango a 1 (cambios más suaves) cuando el arma se aleja demasiado de su base
@@ -990,11 +991,13 @@ export class WeaponGenerator {
     const straight = !magOf || magSpread(magOf) < 1.35;
     if (magBelow && type !== "shotgun") ops.push({ id: "mag", run: () => { if (["smg", "rifle", "lmg", "bullpup"].includes(type) && (r() < 0.35 || !straight)) tw.drum = true; else tw.magLen = 1.22 + r() * 0.28; } });
     if (layout !== "kit") { ops.push({ id: "rail", run: () => (tw.rail = [0, 0, 0]) }); ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) }); }
-    // Escopetas del kit: linterna o láser bajo el cañón
+    // Escopetas del kit: linterna o láser (ahora en la ranura de accesorio, en el costado)
     else if (type === "shotgun") ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) });
+    // Ranura 4: linterna o láser en el costado del guardamanos (armas largas)
+    if (long) ops.push({ id: "light", run: () => (tw.light = { id: "", at: [0, 0], side: true }) });
     const isKitPistol = layout === "kit" && type === "pistol";
     // Cada era admite sus cambios: la clásica no lleva raíles, accesorios tácticos, culatas de tubo ni guardamanos de raíles
-    if (era === "classic") for (let i = ops.length - 1; i >= 0; i--) if (["rail", "device", "fold"].includes(ops[i].id)) ops.splice(i, 1);
+    if (era === "classic") for (let i = ops.length - 1; i >= 0; i--) if (["rail", "device", "fold", "light"].includes(ops[i].id)) ops.splice(i, 1);
     // Mínimo 3 cambios en total (piezas cambiadas + cambios de forma), y siempre al menos 2 de forma
     for (let i = ops.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [ops[i], ops[j]] = [ops[j], ops[i]]; }
     // Con amplitud alta (el arma se parecía demasiado a su base) se aplican todos los cambios posibles
@@ -1008,8 +1011,8 @@ export class WeaponGenerator {
       if (tw.pfront && tw.pfront.kind !== "tube") tw.pfront = { ...tw.pfront, kind: "tube" };
     }
     // Raíl y accesorio: se colocan sobre la zona delantera ya variada (guardamanos o tramo del cañón)
-    if (tw.rail || tw.device || wantBipod) {
-      const wantRail = !!tw.rail, wantDev = !!tw.device; tw.rail = null; tw.device = null;
+    if (tw.rail || tw.device || wantBipod || long || tw.light) {
+      const wantRail = !!tw.rail, wantDev = !!tw.device, wantLight = !!tw.light; tw.rail = null; tw.device = null; tw.light = null;
       const { byRole } = this.placedParts(layout, parts, tw, bl);
       const zone = byRole.get(layout === "modular-long" ? "front" : isKitPistol ? "receiver" : layout === "kit" ? "barrel" : "body");
       if (zone) {
@@ -1026,7 +1029,9 @@ export class WeaponGenerator {
           if (tops.length && x1 - x0 > 0.03) tw.rail = [x0, x1, Math.max(...tops)];
         }
         if (wantDev) {
-          const devs = this.kit.options("Device", "any").filter((d) => (type !== "shotgun" && long) || !/foregrip/.test(d.id));
+          // Bajo el cañón (ranura 3): empuñaduras y similares; las linternas y láseres van a la ranura 4. Las armas cortas
+          // no llevan nada bajo el cañón: lo que se les montaba ahí (luz o láser bajo el armazón) es ahora su accesorio
+          const devs = long && type !== "shotgun" ? this.kit.options("Device", "any").filter((d) => !isLight(d.id)) : [];
           const maxH = layout === "modular-long" ? 0.09 : long ? 0.06 : 0.06;
           const t0 = 0.3 + r() * 0.25;
           // Solo bajo el tramo grueso del guardamanos (no bajo el cañón fino: el agarre quedaba colgando del cañón o
@@ -1040,6 +1045,19 @@ export class WeaponGenerator {
             if (hiY - lo > maxH) continue;
             const ownDev = serie(this.kit, base, "agarres");
             if (devs.length) tw.device = { id: ownDev.length && r() < 0.7 ? ownDev[0] : pick(r, devs).id, at: [x, lo] };
+            else if (!long) { tw.light = { id: pick(r, this.lightPool()).id, at: [x, lo], side: false }; tw.lightZone = { at: [x, lo], side: false }; }
+            break;
+          }
+        }
+        if (long) {
+          // Ranura 4 (accesorio): punto de montaje en el costado izquierdo del tramo grueso delantero; la linterna o el
+          // láser solo si salió el cambio (el punto queda libre para montar uno en el taller)
+          for (const t of [0.62, 0.5, 0.72, 0.4, 0.8]) {
+            const x = z0 + (z1 - z0) * t, col = at(x);
+            if (!col.length || (layout === "modular-long" && !thick(x))) continue;
+            const lo = Math.min(...col.map((p) => p[1])), hiY = Math.max(...col.map((p) => p[2]));
+            const zone = { at: [x, (lo + hiY) / 2] as [number, number], side: true };
+            tw.lightZone = zone; if (wantLight) tw.light = { id: pick(r, this.lightPool()).id, ...zone };
             break;
           }
         }
@@ -1192,7 +1210,13 @@ export class WeaponGenerator {
   }
 
   /** Recalcula estadísticas (tras generar o tras cambiar piezas en el banco). */
+  /** Linternas y láseres posibles (del kit y por código). */
+  lightPool(): { id: string }[] { return [...this.kit.options("Device", "any").filter((d) => isLight(d.id)), ...PROC_LIGHTS]; }
   refresh(spec: WeaponSpec): WeaponSpec {
+    // Partidas antiguas: la linterna o el láser montados bajo el raíl pasan a la ranura de accesorio
+    const tw = spec.tweaks;
+    if (tw?.device && isLight(tw.device.id)) { tw.light = { id: tw.device.id, at: tw.device.at, side: false }; tw.lightZone = { at: tw.device.at, side: false }; tw.device = null; }
+    if (spec.layout === "kit") { const i = spec.parts.findIndex((p) => p.role === "device" && isLight(p.from)); if (i >= 0) { spec.parts.splice(i, 1); } }
     this.ensureDesign(spec);
     ensureGrip(spec); // el agarre sigue a las piezas y accesorios (taller incluido)
     spec.stats = computeStats(spec);

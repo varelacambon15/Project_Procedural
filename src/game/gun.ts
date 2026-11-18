@@ -6,6 +6,7 @@ import { CAL_EFFECT } from "../weapons/pistolgen";
 import type { WeaponAssembler, AssembledWeapon, AssembledPart } from "../weapons/assembler";
 import type { WeaponType } from "../weapons/types";
 import { PELLETS } from "../weapons/generator";
+import { isLight, lightKind } from "../weapons/lights";
 import { EffectRunner, type FxAction } from "../weapons/effects";
 import { accessory, isIron } from "../weapons/accessories";
 import type { Item } from "./inventory";
@@ -69,7 +70,7 @@ export class Gun {
   /** Encuadre en cadera de esta arma (referencias: abajo a la derecha, 24–40 % del ancho, mira bajo la mitad). */
   private fit: [number, number, number, number] | null = null; private fitAspect = 0;
   /** Linterna y láser del accesorio (se encienden con T / cruceta arriba). Sin luces nuevas: cono y haz emisivos. */
-  deviceOn = false;
+  deviceOn = false; private strobe = false; private strobeT = 0;
   private devFx: { kind: "light" | "laser" | "both"; root: THREE.Group; cone: THREE.Mesh | null; lens: THREE.Mesh; beam: THREE.Mesh | null; dot: THREE.Mesh | null; laserCol: number; lampCol: number } | null = null;
   private mag: AssembledPart | null = null;
   private cache = new Map<number, Promise<AssembledWeapon>>();
@@ -159,9 +160,10 @@ export class Gun {
   private buildDeviceFx(m: AssembledWeapon) {
     if (this.devFx?.dot) this.scene.remove(this.devFx.dot);
     this.devFx = null;
-    const part = m.parts.find((p) => p.role === "device" && /flash|light|laser|lamp|torch/i.test(p.from.id ?? ""));
+    const part = m.parts.find((p) => (p.role === "accessory" || p.role === "device") && isLight(p.from.id));
     if (!part) return;
-    const id = part.from.id ?? "", kind: "light" | "laser" | "both" = /laserlight|laser-light/i.test(id) ? "both" : /laser/i.test(id) ? "laser" : "light";
+    const id = part.from.id ?? "", lk = lightKind(id), kind: "light" | "laser" | "both" = lk === "strobe" ? "light" : lk;
+    this.strobe = lk === "strobe";
     m.group.updateMatrixWorld(true);
     const b = new THREE.Box3().setFromObject(part.object).applyMatrix4(m.group.matrixWorld.clone().invert());
     const c = b.getCenter(new THREE.Vector3()), r = Math.max(0.004, Math.min(b.max.y - b.min.y, b.max.z - b.min.z) * 0.32);
@@ -179,7 +181,7 @@ export class Gun {
       const cols: number[] = []; const pos = g.attributes.position;
       for (let i = 0; i < pos.count; i++) { const k = 1 - Math.min(1, pos.getX(i) / L); cols.push(k, k, k); }
       g.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
-      cone = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: lampCol, vertexColors: true, transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+      cone = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: lampCol, vertexColors: true, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
       cone.position.x = 0.002; root.add(cone);
     }
     if (kind !== "light") {
@@ -195,7 +197,9 @@ export class Gun {
     this.applyDevice();
   }
   /** Largo del láser hasta el primer obstáculo (raycast cada fotograma) y punto de impacto. */
-  private updateDevice() {
+  private updateDevice(dt = 0) {
+    const d0 = this.devFx;
+    if (d0 && this.strobe && this.deviceOn && d0.cone) { this.strobeT += dt; d0.cone.visible = Math.sin(this.strobeT * 70) > 0; }
     const d = this.devFx; if (!d || !d.beam || !this.deviceOn) return;
     d.beam.visible = this.viewmodel.visible;
     const o = d.beam.getWorldPosition(new THREE.Vector3()), q = d.beam.getWorldQuaternion(new THREE.Quaternion());
@@ -619,7 +623,7 @@ export class Gun {
       THREE.MathUtils.lerp(this.holder.rotation.y, pose.rot[1], Math.max(follow, Math.min(1, dt * 14))),
       THREE.MathUtils.lerp(this.holder.rotation.z, pose.rot[2], Math.max(follow, Math.min(1, dt * 16))));
     this.sway.rotation.set(...pose.swayRot); this.sway.position.set(...pose.swayPos);
-    this.updateDevice();
+    this.updateDevice(dt);
     // Con visor de aumento, al apuntar del todo se ve a través del visor (el arma se oculta)
     this.viewmodel.visible = !this.hidden && !(this.sight === "scope" && this.aimT > 0.9);
     // Manos obligatorias (05-E): siempre que se ve el arma

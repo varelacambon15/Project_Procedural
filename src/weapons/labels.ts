@@ -59,6 +59,7 @@ export const roleName = (role: string) => t(`role.${role}`);
  */
 export function accName(id: string) {
   if (id.startsWith("acc:")) return t(`acc.${id.slice(4)}`);
+  if (id.startsWith("pa-")) return t(`acc.${id}`);
   if (id.startsWith("iron:")) return t("acc.iron");
   const ALIAS: Record<string, string> = { reddot: "reddot", reflex: "reflex", holographic: "holo", magnified: "acog", scope: "scope6", suppressor: "suppressor-l", foregrip: "foregrip", flashlight: "flashlight", laser: "laser", laserlight: "laserlight" };
   const att = /^k-(?:att|device)-([a-z]+)-(east|west|\d+)$/.exec(id);

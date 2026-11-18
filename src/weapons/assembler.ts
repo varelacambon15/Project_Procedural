@@ -1,5 +1,6 @@
 // Monta en 3D un arma generada: carga los .glb de cada pieza y las coloca en sus puntos de anclaje.
 import * as THREE from "three";
+import { buildLight } from "./lights";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { NO_TWEAKS, type AssetEntry, type PartRole, type WeaponSpec } from "./types";
@@ -587,6 +588,27 @@ export class WeaponAssembler {
     if (thick / long > maxRatio) group.scale.z = Math.max(0.6, (maxRatio * long) / thick);
 
     // Modelos con escala propia (compactos que el conversor agrandó): se encoge el arma entera alrededor del origen
+    // Ranura 4 (accesorio): linterna o láser. En armas largas, en el costado izquierdo del tramo delantero (pegado a la
+    // pieza que hay a esa altura); en pistolas, bajo el armazón como antes
+    const lt = spec.tweaks?.light;
+    if (lt?.id) {
+      const kp = this.gen.kit.byId.get(lt.id);
+      const node = kp ? await this.kitNode(kp) : buildLight(lt.id);
+      node.scale.setScalar(DEVICE_SCALE(spec.type) * (kp ? 1 : 1.05));
+      if (lt.side) {
+        group.updateMatrixWorld(true);
+        let zMin = -0.012, yLo = Infinity, yHi = -Infinity;
+        for (const p of parts) {
+          if (["magazine", "stock", "grip", "device", "scope", "muzzle", "charging", "trigger", "accessory"].includes(p.role)) continue;
+          const b = new THREE.Box3().setFromObject(p.object);
+          if (b.isEmpty() || b.min.x > lt.at[0] || b.max.x < lt.at[0]) continue;
+          zMin = Math.min(zMin, Math.max(-0.05, b.min.z)); yLo = Math.min(yLo, b.min.y); yHi = Math.max(yHi, b.max.y);
+        }
+        const y = Number.isFinite(yLo) ? THREE.MathUtils.clamp(lt.at[1], yLo + 0.008, yHi - 0.008) : lt.at[1];
+        node.rotation.x = Math.PI / 2; node.position.set(lt.at[0], y, zMin * 0.92); // (costado izquierdo: el que se ve en primera persona)
+      } else node.position.set(lt.at[0], lt.at[1] + 0.002, 0);
+      add(node, "accessory", { id: lt.id, label: lt.id, pack: kp ? "kit" : "proc" } as AssetEntry, [0.5, 0, 1]);
+    }
     const size = BASE_SIZE[spec.parts[0]?.from ?? ""] ?? 1;
     if (size !== 1) {
       for (const p of parts) { p.object.position.multiplyScalar(size); p.object.scale.multiplyScalar(size); }

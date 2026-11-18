@@ -169,7 +169,7 @@ export function rollKit(kit: KitIndex, r: Rng, type: WeaponType): { parts: PartP
   const platform = pick(platforms);
   const parts: PartPick[] = [{ role: "receiver", from: platform.id }];
   const cal = platform.caliber;
-  const want = (slot: string, first = false) => { const o = kit.options(slot, cal, type).filter((p) => slot !== "Device" || p.id.startsWith("k-device")); if (o.length) parts.push({ role: KIT_ROLE[slot], from: (first ? o[0] : pick(o)).id }); };
+  const want = (slot: string, first = false) => { const o = kit.options(slot, cal, type).filter((p) => slot !== "Device" || (p.id.startsWith("k-device") && !/flashlight|laser/.test(p.id))); if (o.length) parts.push({ role: KIT_ROLE[slot], from: (first ? o[0] : pick(o)).id }); };
   // Una base y poco más: la configuración de serie (primera variante de cada pieza) y 1-2 piezas cambiadas
   const slots = Object.keys(platform.sockets).filter((slot) => KIT_ROLE[slot] && slot !== "Sights_Rear" && slot !== "Device");
   for (const slot of slots) want(slot, true);
