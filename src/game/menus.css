@@ -454,5 +454,6 @@ body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family
 .holo .hb > * { fill: color-mix(in srgb, var(--f, transparent) 45%, rgba(95, 224, 255, .08)); stroke: #5fe0ff; stroke-width: 1.5; }
 .holo .hb .arm { fill: rgba(95, 224, 255, .08); }
 .holo .scan { stroke: rgba(191, 248, 255, .8); stroke-width: 1; animation: holoscan 2.6s linear infinite; }
-@keyframes holoscan { from { transform: translateY(0); } to { transform: translateY(260px); } }
+@keyframes holoscan { from { transform: translateY(0); } to { transform: translateY(232px); } }
 @media (max-width: 760px) { .armor-rig { grid-template-columns: 110px minmax(0, 1fr); } .holo { height: 200px; } }
+.holo .hb .vis { fill: rgba(191, 248, 255, .55); stroke: none; } .holo .hb .line { fill: none; stroke-width: 1; opacity: .6; }

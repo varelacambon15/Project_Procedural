@@ -212,13 +212,20 @@ export class InventoryScreen {
   /** Pestaña Armadura: silueta holográfica con las tres ranuras apiladas al lado; debajo, las piezas guardadas. */
   private renderArmor() {
     const i = this.inv, sel = this.armorSel, col = (sl: "head" | "torso" | "legs") => { const a = i.wornOf(sl); return a ? ARMOR_RARITY[a.rarity].color : "transparent"; };
-    const holo = `<svg class="holo" viewBox="0 0 120 260" aria-hidden="true">
+    const holo = `<svg class="holo" viewBox="0 0 120 232" aria-hidden="true">
       <g class="hb">
-        <circle cx="60" cy="30" r="20" style="--f:${col("head")}"/>
-        <path d="M30 58 Q60 50 90 58 L96 128 Q60 138 24 128 Z" style="--f:${col("torso")}"/>
-        <path d="M24 64 L10 126 L18 128 L32 80 Z M96 64 L110 126 L102 128 L88 80 Z" class="arm"/>
-        <path d="M30 134 L56 136 L54 246 L36 246 Z M64 136 L90 134 L84 246 L66 246 Z" style="--f:${col("legs")}"/>
-      </g><line class="scan" x1="0" x2="120" y1="0" y2="0"/></svg>`;
+        <path d="M48 12 Q60 4 72 12 L74 30 Q60 36 46 30 Z" style="--f:${col("head")}"/>
+        <path class="vis" d="M47 22 L73 22 L72 28 L48 28 Z"/>
+        <path d="M54 34 L66 34 L65 40 L55 40 Z" class="arm"/>
+        <path d="M40 44 L80 44 L84 58 L78 96 L70 104 L50 104 L42 96 L36 58 Z" style="--f:${col("torso")}"/>
+        <path d="M30 44 L44 42 L42 56 L30 58 Z M90 44 L76 42 L78 56 L90 58 Z" style="--f:${col("torso")}"/>
+        <path d="M31 60 L38 60 L36 100 L33 116 L27 116 L28 98 Z M89 60 L82 60 L84 100 L87 116 L93 116 L92 98 Z" class="arm"/>
+        <path d="M48 64 L72 64 M46 78 L74 78 M52 88 L58 88 M62 88 L68 88" class="line"/>
+        <path d="M48 106 L72 106 L72 114 L48 114 Z" class="arm"/>
+        <path d="M48 116 L59 116 L58 166 L56 210 L47 210 L46 166 Z M61 116 L72 116 L74 166 L73 210 L64 210 L62 166 Z" style="--f:${col("legs")}"/>
+        <path d="M46 158 L58 158 L58 172 L46 172 Z M62 158 L74 158 L74 172 L62 172 Z" style="--f:${col("legs")}"/>
+        <path d="M45 210 L58 210 L60 224 L42 224 Z M62 210 L75 210 L78 224 L60 224 Z" class="arm"/>
+</g><line class="scan" x1="0" x2="120" y1="0" y2="0"/></svg>`;
     const slot = (sl: "head" | "torso" | "legs") => { const a = i.wornOf(sl); return `<div class="slotwrap">${a ? armorTile(a, { sel: this.selArmor === a.uid, slot: t(`ar.key.${sl}`), attrs: `data-armor="${a.uid}"` }) : `<div class="tile empty"><span class="slotno">${t(`ar.key.${sl}`)}</span>${t(`ar.slot.${sl}`)}</div>`}</div>`; };
     const bag = i.armors.filter((a) => !i.wornList.includes(a));
     const tot = i.wornList.reduce((s2, a) => s2 + (a?.reduction ?? 0), 0);
