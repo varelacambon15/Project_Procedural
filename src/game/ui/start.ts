@@ -79,7 +79,7 @@ export class StartScreen {
       ${toggle("damageNumbers")}${toggle("impactFx")}${toggle("screenShake")}${toggle("arms")}${toggle("night")}${toggle("bloom")}
       <div class="row"><span>${t("ui.language")}</span><div class="seg">${LANGS.map((l) => `<button type="button" class="chip ${l.id === getLang() ? "on" : ""}" data-lang="${l.id}">${l.name}</button>`).join("")}</div></div>
       <h3>${t("set.devTitle")}</h3>${toggle("dev")}
-      ${s.dev ? `<p class="note">${t("set.devNote")}</p><div class="row dev-actions">${["lvl1", "lvl10", "cr", "modules", "raid"].map((a) => `<button type="button" class="chip" data-dev="${a}">${t(`set.dev.${a}`)}</button>`).join("")}</div>` : ""}
+      ${s.dev ? `<p class="note">${t("set.devNote")}</p><div class="row dev-actions">${["lvl1", "lvl10", "cr", "modules", "armor", "raid"].map((a) => `<button type="button" class="chip" data-dev="${a}">${t(`set.dev.${a}`)}</button>`).join("")}</div>` : ""}
       <p class="note">${t("set.saved")}</p></div>`;
   }
   private input(e: Event) {

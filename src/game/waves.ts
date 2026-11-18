@@ -11,7 +11,7 @@ export interface WaveEvents {
   /** Empieza una oleada (con su modificador, si lo lleva). */
   onWaveStart?(index: number, mod: WaveModifier | null): void;
   onAllDone(): void;
-  onPlayerHit(dmg: number): void;
+  onPlayerHit(dmg: number, kind?: "melee" | "orb" | "explosive"): void;
   /** Un kamikaze ha llegado al jugador y explota (efecto y daño a los de alrededor). */
   onSelfDestruct?(d: Dummy): void;
 }
@@ -112,7 +112,7 @@ export class Waves {
     // (lanzador: se para lejos y dispara esferas; jefe: golpea de cerca y además lanza ráfagas de esferas cada pocos s)
     d.chase = { target: () => this.decoy?.() ?? this.player(), speed: sp, range: rg?.range ?? (k.shape === "roller" ? 1.4 : data.attackRange), interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
       onAttack: (x) => {
-        if (k.shape === "roller") { this.ev.onPlayerHit(x); this.ev.onSelfDestruct?.(d); return; } // (el kamikaze explota al llegar)
+        if (k.shape === "roller") { this.ev.onPlayerHit(x, "explosive"); this.ev.onSelfDestruct?.(d); return; } // (el kamikaze explota al llegar)
         const od = (rg?.orbDamage ?? 0) * (M ? M.dmg : 1) * dm;
         if (kind === "medic") { this.healBeam(d); return; }
         if (k.gun === "rifle" && rg) { this.bursts.push({ d, n: 3, t: 0, speed: rg.orbSpeed, dmg: od }); return; }
@@ -170,7 +170,7 @@ export class Waves {
     for (const o of [...this.orbs]) {
       o.t -= dt; o.mesh.position.addScaledVector(o.v, dt); o.mesh.rotation.y += dt * 6;
       const p = o.mesh.position, hit = Math.abs(p.x - eye.x) < 0.55 && Math.abs(p.z - eye.z) < 0.55 && p.y > eye.y - 1.2 && p.y < eye.y + 0.6;
-      if (hit) this.ev.onPlayerHit(o.dmg);
+      if (hit) this.ev.onPlayerHit(o.dmg, "orb");
       if (hit || o.t <= 0 || p.y < 0) { this.scene.remove(o.mesh); this.orbs.splice(this.orbs.indexOf(o), 1); }
     }
     for (const b of [...this.beams]) { b.t -= dt; (b.m.material as THREE.MeshBasicMaterial).opacity = Math.max(0, b.t / 0.3) * 0.8; if (b.t <= 0) { this.scene.remove(b.m); this.beams.splice(this.beams.indexOf(b), 1); } }

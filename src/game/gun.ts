@@ -91,7 +91,7 @@ export class Gun {
   superPose: { right: HandPose; left: HandPose; lower: number } | null = null;
   buff = { dmg: 1, rate: 1, freeAmmo: false, crit: false, critMult: 1 };
   /** Árbol de habilidades y nivel: daño, cadencia, daño crítico y probabilidad de no gastar bala. */
-  perks = { dmg: 1, rate: 1, critMult: 1, ammoSave: 0 };
+  perks = { dmg: 1, rate: 1, critMult: 1, ammoSave: 0, reload: 0 };
   /** Para capturas y pruebas: fuerza campos de la entrada de animación (p. ej. { reload: 0.4, dt: 0 }). */
   poseOverride: Partial<AnimInput> | null = null;
   aimT = 0;
@@ -387,7 +387,7 @@ export class Gun {
         time = (0.45 + 0.4 * n + (empty ? 0.35 : 0)) * (1.35 - s.stats.manejo / 200);
       }
     }
-    time *= this.fx?.reloadMult() ?? 1;
+    time *= (this.fx?.reloadMult() ?? 1) * Math.max(0.5, 1 - this.perks.reload); // (armadura: recarga más rápida)
     this.reloadT = this.reloadDur = time; this.burstLeft = 0; this.inspectT = 0;
     this.tacReload = this.item.ammo > 0;
     // Variante de recarga fija del arma (por su semilla); cada paso suena en su fracción del tiempo de recarga

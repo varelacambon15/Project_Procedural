@@ -25,6 +25,11 @@ export class Inventory {
   hasSuper(id: import("./supers").SuperId) { return this.devUnlock || this.supersOwned.includes(id); }
   /** Nivel, experiencia y árbol de habilidades del jugador. */ progress: import("./progress").ProgressState = { level: 1, xp: 0, skills: {} };
   get grenade() { return this.grenades[this.grenadeActive] ?? null; }
+  /** Armaduras guardadas (hasta 12) y las que lleva puestas (por ranura, uid). */
+  armors: import("./armor").ArmorSpec[] = [];
+  worn: Record<import("./armor").ArmorSlot, number | null> = { head: null, torso: null, legs: null };
+  wornOf(slot: import("./armor").ArmorSlot) { const u = this.worn[slot]; return u == null ? null : this.armors.find((a) => a.uid === u) ?? null; }
+  get wornList() { return (["head", "torso", "legs"] as const).map((s) => this.wornOf(s)); }
   credits = 0;
   active = 0;
   private listeners: (() => void)[] = [];
@@ -69,5 +74,5 @@ export class Inventory {
   /** Todas, también las del almacén. */
   get all(): Item[] { return [...this.equip, ...this.pack, ...this.storage].filter((x): x is Item => !!x); }
   /** Vacía todo (nueva partida o carga). */
-  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; this.grenades = []; this.grenadeActive = -1; this.progress = { level: 1, xp: 0, skills: {} }; this.supersOwned = []; this.raidsDone = 0; }
+  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; this.grenades = []; this.grenadeActive = -1; this.progress = { level: 1, xp: 0, skills: {} }; this.supersOwned = []; this.raidsDone = 0; this.armors = []; this.worn = { head: null, torso: null, legs: null }; }
 }

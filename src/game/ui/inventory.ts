@@ -4,7 +4,9 @@ import { type GrenadeSpec } from "../grenades";
 import { SUPERS, SUPER_IDS, type SuperId } from "../supers";
 import { BRANCHES, SKILLS, branchPoints, canRaise, pointsFree, raise, rank, respec, respecCost, xpToNext, MAX_LEVEL } from "../progress";
 import { fillNadeThumbs } from "./shop";
-import { grenadeCard, grenadeTile } from "./common";
+import { armorCard, armorTile, grenadeCard, grenadeTile } from "./common";
+import { fillArmorThumbs } from "../armormodel";
+import type { ArmorSpec } from "../armor";
 import { RARITIES } from "../../weapons/generator";
 import { typeName } from "../../weapons/labels";
 /** Clase para filtrar: el bullpup va con los fusiles. */
@@ -24,6 +26,7 @@ export interface InventoryHooks {
   close(): void; drop(it: Item): void; rename(it: Item): void; toast(m: string): void; changed(it: Item | null): void;
   /** Soltar una granada al suelo (delante del jugador). */ dropNade(g: GrenadeSpec): void;
   /** Ha cambiado el árbol de habilidades (aplicar sus efectos). */ perks?(): void;
+  /** Armaduras: se ha puesto o quitado una pieza; soltar una al suelo. */ armorChanged?(): void; dropArmor?(a: ArmorSpec): void;
 }
 
 export class InventoryScreen {
@@ -186,21 +189,31 @@ export class InventoryScreen {
         <h2>${t("ui.equipped")}</h2>
         <div class="tiles eq">${i.equip.map((x, k) => `<div class="slotwrap" data-eqslot="${k}">${x ? tileHTML(x, { sel: x.uid === this.sel, slot: k, inHand: k === i.active, dim: !this.visible([x]).length }) : `<div class="tile empty"><span class="slotno">${k + 1}</span>${t("ui.empty")}</div>`}</div>`).join("")}
           <div class="slotwrap" data-nadeslot>${i.grenade ? this.nadeTileHTML(i.grenade, true) : `<div class="tile empty"><span class="slotno">G</span>${t("gr.slot")}</div>`}</div></div>
+        <h2>${t("ar.title")}</h2>
+        <div class="tiles eq">${(["head", "torso", "legs"] as const).map((sl) => { const a = i.wornOf(sl); return `<div class="slotwrap">${a ? armorTile(a, { sel: this.selArmor === a.uid, slot: t(`ar.key.${sl}`), attrs: `data-armor="${a.uid}"` }) : `<div class="tile empty"><span class="slotno">${t(`ar.key.${sl}`)}</span>${t(`ar.slot.${sl}`)}</div>`}</div>`; }).join("")}</div>
         <h2>${t("ui.backpack")} <small>${18 - free}/18</small></h2>
-        <div class="tiles" data-packzone>${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${i.grenades.filter((g) => g !== i.grenade).map((g) => this.nadeTileHTML(g, false)).join("")}${packItems.length || i.grenades.length > (i.grenade ? 1 : 0) ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
+        <div class="tiles" data-packzone>${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${i.grenades.filter((g) => g !== i.grenade).map((g) => this.nadeTileHTML(g, false)).join("")}${i.armors.filter((a) => !i.wornList.includes(a)).map((a) => armorTile(a, { sel: this.selArmor === a.uid, attrs: `data-armor="${a.uid}"` })).join("")}${packItems.length || i.grenades.length > (i.grenade ? 1 : 0) ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
         <div class="dropzone" data-dropzone>${t("ui.dropZone")}</div>
         ${this.storageMode ? this.storageHTML() : ""}
       </section>
       <section class="panel detail">
-        ${this.nadeSel ? this.nadeCard(this.nadeSel) : it ? weaponCard(it.spec, cur && cur !== it ? cur.spec : null, cur && cur !== it ? t("ui.vsEquipped") : t("ui.equippedNow"), { wide: true }) : `<div class="card empty">${t("ui.noWeapons")}</div>`}
-        ${this.nadeSel ? "" : it ? this.actions(it) : ""}
+        ${this.armorSel ? this.armorCardHTML(this.armorSel) : this.nadeSel ? this.nadeCard(this.nadeSel) : it ? weaponCard(it.spec, cur && cur !== it ? cur.spec : null, cur && cur !== it ? t("ui.vsEquipped") : t("ui.equippedNow"), { wide: true }) : `<div class="card empty">${t("ui.noWeapons")}</div>`}
+        ${this.nadeSel || this.armorSel ? "" : it ? this.actions(it) : ""}
       </section>`;
     $("inv-credits").textContent = `${i.credits} ${t("unit.cr")}`;
     $("inv-foot").innerHTML = `<span>${t("ui.bankCount", { n: i.bank.length })}</span>` +
       keyHint("Enter", "Ⓐ", t("ui.select")) + keyHint("1 / 2", "LB / RB", t("ui.equipSlot")) + keyHint("R", "Ⓨ", t("ui.rename")) + keyHint("G", "RS", t("ui.drop")) + keyHint("X", "Ⓧ", t("ui.scrapAction")) + keyHint("Esc", "Ⓑ", t("ui.back"));
     this.el.querySelectorAll<HTMLElement>(".tile[data-uid]").forEach((x) => { x.draggable = true; });
     this.thumbs.fill(this.el, this.storageMode ? i.all : i.carried);
-    fillNadeThumbs(this.el);
+    fillNadeThumbs(this.el); fillArmorThumbs(this.el);
+  }
+  /** Armadura elegida (uid). */ private selArmor: number | null = null;
+  private get armorSel() { return this.selArmor == null ? null : this.inv.armors.find((a) => a.uid === this.selArmor) ?? null; }
+  private armorCardHTML(a: ArmorSpec) {
+    const worn = this.inv.worn[a.slot] === a.uid, other = this.inv.wornOf(a.slot);
+    return `${armorCard(a, worn ? t("ui.equippedNow") : other ? t("ui.vsEquipped") : "", worn ? null : other)}
+      <div class="actions"><button type="button" class="btn" data-aact="eq">${worn ? t("ar.unequip") : t("ar.equip")}</button><button type="button" class="btn ghost" data-aact="drop">${t("ui.drop")}</button></div>
+      <p class="note">${t("ar.sellAtShop")}</p>`;
   }
 
   private get nadeSel() { return this.selNade == null ? null : this.inv.grenades.find((g) => g.uid === this.selNade) ?? null; }
@@ -214,7 +227,7 @@ export class InventoryScreen {
       <div class="actions"><button type="button" class="btn" data-nact="eq">${eq ? t("gr.unequip") : t("gr.equip")}</button><button type="button" class="btn ghost" data-nact="drop">${t("ui.drop")}</button></div>
       <p class="note">${t("gr.sellAtShop")}</p>`;
   }
-  private selectNade(uid: number) { this.selNade = uid; this.sel = null; this.render(); }
+  private selectNade(uid: number) { this.selNade = uid; this.sel = null; this.selArmor = null; this.render(); }
   private nadeAction(a: string) {
     const g = this.nadeSel; if (!g) return;
     const k = this.inv.grenades.indexOf(g);
@@ -249,7 +262,7 @@ export class InventoryScreen {
   }
 
   private select(uid: number, rerender = true) {
-    if (this.selNade != null) { this.selNade = null; this.sel = null; }
+    if (this.selNade != null || this.selArmor != null) { this.selNade = null; this.selArmor = null; this.sel = null; }
     if (this.sel === uid) return;
     this.sel = uid;
     if (rerender) { const f = document.activeElement as HTMLElement | null; const keep = f?.closest<HTMLElement>(".tile")?.dataset.uid; this.render(); if (keep) this.el.querySelector<HTMLElement>(`.tile[data-uid="${keep}"]`)?.focus({ preventScroll: true }); }
@@ -273,6 +286,15 @@ export class InventoryScreen {
     if (target.closest("[data-respec]")) { const c = respecCost(this.inv.progress); if (c && this.inv.credits >= c) { this.inv.credits -= c; respec(this.inv.progress); this.hooks.perks?.(); this.hooks.toast(t("pg.respecDone")); } return this.render(); }
     const sp = target.closest<HTMLElement>("[data-super]");
     if (sp) { const id = sp.dataset.super as SuperId; this.spView = id; if (this.inv.hasSuper(id)) { this.inv.superId = id; this.spView = null; } this.render(); return this.el.querySelector<HTMLElement>(`[data-super="${this.inv.superId}"]`)?.focus({ preventScroll: true }); }
+    const at = target.closest<HTMLElement>(".tile[data-armor]");
+    if (at) { this.selArmor = Number(at.dataset.armor); this.selNade = null; this.sel = null; this.render(); return; }
+    const aa = target.closest<HTMLElement>("[data-aact]");
+    if (aa && this.armorSel) {
+      const a = this.armorSel;
+      if (aa.dataset.aact === "eq") this.inv.worn[a.slot] = this.inv.worn[a.slot] === a.uid ? null : a.uid;
+      else { if (this.inv.worn[a.slot] === a.uid) this.inv.worn[a.slot] = null; this.inv.armors.splice(this.inv.armors.indexOf(a), 1); this.selArmor = null; this.hooks.dropArmor?.(a); }
+      this.hooks.armorChanged?.(); this.render(); return;
+    }
     const nt = target.closest<HTMLElement>(".tile[data-nade]");
     if (nt) return this.selectNade(Number(nt.dataset.nade));
     const na = target.closest<HTMLElement>("[data-nact]");

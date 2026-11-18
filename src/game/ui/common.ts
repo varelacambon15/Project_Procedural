@@ -2,6 +2,7 @@
 // direcciones (mando y teclado). Estética de terminal de la simulación (ver menus.css).
 import { overPenalty } from "../progress";
 import { GRENADE_RARITY, type GrenadeSpec } from "../grenades";
+import { ARMOR_RARITY, type ArmorSpec } from "../armor";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { TYPE_INFO } from "../../weapons/generator";
@@ -320,4 +321,23 @@ export function grenadeTile(g: GrenadeSpec, o: { sel?: boolean; slot?: string; a
     ${o.slot ? `<span class="slotno">${o.slot}</span>` : ""}<img class="thumb" data-nadethumb="${g.kind}:${g.rarity}" alt="">
     <span class="lbl">${t("gr.title1")} · ${t(`rarity.${g.rarity}`)}</span><span class="nm">${t(`gr.${g.kind}`)}</span>
     <span class="dm">${g.damage} <span class="ty">${t("gr.chargesShort", { c: g.charges })}</span></span></button>`;
+}
+
+/** Ficha de armadura con el formato de las armas: foto, rareza, ranura y variante, reducción grande y ventajas. */
+export function armorCard(a: ArmorSpec, title = "", cmp: ArmorSpec | null = null) {
+  const col = ARMOR_RARITY[a.rarity].color, d = cmp ? a.reduction - cmp.reduction : 0, pct = (v: number) => `${Math.round(v * 1000) / 10} %`;
+  return `<div class="card" style="--c:${col}">${title ? `<span class="vs">${title}</span>` : ""}
+    <span class="rar">${t(`rarity.${a.rarity}`)} · ${t(`ar.slot.${a.slot}`)} · ${t(`ar.var.${a.variant}`)}</span>
+    <span class="nm">${t(`ar.name.${a.slot}.${a.variant}`)}</span><span class="meta">${t(`ar.desc.${a.variant}`)}</span>
+    <div class="nadebig"><img data-armorthumb="${a.slot}:${a.variant}:${a.rarity}" alt=""></div>
+    <div class="big"><strong>${pct(a.reduction)}</strong><span>${t("ar.reduction")}</span>${cmp && Math.abs(d) >= 0.001 ? `<span class="${d > 0 ? "up" : "down"}">${d > 0 ? "+" : ""}${pct(d)}</span>` : ""}</div>
+    <div class="fxs">${a.perks.map((p) => `<div class="fx tier-1"><span class="ico" style="color:${col}">◆</span><div><b style="color:${col}">${t(`ar.perk.${p.id}`)}</b><small><span class="bonus">+${pct(p.value)}</span></small></div></div>`).join("")}${a.slow ? `<div class="fx"><span class="ico">▾</span><div><b>${t("ar.slow")}</b><small><span class="cost">−${pct(a.slow)}</span></small></div></div>` : ""}</div>
+  </div>`;
+}
+/** Loseta de armadura con el formato de las de armas. */
+export function armorTile(a: ArmorSpec, o: { sel?: boolean; slot?: string; attrs?: string } = {}) {
+  return `<button type="button" class="tile ${o.sel ? "sel" : ""} r-${a.rarity}" style="--c:${ARMOR_RARITY[a.rarity].color}" ${o.attrs ?? ""} data-nav>
+    ${o.slot ? `<span class="slotno">${o.slot}</span>` : ""}<img class="thumb" data-armorthumb="${a.slot}:${a.variant}:${a.rarity}" alt="">
+    <span class="lbl">${t(`ar.slot.${a.slot}`)} · ${t(`rarity.${a.rarity}`)}</span><span class="nm">${t(`ar.name.${a.slot}.${a.variant}`)}</span>
+    <span class="dm">${Math.round(a.reduction * 1000) / 10} % <span class="ty">${t("ar.short")}</span></span></button>`;
 }

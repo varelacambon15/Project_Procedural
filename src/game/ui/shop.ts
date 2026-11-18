@@ -8,7 +8,9 @@ import { t } from "../../i18n";
 import { displayName } from "../../weapons/naming";
 import { GRENADE_RARITY, makeGrenade, type GrenadeKind, type GrenadeRarity } from "../grenades";
 import { grenadeThumb } from "../grenademodel";
-import { grenadeCard } from "./common";
+import { armorCard, grenadeCard } from "./common";
+import { fillArmorThumbs } from "../armormodel";
+import { ARMOR_RARITY, makeArmor, type ArmorSpec } from "../armor";
 import { CRATES, SHOP, SHOWCASE, isFree, sellPrice, buyShowcase, crateOdds, ensureShowcase, openCrate, pityLeft, record, showcasePrice, showcaseRarities, showcaseSeed, type CrateId, type ShopState } from "../shop";
 import type { Inventory, Item } from "../inventory";
 import { $, esc, keyHint, weaponCard, type Thumbnails } from "./common";
@@ -28,6 +30,7 @@ export interface ShopHooks {
   equipNow(spec: WeaponSpec): void;
   /** Reloj del escaparate: tiempo de juego (se pausa con el juego y se guarda). */
   gameTime(): number;
+  /** Se ha puesto o quitado armadura (recalcular protección y ventajas). */ armorChanged?(): void;
   /** Nivel de un arma del escaparate (por su semilla, ajustado al nivel del jugador) y nivel del jugador. */
   weaponLevel?(seed: number): number; playerLevel?(): number;
 }
@@ -69,6 +72,7 @@ export class ShopScreen {
     $("shop-level").textContent = "";
     const tiles = specs.map((s, i) => {
       if (this.nadeAt(i)) return this.nadeTile(i, sc.sold[i]);
+      if (this.armorAt(i)) return this.armorTileShop(i, sc.sold[i]);
       const price = showcasePrice(s.rarity.id, s.level), sold = sc.sold[i];
       const btn = sold ? `<span class="soldtag">${t("shop.soldOut")}</span>`
         : cr < price ? `<button type="button" class="btn ghost sm" disabled>${t("shop.short", { c: price - cr })}</button>`
@@ -91,12 +95,12 @@ export class ShopScreen {
         <div class="floor">${t("shop.floor")} <b style="color:${color(top)}">${t(`rarity.${top}`)}</b>${id === "advanced" ? ` · ${t("shop.pity", { n: pityLeft(st) })}` : ""}</div>
         <div class="odds">${bars}</div>${btn}</div>`;
     }).join("");
-    const ng = this.sel >= 0 ? this.nadeAt(this.sel) : null;
-    const detail = ng ? grenadeCard(ng, this.inv.grenade ? t("ui.compared") : "", this.inv.grenade) : this.sel >= 0 ? weaponCard(specs[this.sel], this.inv.current?.spec ?? null, this.inv.current ? t("ui.compared") : "") : `<p class="hint-sel">${t("shop.pick")}</p>`;
+    const ng = this.sel >= 0 ? this.nadeAt(this.sel) : null, na = this.sel >= 0 && !ng ? this.armorAt(this.sel) : null;
+    const detail = na ? armorCard(na, this.inv.wornOf(na.slot) ? t("ui.compared") : "", this.inv.wornOf(na.slot)) : ng ? grenadeCard(ng, this.inv.grenade ? t("ui.compared") : "", this.inv.grenade) : this.sel >= 0 ? weaponCard(specs[this.sel], this.inv.current?.spec ?? null, this.inv.current ? t("ui.compared") : "") : `<p class="hint-sel">${t("shop.pick")}</p>`;
     $("shop-tiers").innerHTML = `<div class="sc-head"><h2>${t("shop.showcase")}</h2><span class="timer">${t("shop.refreshIn", { t: mmss(Math.max(0, sc.refreshAt - this.hooks.gameTime())) })}</span></div>
       <div class="sc-row">${tiles}</div><div class="crates">${crates}</div>${this.sellHTML()}`;
     $("shop-detail").innerHTML = detail;
-    fillNadeThumbs(this.el);
+    fillNadeThumbs(this.el); fillArmorThumbs(this.el);
     // Imagen fija de cada arma del escaparate (miniatura; se cachea por semilla, ronda y ranura)
     specs.forEach((s, i) => {
       const it = { uid: -((sc.seed % 100000) * 1000 + (sc.round % 100) * 10 + i + 1), spec: s } as unknown as Item;
@@ -110,6 +114,23 @@ export class ShopScreen {
   private nadeAt(i: number) {
     const { sc } = this.showcase(), h = Math.imul((sc.seed * 7 + sc.round * 131 + i * 17) | 0, 2654435761) >>> 0;
     return h % 6 === 0 ? makeGrenade(sc.seed * 7 + sc.round * 131 + i * 17 + 5) : null;
+  }
+  /** Huecos que ofrecen una pieza de armadura (≈ 1 de cada 6, sin coincidir con las granadas; la misma pieza toda la ronda). */
+  private armorCache = new Map<string, ArmorSpec>();
+  private armorAt(i: number) {
+    const { sc } = this.showcase(), h = Math.imul((sc.seed * 7 + sc.round * 131 + i * 17) | 0, 2654435761) >>> 0;
+    if (h % 6 !== 3) return null;
+    const key = `${sc.seed}:${sc.round}:${i}`; let a = this.armorCache.get(key);
+    if (!a) { a = makeArmor(sc.seed * 13 + sc.round * 97 + i * 31 + 7); this.armorCache.set(key, a); }
+    return a;
+  }
+  private armorTileShop(i: number, sold: boolean) {
+    const a = this.armorAt(i)!, cr = this.inv.credits, price = ARMOR_RARITY[a.rarity].price;
+    const btn = sold ? `<span class="soldtag">${t("shop.soldOut")}</span>` : cr < price ? `<button type="button" class="btn ghost sm" disabled>${t("shop.short", { c: price - cr })}</button>`
+      : `<button type="button" class="btn sm" data-buyarmor="${i}">${t("shop.buy", { c: price })}</button>`;
+    return `<div class="sc-tile ${sold ? "sold" : ""} ${this.sel === i ? "sel" : ""}" data-slot="${i}" style="--c:${ARMOR_RARITY[a.rarity].color}"><div class="img"><img data-armorthumb="${a.slot}:${a.variant}:${a.rarity}" alt=""></div>
+      <b class="nm">${t(`ar.name.${a.slot}.${a.variant}`)}</b><span class="meta">${t(`rarity.${a.rarity}`)} · ${t(`ar.slot.${a.slot}`)} · ${Math.round(a.reduction * 1000) / 10} % ${t("ar.short")}</span>
+      <div class="price"><strong>${price}</strong> ${t("unit.cr")}</div>${btn}</div>`;
   }
   private nadeTile(i: number, sold: boolean) {
     const g = this.nadeAt(i)!, cr = this.inv.credits, price = GRENADE_RARITY[g.rarity].price;
@@ -130,7 +151,10 @@ export class ShopScreen {
         <button type="button" class="btn sm" data-sell="${it.uid}">${t("shop.sellFor", { c: sellPrice(it.spec) })}</button></div>`;
     }).join("") + this.inv.grenades.map((g) => `<div class="sell-row" style="--c:${GRENADE_RARITY[g.rarity].color}"><span class="nm">${t("gr.title1")}: ${t(`gr.${g.kind}`)}</span>
         <span class="meta">${t(`rarity.${g.rarity}`)}${g === this.inv.grenade ? ` · ${t("ui.equipped")}` : ""}</span>
-        <button type="button" class="btn sm" data-sellnade="${g.uid}">${t("shop.sellFor", { c: nadeSellPrice(g) })}</button></div>`).join("");
+        <button type="button" class="btn sm" data-sellnade="${g.uid}">${t("shop.sellFor", { c: nadeSellPrice(g) })}</button></div>`).join("")
+      + this.inv.armors.map((a) => `<div class="sell-row" style="--c:${ARMOR_RARITY[a.rarity].color}"><span class="nm">${t(`ar.name.${a.slot}.${a.variant}`)}</span>
+        <span class="meta">${t(`rarity.${a.rarity}`)} · ${t(`ar.slot.${a.slot}`)}${this.inv.worn[a.slot] === a.uid ? ` · ${t("ui.equipped")}` : ""}</span>
+        <button type="button" class="btn sm" data-sellarmor="${a.uid}">${t("shop.sellFor", { c: Math.round(ARMOR_RARITY[a.rarity].price / 3) })}</button></div>`).join("");
     return `<div class="sell"><h2>${t("shop.sell")}</h2>${rows || `<p class="hint-sel">${t("shop.nothingToSell")}</p>`}</div>`;
   }
   private source(tier: string) { if (tier === "sell") return t("shop.sold"); return tier.startsWith("crate:") ? t(`shop.crate.${tier.slice(6)}`) : tier.startsWith("shop:") ? t("shop.showcase") : t("shop.tier", { n: SHOP.tiers.findIndex((x) => x.id === tier) + 1 }); }
@@ -152,6 +176,25 @@ export class ShopScreen {
       this.inv.grenades.splice(k, 1); if (this.inv.grenadeActive === k) this.inv.grenadeActive = -1; else if (this.inv.grenadeActive > k) this.inv.grenadeActive--;
       this.inv.credits += price; record(this.state(), { tier: "sell", rarity: g.rarity, name: t(`gr.${g.kind}`), price: -price, at: Date.now() });
       this.hooks.toast(t("shop.soldMsg", { c: price })); this.render(); return;
+    }
+    const sellArmor = target.closest<HTMLElement>("[data-sellarmor]");
+    if (sellArmor) {
+      const a = this.inv.armors.find((x) => x.uid === Number(sellArmor.dataset.sellarmor)); if (!a) return;
+      const price = Math.round(ARMOR_RARITY[a.rarity].price / 3);
+      if (this.inv.worn[a.slot] === a.uid) this.inv.worn[a.slot] = null;
+      this.inv.armors.splice(this.inv.armors.indexOf(a), 1); this.inv.credits += price;
+      record(this.state(), { tier: "sell", rarity: a.rarity, name: t(`ar.name.${a.slot}.${a.variant}`), price: -price, at: Date.now() });
+      this.hooks.armorChanged?.(); this.hooks.toast(t("shop.soldMsg", { c: price })); this.render(); return;
+    }
+    const armorBtn = target.closest<HTMLElement>("[data-buyarmor]");
+    if (armorBtn) {
+      const i = Number(armorBtn.dataset.buyarmor), { sc } = this.showcase(), a = this.armorAt(i); if (!a) return;
+      const price = ARMOR_RARITY[a.rarity].price;
+      if (sc.sold[i] || this.inv.credits < price) return;
+      if (this.inv.armors.length >= 12) { this.hooks.toast(t("ar.full")); return; }
+      this.inv.credits -= price; sc.sold[i] = true; this.inv.armors.push(a);
+      if (this.inv.worn[a.slot] == null) { this.inv.worn[a.slot] = a.uid; this.hooks.armorChanged?.(); }
+      this.hooks.toast(t("ar.bought", { n: t(`ar.name.${a.slot}.${a.variant}`) })); this.render(); return;
     }
     const nadeBtn = target.closest<HTMLElement>("[data-buynade]");
     if (nadeBtn) {

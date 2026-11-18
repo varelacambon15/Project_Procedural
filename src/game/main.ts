@@ -27,6 +27,8 @@ import { PIXEL_LEVELS, pixelLevel, setPixelLevel } from "../weapons/textures";
 import { onSettings, replaceSettings, setSetting, settings, type Settings } from "./settings";
 import { BOSS_EVERY, PlayerHealth, Waves } from "./waves";
 import { WaveArena } from "./arena";
+import { ARMOR_RARITY, armorTotals, damageTaken, makeArmor, setArmorUid, type ArmorRarity, type ArmorSpec } from "./armor";
+import { armorObject, fillArmorThumbs } from "./armormodel";
 import { generateArena, mutateArena } from "./arenagen";
 import { Raid } from "./raid";
 import { spawnDummies, DamageNumbers, type Dummy } from "./dummies";
@@ -37,7 +39,7 @@ import { Pickups, type Pickup } from "./pickups";
 import { LOOT, LootDirector, type LootSource } from "../weapons/loot";
 import { lootChime } from "./audio";
 import { installPixelFont } from "./pixelfont";
-import { CARD, grenadeCard, $, MenuCursor, MenuNav, ModelView, Thumbnails, esc, weaponCard, type Dir } from "./ui/common";
+import { CARD, armorCard, grenadeCard, $, MenuCursor, MenuNav, ModelView, Thumbnails, esc, weaponCard, type Dir } from "./ui/common";
 import { InventoryScreen } from "./ui/inventory";
 import { WorkshopScreen } from "./ui/workshop";
 import { ShopScreen, fillNadeThumbs } from "./ui/shop";
@@ -280,12 +282,13 @@ async function boot() {
     toast(it.spec.customName ? t("ui.renamed", { n: it.spec.customName }) : t("ui.nameRestored", { n: it.spec.name }));
     renderSlots(); if (invScreen.isOpen) invScreen.render(); if (bench.isOpen) bench.render();
   }
-  const invScreen = new InventoryScreen(inv, thumbs, { close: () => resume(), drop: (it) => dropItem(it), dropNade: (g) => dropNade(g, player.pos.clone().add(new THREE.Vector3(-Math.sin(player.yaw) * 1.5, 0, -Math.cos(player.yaw) * 1.5)), true), rename: (it) => void renameItem(it), toast, changed: onWeaponChanged, perks: () => { applyPerks(); autosave(); } });
+  const invScreen = new InventoryScreen(inv, thumbs, { close: () => resume(), drop: (it) => dropItem(it), dropNade: (g) => dropNade(g, player.pos.clone().add(new THREE.Vector3(-Math.sin(player.yaw) * 1.5, 0, -Math.cos(player.yaw) * 1.5)), true), rename: (it) => void renameItem(it), toast, changed: onWeaponChanged, perks: () => { applyPerks(); autosave(); }, armorChanged: () => { applyPerks(); autosave(); }, dropArmor: (a) => dropArmor(a, player.pos.clone().add(new THREE.Vector3(-Math.sin(player.yaw) * 1.5, 0, -Math.cos(player.yaw) * 1.5)), true) });
   const bench = new WorkshopScreen(inv, gen, view, thumbs, { close: () => { resume(); autosave(); }, changed: onWeaponChanged, rename: (it) => void renameItem(it), toast });
   const shop = new ShopScreen(inv, () => shopState, {
     close: () => { resume(); autosave(); }, toast, chime: (l) => lootChime(l), sold: (it) => { gun.forget(it.uid); onWeaponChanged(null); },
     deliver: (rarity) => deliverPurchase(rarity),
     deliverSpec: (spec) => deliverSpec(spec),
+    armorChanged: () => applyPerks(),
     gameTime: () => playSeconds,
     weaponLevel: (seed) => rollWeaponLevel(inv.progress.level, ((seed * 2654435761) >>> 0) / 2 ** 32), playerLevel: () => inv.progress.level,
     equipNow: (spec) => { const it = inv.all.find((x) => x.spec === spec); const w = it && inv.find(it.uid); if (it && w) { if (w.area === "pack") inv.move(w, { area: "equip", index: inv.active }); else inv.active = w.index; inv.changed(); } },
@@ -307,6 +310,7 @@ async function boot() {
       else if (a === "cr") earn(10000);
       else if (a === "modules") { inv.supersOwned = [...SUPER_IDS]; toast(t("set.dev.modulesDone")); }
       else if (a === "raid") { inv.raidsDone = 0; toast(t("set.dev.raidDone")); }
+      else if (a === "armor") { for (const sl of ["head", "torso", "legs"] as const) for (const v of ["light", "heavy"] as const) if (inv.armors.length < 12) inv.armors.push(makeArmor(Math.floor(Math.random() * 1e9), sl, "epica", v)); toast(t("set.dev.armorDone")); }
       autosave();
     },
   });
@@ -366,7 +370,7 @@ async function boot() {
     const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i })), ...inv.storage.map((it, i) => ({ it, area: "storage" as const, index: i }))]
       .filter((x) => x.it).map((x) => ({ spec: x.it!.spec, ammo: x.it!.ammo, area: x.area, index: x.index }));
     return { version: SAVE_VERSION, savedAt: "", name, playSeconds: Math.round(playSeconds), credits: inv.credits, weapons, active: inv.active, bank: inv.bank, shop: shopState,
-      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone };
+      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone, armors: inv.armors, worn: inv.worn };
   }
   function apply(d: SaveData) {
     if (raid.active) returnHub(false);
@@ -382,6 +386,7 @@ async function boot() {
     inv.bank = d.bank; setAccUid(Math.max(0, ...d.bank.map((a) => a.uid)) + 1);
     inv.credits = d.credits; inv.active = inv.equip[d.active] ? d.active : Math.max(0, inv.equip.findIndex(Boolean));
     shopState = d.shop; playSeconds = d.playSeconds; contracts = refreshContracts(d.contracts, new Date());
+    inv.armors = d.armors ?? []; inv.worn = { head: null, torso: null, legs: null, ...(d.worn ?? {}) }; setArmorUid(Math.max(0, ...inv.armors.map((a) => a.uid)) + 1);
     inv.grenades = d.grenades ?? []; inv.grenadeActive = inv.grenades[d.grenadeActive ?? -1] ? d.grenadeActive! : -1; setGrenadeUid(Math.max(0, ...inv.grenades.map((g) => g.uid)) + 1); pouch.equip(null);
     inv.superId = (SUPER_IDS as string[]).includes(d.superId ?? "") ? (d.superId as SuperId) : "shockwave"; meter.charge = 0;
     // Súperes: las partidas de antes de los módulos conservan el que tenían elegido
@@ -465,13 +470,18 @@ async function boot() {
   function earn(n: number) { if (!n) return; inv.credits += n; creditsHud(); }
   function creditsHud() { $("crhud").textContent = `${inv.credits} ${t("unit.cr")}`; }
   // ---------- Nivel y habilidades ----------
-  let curPerks = skillPerks(inv.progress), windUsed = false, xpShown = "", xpShowT = 0;
+  let curPerks = skillPerks(inv.progress), windUsed = false, xpShown = "", xpShowT = 0, armorT = armorTotals([]);
   /** Aplica el árbol y el nivel: arma, vida, regeneración, súper, granadas y velocidad. */
   function applyPerks() {
     const p = curPerks = skillPerks(inv.progress); CARD.playerLevel = inv.progress.level;
     gun.perks.rate = p.rate; gun.perks.critMult = p.critMult; gun.perks.ammoSave = p.ammoSave; gun.perks.dmg = p.dmg;
     php.setMax(PlayerHealth.BASE * playerHealthMult(inv.progress.level) * p.health); php.regenMult = p.regen; php.delayMult = p.regenDelay;
     meter.gain = p.superGain; sfx.power = p.superPower; sfx.span = p.superSpan; player.speedMult = p.speed;
+    // Armadura puesta: reducción de daño (en hurtPlayer) y sus ventajas sobre lo anterior
+    const A = armorT = armorTotals(inv.wornList), q = A.perk;
+    php.setMax(php.max * (1 + q.health)); php.regenMult *= 1 + q.regen; php.delayMult *= Math.max(0.3, 1 - q.regenDelay);
+    player.speedMult *= Math.max(0.7, 1 + q.speed - A.slow); meter.gain *= 1 + q.superGain; gun.perks.critMult *= 1 + q.critDmg; gun.perks.reload = q.reload;
+    armorNade = 1 + q.nadeRecharge;
     xpShown = "";
   }
   /** Módulo de súper: desbloquea uno que no tengas (si ya los tienes todos, se cambia por créditos). */
@@ -579,10 +589,10 @@ async function boot() {
       if ((i + 1) % BOSS_EVERY === 0 && arena.layout) { arena.set(mutateArena(arena.layout, arena.bounds), true, player.pos); toast(t("ui.arenaShift")); } },
     onAllDone: () => { toast(t("ui.wavesDone")); autosave(); },
     onSelfDestruct: (d) => selfDestruct(d),
-    onPlayerHit: (dmg) => {
+    onPlayerHit: (dmg, kind) => {
       waveHurt = true;
       if (settings.screenShake) shake = Math.min(0.5, shake + 0.18);
-      hurtPlayer(dmg);
+      hurtPlayer(dmg, kind);
       $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on");
     },
   });
@@ -590,8 +600,8 @@ async function boot() {
   /** Kamikaze que llega al jugador: explota (también daña a los suyos) y desaparece sin dar recompensa. */
   function selfDestruct(d: Dummy) { const at = d.center; d.damage(1e9, null, false, at); gun.explode(at, 140, "explosive", d); if (settings.screenShake) shake = Math.min(0.8, shake + 0.35); }
   /** Daño al jugador: Égida y resistencia del árbol; Segundo aliento salva una vez por oleada. */
-  function hurtPlayer(dmg: number) {
-    dmg *= sfx.guard * curPerks.guard;
+  function hurtPlayer(dmg: number, kind: "melee" | "orb" | "explosive" = "melee") {
+    dmg *= sfx.guard * curPerks.guard * damageTaken(armorT, kind); // (armadura: reducción y resistencias)
     if (curPerks.secondWind && !windUsed && php.value - dmg <= 0) { windUsed = true; php.value = php.max * 0.4; toast(t("pg.secondWind")); return; }
     if (php.hit(dmg)) {
       windUsed = false;
@@ -602,7 +612,7 @@ async function boot() {
   // ---------- Incursiones (ordenador de la sala B) ----------
   const mobs = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
     onWaveEnd() {}, onAllDone() {}, onSelfDestruct: (d) => selfDestruct(d),
-    onPlayerHit: (dmg) => { if (settings.screenShake) shake = Math.min(0.5, shake + 0.18); hurtPlayer(dmg); $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on"); },
+    onPlayerHit: (dmg, kind) => { if (settings.screenShake) shake = Math.min(0.5, shake + 0.18); hurtPlayer(dmg, kind); $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on"); },
   });
   mobs.playerLevel = () => inv.progress.level;
   waves.decoy = mobs.decoy = () => sfx.decoyPos;
@@ -679,6 +689,31 @@ async function boot() {
   const LEVEL: Record<string, number> = { comun: 0, poco: 1, rara: 2, epica: 3, legendaria: 4 };
   // Granadas en el suelo: esfera brillante con haz; se recogen al pasar por encima y caducan como el botín
   const nadeDrops: { g: GrenadeSpec; mesh: THREE.Group; t: number; wait: number }[] = [];
+  // Armaduras en el suelo: como las granadas (pieza girando con su haz de rareza; se recogen con usar)
+  let armorNade = 1;
+  const armorDrops: { a: ArmorSpec; mesh: THREE.Group; t: number; wait: number }[] = [];
+  function dropArmor(a: ArmorSpec, at: THREE.Vector3, byPlayer = false) {
+    const grp = new THREE.Group(), col = new THREE.Color(ARMOR_RARITY[a.rarity].color);
+    const body = armorObject(a.slot, a.variant, a.rarity); body.scale.setScalar(0.9); grp.add(body);
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 8, 1, true), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })); beam.position.y = 1.1; grp.add(beam);
+    grp.position.copy(at).setY(0.35); scene.add(grp); armorDrops.push({ a, mesh: grp, t: LOOT.expireSeconds, wait: byPlayer ? 2.5 : 0 });
+    lootChime(LEVEL[a.rarity] ?? 0);
+  }
+  function updateArmorDrops(dt: number) {
+    for (const n of [...armorDrops]) { n.t -= dt; n.wait = Math.max(0, n.wait - dt); n.mesh.rotation.y += dt * 1.5; n.mesh.children[0].position.y = Math.sin(gameTime * 3) * 0.05; if (n.t <= 0) { scene.remove(n.mesh); armorDrops.splice(armorDrops.indexOf(n), 1); } }
+  }
+  function armorTarget(look: THREE.Vector3) {
+    let best: (typeof armorDrops)[number] | null = null, bd = 1e9;
+    for (const n of armorDrops) { if (n.wait > 0) continue; const to = n.mesh.position.clone().sub(camera.position), d = to.length(); if (d < 3 && to.normalize().dot(look) > 0.86 && d < bd) { bd = d; best = n; } }
+    return best;
+  }
+  function pickArmor(n: (typeof armorDrops)[number]) {
+    if (inv.armors.length >= 12) { toast(t("ar.full")); return; }
+    inv.armors.push(n.a); if (inv.worn[n.a.slot] == null) { inv.worn[n.a.slot] = n.a.uid; applyPerks(); }
+    toast(t("ar.found", { n: t(`ar.name.${n.a.slot}.${n.a.variant}`), r: t(`rarity.${n.a.rarity}`) }));
+    { const l = soundManifest?.efectos.recoger_arma; if (l?.length) playSample(sample(l[0]), 0.5, 0.8); }
+    scene.remove(n.mesh); armorDrops.splice(armorDrops.indexOf(n), 1);
+  }
   function dropNade(g: GrenadeSpec, at: THREE.Vector3, byPlayer = false) {
     const grp = new THREE.Group(), col = new THREE.Color(GRENADE_RARITY[g.rarity].color);
     const body = new THREE.Group(); grp.add(body); void loadGrenadeModel().then((m) => body.add(grenadeObject(m, g.kind, g.rarity, 0.22)));
@@ -716,6 +751,7 @@ async function boot() {
     const a = Math.random() * Math.PI * 2;
     // De vez en cuando, en lugar del arma cae una granada de esa rareza (menos común que las armas)
     if (Math.random() < 0.2) { dropNade(makeGrenade(Math.floor(Math.random() * 1e9), undefined, rarity as GrenadeRarity), at); return; }
+    if (Math.random() < 0.15) { dropArmor(makeArmor(Math.floor(Math.random() * 1e9), undefined, rarity as ArmorRarity), at); return; } // (a veces, una pieza de armadura)
     const spec = rollWeapon(rarity);
     pickups.spawn(makeItem(spec), at.clone().setY(1.1), new THREE.Vector3(Math.cos(a) * 1.2, 3.4, Math.sin(a) * 1.2), { compile: true, expires: LOOT.expireSeconds });
     lootChime(LEVEL[rarity] ?? 0);
@@ -789,24 +825,27 @@ async function boot() {
       const key = input.device === "pad" ? `<kbd class="hold" style="--p:${Math.round(input.useHold * 100)}%">${PAD_NAMES[input.padBinds.useReload]}</kbd>${t("ui.holdBtn")} ` : `<kbd>${input.binds.use.replace(/^Key/, "")}</kbd>`;
       const look = camera.getWorldDirection(new THREE.Vector3());
       const ground = pickups.target(camera.position, look);
-      const gnade = ground ? null : nadeTarget(look);
-      const near = ground || gnade ? null : nearInteractable();
-      $("prompt").hidden = !ground && !near && !gnade;
+      const gnade = ground ? null : nadeTarget(look), garmor = ground || gnade ? null : armorTarget(look);
+      const near = ground || gnade || garmor ? null : nearInteractable();
+      $("prompt").hidden = !ground && !near && !gnade && !garmor;
       if (ground) $("prompt").innerHTML = `${key}${t("ui.pickup")}`;
       else if (gnade) $("prompt").innerHTML = `${key}${t("ui.pickupNade")}`;
+      else if (garmor) $("prompt").innerHTML = `${key}${t("ar.pickup")}`;
       else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : near.id === "raid" ? "rd.use" : "ui.useBench")}`;
       // Ficha del arma del suelo comparada con la que llevas
       const card = $("pickcard");
-      if ((ground ?? gnade) !== shownPickup) {
-        shownPickup = ground ?? gnade;
-        card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : gnade ? grenadeCard(gnade.g, inv.grenade ? t("ui.compared") : "", inv.grenade) : "";
-        card.hidden = !ground && !gnade; if (gnade) fillNadeThumbs(card);
+      if ((ground ?? gnade ?? garmor) !== shownPickup) {
+        shownPickup = ground ?? gnade ?? garmor;
+        const worn = garmor ? inv.wornOf(garmor.a.slot) : null;
+        card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : gnade ? grenadeCard(gnade.g, inv.grenade ? t("ui.compared") : "", inv.grenade) : garmor ? armorCard(garmor.a, worn ? t("ui.compared") : "", worn) : "";
+        card.hidden = !ground && !gnade && !garmor; if (gnade) fillNadeThumbs(card); if (garmor) fillArmorThumbs(card);
       }
       // Ⓧ del mando: mantener = recoger o usar lo que hay cerca (pulsar y soltar recarga)
-      if (f.holdUse && (ground || near || gnade)) f.interact = true;
+      if (f.holdUse && (ground || near || gnade || garmor)) f.interact = true;
       if (f.interact) {
         if (ground) pickUp(ground);
         else if (gnade) pickNade(gnade);
+        else if (garmor) pickArmor(garmor);
         else if (near) {
           if (near.id === "chest") openScreen("shop");
           else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); arena.set(generateArena((Math.random() * 2 ** 31) | 0, arena.bounds), true, player.pos); waves.start(); toast(t("ui.wavesGo")); } }
@@ -881,7 +920,7 @@ async function boot() {
       waves.update(wdt * ts); arena.update(dt);
       if (raid.active) { mobs.update(wdt * ts); raid.update(dt, player.pos); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
       if (!sfx.casting && !sfx.busy) meter.update(dt); sfx.update(dt, player.pos); superHud();
-      pouch.update(dt * curPerks.nadeRecharge); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
+      pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
     healthHud(); xpHud(dt);
     {

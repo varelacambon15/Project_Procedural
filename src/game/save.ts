@@ -33,6 +33,7 @@ export interface SaveData {
   /** Nivel, experiencia y habilidades (opcional: las partidas antiguas empiezan al nivel de su mejor arma). */
   progress?: import("./progress").ProgressState;
   /** Súperes desbloqueados con módulos e incursiones completadas (opcional). */ supersOwned?: string[]; raidsDone?: number;
+  /** Armaduras guardadas y las puestas por ranura (opcional). */ armors?: import("./armor").ArmorSpec[]; worn?: Partial<Record<import("./armor").ArmorSlot, number | null>>;
 }
 
 // ---------- Migraciones: una función por versión, de N a N+1 ----------
