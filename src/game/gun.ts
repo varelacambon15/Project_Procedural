@@ -68,7 +68,7 @@ export class Gun {
   private holder = new THREE.Group(); // pose (cadera/mira/sprint) y animaciones
   private model: AssembledWeapon | null = null;
   /** Encuadre en cadera de esta arma (referencias: abajo a la derecha, 24–40 % del ancho, mira bajo la mitad). */
-  private fit: [number, number, number, number] | null = null; private fitAspect = 0;
+  private fit: [number, number, number, number] | null = null; private fitAspect = 0; private fitTune = 0;
   /** Linterna y láser del accesorio (se encienden con T / cruceta arriba). Sin luces nuevas: cono y haz emisivos. */
   deviceOn = false; private strobe = false; private strobeT = 0;
   private devFx: { kind: "light" | "laser" | "both"; root: THREE.Group; cone: THREE.Mesh | null; lens: THREE.Mesh; beam: THREE.Mesh | null; dot: THREE.Mesh | null; laserCol: number; lampCol: number } | null = null;
@@ -241,6 +241,10 @@ export class Gun {
       o[0] = THREE.MathUtils.clamp(o[0] + (tx - sx) * w * zz * 0.8, -0.06, 0.09);
       o[1] = THREE.MathUtils.clamp(o[1] + (ty - sy) * h * zz * 0.8, -0.05, 0.07);
     }
+    // La empuñadura siempre dentro de la pantalla (si no, el brazo no llega y la mano se queda flotando): en armas altas
+    // (cargador largo, modelo grande) se sube el arma lo que haga falta, aunque la mira quede algo más alta
+    for (let it = 0; it < 4; it++) { const gy = proj(grip, o)[1]; if (gy >= -0.78) break; o[1] += (-0.76 - gy) * h * -(base[2] + o[2] + grip.z) * 0.9; }
+    o[1] = Math.min(o[1], 0.2);
     // La boca nunca cruza el centro
     const [mxn] = proj(muzzle, o); if (mxn < 0.06) o[0] += (0.06 - mxn) * w * -(base[2] + o[2] + muzzle.z);
     this.fit = [o[0], o[1], o[2], yaw];
@@ -357,7 +361,7 @@ export class Gun {
     }
     // Shaders del arma compilados en segundo plano mientras se saca (sin tirón al aparecer)
     if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item || seq !== this.equipSeq) return; }
-    this.model = m; this.fitCurl = null; this.fit = null;
+    this.model = m; this.fitCurl = null; this.fit = null; this.fitTune = 0;
     this.buildDeviceFx(m);
     if (soundManifest) void loadSamples([...filesOfType(soundManifest, item.spec.type), ...(soundManifest.efectos.casquillo ?? [])]); this.fitWait = 12;
     // Rendimiento: dentro de cada pieza (que se anima entera) se fusionan sus mallas por material
@@ -624,6 +628,22 @@ export class Gun {
       THREE.MathUtils.lerp(this.holder.rotation.z, pose.rot[2], Math.max(follow, Math.min(1, dt * 16))));
     this.sway.rotation.set(...pose.swayRot); this.sway.position.set(...pose.swayPos);
     this.updateDevice(dt);
+    // Ajuste fino del encuadre sobre la pose real (la estimación de computeFit no ve la inclinación de la pose): durante
+    // el primer segundo y medio en cadera y quieto, se mide en pantalla la empuñadura y la mira y se corrige el desfase
+    if (this.fit && this.model && this.fitTune < 1.5 && this.aimT < 0.02 && this.reloadT <= 0 && this.sprintT < 0.05 && this.equipT <= 0 && this.inspectT <= 0) {
+      this.fitTune += dt;
+      const m = this.model; m.group.updateMatrixWorld(true);
+      const pr = (x: number, y: number) => new THREE.Vector3(x, y, 0).applyMatrix4(m.group.matrixWorld).project(this.camera);
+      const g = pr(m.handles.grip.x, m.handles.grip.y), si = pr(m.sightX ?? m.handles.grip.x + 0.06, this.sightY);
+      const handgun = this.spec?.type === "pistol" || this.spec?.type === "revolver";
+      const ty = handgun ? -0.12 : -0.08;
+      // Prioridad: la empuñadura dentro de la pantalla; después, la mira en su altura
+      const ey = g.y < -0.78 ? -0.76 - g.y : g.y > -0.35 ? -0.37 - g.y : (ty - si.y) * 0.5;
+      const ex = si.x < 0.12 ? 0.14 - si.x : si.x > 0.5 ? 0.48 - si.x : 0;
+      const k = Math.min(1, dt * 6), d = -this.holder.position.z;
+      this.fit[1] = THREE.MathUtils.clamp(this.fit[1] + ey * 0.35 * d * k, -0.08, 0.22);
+      this.fit[0] = THREE.MathUtils.clamp(this.fit[0] + ex * 0.6 * d * k, -0.08, 0.12);
+    }
     // Con visor de aumento, al apuntar del todo se ve a través del visor (el arma se oculta)
     this.viewmodel.visible = !this.hidden && !(this.sight === "scope" && this.aimT > 0.9);
     // Manos obligatorias (05-E): siempre que se ve el arma

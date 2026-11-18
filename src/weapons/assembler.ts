@@ -670,8 +670,10 @@ export class WeaponAssembler {
       grip = new THREE.Vector3(b.min.x + w * 0.13, b.min.y + hh * 0.3, 0);
     } else if (gp) { const b = boxOf(gp.object); grip = new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - (b.max.y - b.min.y) * 0.35, 0); }
     else if (handgun && magBox) grip = new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.3, 0);
+    // Cargador en la empuñadura (MP7, Uzi, MP9…: subfusil con el cargador en la mitad trasera): se agarra el cargador
+    else if (magBox && spec.type === "smg" && (magBox.min.x + magBox.max.x) / 2 < box.min.x + L * 0.5) grip = new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.25, 0);
     else if (magBox) grip = new THREE.Vector3(magBox.min.x - L * 0.09, box.min.y + H * 0.32, 0);
-    else grip = new THREE.Vector3(box.min.x + L * (handgun ? 0.35 : 0.38), box.min.y + H * 0.3, 0);
+    else grip = (!handgun && spec.type !== "bullpup" ? gripFromShape(parts, box) : null) ?? new THREE.Vector3(box.min.x + L * (handgun ? 0.35 : 0.38), box.min.y + H * 0.3, 0);
     const fp = part("pump") ?? part("front");
     const fb = fp ? boxOf(fp.object) : null;
     const support = handgun ? grip.clone().add(new THREE.Vector3(0.01, -0.01, 0))
@@ -713,6 +715,36 @@ const KIT_EXPLODE: Partial<Record<string, [number, number, number]>> = {
 };
 
 /** Los accesorios bajo el cañón son de tamaño de fusil: en armas cortas se reducen. */
+/**
+ * Empuñadura de un arma de una pieza (sin empuñadura ni cargador aparte), leída de su forma: por columnas a lo largo
+ * del arma, lo que cuelga por debajo del cajón. El tramo colgante más trasero que no es la culata es la empuñadura
+ * (en una MP7 o una Uzi, empuñadura y cargador son el mismo tramo). La mano va arriba de ese tramo, bajo el cajón.
+ */
+function gripFromShape(parts: AssembledPart[], box: THREE.Box3): THREE.Vector3 | null {
+  const body = parts.find((p) => p.role === "body"); if (!body) return null;
+  const N = 48, L = box.max.x - box.min.x, minY = new Array<number>(N).fill(Infinity), v = new THREE.Vector3();
+  body.object.updateMatrixWorld(true);
+  body.object.traverse((o) => {
+    const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position; if (!pos) return;
+    const step = Math.max(1, Math.floor(pos.count / 4000));
+    for (let i = 0; i < pos.count; i += step) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); const k = Math.min(N - 1, Math.max(0, Math.floor(((v.x - box.min.x) / L) * N))); if (v.y < minY[k]) minY[k] = v.y; }
+  });
+  const fin = minY.filter(Number.isFinite); if (fin.length < N * 0.6) return null;
+  // Fondo del cajón: la mediana de los fondos de la mitad delantera (allí solo hay cajón, guardamanos y cañón)
+  const front = minY.slice(Math.floor(N * 0.45)).filter(Number.isFinite).sort((a, b) => a - b);
+  const recv = front[Math.floor(front.length * 0.6)] ?? box.min.y + (box.max.y - box.min.y) * 0.6;
+  const drop = (k: number) => Number.isFinite(minY[k]) && minY[k] < recv - 0.025;
+  // Tramos colgantes en el 70 % trasero; se descarta el que toca el extremo trasero (la culata)
+  const segs: [number, number][] = [];
+  for (let k = 0; k < Math.floor(N * 0.7); k++) { if (!drop(k)) continue; let e = k; while (e + 1 < N && drop(e + 1)) e++; segs.push([k, e]); k = e; }
+  const cand = segs.filter(([a]) => a > N * 0.08);
+  if (!cand.length) return null;
+  const [a, b] = cand[0]; // el más trasero que no es culata
+  const xa = box.min.x + (L * a) / N, xb = box.min.x + (L * (b + 1)) / N;
+  // (tramo muy ancho = empuñadura y cargador juntos o guardamonte largo: la mano, hacia su parte trasera)
+  const x = xb - xa > 0.07 ? xa + 0.03 : (xa + xb) / 2;
+  return new THREE.Vector3(x, recv - 0.022, 0);
+}
 const DEVICE_SCALE = (type: string) => (type === "pistol" || type === "revolver" ? 0.62 : type === "smg" ? 0.85 : 1);
 
 /** Grosor máximo (ancho / largo) según el tipo, como en armas reales. */
