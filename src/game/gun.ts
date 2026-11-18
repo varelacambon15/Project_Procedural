@@ -152,7 +152,7 @@ export class Gun {
     const sight = new THREE.Vector3(m.sightX ?? (m.handles.grip.x + 0.06), this.sightY, 0).applyMatrix4(m.group.matrix);
     const muzzle = new THREE.Vector3(m.muzzle.x, m.muzzle.y, 0).applyMatrix4(m.group.matrix);
     const base = this.anim.hipBase({ length: m.length, gripX: m.handles.grip.x, gripY: m.handles.grip.y });
-    const t = spec?.type ?? "rifle", h = Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2), w = h * this.camera.aspect;
+    const t0 = spec?.type ?? "rifle", t = t0 === "revolver" ? "pistol" : t0, h = Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2), w = h * this.camera.aspect;
     // Variación por arma (semilla): ±6 % de posición y ±2° de giro
     let sd = (spec?.seed ?? 7) >>> 0; const rnd = () => ((sd = (Math.imul(sd, 1664525) + 1013904223) >>> 0) / 4294967296) * 2 - 1;
     const vx = rnd() * 0.012, vy = rnd() * 0.01, yaw = (t === "pistol" ? 0.035 : 0.07) + rnd() * 0.035;
