@@ -14,10 +14,9 @@ function phalanx(r: number, len: number, mat: THREE.Material, flat = 0.9) {
 
 /** Medidas del brazo (datos, no código): cambiar de modelo no obliga a rehacer el IK. */
 export const ARM_DATA = {
-  // (hombros por detrás de la cámara del arma, que va retrasada 27 cm: si no, se veía el arranque del brazo de frente)
-  upper: 0.36, fore: 0.33,
-  shoulderR: new THREE.Vector3(0.24, -0.42, 0.3),
-  shoulderL: new THREE.Vector3(-0.22, -0.46, 0.3),
+  upper: 0.33, fore: 0.3,
+  shoulderR: new THREE.Vector3(0.24, -0.4, 0.16),
+  shoulderL: new THREE.Vector3(-0.22, -0.44, 0.14),
   poleR: new THREE.Vector3(0.7, -1, 0.1),   // el codo derecho apunta hacia abajo y afuera
   poleL: new THREE.Vector3(-0.6, -1, 0.2),
 };
@@ -238,7 +237,7 @@ export class Arms {
     if (this.override) t = { ...t, right: this.override.right, left: this.override.left };
     const sh = t.shoulder ?? new THREE.Vector3();
     this.right.set(ARM_DATA.shoulderR.clone().add(sh), t.right, ARM_DATA.poleR, dt);
-    const left = t.left ?? { pos: new THREE.Vector3(-0.3, -0.85, 0.1), orient: t.right.orient, curl: { fingers: [0.4, 0.45, 0.5, 0.55], thumb: 0.2 } };
+    const left = t.left ?? { pos: new THREE.Vector3(-0.24, -0.62, -0.08), orient: t.right.orient, curl: { fingers: [0.4, 0.45, 0.5, 0.55], thumb: 0.2 } };
     this.left.set(ARM_DATA.shoulderL.clone().add(sh), left, ARM_DATA.poleL, dt);
   }
   set visible(v: boolean) { this.group.visible = v; }

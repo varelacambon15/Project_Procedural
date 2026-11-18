@@ -70,8 +70,6 @@ export class Gun {
   /** Encuadre en cadera de esta arma (referencias: abajo a la derecha, 24–40 % del ancho, mira bajo la mitad). */
   private fit: [number, number, number, number] | null = null; private fitAspect = 0; private fitTune = 0;
   /** Linterna y láser del accesorio (se encienden con T / cruceta arriba). Sin luces nuevas: cono y haz emisivos. */
-  /** Cámara del arma (campo de visión propio, retrasada `vmBack`); el encuadre se calcula con ella. */
-  vmCam: THREE.PerspectiveCamera | null = null; vmBack = 0;
   deviceOn = false; private strobe = false; private strobeT = 0;
   private devFx: { kind: "light" | "laser" | "both"; root: THREE.Group; cone: THREE.Mesh | null; lens: THREE.Mesh; beam: THREE.Mesh | null; dot: THREE.Mesh | null; laserCol: number; lampCol: number } | null = null;
   private mag: AssembledPart | null = null;
@@ -223,31 +221,29 @@ export class Gun {
     const sight = new THREE.Vector3(m.sightX ?? (m.handles.grip.x + 0.06), this.sightY, 0).applyMatrix4(m.group.matrix);
     const muzzle = new THREE.Vector3(m.muzzle.x, m.muzzle.y, 0).applyMatrix4(m.group.matrix);
     const base = this.anim.hipBase({ length: m.length, gripX: m.handles.grip.x, gripY: m.handles.grip.y });
-    const t0 = spec?.type ?? "rifle", t = t0 === "revolver" ? "pistol" : t0, vc = this.vmCam ?? this.camera, h = Math.tan(THREE.MathUtils.degToRad(vc.fov) / 2), w = h * this.camera.aspect, back = this.vmCam ? this.vmBack : 0;
+    const t0 = spec?.type ?? "rifle", t = t0 === "revolver" ? "pistol" : t0, h = Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2), w = h * this.camera.aspect;
     // Variación por arma (semilla): ±6 % de posición y ±2° de giro
     let sd = (spec?.seed ?? 7) >>> 0; const rnd = () => ((sd = (Math.imul(sd, 1664525) + 1013904223) >>> 0) / 4294967296) * 2 - 1;
-    const vx = rnd() * 0.012, vy = rnd() * 0.01, yaw = (t === "pistol" ? 0.04 : 0.11) + rnd() * 0.04;
+    const vx = rnd() * 0.012, vy = rnd() * 0.01, yaw = (t === "pistol" ? 0.035 : 0.07) + rnd() * 0.035;
     const proj = (p: THREE.Vector3, o: number[]) => {
       const c = Math.cos(yaw), s2 = Math.sin(yaw), x = p.x * c + p.z * s2, z = -p.x * s2 + p.z * c;
-      const X = x + base[0] + o[0], Y = p.y + base[1] + o[1], Z = Math.min(-0.04, z + base[2] + o[2]) - back;
+      const X = x + base[0] + o[0], Y = p.y + base[1] + o[1], Z = Math.min(-0.04, z + base[2] + o[2]);
       return [X / (-Z) / w, Y / (-Z) / h]; // NDC
     };
     // Más cerca de la cámara que antes (en las referencias el arma es grande): 6–9 cm según el largo
-    // (cuanto más larga, menos se acerca: una LMG o un francotirador tapaban media pantalla)
-    // (armas largas cortas, como subfusiles sin culata: algo más lejos; pegadas a la cámara parecían apuntar hacia arriba)
-    const o = [0, 0, t === "pistol" ? 0.0 + (t0 === "revolver" ? 0.02 : 0) : m.length < 0.5 ? -0.04 : THREE.MathUtils.clamp(0.03 - (m.length - 0.45) * 0.22, -0.16, 0.03)];
+    const o = [0, 0, THREE.MathUtils.clamp(0.06 + (m.length - 0.4) * 0.05, 0.05, 0.09) + (t0 === "revolver" ? 0.025 : 0)];
     // La mira cae en el cuadrante derecho (x ≈ 62–68 %, y ≈ 53–56 %) y la mano de la empuñadura no sale por abajo
     const grip = new THREE.Vector3(m.handles.grip.x, m.handles.grip.y, 0).applyMatrix4(m.group.matrix);
-    const tx = (t === "pistol" ? 0.2 : 0.2) + vx * 3, ty = (t === "pistol" ? -0.05 : m.length < 0.5 ? -0.06 : -0.13) + vy * 3;
+    const tx = (t === "pistol" ? 0.22 : 0.3) + vx * 3, ty = (t === "pistol" ? -0.12 : -0.08) + vy * 3;
     for (let it = 0; it < 8; it++) {
       if (proj(grip, o)[1] < -0.72 && o[2] > -0.04) o[2] -= 0.012;
-      const zz = -(base[2] + o[2]) + back, [sx, sy] = proj(sight, o);
-      o[0] = THREE.MathUtils.clamp(o[0] + (tx - sx) * w * zz * 0.8, -0.12, 0.09);
+      const zz = -(base[2] + o[2]), [sx, sy] = proj(sight, o);
+      o[0] = THREE.MathUtils.clamp(o[0] + (tx - sx) * w * zz * 0.8, -0.06, 0.09);
       o[1] = THREE.MathUtils.clamp(o[1] + (ty - sy) * h * zz * 0.8, -0.05, 0.07);
     }
     // La empuñadura siempre dentro de la pantalla (si no, el brazo no llega y la mano se queda flotando): en armas altas
     // (cargador largo, modelo grande) se sube el arma lo que haga falta, aunque la mira quede algo más alta
-    for (let it = 0; it < 4; it++) { const gy = proj(grip, o)[1]; if (gy >= -0.78) break; o[1] += (-0.76 - gy) * h * (-(base[2] + o[2] + grip.z) + back) * 0.9; }
+    for (let it = 0; it < 4; it++) { const gy = proj(grip, o)[1]; if (gy >= -0.78) break; o[1] += (-0.76 - gy) * h * -(base[2] + o[2] + grip.z) * 0.9; }
     o[1] = Math.min(o[1], 0.2);
     // La boca nunca cruza el centro
     const [mxn] = proj(muzzle, o); if (mxn < 0.06) o[0] += (0.06 - mxn) * w * -(base[2] + o[2] + muzzle.z);
@@ -637,19 +633,16 @@ export class Gun {
     if (this.fit && this.model && this.fitTune < 1.5 && this.aimT < 0.02 && this.reloadT <= 0 && this.sprintT < 0.05 && this.equipT <= 0 && this.inspectT <= 0) {
       this.fitTune += dt;
       const m = this.model; m.group.updateMatrixWorld(true);
-      const pr = (x: number, y: number) => new THREE.Vector3(x, y, 0).applyMatrix4(m.group.matrixWorld).project(this.vmCam ?? this.camera);
+      const pr = (x: number, y: number) => new THREE.Vector3(x, y, 0).applyMatrix4(m.group.matrixWorld).project(this.camera);
       const g = pr(m.handles.grip.x, m.handles.grip.y), si = pr(m.sightX ?? m.handles.grip.x + 0.06, this.sightY);
       const handgun = this.spec?.type === "pistol" || this.spec?.type === "revolver";
-      const ty = handgun ? -0.05 : m.length < 0.5 ? -0.06 : -0.13;
+      const ty = handgun ? -0.12 : -0.08;
       // Prioridad: la empuñadura dentro de la pantalla; después, la mira en su altura
-      const su = pr(m.handles.support.x, m.handles.support.y);
-      // (la mano de apoyo también a la vista en armas largas: en las LMG quedaba escondida bajo el cajón)
-      const lowSup = !handgun && su.y < -0.82 ? -0.8 - su.y : 0;
-      const ey = g.y < -0.78 ? -0.76 - g.y : lowSup > 0 ? lowSup : g.y > -0.35 ? -0.37 - g.y : (ty - si.y) * 0.5;
-      const ex = (0.2 - si.x) * 0.5;
-      const k = Math.min(1, dt * 6), d = -this.holder.position.z + this.vmBack;
+      const ey = g.y < -0.78 ? -0.76 - g.y : g.y > -0.35 ? -0.37 - g.y : (ty - si.y) * 0.5;
+      const ex = si.x < 0.12 ? 0.14 - si.x : si.x > 0.5 ? 0.48 - si.x : 0;
+      const k = Math.min(1, dt * 6), d = -this.holder.position.z;
       this.fit[1] = THREE.MathUtils.clamp(this.fit[1] + ey * 0.35 * d * k, -0.08, 0.22);
-      this.fit[0] = THREE.MathUtils.clamp(this.fit[0] + ex * 0.6 * d * k, -0.12, 0.12);
+      this.fit[0] = THREE.MathUtils.clamp(this.fit[0] + ex * 0.6 * d * k, -0.08, 0.12);
     }
     // Con visor de aumento, al apuntar del todo se ve a través del visor (el arma se oculta)
     this.viewmodel.visible = !this.hidden && !(this.sight === "scope" && this.aimT > 0.9);
