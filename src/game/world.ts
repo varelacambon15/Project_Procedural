@@ -315,6 +315,22 @@ export function buildRange(scene: THREE.Scene): World {
   scene.add(ctBoard); colliders.push(new THREE.Box3(new THREE.Vector3(-5.2, 0, 13.0), new THREE.Vector3(-2.8, 2.4, 13.4)));
   hang(t("sign.contracts"), "#e8a040", -4, 12.6, 3);
 
+  // ---------- Toques de simulación en el vestíbulo y el campo de tiro (más suaves: siguen siendo claros) ----------
+  {
+    const core = new THREE.MeshStandardMaterial({ color: 0xbff6ff, emissive: 0x5fe0ff, emissiveIntensity: 1.3 }), shell = new THREE.MeshStandardMaterial({ color: 0xc8d4dc, transparent: true, opacity: 0.3, roughness: 0.2 });
+    const cap = new THREE.MeshStandardMaterial({ color: 0x3a414b, metalness: 0.5, roughness: 0.4 });
+    for (const [x, z] of [[-W / 2 + 1.2, 2], [W / 2 - 1.2, 2], [-W / 2 + 1.2, BACK - 1.5], [W / 2 - 1.2, BACK - 1.5]]) {
+      const c1 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, H - 1.4, 10), core); c1.position.set(x, H / 2, z); scene.add(c1);
+      const c2 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, H - 1.4, 6), shell); c2.position.set(x, H / 2, z); scene.add(c2);
+      for (const y of [0.35, H - 0.35]) { const k = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.7, 6), cap); k.position.set(x, y, z); scene.add(k); }
+      colliders.push(new THREE.Box3(new THREE.Vector3(x - 0.55, 0, z - 0.55), new THREE.Vector3(x + 0.55, H, z + 0.55)));
+    }
+    for (const [i, z] of [-20, -45, -68].entries()) for (const sx of [-1, 1]) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({ map: holoData("#3fc0d0", 40 + i * 5 + sx), transparent: true, opacity: 0.55, depthWrite: false }));
+      m.position.set(sx * (W / 2 - 0.04), 4.6, z); m.rotation.y = -sx * Math.PI / 2; scene.add(m); dayOnly.push(m);
+    }
+  }
+
   // ---------- Sala de oleadas (detrás de la pared del fondo, entrando por la puerta) ----------
   const RW = 60, R0 = BACK + 1, R1 = BACK + 74, RH = 9; // (más grande: antes 46 × 56 m)
   // Arena con la estética de las referencias (Coded Arms): baldosas hexagonales oscuras con juntas luminosas,

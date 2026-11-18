@@ -131,6 +131,24 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 35 (versión 0.15.0): referencias de Coded Arms, patada, granadas como armas y enemigos pulidos
+
+- Referencias del usuario (capturas de Coded Arms y Destiny): soldados con casco y visor luminoso, venas de luz,
+  suelos hexagonales, molduras de neón, columnas de luz y paneles holográficos de datos.
+- Enemigos humanoides de oleada/incursión como soldados (casco y visor por tipo `VISOR`, hombreras con emblema,
+  chaleco, bolsas, mochila, rodilleras, botas; venas `veinMat` en lanzador, élite, comandante y fallo). Brazos que se
+  balancean y zarpazo al atacar. Araña con las patas bien (muslo arriba, tibia al suelo, pasos en trípode).
+- Muerte: cae hacia donde le dispararon (`deathDir`, rodillas que ceden, rebote) y luego se desintegra (0,85 s después).
+- Desmembramiento: la pieza sale volando entera girando, muñón luminoso, fogonazo de cuadrados, más fragmentos,
+  pausa de 130 ms, sacudida y crujido grave.
+- Patada (Z / R3, configurable): pierna en primera persona, 55 de daño y empuje fuerte, con puños o con arma.
+  Puños: golpe sordo (no el sonido de cuchillo).
+- Granadas con el formato de las armas: `grenadeCard`/`grenadeTile` (common.ts) en tienda, inventario y suelo; en el
+  suelo ya no se recogen solas: aviso y usar (como las armas). Fotos de 320 × 140 de lado.
+- Escenario: `simtex.ts` (hexágonos que se repiten y paneles de datos). Arena de oleadas oscura con neón (suelo
+  hexagonal luminoso, molduras rosa/cian, columnas de luz con remates rojos, paneles holográficos); incursiones con
+  suelo hexagonal, columnas y paneles y paletas más oscuras; vestíbulo con columnas cian y paneles suaves (sigue claro).
+
 ## Ronda 34 (versión 0.14.0): controles, arena de oleadas, estética de simulación y pulidos
 
 - Controles (Opciones → Controles): correr/apuntar/agacharse en modo mantener o alternar, invertir eje vertical,
