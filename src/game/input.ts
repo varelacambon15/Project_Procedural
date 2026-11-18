@@ -11,8 +11,9 @@ export interface Frame {
   crouch: boolean;
   slot1: boolean; slot2: boolean; inspect: boolean;
   /** Lanzar granada (G / RB / botón táctil). */ grenade: boolean;
-  /** Invocar el súper (V / cruceta arriba / botón táctil). */ super: boolean;
+  /** Invocar el súper (V / LB / botón táctil). */ super: boolean;
   /** Patada (Z / R3). */ kick?: boolean;
+  /** Encender/apagar linterna y láser del arma (T / cruceta arriba). */ light?: boolean;
   device: "kbm" | "pad";
   /** Botón Ⓧ del mando, como en Call of Duty: mantenido = recoger/usar lo que hay cerca. */
   holdUse?: boolean;
@@ -24,11 +25,11 @@ const stick = (v: number, curve: number) => { const a = Math.abs(v); if (a < DZ)
 /** Acciones del teclado y su tecla por defecto (el ratón dispara y apunta). */
 export const DEFAULT_BINDS: Record<string, string> = {
   forward: "KeyW", back: "KeyS", left: "KeyA", right: "KeyD", jump: "Space", sprint: "ShiftLeft", crouch: "KeyC",
-  reload: "KeyR", use: "KeyE", kick: "KeyZ", swap: "KeyQ", slot1: "Digit1", slot2: "Digit2", inspect: "KeyF", grenade: "KeyG", super: "KeyV", inventory: "KeyI",
+  reload: "KeyR", use: "KeyE", kick: "KeyZ", swap: "KeyQ", slot1: "Digit1", slot2: "Digit2", inspect: "KeyF", grenade: "KeyG", super: "KeyV", light: "KeyT", inventory: "KeyI",
 };
 export const BIND_ORDER = Object.keys(DEFAULT_BINDS);
 /** Botones del mando por acción (índices del mando estándar). Por defecto, al estilo Call of Duty. */
-export const DEFAULT_PAD: Record<string, number> = { fire: 7, aim: 6, jump: 0, useReload: 2, crouch: 1, swap: 3, grenade: 5, super: 4, sprint: 10, kick: 11, inspect: 13 };
+export const DEFAULT_PAD: Record<string, number> = { fire: 7, aim: 6, jump: 0, useReload: 2, crouch: 1, swap: 3, grenade: 5, super: 4, sprint: 10, kick: 11, light: 12, inspect: 13 };
 export const PAD_ORDER = Object.keys(DEFAULT_PAD);
 /** Nombre de un botón del mando estándar. */
 export const PAD_NAMES = ["Ⓐ", "Ⓑ", "Ⓧ", "Ⓨ", "LB", "RB", "LT", "RT", "View", "Start", "L3", "R3", "✚↑", "✚↓", "✚←", "✚→"];
@@ -107,7 +108,7 @@ export class Input {
       lookX: this.mouse.dx * this.sensitivity, lookY: this.mouse.dy * this.sensitivity,
       fire: this.mouse.left, aim: this.mouse.right, sprint: k("sprint"), crouch: k("crouch"),
       jump: kp("jump"), reload: kp("reload"), interact: kp("use"), swap: this.mouse.wheel !== 0 || kp("swap"),
-      inventory: kp("inventory") || this.pressed.has("Tab"), pause: this.pressed.has("Escape"), slot1: kp("slot1"), slot2: kp("slot2"), inspect: kp("inspect"), grenade: kp("grenade"), super: kp("super"), kick: kp("kick"), device: this.device,
+      inventory: kp("inventory") || this.pressed.has("Tab"), pause: this.pressed.has("Escape"), slot1: kp("slot1"), slot2: kp("slot2"), inspect: kp("inspect"), grenade: kp("grenade"), super: kp("super"), kick: kp("kick"), light: kp("light"), device: this.device,
     };
     this.mouse.dx = this.mouse.dy = 0; this.mouse.wheel = 0; this.pressed.clear();
     const p = this.pad();
@@ -120,7 +121,7 @@ export class Input {
       // Ⓑ agacharse, Ⓨ cambiar arma, RB granada, LB súper, L3 correr, ✚↓ inspeccionar, View inventario, Start pausa
       const P = this.padBinds, e = (a: string) => !!edges[P[a]];
       f.fire ||= b(P.fire); f.aim ||= b(P.aim); f.sprint ||= b(P.sprint); f.crouch ||= b(P.crouch);
-      f.kick ||= e("kick"); f.jump ||= e("jump"); f.swap ||= e("swap"); f.inspect ||= e("inspect"); f.grenade ||= e("grenade"); f.super ||= e("super");
+      f.kick ||= e("kick"); f.jump ||= e("jump"); f.swap ||= e("swap"); f.inspect ||= e("inspect"); f.grenade ||= e("grenade"); f.super ||= e("super"); f.light ||= e("light");
       const uh = b(P.useReload);
       if (uh) {
         if (this.useT < 0) { this.useT = 0; this.useDone = false; }

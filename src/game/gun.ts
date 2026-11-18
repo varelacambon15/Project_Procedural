@@ -68,6 +68,9 @@ export class Gun {
   private model: AssembledWeapon | null = null;
   /** Encuadre en cadera de esta arma (referencias: abajo a la derecha, 24–40 % del ancho, mira bajo la mitad). */
   private fit: [number, number, number, number] | null = null; private fitAspect = 0;
+  /** Linterna y láser del accesorio (se encienden con T / cruceta arriba). Sin luces nuevas: cono y haz emisivos. */
+  deviceOn = false;
+  private devFx: { kind: "light" | "laser" | "both"; root: THREE.Group; cone: THREE.Mesh | null; lens: THREE.Mesh; beam: THREE.Mesh | null; dot: THREE.Mesh | null; laserCol: number; lampCol: number } | null = null;
   private mag: AssembledPart | null = null;
   private cache = new Map<number, Promise<AssembledWeapon>>();
   item: Item | null = null;
@@ -141,6 +144,68 @@ export class Gun {
   private leftLocal: THREE.Vector3 | null = null;
   // ---------- Puños (sin arma equipada) ----------
   /** Progreso del golpe en curso (0 = ninguno), mano que golpea, golpe fuerte (al esprintar), golpe ya resuelto. */
+  /** ¿Lleva el arma linterna o láser? */
+  get hasDevice() { return !!this.devFx; }
+  /** Enciende o apaga la linterna/láser; devuelve el estado nuevo (null si el arma no lleva ninguno). */
+  toggleDevice(): boolean | null { if (!this.devFx) return null; this.deviceOn = !this.deviceOn; this.applyDevice(); return this.deviceOn; }
+  private applyDevice() {
+    const d = this.devFx; if (!d) return;
+    const on = this.deviceOn;
+    if (d.cone) d.cone.visible = on;
+    if (d.beam) d.beam.visible = on;
+    if (d.dot) d.dot.visible = false;
+    (d.lens.material as THREE.MeshBasicMaterial).color.set(on ? (d.kind === "laser" ? d.laserCol : d.lampCol) : 0x1a1a1a);
+  }
+  private buildDeviceFx(m: AssembledWeapon) {
+    if (this.devFx?.dot) this.scene.remove(this.devFx.dot);
+    this.devFx = null;
+    const part = m.parts.find((p) => p.role === "device" && /flash|light|laser|lamp|torch/i.test(p.from.id ?? ""));
+    if (!part) return;
+    const id = part.from.id ?? "", kind: "light" | "laser" | "both" = /laserlight|laser-light/i.test(id) ? "both" : /laser/i.test(id) ? "laser" : "light";
+    m.group.updateMatrixWorld(true);
+    const b = new THREE.Box3().setFromObject(part.object).applyMatrix4(m.group.matrixWorld.clone().invert());
+    const c = b.getCenter(new THREE.Vector3()), r = Math.max(0.004, Math.min(b.max.y - b.min.y, b.max.z - b.min.z) * 0.32);
+    const root = new THREE.Group(); root.position.set(b.max.x + 0.001, c.y, c.z); m.group.add(root);
+    // Variedad por arma (semilla): color del láser y tono/apertura de la linterna
+    let sd = ((this.item?.spec.seed ?? 1) * 2654435761) >>> 0; const rnd = () => ((sd = (Math.imul(sd, 1664525) + 1013904223) >>> 0) / 4294967296);
+    const LASER = [0xff2a2a, 0x2aff4a, 0x2a8cff, 0xb44aff, 0xff9a1a, 0x1affe4], laserCol = LASER[Math.floor(rnd() * LASER.length)];
+    const LAMP = [0xfff0c8, 0xe8f2ff, 0xfff6e6, 0xd8ecff], lampCol = LAMP[Math.floor(rnd() * LAMP.length)], spread = 0.4 + rnd() * 0.35;
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(r, 14), new THREE.MeshBasicMaterial({ color: 0x1a1a1a, toneMapped: false }));
+    lens.rotation.y = Math.PI / 2; root.add(lens);
+    let cone: THREE.Mesh | null = null, beam: THREE.Mesh | null = null, dot: THREE.Mesh | null = null;
+    if (kind !== "laser") {
+      // Haz de la linterna: cono abierto, aditivo y muy tenue, que se desvanece hacia la punta
+      const L = 3.2, g = new THREE.ConeGeometry(spread, L, 20, 1, true); g.translate(0, -L / 2, 0); g.rotateZ(Math.PI / 2);
+      const cols: number[] = []; const pos = g.attributes.position;
+      for (let i = 0; i < pos.count; i++) { const k = 1 - Math.min(1, pos.getX(i) / L); cols.push(k, k, k); }
+      g.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+      cone = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: lampCol, vertexColors: true, transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+      cone.position.x = 0.002; root.add(cone);
+    }
+    if (kind !== "light") {
+      // Láser: haz fino rojo hasta lo primero que toca y un punto en el impacto
+      const g = new THREE.CylinderGeometry(0.0013, 0.0013, 1, 6, 1, true); g.translate(0, 0.5, 0); g.rotateZ(-Math.PI / 2);
+      beam = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: laserCol, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+      beam.position.y = kind === "both" ? -r * 0.9 : 0; root.add(beam);
+      dot = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), new THREE.MeshBasicMaterial({ color: laserCol, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+      dot.visible = false; this.scene.add(dot);
+    }
+    for (const o of [lens, cone, beam]) if (o) o.renderOrder = 11;
+    this.devFx = { kind, root, cone, lens, beam, dot, laserCol, lampCol };
+    this.applyDevice();
+  }
+  /** Largo del láser hasta el primer obstáculo (raycast cada fotograma) y punto de impacto. */
+  private updateDevice() {
+    const d = this.devFx; if (!d || !d.beam || !this.deviceOn) return;
+    d.beam.visible = this.viewmodel.visible;
+    const o = d.beam.getWorldPosition(new THREE.Vector3()), q = d.beam.getWorldQuaternion(new THREE.Quaternion());
+    const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(q).normalize();
+    this.ray.set(o, dir); this.ray.far = 60;
+    const hit = this.ray.intersectObjects(this.world, true)[0];
+    const dist = hit ? hit.distance : 60, sc = d.beam.getWorldScale(new THREE.Vector3()).x || 1;
+    d.beam.scale.x = dist / sc;
+    if (d.dot) { d.dot.visible = !!hit; if (hit) d.dot.position.copy(hit.point).addScaledVector(dir, -0.01); }
+  }
   /** Encuadre de cadera a partir de la geometría del arma: ancho en pantalla por tipo, mira en el cuadrante derecho
    *  bajo la mitad, boca girada unos grados hacia el centro sin cruzarlo, y una pequeña variación por arma. */
   private computeFit() {
@@ -289,6 +354,7 @@ export class Gun {
     // Shaders del arma compilados en segundo plano mientras se saca (sin tirón al aparecer)
     if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item || seq !== this.equipSeq) return; }
     this.model = m; this.fitCurl = null; this.fit = null;
+    this.buildDeviceFx(m);
     if (soundManifest) void loadSamples([...filesOfType(soundManifest, item.spec.type), ...(soundManifest.efectos.casquillo ?? [])]); this.fitWait = 12;
     // Rendimiento: dentro de cada pieza (que se anima entera) se fusionan sus mallas por material
     if (!m.group.userData.merged) { for (const p of m.parts) mergeStatic(p.object); m.group.userData.merged = true; }
@@ -553,6 +619,7 @@ export class Gun {
       THREE.MathUtils.lerp(this.holder.rotation.y, pose.rot[1], Math.max(follow, Math.min(1, dt * 14))),
       THREE.MathUtils.lerp(this.holder.rotation.z, pose.rot[2], Math.max(follow, Math.min(1, dt * 16))));
     this.sway.rotation.set(...pose.swayRot); this.sway.position.set(...pose.swayPos);
+    this.updateDevice();
     // Con visor de aumento, al apuntar del todo se ve a través del visor (el arma se oculta)
     this.viewmodel.visible = !this.hidden && !(this.sight === "scope" && this.aimT > 0.9);
     // Manos obligatorias (05-E): siempre que se ve el arma

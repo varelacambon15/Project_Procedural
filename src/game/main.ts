@@ -866,6 +866,7 @@ async function boot() {
         for (const d of dummies) { if (!d.alive) continue; const to = d.center.sub(camera.position); const dist = to.length(); if (fwd.angleTo(to) < Math.max(0.03, 0.6 / dist)) { input.assist = 0.45; break; } }
       }
       player.update(dt, f, gun.aimT > 0.5, (1 - gun.aimT * (1 - 1 / Math.max(1.5, gun.zoom))) * (1 + (settings.adsSens - 1) * gun.aimT));
+      if (f.light) { const on = gun.toggleDevice(); if (on !== null) toast(t(on ? "ui.lightOn" : "ui.lightOff")); }
       gun.update(dt, { kick: f.kick && !sfx.casting, fire: f.fire && !sfx.casting, aim: f.aim && !sfx.casting, moving: Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5), sprinting: player.sprinting, lookX: f.lookX, lookY: f.lookY, vy: player.vel.y, grounded: player.onGround, inspect: f.inspect });
       const base = settings.fov, aimFov = gun.sight === "scope" || gun.sight === "irons" ? base / gun.zoom : gun.sight === "iron" ? base / 1.35 : base / 1.6;
       camera.fov = THREE.MathUtils.lerp((player.sprinting ? base + 7 : base) + 9 * player.slideK, aimFov, gun.aimT);
