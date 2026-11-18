@@ -705,6 +705,9 @@ export class WeaponAssembler {
     // La mano de apoyo llega hasta donde acaba el cuerpo grueso del arma (cajón o guardamanos, leído de su forma), sin
     // pasar al cañón fino ni a más de un antebrazo: en una MP7 envuelve la parte delantera del cajón; en una MP5K se queda
     // delante del cargador
+    // Armas largas: la palma de apoyo, en la cara inferior real del guardamanos o del cuerpo a esa altura (leída de la
+    // forma), no a media altura (se veía la mano en el costado o por encima)
+    if (!handgun) for (const a of [support, anchors.front]) if (a) { const b = bottomAt(parts, a.x); if (b !== null && a.y > b + 0.006 && a.y - b < 0.05) a.y = b + 0.006; }
     const smg = spec.type === "smg", end = thickEnd(parts, box, grip.x);
     const reach = Math.min(smg ? 0.17 : 0.26, (box.max.x - grip.x) * 0.55, end !== null ? Math.max(0.06, end - 0.02 - grip.x) : Infinity);
     for (const a of [support, anchors.front]) if (a) { if (a.x > grip.x + reach) a.x = grip.x + reach; if (smg && !fb && a.x < grip.x + reach * 0.8) a.x = grip.x + reach * 0.8; if (a.y > grip.y + 0.06) a.y = grip.y + 0.06; }
@@ -748,6 +751,19 @@ function gripFromShape(parts: AssembledPart[], box: THREE.Box3): THREE.Vector3 |
   // (tramo muy ancho = empuñadura y cargador juntos o guardamonte largo: la mano, hacia su parte trasera)
   const x = xb - xa > 0.07 ? xa + 0.03 : (xa + xb) / 2;
   return new THREE.Vector3(x, recv - 0.022, 0);
+}
+/** Cara inferior del arma (sin cargador, empuñaduras ni accesorios) en la columna x. */
+function bottomAt(parts: AssembledPart[], x: number): number | null {
+  let lo = Infinity; const v = new THREE.Vector3();
+  for (const p of parts) {
+    if (["magazine", "stock", "scope", "device", "accessory", "muzzle", "grip", "charging", "trigger"].includes(p.role)) continue;
+    p.object.traverse((o) => {
+      const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position; if (!pos) return;
+      const step = Math.max(1, Math.floor(pos.count / 3000));
+      for (let i = 0; i < pos.count; i += step) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (Math.abs(v.x - x) < 0.012 && v.y < lo) lo = v.y; }
+    });
+  }
+  return Number.isFinite(lo) ? lo : null;
 }
 /** Hasta dónde llega por delante el cuerpo grueso del arma (columnas con al menos el 55 % del alto del cajón). */
 function thickEnd(parts: AssembledPart[], box: THREE.Box3, gx: number): number | null {
