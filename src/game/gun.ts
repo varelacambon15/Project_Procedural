@@ -908,13 +908,13 @@ export class Gun {
     if (!hold && !base) base = h.support.clone();
     // La mano de apoyo no se estira más allá de un brazo cómodo (en armas largas se iba a la punta del guardamanos)
     // (y nunca más allá del 55 % del tramo empuñadura→boca: en armas cortas como la MP5K agarraba el cañón)
-    const sReach = this.spec?.type === "smg" ? Math.min(0.15, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.32)) : Math.min(0.3, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5));
+    const sReach = this.spec?.type === "smg" ? Math.min(0.2, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.32)) : Math.min(0.3, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5));
     if (base && base.x - h.grip.x > sReach) base.x = h.grip.x + sReach;
     // …y nunca pegada a la empuñadura cuando agarra el guardamanos (en armas por código el guardamanos empezaba junto a
     // la empuñadura y la mano izquierda quedaba encima de la derecha, como con una pistola)
     const sup0 = (k > 0.5 ? hold?.ads : hold?.hip) ?? "front";
     if (base && (sup0 === "front" || sup0 === "pump" || sup0 === "frame") && this.spec?.type !== "pistol" && this.spec?.type !== "revolver") {
-      const sMin = Math.min(sReach, this.spec?.type === "smg" ? Math.max(0.11, (m.muzzle.x - h.grip.x) * 0.3) : Math.max(0.2, (m.muzzle.x - h.grip.x) * 0.32));
+      const sMin = Math.min(sReach, this.spec?.type === "smg" ? Math.max(0.14, (m.muzzle.x - h.grip.x) * 0.35) : Math.max(0.2, (m.muzzle.x - h.grip.x) * 0.32));
       if (base.x - h.grip.x < sMin) base.x = h.grip.x + sMin;
     }
     const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
