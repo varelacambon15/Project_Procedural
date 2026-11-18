@@ -2,6 +2,7 @@
 // acabar con sus enemigos, salas de botín y un jefe al final. Al ganar o morir se vuelve al vestíbulo (main.ts).
 // Sin luces nuevas (el número de luces es fijo): paneles emisivos en el techo y barreras aditivas en las puertas.
 import * as THREE from "three";
+import { dataPanel, hexFloor } from "./simtex";
 import { CELL, DOOR_W, doorsOf, generateRaid, rng, type RaidMap, type RaidOptions, type RaidRoom } from "./raidgen";
 import type { Waves } from "./waves";
 import type { KINDS } from "./dummies";
@@ -20,9 +21,10 @@ export interface RaidHooks {
 interface RoomState { room: RaidRoom; started: boolean; cleared: boolean; queue: string[]; spawnT: number; barriers: { mesh: THREE.Mesh; box: THREE.Box3 }[]; chest?: THREE.Group }
 
 const PALETTES = [
-  { floor: "#8f9396", wall: "#aeb3b8", trim: 0xe07a2a, accent: 0x3fd0d8 },  // instalación clara
-  { floor: "#6f7a86", wall: "#93a2b2", trim: 0x3a9ad8, accent: 0x7affc8 },  // laboratorio azul
-  { floor: "#7d7368", wall: "#a49a8c", trim: 0xc99a2e, accent: 0xff7a4a },  // almacén oxidado
+  // (más oscuras y con neón, como las salas de las referencias de Coded Arms)
+  { floor: "#4e545c", wall: "#5e646d", trim: 0xff4a8a, accent: 0x3fd0d8 },  // instalación
+  { floor: "#3e4856", wall: "#4e5b6b", trim: 0x3a9ad8, accent: 0x7affc8 },  // laboratorio azul
+  { floor: "#4e4842", wall: "#625a50", trim: 0xc99a2e, accent: 0xff7a4a },  // almacén oxidado
 ];
 function grid(base: string, line: string, rep: [number, number]) {
   const c = document.createElement("canvas"); c.width = c.height = 32; const g = c.getContext("2d")!;
@@ -78,7 +80,11 @@ export class Raid {
     const floorTex = grid(pal.floor, "#00000030", [1, 1]);
     // Rejilla luminosa del color de acento de la incursión (estética de simulación)
     const gridTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 32; const g = c.getContext("2d")!; g.fillStyle = "#000"; g.fillRect(0, 0, 32, 32); g.fillStyle = "#fff"; g.fillRect(0, 0, 32, 1); g.fillRect(0, 0, 1, 32); g.fillRect(0, 0, 2, 2); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; return t; })();
-    const floorFor = (w: number, d: number) => { const t = floorTex.clone(), e = gridTex.clone(); t.repeat.set(w / 4, d / 4); e.repeat.set(w / 4, d / 4); t.needsUpdate = e.needsUpdate = true; return new THREE.MeshStandardMaterial({ map: t, roughness: 0.9, emissive: pal.accent, emissiveMap: e, emissiveIntensity: 0.35 }); };
+    // (baldosas hexagonales con juntas del color de acento, como en las referencias)
+    const hx = hexFloor(pal.floor, "#25292f", [1, 1]); void floorTex; void gridTex;
+    const floorFor = (w: number, d: number) => { const t = hx.map.clone(), e = hx.emissive.clone(); t.repeat.set(w / 3.2, d / 5.5); e.repeat.set(w / 3.2, d / 5.5); t.needsUpdate = e.needsUpdate = true; return new THREE.MeshStandardMaterial({ map: t, roughness: 0.6, metalness: 0.3, emissive: pal.accent, emissiveMap: e, emissiveIntensity: 0.5 }); };
+    const core = new THREE.MeshStandardMaterial({ color: 0xffb060, emissive: 0xff9a40, emissiveIntensity: 1.6 }), shell = new THREE.MeshStandardMaterial({ color: 0x9ab0c0, transparent: true, opacity: 0.25, roughness: 0.2 });
+    const capMat = new THREE.MeshStandardMaterial({ color: 0x401018, emissive: pal.trim, emissiveIntensity: 1.1 });
     const wallMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(pal.wall), roughness: 0.9 });
     const ceilMat = new THREE.MeshStandardMaterial({ color: 0x3c4046, roughness: 1 });
     const coverMat = new THREE.MeshStandardMaterial({ color: 0x5d636a, metalness: 0.4, roughness: 0.6 });
@@ -123,6 +129,18 @@ export class Raid {
         if (alongX) box(len, 0.2, 0.05, cx, 1.1, pos + (s === "n" ? -0.53 : 0.53), trimMat, false); else box(0.05, 0.2, len, pos + (s === "e" ? -0.53 : 0.53), 1.1, cz, trimMat, false);
       };
       (["n", "s", "e", "w"] as const).forEach(side);
+      // Columnas de luz en dos esquinas y un panel holográfico de datos en una pared (salas de combate y jefe)
+      if (room.kind === "fight" || room.kind === "boss") {
+        for (const [sx, sz] of [[-1, -1], [1, 1]] as const) {
+          const x = cx + sx * (w / 2 - 1.3), z = cz + sz * (d / 2 - 1.3);
+          const c1 = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, H - 1.6, 10), core); c1.position.set(O.x + x, H / 2, O.z + z); g.add(c1);
+          const c2 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, H - 1.6, 6), shell); c2.position.copy(c1.position); g.add(c2);
+          for (const y of [0.4, H - 0.4]) box(1.1, 0.8, 1.1, x, y, z, capMat, false);
+          const bx = new THREE.Box3(new THREE.Vector3(O.x + x - 0.6, 0, O.z + z - 0.6), new THREE.Vector3(O.x + x + 0.6, H, O.z + z + 0.6)); this.boxes.push(bx); this.hooks.colliders.push(bx);
+        }
+        const pn = new THREE.Mesh(new THREE.PlaneGeometry(5, 3.4), new THREE.MeshBasicMaterial({ map: dataPanel(`#${new THREE.Color(pal.accent).getHexString()}`, room.i * 13 + 5), transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+        pn.position.set(O.x + cx - w / 2 + 0.06, Math.min(H - 2, 3.4), O.z + cz + d / 4); pn.rotation.y = Math.PI / 2; g.add(pn);
+      }
       for (const c of room.covers) {
         if (c.kind === "pillar") {
           const m = new THREE.Mesh(new THREE.CylinderGeometry(c.w / 2, c.w / 2 + 0.08, c.h, 14), wallMat); m.position.set(O.x + c.x, c.h / 2, O.z + c.z); m.receiveShadow = true; g.add(m); this.hooks.shootables.push(m);

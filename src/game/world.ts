@@ -3,6 +3,7 @@
 // y mensajes del sistema. El terminal de la simulación sustituye al cofre. Estética propia, solo inspirada en el
 // planteamiento de una simulación militar (nada copiado de ningún juego).
 // Coordenadas: la línea de tiro está en z = 0, hacia -z queda la sala de tiro; detrás (z > 0) la zona de equipo.
+import { dataPanel as holoData, hexFloor } from "./simtex";
 import * as THREE from "three";
 import { t } from "../i18n";
 import { buildNightCity } from "./nightcity";
@@ -316,11 +317,37 @@ export function buildRange(scene: THREE.Scene): World {
 
   // ---------- Sala de oleadas (detrás de la pared del fondo, entrando por la puerta) ----------
   const RW = 60, R0 = BACK + 1, R1 = BACK + 74, RH = 9; // (más grande: antes 46 × 56 m)
-  const roomFloor = new THREE.Mesh(new THREE.PlaneGeometry(RW, R1 - R0), floor);
+  // Arena con la estética de las referencias (Coded Arms): baldosas hexagonales oscuras con juntas luminosas,
+  // paredes de paneles con molduras de neón, columnas de luz y paneles holográficos de datos (todo emisivo: sin luces)
+  const hx = hexFloor("#4a505a", "#2a2e35", [RW / 3.2, (R1 - R0) / 5.5]);
+  const arenaFloor = new THREE.MeshStandardMaterial({ map: hx.map, emissiveMap: hx.emissive, emissive: 0x3fd0d8, emissiveIntensity: 0.45, roughness: 0.55, metalness: 0.35 });
+  const arenaWall = new THREE.MeshStandardMaterial({ map: wallTex, color: 0x8a909a, roughness: 0.8, metalness: 0.2, emissive: 0xff4a8a, emissiveMap: wallCircuit, emissiveIntensity: 0.35 });
+  const neonPink = new THREE.MeshStandardMaterial({ color: 0xff4a8a, emissive: 0xff4a8a, emissiveIntensity: 1.3 });
+  const neonCyan = new THREE.MeshStandardMaterial({ color: 0x5fe0ff, emissive: 0x5fe0ff, emissiveIntensity: 1.2 });
+  const roomFloor = new THREE.Mesh(new THREE.PlaneGeometry(RW, R1 - R0), arenaFloor);
   roomFloor.rotation.x = -Math.PI / 2; roomFloor.position.set(0, 0, (R0 + R1) / 2); roomFloor.receiveShadow = true; scene.add(roomFloor); shootables.push(roomFloor);
-  box(1, RH, R1 - R0, -RW / 2 - 0.5, RH / 2, (R0 + R1) / 2, wall);
-  box(1, RH, R1 - R0, RW / 2 + 0.5, RH / 2, (R0 + R1) / 2, wall);
-  box(RW + 2, RH, 1, 0, RH / 2, R1 + 0.5, wall);
+  box(1, RH, R1 - R0, -RW / 2 - 0.5, RH / 2, (R0 + R1) / 2, arenaWall);
+  box(1, RH, R1 - R0, RW / 2 + 0.5, RH / 2, (R0 + R1) / 2, arenaWall);
+  box(RW + 2, RH, 1, 0, RH / 2, R1 + 0.5, arenaWall);
+  // Molduras de neón (rosa abajo, cian arriba) a lo largo de las paredes
+  for (const sx of [-1, 1]) { box(0.06, 0.08, R1 - R0, sx * (RW / 2 - 0.02), 0.45, (R0 + R1) / 2, neonPink, false, false); box(0.06, 0.06, R1 - R0, sx * (RW / 2 - 0.02), RH - 1.4, (R0 + R1) / 2, neonCyan, false, false); }
+  box(RW, 0.08, 0.06, 0, 0.45, R1 - 0.02, neonPink, false, false); box(RW, 0.06, 0.06, 0, RH - 1.4, R1 - 0.02, neonCyan, false, false);
+  // Columnas de luz: núcleo naranja brillante en una funda translúcida, con remates hexagonales rojos
+  const core = new THREE.MeshStandardMaterial({ color: 0xffb060, emissive: 0xff9a40, emissiveIntensity: 1.6 });
+  const shell = new THREE.MeshStandardMaterial({ color: 0x9ab0c0, transparent: true, opacity: 0.25, roughness: 0.2, metalness: 0.3 });
+  const capRed = new THREE.MeshStandardMaterial({ color: 0x401018, emissive: 0xff2a3a, emissiveIntensity: 1.1 });
+  for (const z of [R0 + 12, R0 + 36, R0 + 60]) for (const sx of [-1, 1]) {
+    const x = sx * (RW / 2 - 1.2);
+    const c1 = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, RH - 2.2, 12), core); c1.position.set(x, RH / 2, z); scene.add(c1);
+    const c2 = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, RH - 2.2, 6), shell); c2.position.set(x, RH / 2, z); scene.add(c2);
+    for (const y of [0.55, RH - 0.55]) { const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 1.1, 6), capRed); cap.position.set(x, y, z); scene.add(cap); }
+    colliders.push(new THREE.Box3(new THREE.Vector3(x - 0.7, 0, z - 0.7), new THREE.Vector3(x + 0.7, RH, z + 0.7)));
+  }
+  // Paneles holográficos de datos en las paredes (como las pantallas de números de la simulación)
+  for (const [i, z] of [R0 + 24, R0 + 48].entries()) for (const sx of [-1, 1]) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(6, 4.2), new THREE.MeshBasicMaterial({ map: holoData(i % 2 ? "#ff6aa8" : "#5fe0ff", 7 + i * 3 + sx), transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+    m.position.set(sx * (RW / 2 - 0.05), 4.2, z); m.rotation.y = -sx * Math.PI / 2; scene.add(m);
+  }
   // (la sala es más ancha y alta que el vestíbulo: se cierran los costados y la franja de encima de su pared)
   for (const sd of [-1, 1]) box((RW - W) / 2 + 1, RH, 1, sd * (W / 2 + 1 + (RW - W) / 4), RH / 2, BACK + 0.5, wall);
   if (RH > H) box(W + 2, RH - H, 1, 0, H + (RH - H) / 2, BACK + 0.5, wall, false);
