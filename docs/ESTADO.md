@@ -131,6 +131,15 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Lista de pendientes del usuario (en orden)
+
+1. Pulir las animaciones de las armas, recarga incluida. Recargas propias para las escopetas de doble cañón
+   (basculante: abrir, sacar los cartuchos, meter dos y cerrar) y para los revólveres de acción simple (amartillar el
+   martillo a mano en cada disparo y cargar por la portilla, cartucho a cartucho).
+2. Armaduras equipables: casco, torso y parte inferior, con variantes, efectos y valores de reducción de daño. Los
+   diseños los pasará el usuario más adelante (preparar el sistema: ranuras, botín, inventario, efectos).
+3. Hecho (ronda 37): la pausa, el inventario y los demás menús paran el mundo.
+
 ## Ronda 36 (versión 0.16.0): pack 5, sonidos nuevos, animaciones por tipo y visor
 
 - Pack 5 del usuario (`raw/pack5`, ids `x-p5-*` en el pack kit39): MG338, RPD, MG4HK (lmg), LPM1, LPM4 (fusil), VSV,
