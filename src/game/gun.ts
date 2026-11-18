@@ -234,10 +234,11 @@ export class Gun {
     };
     // Más cerca de la cámara que antes (en las referencias el arma es grande): 6–9 cm según el largo
     // (cuanto más larga, menos se acerca: una LMG o un francotirador tapaban media pantalla)
-    const o = [0, 0, t === "pistol" ? 0.05 + (t0 === "revolver" ? 0.02 : 0) : THREE.MathUtils.clamp(0.03 - (m.length - 0.45) * 0.16, -0.1, 0.03)];
+    // (armas largas cortas, como subfusiles sin culata: algo más lejos; pegadas a la cámara parecían apuntar hacia arriba)
+    const o = [0, 0, t === "pistol" ? 0.05 + (t0 === "revolver" ? 0.02 : 0) : m.length < 0.5 ? -0.04 : THREE.MathUtils.clamp(0.03 - (m.length - 0.45) * 0.16, -0.1, 0.03)];
     // La mira cae en el cuadrante derecho (x ≈ 62–68 %, y ≈ 53–56 %) y la mano de la empuñadura no sale por abajo
     const grip = new THREE.Vector3(m.handles.grip.x, m.handles.grip.y, 0).applyMatrix4(m.group.matrix);
-    const tx = (t === "pistol" ? 0.2 : 0.2) + vx * 3, ty = (t === "pistol" ? -0.14 : -0.13) + vy * 3;
+    const tx = (t === "pistol" ? 0.2 : 0.2) + vx * 3, ty = (t === "pistol" ? -0.14 : m.length < 0.5 ? -0.06 : -0.13) + vy * 3;
     for (let it = 0; it < 8; it++) {
       if (proj(grip, o)[1] < -0.72 && o[2] > -0.04) o[2] -= 0.012;
       const zz = -(base[2] + o[2]) + back, [sx, sy] = proj(sight, o);
@@ -639,7 +640,7 @@ export class Gun {
       const pr = (x: number, y: number) => new THREE.Vector3(x, y, 0).applyMatrix4(m.group.matrixWorld).project(this.vmCam ?? this.camera);
       const g = pr(m.handles.grip.x, m.handles.grip.y), si = pr(m.sightX ?? m.handles.grip.x + 0.06, this.sightY);
       const handgun = this.spec?.type === "pistol" || this.spec?.type === "revolver";
-      const ty = handgun ? -0.14 : -0.13;
+      const ty = handgun ? -0.14 : m.length < 0.5 ? -0.06 : -0.13;
       // Prioridad: la empuñadura dentro de la pantalla; después, la mira en su altura
       const ey = g.y < -0.78 ? -0.76 - g.y : g.y > -0.35 ? -0.37 - g.y : (ty - si.y) * 0.5;
       const ex = (0.2 - si.x) * 0.5;
