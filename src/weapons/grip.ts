@@ -51,7 +51,7 @@ export function gripOptions(spec: Pick<WeaponSpec, "type" | "layout" | "tweaks" 
     if (t.stock) return [P("stock", t.vgrip ? "vgrip" : t.front ? "front" : t.frontMag ? "mag" : "frame", t.vgrip ? "vgrip" : t.front ? "front" : t.frontMag ? "mag" : "frame", "shoulder")];
     if (t.vgrip) return [P("vgrip", "vgrip", "vgrip", "hip")];
     const out: GripProfile[] = [];
-    if (t.front) out.push(P("front", "front", "front", "hip"));
+    // (sin culata, la mano de apoyo de una pistola va siempre a la empuñadura: delante, en el guardamanos, quedaba vertical sobre el arma)
     if (t.frontMag) out.push(P("mag", "mag", "mag", "hip"));
     // Los calibres pesados favorecen las dos manos; los ligeros, una
     out.push(P("two", "grip", "grip", "hip"), P("switch", "none", "grip", "hip"));
