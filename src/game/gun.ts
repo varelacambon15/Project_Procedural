@@ -163,13 +163,13 @@ export class Gun {
     };
     // Más cerca de la cámara que antes (en las referencias el arma es grande): 6–9 cm según el largo
     const o = [0, 0, THREE.MathUtils.clamp(0.06 + (m.length - 0.4) * 0.05, 0.05, 0.09)];
-    // Borde izquierdo visible (normalmente la boca) donde caen las referencias: más a la derecha cuanto más corta
-    const left = t === "pistol" ? 0.2 : t === "smg" || t === "revolver" ? 0.14 : t === "rifle" || t === "bullpup" ? 0.1 : 0.05;
-    for (let it = 0; it < 6; it++) {
-      let mn = 9; for (const p of pts) mn = Math.min(mn, proj(p, o)[0]);
-      const zz = -(base[2] + o[2]);
-      o[0] = THREE.MathUtils.clamp(o[0] + (left + vx * 3 - mn) * w * zz * 0.8, -0.06, 0.09);
-      const [, sy] = proj(sight, o), ty = (t === "pistol" ? -0.12 : -0.06) + vy * 3;
+    // La mira cae en el cuadrante derecho (x ≈ 62–68 %, y ≈ 53–56 %) y la mano de la empuñadura no sale por abajo
+    const grip = new THREE.Vector3(m.handles.grip.x, m.handles.grip.y, 0).applyMatrix4(m.group.matrix);
+    const tx = (t === "pistol" ? 0.22 : 0.3) + vx * 3, ty = (t === "pistol" ? -0.12 : -0.08) + vy * 3;
+    for (let it = 0; it < 8; it++) {
+      if (proj(grip, o)[1] < -0.72 && o[2] > -0.04) o[2] -= 0.012;
+      const zz = -(base[2] + o[2]), [sx, sy] = proj(sight, o);
+      o[0] = THREE.MathUtils.clamp(o[0] + (tx - sx) * w * zz * 0.8, -0.06, 0.09);
       o[1] = THREE.MathUtils.clamp(o[1] + (ty - sy) * h * zz * 0.8, -0.05, 0.07);
     }
     // La boca nunca cruza el centro
