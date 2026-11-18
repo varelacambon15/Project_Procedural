@@ -75,6 +75,7 @@ export interface AnimInput {
   lookX: number; lookY: number;
   /** Largo del modelo y altura de la línea de mira (para la posición de apuntado). */ length: number; sightY: number;
   /** X local de la empuñadura respecto al centro del modelo (la boca está en +X). */ gripX?: number;
+  /** Ajuste de encuadre en cadera propio de cada arma (dx, dy, dz, giro hacia el centro); se desvanece al apuntar. */ fit?: [number, number, number, number];
   /** Y local de la empuñadura (las armas cortas se colocan por ella: igual altura de mano en todas). */ gripY?: number;
   /** Sin óptica: al apuntar no se alinea la mira de hierro; el arma se acerca y se centra un poco (estilo Black). */ iron?: boolean;
   /** Miras de hierro montadas: X del alza respecto al centro del arma (el ojo queda a 2,5 cm detrás de ella (los cuerpos de las alzas no pasan de 1,5 cm detrás de su lente), como en un shooter moderno: la mirilla llena la vista). */ sightX?: number;
@@ -123,6 +124,12 @@ export class ViewAnimator {
     this.shotT = 0;
   }
 
+  /** Posición de cadera sin balanceo ni ajuste (para calcular el encuadre de cada arma). */
+  hipBase(i: Pick<AnimInput, "length" | "gripX" | "gripY">): V3 {
+    const p = this.p;
+    const hipZ = i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, 0.34 - i.length * 0.5) : -(i.length * 0.5 + p.hip[2]);
+    return [p.hip[0], p.gripAnchor && i.gripY !== undefined ? p.hip[1] - i.gripY : p.hip[1], hipZ];
+  }
   update(i: AnimInput): Pose {
     const p = this.p, dt = i.dt;
     // Muelle del retroceso (semi-implícito en subpasos: estable con dt grandes)
@@ -149,8 +156,9 @@ export class ViewAnimator {
     // (armas cortas: la empuñadura siempre a la misma altura; un cargador largo o un tambor ya no suben el arma entera)
     const hipY = p.gripAnchor && i.gripY !== undefined ? p.hip[1] - i.gripY : p.hip[1];
     const pos: V3 = [lerp(p.hip[0], tgt[0], e), lerp(hipY, tgt[1], e), lerp(hipZ, tgt[2], e)];
+    if (i.fit) { const f = 1 - e; pos[0] += i.fit[0] * f; pos[1] += i.fit[1] * f; pos[2] += i.fit[2] * f; }
     const rest = p.rest ?? [0, 0, 0];
-    const rot: V3 = [rest[0] * (1 - e), rest[1] * (1 - e), rest[2] * (1 - e) - p.adsRoll * tri(ads, 0, 1)];
+    const rot: V3 = [rest[0] * (1 - e), (rest[1] + (i.fit?.[3] ?? 0)) * (1 - e), rest[2] * (1 - e) - p.adsRoll * tri(ads, 0, 1)];
     // Sprint
     this.sprint = lerp(this.sprint, i.sprinting && i.reload === null ? 1 : 0, Math.min(1, dt * p.sprint.speed));
     for (let a = 0; a < 3; a++) { pos[a] += p.sprint.pos[a] * this.sprint; rot[a] += p.sprint.rot[a] * this.sprint; }

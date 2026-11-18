@@ -66,6 +66,8 @@ export class Gun {
   private sway = new THREE.Group();   // inercia y balanceo
   private holder = new THREE.Group(); // pose (cadera/mira/sprint) y animaciones
   private model: AssembledWeapon | null = null;
+  /** Encuadre en cadera de esta arma (referencias: abajo a la derecha, 24–40 % del ancho, mira bajo la mitad). */
+  private fit: [number, number, number, number] | null = null; private fitAspect = 0;
   private mag: AssembledPart | null = null;
   private cache = new Map<number, Promise<AssembledWeapon>>();
   item: Item | null = null;
@@ -139,6 +141,41 @@ export class Gun {
   private leftLocal: THREE.Vector3 | null = null;
   // ---------- Puños (sin arma equipada) ----------
   /** Progreso del golpe en curso (0 = ninguno), mano que golpea, golpe fuerte (al esprintar), golpe ya resuelto. */
+  /** Encuadre de cadera a partir de la geometría del arma: ancho en pantalla por tipo, mira en el cuadrante derecho
+   *  bajo la mitad, boca girada unos grados hacia el centro sin cruzarlo, y una pequeña variación por arma. */
+  private computeFit() {
+    const m = this.model!, spec = this.item?.spec; this.fitAspect = this.camera.aspect;
+    m.group.updateMatrix();
+    const pts: THREE.Vector3[] = [];
+    const lb = new THREE.Box3().setFromObject(m.group, true); lb.applyMatrix4(new THREE.Matrix4().copy(m.group.matrixWorld).invert());
+    for (let c = 0; c < 8; c++) pts.push(new THREE.Vector3(c & 1 ? lb.max.x : lb.min.x, c & 2 ? lb.max.y : lb.min.y, c & 4 ? lb.max.z : lb.min.z).applyMatrix4(m.group.matrix));
+    const sight = new THREE.Vector3(m.sightX ?? (m.handles.grip.x + 0.06), this.sightY, 0).applyMatrix4(m.group.matrix);
+    const muzzle = new THREE.Vector3(m.muzzle.x, m.muzzle.y, 0).applyMatrix4(m.group.matrix);
+    const base = this.anim.hipBase({ length: m.length, gripX: m.handles.grip.x, gripY: m.handles.grip.y });
+    const t = spec?.type ?? "rifle", h = Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2), w = h * this.camera.aspect;
+    // Variación por arma (semilla): ±6 % de posición y ±2° de giro
+    let sd = (spec?.seed ?? 7) >>> 0; const rnd = () => ((sd = (Math.imul(sd, 1664525) + 1013904223) >>> 0) / 4294967296) * 2 - 1;
+    const vx = rnd() * 0.012, vy = rnd() * 0.01, yaw = (t === "pistol" ? 0.035 : 0.07) + rnd() * 0.035;
+    const proj = (p: THREE.Vector3, o: number[]) => {
+      const c = Math.cos(yaw), s2 = Math.sin(yaw), x = p.x * c + p.z * s2, z = -p.x * s2 + p.z * c;
+      const X = x + base[0] + o[0], Y = p.y + base[1] + o[1], Z = Math.min(-0.04, z + base[2] + o[2]);
+      return [X / (-Z) / w, Y / (-Z) / h]; // NDC
+    };
+    // Más cerca de la cámara que antes (en las referencias el arma es grande): 6–9 cm según el largo
+    const o = [0, 0, THREE.MathUtils.clamp(0.06 + (m.length - 0.4) * 0.05, 0.05, 0.09)];
+    // Borde izquierdo visible (normalmente la boca) donde caen las referencias: más a la derecha cuanto más corta
+    const left = t === "pistol" ? 0.2 : t === "smg" || t === "revolver" ? 0.14 : t === "rifle" || t === "bullpup" ? 0.1 : 0.05;
+    for (let it = 0; it < 6; it++) {
+      let mn = 9; for (const p of pts) mn = Math.min(mn, proj(p, o)[0]);
+      const zz = -(base[2] + o[2]);
+      o[0] = THREE.MathUtils.clamp(o[0] + (left + vx * 3 - mn) * w * zz * 0.8, -0.06, 0.09);
+      const [, sy] = proj(sight, o), ty = (t === "pistol" ? -0.12 : -0.06) + vy * 3;
+      o[1] = THREE.MathUtils.clamp(o[1] + (ty - sy) * h * zz * 0.8, -0.05, 0.07);
+    }
+    // La boca nunca cruza el centro
+    const [mxn] = proj(muzzle, o); if (mxn < 0.06) o[0] += (0.06 - mxn) * w * -(base[2] + o[2] + muzzle.z);
+    this.fit = [o[0], o[1], o[2], yaw];
+  }
   /** Patada: pierna en primera persona que entra desde abajo; golpe fuerte con empuje (vale con puños o con arma). */
   private kickT = 0; private kickCd = 0; private kickDone = false; private leg: THREE.Group | null = null;
   private punchT = 0; private punchDur = 0.34; private punchSide: 1 | -1 = -1; private punchHeavy = false; private punchDone = false;
@@ -251,7 +288,7 @@ export class Gun {
     }
     // Shaders del arma compilados en segundo plano mientras se saca (sin tirón al aparecer)
     if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item || seq !== this.equipSeq) return; }
-    this.model = m; this.fitCurl = null;
+    this.model = m; this.fitCurl = null; this.fit = null;
     if (soundManifest) void loadSamples([...filesOfType(soundManifest, item.spec.type), ...(soundManifest.efectos.casquillo ?? [])]); this.fitWait = 12;
     // Rendimiento: dentro de cada pieza (que se anima entera) se fusionan sus mallas por material
     if (!m.group.userData.merged) { for (const p of m.parts) mergeStatic(p.object); m.group.userData.merged = true; }
@@ -471,9 +508,10 @@ export class Gun {
     this.recoilYaw += (0 - this.recoilYaw) * Math.min(1, dt * 8);
 
     // ---------- Animación (capa procedural: src/game/anim.ts) ----------
+    if (this.model && (!this.fit || Math.abs(this.fitAspect - this.camera.aspect) > 0.01)) this.computeFit();
     const pose = this.anim.update({
       dt, time: performance.now() / 1000, ads: this.aimT, moving: c.moving, sprinting: c.sprinting, grounded: c.grounded, vy: c.vy,
-      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, sightY: this.sightY, sightX: this.sight === "irons" ? this.model?.sightX : undefined, gripX: this.model?.handles.grip.x, gripY: this.model?.handles.grip.y, iron: this.sight === "iron",
+      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, sightY: this.sightY, sightX: this.sight === "irons" ? this.model?.sightX : undefined, gripX: this.model?.handles.grip.x, gripY: this.model?.handles.grip.y, fit: this.fit ?? undefined, iron: this.sight === "iron",
       reload: this.reloadT > 0 && s ? 1 - this.reloadT / this.reloadDur : null,
       draw: this.equipT > 0 ? this.equipT / this.equipDur : 0,
       holster: this.pending ? 1 - Math.max(0, this.holsterT) / Math.max(0.01, this.anim.p.holster) : 0,
