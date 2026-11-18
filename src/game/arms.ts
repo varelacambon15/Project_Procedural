@@ -102,9 +102,14 @@ class Hand {
   private cur: Curl = { fingers: [0.5, 0.5, 0.5, 0.5], thumb: 0.3 };
   constructor(parent: THREE.Object3D, readonly side: 1 | -1, withWatch: boolean) {
     const s = side;
-    const palm = new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.03, 0.088, 2, 0.009), glove); this.g.add(palm);
-    // Nudillera y refuerzo del dorso
-    const knuckle = new THREE.Mesh(new RoundedBoxGeometry(0.072, 0.01, 0.026, 1, 0.003), gloveArmor); knuckle.position.set(0, 0.017, -0.032); this.g.add(knuckle);
+    // Palma más redondeada y algo más estrecha hacia la muñeca (antes una caja que en primer plano se veía como un bloque)
+    const palm = new THREE.Mesh(new RoundedBoxGeometry(0.076, 0.026, 0.084, 3, 0.012), glove); this.g.add(palm);
+    const heel = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 8), glove); heel.scale.set(1.15, 0.45, 0.9); heel.position.set(0, -0.002, 0.03); this.g.add(heel);
+    // Eminencia del pulgar (la base carnosa junto a la palma)
+    const thenar = new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), glove); thenar.scale.set(1, 0.8, 1.5); thenar.position.set(-0.03 * s, -0.006, 0.006); this.g.add(thenar);
+    // Nudillos: cuatro bultos redondeados con refuerzo encima (en lugar de una barra plana)
+    for (let f = 0; f < 4; f++) { const kn = new THREE.Mesh(new THREE.SphereGeometry(0.0092, 8, 6), gloveArmor); kn.scale.set(1, 0.7, 1); kn.position.set([-0.0255, -0.0085, 0.0085, 0.0245][f] * s, 0.012, -0.037); this.g.add(kn); }
+    const knuckle = new THREE.Mesh(new RoundedBoxGeometry(0.066, 0.006, 0.02, 1, 0.0025), gloveArmor); knuckle.position.set(0, 0.016, -0.028); this.g.add(knuckle);
     const back = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.004, 0.034), gloveArmor); back.position.set(0.004 * s, 0.016, 0.006); this.g.add(back);
     // Puño del guante con su cierre de velcro y la tira
     const gauntlet = cyl(0.029, 0.032, glove, 12); gauntlet.rotation.x = Math.PI / 2; gauntlet.scale.y = 0.05; gauntlet.position.z = 0.066; gauntlet.scale.x = 1.08; this.g.add(gauntlet);
