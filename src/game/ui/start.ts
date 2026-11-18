@@ -4,7 +4,7 @@ import pkg from "../../../package.json";
 import { LANGS, getLang, setLang, t, type Lang } from "../../i18n";
 import { PIXEL_LEVELS, pixelLevel, setPixelLevel } from "../../weapons/textures";
 import { settings, setSetting, type Settings } from "../settings";
-import { BIND_ORDER, DEFAULT_BINDS } from "../input";
+import { BIND_ORDER, DEFAULT_BINDS, DEFAULT_PAD, PAD_NAMES, PAD_ORDER } from "../input";
 import { AUTO, SLOTS, type SlotId, type SlotSummary } from "../save";
 import { $, esc, keyHint, softConfirm, type ModelView } from "./common";
 import type { WeaponSpec } from "../../weapons/types";
@@ -25,6 +25,8 @@ export interface StartHooks {
   dev?(action: string): void;
   /** Espera la siguiente tecla para una acción (Controles). */
   bindKey?(action: string, done: () => void): void;
+  /** Espera el siguiente botón del mando para una acción. */
+  bindPad?(action: string, done: () => void): void;
 }
 export const VERSION: string = pkg.version;
 
@@ -90,7 +92,7 @@ export class StartScreen {
   private waiting: string | null = null;
   private controlsHTML() {
     const kb: [string, string][] = [["WASD", "c.move"], ["Mouse", "c.look"], ["LMB / RMB", "c.fire"], ["R", "c.reload"], ["1 · 2 · Q · wheel", "c.swap"], ["Shift · Space", "c.sprint"], ["C · Ctrl", "c.crouch"], ["F", "c.inspect"], ["E", "c.use"], ["Tab", "c.inv"], ["Esc", "c.pause"], ["N · P · L", "c.toggles"]];
-    const pad: [string, string][] = [["Sticks", "c.sticks"], ["RT / LT", "c.fire"], ["Ⓧ", "c.reload"], ["Ⓨ", "c.swap"], ["Ⓐ · L3", "c.sprint"], ["R3", "c.crouch"], ["✚ ↓", "c.inspect"], ["Ⓑ", "c.use"], ["View", "c.inv"], ["Start", "c.pause"], ["✚ · Ⓐ · Ⓑ", "c.menus.d"]];
+    const pad: [string, string][] = [["Sticks", "c.sticks"], ["View", "c.inv"], ["Start", "c.pause"], ["✚ · Ⓐ · Ⓑ", "c.menus.d"]];
     const dl = (rows: [string, string][]) => `<dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${t(v)}</dd>`).join("")}</dl>`;
     const s = settings, tog = (k: keyof Settings) => `<div class="row"><span>${t(`set.${k}`)}</span><button type="button" class="tog ${s[k] ? "on" : ""}" data-tog="${k}">${s[k] ? t("set.toggleMode") : t("set.holdMode")}</button></div>`;
     const flip = (k: keyof Settings) => `<div class="row"><span>${t(`set.${k}`)}</span><button type="button" class="tog ${s[k] ? "on" : ""}" data-tog="${k}">${s[k] ? t("ui.on") : t("ui.off")}</button></div>`;
@@ -99,6 +101,7 @@ export class StartScreen {
     const rows = BIND_ORDER.map((a) => `<div class="row"><span>${t(`bind.${a}`)}</span><button type="button" class="chip kb" data-bind="${a}">${this.waiting === a ? t("set.pressKey") : keyName(binds[a])}</button></div>`).join("");
     return `<h2>${t("ui.controls")}</h2><div class="settings">${tog("sprintToggle")}${tog("aimToggle")}${tog("crouchToggle")}${flip("invertY")}${range("adsSens")}${range("padSens")}</div>
       <h3>${t("set.binds")}</h3><div class="settings binds">${rows}<div class="row"><span></span><button type="button" class="chip" data-bindreset="1">${t("set.bindsReset")}</button></div></div>
+      <h3>${t("set.padBinds")}</h3><div class="settings binds">${PAD_ORDER.map((a) => `<div class="row"><span>${t(`pbind.${a}`)}</span><button type="button" class="chip kb" data-pbind="${a}">${this.waiting === "pad:" + a ? t("set.pressButton") : PAD_NAMES[{ ...DEFAULT_PAD, ...s.padBinds }[a]] ?? "?"}</button></div>`).join("")}<div class="row"><span></span><button type="button" class="chip" data-pbindreset="1">${t("set.bindsReset")}</button></div></div>
       <div class="ctrl"><div><h3>${t("ui.kbm")}</h3>${dl(kb)}</div><div><h3>${t("ui.pad")}</h3>${dl(pad)}</div></div>`;
   }
 
@@ -139,6 +142,9 @@ export class StartScreen {
     if (tog) { setSetting(tog, !settings[tog] as never); this.render(); this.el.querySelector<HTMLElement>(`[data-tog="${tog}"]`)?.focus(); return; }
     const bd = target.closest<HTMLElement>("[data-bind]")?.dataset.bind;
     if (bd && this.hooks.bindKey) { this.waiting = bd; this.render(); this.hooks.bindKey(bd, () => { this.waiting = null; this.render(); }); return; }
+    const pb = target.closest<HTMLElement>("[data-pbind]")?.dataset.pbind;
+    if (pb && this.hooks.bindPad) { this.waiting = "pad:" + pb; this.render(); this.hooks.bindPad(pb, () => { this.waiting = null; this.render(); }); return; }
+    if (target.closest("[data-pbindreset]")) { setSetting("padBinds", {}); this.render(); return; }
     if (target.closest("[data-bindreset]")) { setSetting("binds", {}); this.render(); return; }
     const dv = target.closest<HTMLElement>("[data-dev]")?.dataset.dev;
     if (dv) { this.hooks.dev?.(dv); return; }

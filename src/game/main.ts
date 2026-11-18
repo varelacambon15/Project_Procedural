@@ -21,7 +21,7 @@ import { displayName, rename } from "../weapons/naming";
 import { setAccUid } from "../weapons/accbank";
 import type { Manifest, RarityId, WeaponSpec } from "../weapons/types";
 import { getLang, onLang, setLang, t, type Lang } from "../i18n";
-import { DEFAULT_BINDS, Input } from "./input";
+import { DEFAULT_BINDS, DEFAULT_PAD, Input, PAD_NAMES } from "./input";
 import { buildRange, type Interactable } from "./world";
 import { PIXEL_LEVELS, pixelLevel, setPixelLevel } from "../weapons/textures";
 import { onSettings, replaceSettings, setSetting, settings, type Settings } from "./settings";
@@ -108,7 +108,7 @@ onLang(() => dummies.forEach((d) => d.relabel()));
 const applySens = () => {
   input.sensitivity = 0.0022 * settings.sensitivity; input.padSensitivity = 3.2 * settings.sensitivity * settings.padSens;
   input.toggles = { sprint: settings.sprintToggle, aim: settings.aimToggle, crouch: settings.crouchToggle }; input.invertY = settings.invertY;
-  input.binds = { ...DEFAULT_BINDS, ...settings.binds };
+  input.binds = { ...DEFAULT_BINDS, ...settings.binds }; input.padBinds = { ...DEFAULT_PAD, ...settings.padBinds };
 };
 applySens(); onSettings(applySens);
 
@@ -242,7 +242,7 @@ async function boot() {
     const left = sfx.activeLeft, pct = left > 0 ? Math.round((left / sfx.activeTotal) * 100) : Math.round(meter.charge * 100);
     el.className = left > 0 ? "on" : meter.ready ? "ready" : "";
     document.body.classList.toggle("deadeye", state === "play" && sfx.activeId === "deadeye"); document.body.classList.toggle("aegis", state === "play" && sfx.activeId === "aegis");
-    el.innerHTML = `<span>${t(`sp.${inv.superId}`)}</span><span class="bar"><i style="width:${pct}%"></i></span><b>${left > 0 ? Math.ceil(left) + " s" : meter.ready ? `<kbd>${input.device === "pad" ? "▲" : "V"}</kbd>` : pct + " %"}</b>`;
+    el.innerHTML = `<span>${t(`sp.${inv.superId}`)}</span><span class="bar"><i style="width:${pct}%"></i></span><b>${left > 0 ? Math.ceil(left) + " s" : meter.ready ? `<kbd>${input.device === "pad" ? PAD_NAMES[input.padBinds.super] : input.binds.super.replace(/^Key/, "")}</kbd>` : pct + " %"}</b>`;
   };
   const syncNade = () => { if (pouch.g !== inv.grenade) { const fresh = pouch.g == null; pouch.equip(inv.grenade); if (fresh && inv.grenade) pouch.charges = inv.grenade.charges; } };
   const nadeHud = () => {
@@ -293,6 +293,7 @@ async function boot() {
     exportSlot: (slot) => exportSlot(slot), importSlot: (slot) => importSlot(slot),
     quit: () => quit(), canQuit: () => inGame || !!(window as unknown as { ppApp?: unknown }).ppApp,
     current: () => inv.current?.spec ?? showcase,
+    bindPad: (action, done) => input.capturePad((btn) => { if (btn >= 0) setSetting("padBinds", { ...settings.padBinds, [action]: btn }); done(); }),
     bindKey: (action, done) => input.captureKey((code) => { if (code) setSetting("binds", { ...settings.binds, [action]: code }); done(); }),
     dev(a) {
       if (!inGame) { toast(t("set.dev.needGame")); return; }
@@ -761,7 +762,7 @@ async function boot() {
         if (!inv.grenade) toast(t("gr.none"));
         else if (pouch.use()) { const dir = camera.getWorldDirection(new THREE.Vector3()); nades.throw(inv.grenade, camera.getWorldPosition(new THREE.Vector3()).addScaledVector(dir, 0.5).add(new THREE.Vector3(0, -0.15, 0)), dir); }
       }
-      const key = `<kbd>${input.device === "pad" ? "Ⓑ" : "E"}</kbd>`;
+      const key = `<kbd>${input.device === "pad" ? PAD_NAMES[input.padBinds.useReload] : input.binds.use.replace(/^Key/, "")}</kbd>`;
       const look = camera.getWorldDirection(new THREE.Vector3());
       const ground = pickups.target(camera.position, look);
       const near = ground ? null : nearInteractable();
@@ -775,6 +776,8 @@ async function boot() {
         card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : "";
         card.hidden = !ground;
       }
+      // Ⓧ del mando: si hay algo cerca (arma en el suelo, terminal…) se usa; si no, recarga
+      if (f.ctxUse) { if (ground || near) f.interact = true; else f.reload = true; }
       if (f.interact) {
         if (ground) pickUp(ground);
         else if (near) {

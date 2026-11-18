@@ -13,6 +13,8 @@ export interface Frame {
   /** Lanzar granada (G / RB / botón táctil). */ grenade: boolean;
   /** Invocar el súper (V / cruceta arriba / botón táctil). */ super: boolean;
   device: "kbm" | "pad";
+  /** Botón de usar/recargar del mando (Ⓧ, como en Call of Duty): recoge o usa si hay algo cerca; si no, recarga. */
+  ctxUse?: boolean;
 }
 
 const DZ = 0.16;
@@ -24,6 +26,11 @@ export const DEFAULT_BINDS: Record<string, string> = {
   reload: "KeyR", use: "KeyE", swap: "KeyQ", slot1: "Digit1", slot2: "Digit2", inspect: "KeyF", grenade: "KeyG", super: "KeyV", inventory: "KeyI",
 };
 export const BIND_ORDER = Object.keys(DEFAULT_BINDS);
+/** Botones del mando por acción (índices del mando estándar). Por defecto, al estilo Call of Duty. */
+export const DEFAULT_PAD: Record<string, number> = { fire: 7, aim: 6, jump: 0, useReload: 2, crouch: 1, swap: 3, grenade: 5, super: 4, sprint: 10, inspect: 13 };
+export const PAD_ORDER = Object.keys(DEFAULT_PAD);
+/** Nombre de un botón del mando estándar. */
+export const PAD_NAMES = ["Ⓐ", "Ⓑ", "Ⓧ", "Ⓨ", "LB", "RB", "LT", "RT", "View", "Start", "L3", "R3", "✚↑", "✚↓", "✚←", "✚→"];
 
 export class Input {
   private keys = new Set<string>();
@@ -40,6 +47,10 @@ export class Input {
   /** Acción a la espera de tecla nueva (menú de controles). */
   private capture: ((code: string) => void) | null = null;
   captureKey(f: (code: string) => void) { this.capture = f; }
+  /** Botones del mando por acción y captura de un botón nuevo (menú de controles). */
+  padBinds: Record<string, number> = { ...DEFAULT_PAD };
+  private padCapture: ((btn: number) => void) | null = null;
+  capturePad(f: (btn: number) => void) { this.padCapture = f; }
   padSensitivity = 3.2;
   /** Factor de asistencia de apuntado (lo pone el juego cuando la mira pasa por un objetivo). */
   assist = 1;
@@ -81,6 +92,7 @@ export class Input {
     const now = p.buttons.map((b) => b.pressed || b.value > 0.5);
     const edges = now.map((v, i) => v && !this.padPrev[i]);
     this.padPrev = now;
+    if (this.padCapture) { const i = edges.findIndex(Boolean); if (i >= 0 && i !== 9) { const f = this.padCapture; this.padCapture = null; f(i); return []; } if (edges[9]) { const f = this.padCapture; this.padCapture = null; f(-1); return []; } }
     if (now.some(Boolean) || p.axes.some((a) => Math.abs(a) > 0.3)) this.device = "pad";
     return edges;
   }
@@ -101,13 +113,13 @@ export class Input {
       f.moveX += stick(p.axes[0] ?? 0, 1); f.moveZ -= stick(p.axes[1] ?? 0, 1);
       f.lookX += stick(p.axes[2] ?? 0, 2.2) * this.padSensitivity * this.assist * dt;
       f.lookY += stick(p.axes[3] ?? 0, 2.2) * this.padSensitivity * 0.75 * this.assist * dt;
-      f.fire ||= b(7); f.aim ||= b(6); f.sprint ||= b(10); f.crouch ||= b(11);
+      // Mando (configurable; por defecto como Call of Duty): RT disparar, LT apuntar, Ⓐ saltar, Ⓧ usar/recargar,
+      // Ⓑ agacharse, Ⓨ cambiar arma, RB granada, LB súper, L3 correr, ✚↓ inspeccionar, View inventario, Start pausa
+      const P = this.padBinds, e = (a: string) => !!edges[P[a]];
+      f.fire ||= b(P.fire); f.aim ||= b(P.aim); f.sprint ||= b(P.sprint); f.crouch ||= b(P.crouch);
+      f.jump ||= e("jump"); f.swap ||= e("swap"); f.inspect ||= e("inspect"); f.grenade ||= e("grenade"); f.super ||= e("super");
+      if (e("useReload")) f.ctxUse = true;
       f.inventory ||= !!edges[8]; f.pause ||= !!edges[9];
-      // Mando: Ⓐ saltar, Ⓑ interactuar, Ⓧ recargar, Ⓨ cambiar arma, View inventario, Start pausa
-      f.interact ||= !!edges[1];
-      f.inspect ||= !!edges[13]; // cruceta abajo
-      f.grenade ||= !!edges[5]; // RB: granada
-      f.super ||= !!edges[12]; // cruceta arriba: súper
     }
     const t = this.touch;
     if (t.active) {
