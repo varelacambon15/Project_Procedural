@@ -30,3 +30,24 @@ describe("incursión: generador de mapas", () => {
     }
   });
 });
+
+import { generateArena, mutateArena } from "../src/game/arenagen";
+describe("arena de oleadas", () => {
+  const B = { x0: -30, x1: 30, z0: 29, z1: 102 };
+  it("coberturas dentro, sin solaparse y con el pasillo de entrada libre", () => {
+    for (let s = 1; s < 30; s++) {
+      const a = generateArena(s, B);
+      expect(a.covers.length).toBeGreaterThan(12);
+      for (const c of a.covers) {
+        expect(c.x).toBeGreaterThan(B.x0); expect(c.x).toBeLessThan(B.x1); expect(c.z).toBeGreaterThan(B.z0 + 8); expect(c.z).toBeLessThan(B.z1 - 13);
+        expect(Math.abs(c.x) < 3 && c.z < B.z0 + 14).toBe(false);
+      }
+    }
+  });
+  it("tras el jefe cambia un poco: conserva buena parte y cambia el color", () => {
+    const a = generateArena(77, B), m = mutateArena(a, B);
+    const kept = m.covers.filter((c) => a.covers.some((o) => o.id === c.id)).length;
+    expect(kept).toBeGreaterThan(a.covers.length * 0.4); expect(kept).toBeLessThan(a.covers.length);
+    expect(m.accent).not.toBe(a.accent); expect(m.stage).toBe(1);
+  });
+});

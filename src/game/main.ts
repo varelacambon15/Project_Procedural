@@ -25,7 +25,9 @@ import { DEFAULT_BINDS, DEFAULT_PAD, Input, PAD_NAMES } from "./input";
 import { buildRange, type Interactable } from "./world";
 import { PIXEL_LEVELS, pixelLevel, setPixelLevel } from "../weapons/textures";
 import { onSettings, replaceSettings, setSetting, settings, type Settings } from "./settings";
-import { PlayerHealth, Waves } from "./waves";
+import { BOSS_EVERY, PlayerHealth, Waves } from "./waves";
+import { WaveArena } from "./arena";
+import { generateArena, mutateArena } from "./arenagen";
 import { Raid } from "./raid";
 import { spawnDummies, DamageNumbers, type Dummy } from "./dummies";
 import { Player } from "./player";
@@ -569,7 +571,8 @@ async function boot() {
   const waves = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
     onWaveStart: (_i, mod) => { php.noRegen = mod === "noregen"; if (mod) toast(t("wm.start", { m: t(`wm.${mod}`), d: t(`wm.d.${mod}`) })); },
     onWaveEnd: (i, last, reward) => {
-      contractEvent({ type: "wave", reached: i + 1, clean: !waveHurt }); waveHurt = false; toast(t("ui.waveDone", { n: i + 1 })); earn(Math.round(SHOP.income.waveEnd * reward * curPerks.fortune)); gainXp(waveXp(i + 1, inv.progress.level) * reward); windUsed = false; hooksWaveEnd(i, last); },
+      contractEvent({ type: "wave", reached: i + 1, clean: !waveHurt }); waveHurt = false; toast(t("ui.waveDone", { n: i + 1 })); earn(Math.round(SHOP.income.waveEnd * reward * curPerks.fortune)); gainXp(waveXp(i + 1, inv.progress.level) * reward); windUsed = false; hooksWaveEnd(i, last);
+      if ((i + 1) % BOSS_EVERY === 0 && arena.layout) { arena.set(mutateArena(arena.layout, arena.bounds), true, player.pos); toast(t("ui.arenaShift")); } },
     onAllDone: () => { toast(t("ui.wavesDone")); autosave(); },
     onSelfDestruct: (d) => selfDestruct(d),
     onPlayerHit: (dmg) => {
@@ -653,6 +656,9 @@ async function boot() {
     const d = tg.closest<HTMLElement>("[data-diff]"); if (d) { raidOpt.difficulty = Number(d.dataset.diff) as 0 | 1 | 2; return openRaidMenu(); }
     if (tg.closest("[data-go]")) { closeRaidMenu(); startRaid(); }
   });
+  // Arena de oleadas: al azar al empezar; cambia un poco tras cada jefe
+  const arena = new WaveArena(scene, world.colliders, world.shootables, { x0: world.wavesRoom.x0, x1: world.wavesRoom.x1, z0: world.wavesRoom.z0 + 0.5, z1: world.wavesRoom.z1 });
+  arena.set(generateArena((Math.random() * 2 ** 31) | 0, arena.bounds), false);
   const hooksWaveEnd = (_i: number, last: Dummy | null) => dropLoot("waveEnd", last?.group.position ?? new THREE.Vector3(0, 0, 8));
   function healthHud() {
     // Vida del jugador: siempre visible abajo a la izquierda, con cifras (y la oleada en curso encima)
@@ -782,7 +788,7 @@ async function boot() {
         if (ground) pickUp(ground);
         else if (near) {
           if (near.id === "chest") openScreen("shop");
-          else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); waves.start(); toast(t("ui.wavesGo")); } }
+          else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); arena.set(generateArena((Math.random() * 2 ** 31) | 0, arena.bounds), true, player.pos); waves.start(); toast(t("ui.wavesGo")); } }
           else if (near.id === "storage") openScreen("inventory", true);
           else if (near.id === "contracts") openContracts();
           else if (near.id === "raid") openRaidMenu();
@@ -851,7 +857,7 @@ async function boot() {
       if (waves.active && (player.pos.z < world.wavesRoom.z0 || player.pos.z > world.wavesRoom.z1)) { waves.stop(); toast(t("ui.wavesLeft")); }
       const ts = sfx.timeScale; // (Dilatación temporal: enemigos y esferas a cámara lenta)
       const wdt = hitstop > 0 ? 0 : dt;
-      waves.update(wdt * ts);
+      waves.update(wdt * ts); arena.update(dt);
       if (raid.active) { mobs.update(wdt * ts); raid.update(dt, player.pos); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
       if (!sfx.casting && !sfx.busy) meter.update(dt); sfx.update(dt, player.pos); superHud();
       pouch.update(dt * curPerks.nadeRecharge); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
@@ -886,7 +892,7 @@ async function boot() {
   frame();
   (window as unknown as Record<string, unknown>).__game = {
     debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
-    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, returnHub, mobs, openRaidMenu,
+    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, returnHub, mobs, openRaidMenu, arena, mutateArena,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };
 }

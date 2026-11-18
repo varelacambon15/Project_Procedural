@@ -21,7 +21,7 @@ export function decal<T extends THREE.Mesh>(m: T): T {
 export interface Interactable { id: "chest" | "workbench" | "waves" | "storage" | "contracts" | "raid"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
 export interface RangeData { dps: number; ttk: number | null; accuracy: number | null; distance: number | null; message: string }
 export interface World {
-  colliders: THREE.Box3[]; interactables: Interactable[]; chestLid: THREE.Object3D; chestGlow: THREE.PointLight; wavesRoom: { z0: number; z1: number }; shootables: THREE.Object3D[]; lanes: number[];
+  colliders: THREE.Box3[]; interactables: Interactable[]; chestLid: THREE.Object3D; chestGlow: THREE.PointLight; wavesRoom: { z0: number; z1: number; x0: number; x1: number }; shootables: THREE.Object3D[]; lanes: number[];
   /** Animación de la sala (parpadeos) y refresco de los cuadros de datos. */
   update(dt: number, data: RangeData): void;
   /** Noche (sala a oscuras con neón) o día (luz de mantenimiento). */
@@ -319,10 +319,7 @@ export function buildRange(scene: THREE.Scene): World {
   box(0.04, 0.25, R1 - R0, -RW / 2 + 0.03, 1.1, (R0 + R1) / 2, danger, false, false);
   box(0.04, 0.25, R1 - R0, RW / 2 - 0.03, 1.1, (R0 + R1) / 2, danger, false, false);
   box(RW, 0.25, 0.04, 0, 1.1, R1 - 0.03, danger, false, false);
-  // Coberturas bajas
-  for (const [x, z, w] of [[-7, R0 + 12, 2.4], [7, R0 + 12, 2.4], [0, R0 + 20, 3.2], [-14, R0 + 22, 1.8], [14, R0 + 22, 1.8], [-6, R0 + 32, 2.6], [8, R0 + 34, 2.2], [-17, R0 + 40, 1.6], [16, R0 + 42, 2.4], [0, R0 + 44, 3.4], [-22, R0 + 30, 2], [22, R0 + 28, 2.2], [-12, R0 + 54, 2.6], [12, R0 + 58, 2.4], [-24, R0 + 60, 1.8], [24, R0 + 50, 1.8]]) {
-    box(w, 1.0, 1.0, x, 0.5, z, wall); box(w + 0.04, 0.12, 1.04, x, 0.95, z, danger, false, false);
-  }
+  // (las coberturas de la arena se generan al azar: arena.ts / arenagen.ts)
   // Cartel del fondo: por ahí entran los enemigos
   { const m = sign(t("sign.spawn"), "#c8402e", 6, 1.2); m.position.set(0, 3.6, R1 - 0.02); m.rotation.y = Math.PI; scene.add(m); }
   // Marco de la puerta y cartel encima (por los dos lados)
@@ -395,7 +392,7 @@ export function buildRange(scene: THREE.Scene): World {
   let lastMsg = "";
   return {
     setNight, get night() { return night; },
-    colliders, shootables, lanes, chestLid: lidPivot, chestGlow, wavesRoom: { z0: R0 - 0.5, z1: R1 },
+    colliders, shootables, lanes, chestLid: lidPivot, chestGlow, wavesRoom: { z0: R0 - 0.5, z1: R1, x0: -RW / 2, x1: RW / 2 },
     interactables: [
       { id: "chest", position: new THREE.Vector3(-12, 0, 13), radius: 2.2, label: "Terminal", object: chest },
       { id: "workbench", position: new THREE.Vector3(12, 0, 13), radius: 2.4, label: "Banco", object: bench },

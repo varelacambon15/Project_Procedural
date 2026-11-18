@@ -43,6 +43,9 @@ interface Orb { mesh: THREE.Mesh; v: THREE.Vector3; t: number; dmg: number }
 const orbGeo = new THREE.SphereGeometry(0.22, 12, 8), orbHalo = new THREE.SphereGeometry(0.38, 10, 6);
 const bulletGeo = new THREE.BoxGeometry(0.04, 0.04, 0.5), laserGeo = new THREE.BoxGeometry(0.012, 0.012, 1);
 
+/** Cada cuántas oleadas sale el jefe (y la arena cambia al vencerlo). */
+export const BOSS_EVERY: number = data.bossEvery;
+
 export class Waves {
   active = false;
   index = -1;
