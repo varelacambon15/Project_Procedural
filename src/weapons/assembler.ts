@@ -720,7 +720,7 @@ export class WeaponAssembler {
     for (const a of [support, anchors.front]) if (a) { if (a.x > grip.x + reach) a.x = grip.x + reach; if (smg && !fb && a.x < grip.x + reach * 0.8) a.x = grip.x + reach * 0.8; if (a.y > grip.y + 0.06) a.y = grip.y + 0.06; }
     // (después de acercarla: la palma de apoyo, pegada a la cara inferior real del arma en su columna, hacia arriba o
     // hacia abajo; antes se calculaba donde estaba antes de acercarla y quedaba flotando bajo el guardamanos)
-    if (!handgun) for (const a of [support, anchors.front]) if (a) { const b = bottomAt(parts, a.x); if (b !== null && Math.abs(a.y - b) < 0.09) a.y = b + 0.004; }
+    if (!handgun) for (const a of [support, anchors.front]) if (a) { const b = bottomAt(parts, a.x); if (b !== null && b - a.y < 0.14 && a.y - b < 0.09) a.y = b + 0.004; }
     return { grip, support, magwell, charge, anchors };
   }
 }
@@ -764,16 +764,16 @@ function gripFromShape(parts: AssembledPart[], box: THREE.Box3): THREE.Vector3 |
 }
 /** Cara inferior del arma (sin cargador, empuñaduras ni accesorios) en la columna x. */
 function bottomAt(parts: AssembledPart[], x: number): number | null {
-  let lo = Infinity; const v = new THREE.Vector3();
-  for (const p of parts) {
-    if (["magazine", "stock", "scope", "device", "accessory", "muzzle", "grip", "charging", "trigger"].includes(p.role)) continue;
-    p.object.traverse((o) => {
-      const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position; if (!pos) return;
-      const step = Math.max(1, Math.floor(pos.count / 3000));
-      for (let i = 0; i < pos.count; i += step) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (Math.abs(v.x - x) < 0.012 && v.y < lo) lo = v.y; }
-    });
+  // Rayo hacia arriba desde debajo del arma, en el plano central y a ±7 mm: la primera superficie que toca es la cara
+  // inferior real (los vértices sueltos no sirven: un guardamanos en caja solo tiene vértices en sus extremos)
+  const objs = parts.filter((p) => !["magazine", "stock", "scope", "device", "accessory", "muzzle", "grip", "charging", "trigger"].includes(p.role)).map((p) => p.object);
+  const rc = new THREE.Raycaster(); let best = -Infinity;
+  for (const z of [0, 0.007, -0.007]) {
+    rc.set(new THREE.Vector3(x, -2, z), new THREE.Vector3(0, 1, 0));
+    const hit = rc.intersectObjects(objs, true)[0];
+    if (hit && hit.point.y > best) best = hit.point.y;
   }
-  return Number.isFinite(lo) ? lo : null;
+  return Number.isFinite(best) ? best : null;
 }
 /** Hasta dónde llega por delante el cuerpo grueso del arma (columnas con al menos el 55 % del alto del cajón). */
 function thickEnd(parts: AssembledPart[], box: THREE.Box3, gx: number): number | null {
