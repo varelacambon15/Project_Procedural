@@ -762,7 +762,7 @@ async function boot() {
         if (!inv.grenade) toast(t("gr.none"));
         else if (pouch.use()) { const dir = camera.getWorldDirection(new THREE.Vector3()); nades.throw(inv.grenade, camera.getWorldPosition(new THREE.Vector3()).addScaledVector(dir, 0.5).add(new THREE.Vector3(0, -0.15, 0)), dir); }
       }
-      const key = `<kbd>${input.device === "pad" ? PAD_NAMES[input.padBinds.useReload] : input.binds.use.replace(/^Key/, "")}</kbd>`;
+      const key = input.device === "pad" ? `<kbd class="hold" style="--p:${Math.round(input.useHold * 100)}%">${PAD_NAMES[input.padBinds.useReload]}</kbd>${t("ui.holdBtn")} ` : `<kbd>${input.binds.use.replace(/^Key/, "")}</kbd>`;
       const look = camera.getWorldDirection(new THREE.Vector3());
       const ground = pickups.target(camera.position, look);
       const near = ground ? null : nearInteractable();
@@ -776,8 +776,8 @@ async function boot() {
         card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : "";
         card.hidden = !ground;
       }
-      // Ⓧ del mando: si hay algo cerca (arma en el suelo, terminal…) se usa; si no, recarga
-      if (f.ctxUse) { if (ground || near) f.interact = true; else f.reload = true; }
+      // Ⓧ del mando: mantener = recoger o usar lo que hay cerca (pulsar y soltar recarga)
+      if (f.holdUse && (ground || near)) f.interact = true;
       if (f.interact) {
         if (ground) pickUp(ground);
         else if (near) {

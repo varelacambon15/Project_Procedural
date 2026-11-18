@@ -13,8 +13,8 @@ export interface Frame {
   /** Lanzar granada (G / RB / botón táctil). */ grenade: boolean;
   /** Invocar el súper (V / cruceta arriba / botón táctil). */ super: boolean;
   device: "kbm" | "pad";
-  /** Botón de usar/recargar del mando (Ⓧ, como en Call of Duty): recoge o usa si hay algo cerca; si no, recarga. */
-  ctxUse?: boolean;
+  /** Botón Ⓧ del mando, como en Call of Duty: mantenido = recoger/usar lo que hay cerca. */
+  holdUse?: boolean;
 }
 
 const DZ = 0.16;
@@ -50,6 +50,8 @@ export class Input {
   /** Botones del mando por acción y captura de un botón nuevo (menú de controles). */
   padBinds: Record<string, number> = { ...DEFAULT_PAD };
   private padCapture: ((btn: number) => void) | null = null;
+  /** Ⓧ: tiempo mantenido (pulsar y soltar = recargar; mantener 0,35 s = recoger/usar) y progreso para el aviso (0..1). */
+  private useT = -1; private useDone = false; useHold = 0;
   capturePad(f: (btn: number) => void) { this.padCapture = f; }
   padSensitivity = 3.2;
   /** Factor de asistencia de apuntado (lo pone el juego cuando la mira pasa por un objetivo). */
@@ -118,7 +120,12 @@ export class Input {
       const P = this.padBinds, e = (a: string) => !!edges[P[a]];
       f.fire ||= b(P.fire); f.aim ||= b(P.aim); f.sprint ||= b(P.sprint); f.crouch ||= b(P.crouch);
       f.jump ||= e("jump"); f.swap ||= e("swap"); f.inspect ||= e("inspect"); f.grenade ||= e("grenade"); f.super ||= e("super");
-      if (e("useReload")) f.ctxUse = true;
+      const uh = b(P.useReload);
+      if (uh) {
+        if (this.useT < 0) { this.useT = 0; this.useDone = false; }
+        this.useT += dt; this.useHold = Math.min(1, this.useT / 0.35);
+        if (!this.useDone && this.useT >= 0.35) { this.useDone = true; f.holdUse = true; }
+      } else if (this.useT >= 0) { if (!this.useDone) f.reload = true; this.useT = -1; this.useHold = 0; }
       f.inventory ||= !!edges[8]; f.pause ||= !!edges[9];
     }
     const t = this.touch;

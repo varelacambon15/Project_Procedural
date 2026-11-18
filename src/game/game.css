@@ -195,3 +195,4 @@ body.chrono::after { content: ""; position: fixed; inset: 0; pointer-events: non
 .hptrack .lag { background: #fff6e8; opacity: .85; transition: none; }
 .dmg.crit { color: #ffd84a; animation: dmgpop .28s ease-out; } @keyframes dmgpop { 0% { font-size: 44px; } 100% { font-size: 32px; } }
 .dmg.bump { animation: dmgbump .16s ease-out; } @keyframes dmgbump { 0% { filter: brightness(2); } 100% { filter: none; } }
+#prompt kbd.hold { background: linear-gradient(90deg, rgba(255,208,112,.55) var(--p), transparent var(--p)); }
