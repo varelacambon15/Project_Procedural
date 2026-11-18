@@ -446,3 +446,13 @@ body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family
 @media (max-width: 760px) { .panel.tree .branches { grid-template-columns: 1fr; } .tiles.skills { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .tile.skill.locked { opacity: .55; } .tile.skill.locked .glyph { filter: grayscale(1); } .card .note.warn { color: #ffb070; }
 .dev-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Pestaña Armadura: silueta holográfica con las ranuras apiladas al lado */
+.armor-rig { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; align-items: center; margin-bottom: 10px; }
+.armor-slots { display: grid; gap: 8px; }
+.holo { width: 100%; height: 300px; filter: drop-shadow(0 0 6px rgba(95, 224, 255, .6)); }
+.holo .hb > * { fill: color-mix(in srgb, var(--f, transparent) 45%, rgba(95, 224, 255, .08)); stroke: #5fe0ff; stroke-width: 1.5; }
+.holo .hb .arm { fill: rgba(95, 224, 255, .08); }
+.holo .scan { stroke: rgba(191, 248, 255, .8); stroke-width: 1; animation: holoscan 2.6s linear infinite; }
+@keyframes holoscan { from { transform: translateY(0); } to { transform: translateY(260px); } }
+@media (max-width: 760px) { .armor-rig { grid-template-columns: 110px minmax(0, 1fr); } .holo { height: 200px; } }
