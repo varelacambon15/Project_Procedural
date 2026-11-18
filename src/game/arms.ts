@@ -16,9 +16,9 @@ function phalanx(r: number, len: number, mat: THREE.Material, flat = 0.9) {
 export const ARM_DATA = {
   // (brazo de unos 70 cm hasta la palma y hombro izquierdo algo más cerca del centro: con armas largas la mano de apoyo
   // no llegaba al guardamanos y el brazo quedaba recto, con el arma «sostenida» desde abajo)
-  upper: 0.36, fore: 0.34,
+  upper: 0.37, fore: 0.35,
   shoulderR: new THREE.Vector3(0.22, -0.38, 0.08),
-  shoulderL: new THREE.Vector3(-0.16, -0.38, 0.05),
+  shoulderL: new THREE.Vector3(-0.12, -0.38, 0.0),
   poleR: new THREE.Vector3(0.7, -1, 0.1),   // el codo derecho apunta hacia abajo y afuera
   poleL: new THREE.Vector3(-0.6, -1, 0.2),
 };

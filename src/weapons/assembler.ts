@@ -715,12 +715,16 @@ export class WeaponAssembler {
     // forma), no a media altura (se veía la mano en el costado o por encima)
     // (solo en subfusiles: en fusiles de una pieza el cargador cuenta como cuerpo y el guardamanos, más fino, quedaba fuera:
     // la mano de apoyo se quedaba junto a la empuñadura, como con una pistola)
-    const smg = spec.type === "smg", end = smg ? thickEnd(parts, box, grip.x) : null;
+    const smg = spec.type === "smg", end = smg && L < 0.45 ? thickEnd(parts, box, grip.x) : null; // (solo subfusiles compactos tipo MP7)
     const reach = Math.min(smg ? 0.17 : 0.42, (box.max.x - grip.x) * (smg ? 0.55 : 0.45), end !== null ? Math.max(0.06, end - 0.02 - grip.x) : Infinity);
     for (const a of [support, anchors.front]) if (a) { if (a.x > grip.x + reach) a.x = grip.x + reach; if (smg && !fb && a.x < grip.x + reach * 0.8) a.x = grip.x + reach * 0.8; if (a.y > grip.y + 0.06) a.y = grip.y + 0.06; }
     // (después de acercarla: la palma de apoyo, pegada a la cara inferior real del arma en su columna, hacia arriba o
     // hacia abajo; antes se calculaba donde estaba antes de acercarla y quedaba flotando bajo el guardamanos)
-    if (!handgun) for (const a of [support, anchors.front]) if (a) { const b = bottomAt(parts, a.x); if (b !== null && b - a.y < 0.14 && a.y - b < 0.09) a.y = b + 0.004; }
+    // Ni pegada a la empuñadura (mano sobre mano, como con una pistola): un mínimo por delante, y luego a la cara inferior
+    if (!handgun) for (const a of [support, anchors.front]) if (a) { const mn = Math.min(reach, smg ? Math.max(0.14, (box.max.x - grip.x) * 0.35) : Math.max(0.2, (box.max.x - grip.x) * 0.32)); if (a.x - grip.x < mn) a.x = grip.x + mn; }
+    // (si en ese punto cuelga el cargador, la mano va justo delante de él, no encima del arma)
+    if (!handgun) for (const a of [support, anchors.front]) if (a) { for (let i = 0; i < 8; i++) { const b = colBottom(parts, a.x); if (b === null || b > a.y - 0.09) break; a.x += 0.012; } }
+    if (!handgun) for (const a of [support, anchors.front]) if (a) { const b = colBottom(parts, a.x); if (b !== null && b - a.y < 0.14 && a.y - b < 0.12) a.y = b + 0.004; }
     return { grip, support, magwell, charge, anchors };
   }
 }
@@ -760,20 +764,21 @@ function gripFromShape(parts: AssembledPart[], box: THREE.Box3): THREE.Vector3 |
   const xa = box.min.x + (L * a) / N, xb = box.min.x + (L * (b + 1)) / N;
   // (tramo muy ancho = empuñadura y cargador juntos o guardamonte largo: la mano, hacia su parte trasera)
   const x = xb - xa > 0.07 ? xa + 0.03 : (xa + xb) / 2;
-  return new THREE.Vector3(x, recv - 0.022, 0);
+  // Altura: a ~5,5 cm del fondo de la empuñadura (la mano la abarca), nunca por encima del fondo del cajón
+  let segMin = Infinity; for (let k = a; k <= b; k++) segMin = Math.min(segMin, minY[k]);
+  return new THREE.Vector3(x, Math.min(recv - 0.022, segMin + 0.055), 0);
 }
 /** Cara inferior del arma (sin cargador, empuñaduras ni accesorios) en la columna x. */
-function bottomAt(parts: AssembledPart[], x: number): number | null {
-  // Rayo hacia arriba desde debajo del arma, en el plano central y a ±7 mm: la primera superficie que toca es la cara
-  // inferior real (los vértices sueltos no sirven: un guardamanos en caja solo tiene vértices en sus extremos)
-  const objs = parts.filter((p) => !["magazine", "stock", "scope", "device", "accessory", "muzzle", "grip", "charging", "trigger"].includes(p.role)).map((p) => p.object);
-  const rc = new THREE.Raycaster(); let best = -Infinity;
-  for (const z of [0, 0.007, -0.007]) {
-    rc.set(new THREE.Vector3(x, -2, z), new THREE.Vector3(0, 1, 0));
-    const hit = rc.intersectObjects(objs, true)[0];
-    if (hit && hit.point.y > best) best = hit.point.y;
+/** Punto más bajo del arma (cualquier pieza salvo culata, mira y accesorios) en la columna x, por vértices. */
+function colBottom(parts: AssembledPart[], x: number): number | null {
+  let lo = Infinity; const v = new THREE.Vector3();
+  for (const p of parts) {
+    if (["stock", "scope", "device", "accessory", "muzzle"].includes(p.role)) continue;
+    p.object.updateMatrixWorld(true);
+    p.object.traverse((o) => { const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position; if (!pos) return;
+      for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (Math.abs(v.x - x) < 0.014 && v.y < lo) lo = v.y; } });
   }
-  return Number.isFinite(best) ? best : null;
+  return Number.isFinite(lo) ? lo : null;
 }
 /** Hasta dónde llega por delante el cuerpo grueso del arma (columnas con al menos el 55 % del alto del cajón). */
 function thickEnd(parts: AssembledPart[], box: THREE.Box3, gx: number): number | null {
