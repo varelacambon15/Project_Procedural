@@ -417,6 +417,84 @@ export class Dummy {
       this.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8), coreMat), 0, 0, -0.32), head, "head");
     }
   }
+  /** Postura extra de este fotograma (inclinación, agachado, alabeo) que suma cada estilo de animación. */
+  private pose = { lean: 0, dip: 0, roll: 0 }; private cmdT = 3 + Math.random() * 4;
+  /**
+   * Animación propia de cada tipo: cómo anda y cómo ataca (attackT se pone a 0,4 s en cada ataque).
+   * Pequeños: corren encorvados y lanzan dos golpes rápidos. Grandes, resistentes y jefes: andar pesado de lado a lado
+   * y golpe con los dos brazos por encima de la cabeza. Élite: guardia alta, se mueve de lado y gancho. Lanzador: los
+   * dos brazos al frente al lanzar. Médico: se agacha y extiende el brazo al curar. Comandante: señala al frente de vez
+   * en cuando. Fallo: brazos con tics. Tirador: retroceso del arma. Francotirador: agachado al apuntar. Guardián: carga
+   * con el escudo. Robots: el dron se inclina y retrocede al disparar, la bola bota, la torreta retrocede, la araña salta.
+   */
+  private animStyle(dt: number, moving: number) {
+    const P = this.pose; P.lean = P.dip = P.roll = 0;
+    this.attackT = Math.max(0, this.attackT - dt);
+    const k = this.attackT > 0 ? 1 - this.attackT / 0.4 : 0, a = this.attackT > 0 ? Math.sin(k * Math.PI) : 0, key = this.kind.key;
+    if (!this.alive) return;
+    const arms = this.armsH, ease = (m: THREE.Object3D, x: number, z: number | null, r: number) => { m.rotation.x += (x - m.rotation.x) * Math.min(1, dt * r); if (z != null) m.rotation.z += (z - m.rotation.z) * Math.min(1, dt * r); };
+    const w = this.walkT;
+    if (this.kind.shape === "drone") { P.lean = 0.22 * moving - 0.25 * a; }
+    else if (this.kind.shape === "roller" && this.rollBall) this.rollBall.position.y = 0.4 + Math.abs(Math.sin(w * 3)) * 0.06 * moving;
+    else if (this.kind.shape === "turret" && this.turretHead) this.turretHead.position.y = 1.15 - 0.03 * a, this.turretHead.children.forEach((c) => { if (c.position.z > 0.4) c.position.z = 0.55 - 0.12 * a; });
+    else if (this.kind.shape === "spider") { if (this.pounceT > 0) P.dip = -Math.sin((1 - this.pounceT / 0.35) * Math.PI) * 0.5; P.lean = -0.15 * a; }
+    if (!arms.length) return;
+    const [L, R] = arms;
+    if (this.kind.gun) {
+      // Soldados con arma: retroceso al disparar; el francotirador se agacha cuando está parado apuntando
+      P.lean = -0.06 * a;
+      if (this.kind.gun === "sniper" && !moving) { P.dip = 0.28; P.lean += 0.12; this.legs.forEach((l, i) => (l.rotation.x = i ? 0.9 : -0.3)); }
+      return;
+    }
+    if (this.kind.shield) { P.lean = 0.05 + 0.2 * a; if (a > 0) this.pushOff.z += a * 0.01; P.roll = Math.sin(w) * 0.05 * moving; return; } // (carga con el escudo)
+    switch (key) {
+      case "small": {
+        P.lean = 0.28 * moving + 0.1;
+        const jab = this.attackT > 0 ? Math.max(0, Math.sin(k * Math.PI * 2)) : 0, jab2 = this.attackT > 0 ? Math.max(0, -Math.sin(k * Math.PI * 2)) : 0;
+        ease(L, Math.sin(w * 1.6) * 0.8 * moving - 1.6 * jab2 - 0.5, null, 16); ease(R, -Math.sin(w * 1.6) * 0.8 * moving - 1.6 * jab - 0.5, null, 16);
+        break;
+      }
+      case "large": case "sturdy": case "boss": case "warden": {
+        P.roll = Math.sin(w) * 0.08 * moving; P.lean = 0.06;
+        // Golpe a dos manos: sube (60 %) y baja de golpe (agachándose al caer)
+        const up = this.attackT > 0 ? (k < 0.6 ? k / 0.6 : 1 - (k - 0.6) / 0.4) : 0;
+        if (this.attackT > 0 && k > 0.6) P.dip = 0.1 * (1 - (k - 0.6) / 0.4);
+        ease(L, Math.sin(w) * 0.3 * moving - 2.8 * up, 0.18, 10); ease(R, -Math.sin(w) * 0.3 * moving - 2.8 * up, -0.18, 10);
+        break;
+      }
+      case "elite": {
+        P.lean = 0.12; this.pushOff.x += Math.sin(w * 0.45) * 0.003 * moving; // (se mueve de lado mientras avanza)
+        ease(L, -0.7 + Math.sin(w) * 0.2 * moving, 0.4, 12); ease(R, -0.7 - 2.0 * a, -0.4 + 0.5 * a, 16); P.roll = -0.12 * a;
+        break;
+      }
+      case "caster": {
+        P.dip = Math.sin(w * 0.8) * 0.03; // (balanceo de canalización)
+        ease(L, -0.3 - 1.3 * a, 0.25 - 0.2 * a, 12); ease(R, -0.3 - 1.3 * a, -0.25 + 0.2 * a, 12);
+        break;
+      }
+      case "medic": {
+        const healing = this.attackT > 0 ? 1 : 0;
+        P.dip = 0.18 * healing; P.lean = 0.15 * healing;
+        ease(L, Math.sin(w) * 0.4 * moving, null, 10); ease(R, healing ? -1.5 : -Math.sin(w) * 0.4 * moving, null, 12);
+        break;
+      }
+      case "commander": {
+        this.cmdT -= dt; const point = this.cmdT < 1 ? Math.sin(Math.max(0, this.cmdT) * Math.PI) : 0; if (this.cmdT <= 0) this.cmdT = 5 + Math.random() * 4;
+        P.lean = 0.04; P.roll = Math.sin(w) * 0.04 * moving;
+        ease(L, Math.sin(w) * 0.35 * moving, null, 10); ease(R, -Math.sin(w) * 0.35 * moving - 1.6 * point - 1.9 * a, null, 12);
+        break;
+      }
+      case "glitch": {
+        const tic = () => (Math.random() < 0.08 ? (Math.random() - 0.5) * 2 : 0);
+        ease(L, Math.sin(w) * 0.5 * moving + tic() - 1.5 * a, null, 20); ease(R, -Math.sin(w) * 0.5 * moving + tic() - 1.5 * a, null, 20); P.roll = (Math.random() < 0.05 ? (Math.random() - 0.5) * 0.3 : 0);
+        break;
+      }
+      default: {
+        ease(L, Math.sin(w) * 0.45 * moving, null, 10); ease(R, -Math.sin(w) * 0.45 * moving - 1.7 * a, null, 14);
+        if (a > 0) this.pushOff.z += a * 0.004; // (se echa hacia delante al golpear)
+      }
+    }
+  }
   /** Animación de los robots: rotores, pasos de la araña, bola que rueda, torreta que apunta, luz que parpadea. */
   private animRobot(dt: number, moving: number, toTarget: number) {
     for (const r of this.rotors) r.rotation.y += dt * 40;
@@ -479,14 +557,7 @@ export class Dummy {
     }
     if (this.kind.shape && this.kind.shape !== "humanoid") { this.walkT += dt * (1 + moving * 4); this.animRobot(dt, moving, toTarget); }
     this.buffT = Math.max(0, this.buffT - dt);
-    // Brazos: se balancean al andar (al revés que las piernas) y el derecho lanza un zarpazo al atacar
-    if (this.armsH.length && this.alive && !this.kind.gun && !this.kind.shield) {
-      this.attackT = Math.max(0, this.attackT - dt);
-      const walk = moving ? Math.sin(this.walkT) * 0.45 : 0, a = this.attackT > 0 ? Math.sin((1 - this.attackT / 0.4) * Math.PI) : 0;
-      this.armsH[0].rotation.x += (walk - this.armsH[0].rotation.x) * Math.min(1, dt * 10);
-      this.armsH[1].rotation.x += (-walk - 1.7 * a - this.armsH[1].rotation.x) * Math.min(1, dt * 14);
-      if (a > 0) this.pushOff.z += a * 0.004; // (se echa hacia delante al golpear)
-    }
+    this.animStyle(dt, moving);
     // Fallo de código: parpadea y cada pocos segundos salta a otro sitio cerca del jugador (intocable durante el salto)
     if (this.kind.glitch && this.alive) {
       this.glitchT -= dt; this.phaseT = Math.max(0, this.phaseT - dt);
@@ -542,10 +613,10 @@ export class Dummy {
       this.legs.forEach((l) => (l.rotation.x = -Math.min(0.9, k * 1.6) * 0.6));
     }
     const dt2 = this.deathTilt > 0.02 ? this.deathTilt : 0;
-    this.body.rotation.x = this.flinch.x + dt2 * this.deathDir.y; this.body.rotation.z = this.flinch.y + limp * 0.08 * this.limpSide - dt2 * this.deathDir.x;
+    this.body.rotation.x = this.flinch.x + dt2 * this.deathDir.y + (this.alive ? this.pose.lean : 0); this.body.rotation.z = this.flinch.y + limp * 0.08 * this.limpSide - dt2 * this.deathDir.x + (this.alive ? this.pose.roll : 0);
     this.hitGlow = Math.max(0, this.hitGlow - dt * 9);
     for (let i = 0; i < this.mats.length; i++) { const m = this.mats[i]; if (this.glowSkip.has(m)) continue; m.emissive.copy(this.baseEm[i]).lerp(this.glowColor, this.hitGlow * 0.55); }
-    this.body.position.set((this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0) + this.pushOff.x + this.deathOff.x, -limp * 0.06, this.pushOff.z + this.deathOff.z);
+    this.body.position.set((this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0) + this.pushOff.x + this.deathOff.x, -limp * 0.06 - (this.alive ? this.pose.dip : 0), this.pushOff.z + this.deathOff.z);
     // Escaneo: al morir se desintegra de arriba abajo; al reaparecer se compila de abajo arriba
     const wy = this.group.getWorldPosition(new THREE.Vector3()).y;
     const sm = this.scan.material as THREE.MeshBasicMaterial;
