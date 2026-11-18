@@ -1393,6 +1393,8 @@ function shapeOk(recv: AssetEntry, donor: AssetEntry, role: "stock" | "front" | 
   return top <= own.max[1] + H * 0.25 && bottom >= own.min[1] - H * (role === "stock" ? 0.35 : 0.3);
 }
 
+/** Culatas de caja muy altas (de francotirador): solo en francotiradores. */
+const STOCK_TALL = new Set(["x-sniper-0"]);
 export function longGunOk(recv: AssetEntry, stock: AssetEntry, front: AssetEntry, grip: AssetEntry, type: WeaponType, tw: Tweaks = NO_TWEAKS): boolean {
   if (!recv.joints || !stock.joints || !front.joints || !grip.joints) return false;
   const own = (x: AssetEntry) => x.id === recv.id;
@@ -1406,6 +1408,9 @@ export function longGunOk(recv: AssetEntry, stock: AssetEntry, front: AssetEntry
   const pS = tw.pstock ?? null, pF = tw.pfront ?? null;
   if (tw.nostock) return (pF ? true : shapeOk(recv, front, "front", tw)) && shapeOk(recv, grip, "grip", tw);
   if ((!pS && !shapeOk(recv, stock, "stock", tw)) || (!pF && !shapeOk(recv, front, "front", tw)) || !shapeOk(recv, grip, "grip", tw)) return false;
+  // Culata ajena mucho más alta que el cajón (p. ej. la culata de caja de un francotirador en un fusil compacto): en
+  // primera persona era un bloque que tapaba media pantalla
+  if (!pS && !own(stock) && STOCK_TALL.has(stock.id) && type !== "sniper") return false;
   const J = recv.joints;
   const stockLen = pS ? pS.len : zoneLen((stock.joints.stockFace.pos[0] - stock.bounds.min[0]) * pieceScale(recv, stock, "stock", tw)[0], tw.stock);
   const frontLen = pF ? pF.len + pF.barrel : zoneLen((front.bounds.max[0] - front.joints.frontFace.pos[0]) * pieceScale(recv, front, "front", tw)[0], tw.front, 0.6);
