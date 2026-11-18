@@ -702,8 +702,12 @@ export class WeaponAssembler {
     };
     // La mano de apoyo nunca agarra la punta del cañón: como mucho a ~55 % del tramo empuñadura→boca y a un antebrazo
     // de distancia (armas cortas tipo MP5K: justo delante del cargador)
-    const smg = spec.type === "smg", reach = Math.min(smg ? 0.14 : 0.24, (box.max.x - grip.x) * (smg ? 0.3 : 0.36));
-    for (const a of [support, anchors.front]) if (a) { if (a.x > grip.x + reach) a.x = grip.x + reach; if (a.y > grip.y + 0.06) a.y = grip.y + 0.06; }
+    // La mano de apoyo llega hasta donde acaba el cuerpo grueso del arma (cajón o guardamanos, leído de su forma), sin
+    // pasar al cañón fino ni a más de un antebrazo: en una MP7 envuelve la parte delantera del cajón; en una MP5K se queda
+    // delante del cargador
+    const smg = spec.type === "smg", end = thickEnd(parts, box, grip.x);
+    const reach = Math.min(smg ? 0.17 : 0.26, (box.max.x - grip.x) * 0.55, end !== null ? Math.max(0.06, end - 0.02 - grip.x) : Infinity);
+    for (const a of [support, anchors.front]) if (a) { if (a.x > grip.x + reach) a.x = grip.x + reach; if (smg && !fb && a.x < grip.x + reach * 0.8) a.x = grip.x + reach * 0.8; if (a.y > grip.y + 0.06) a.y = grip.y + 0.06; }
     return { grip, support, magwell, charge, anchors };
   }
 }
@@ -744,6 +748,25 @@ function gripFromShape(parts: AssembledPart[], box: THREE.Box3): THREE.Vector3 |
   // (tramo muy ancho = empuñadura y cargador juntos o guardamonte largo: la mano, hacia su parte trasera)
   const x = xb - xa > 0.07 ? xa + 0.03 : (xa + xb) / 2;
   return new THREE.Vector3(x, recv - 0.022, 0);
+}
+/** Hasta dónde llega por delante el cuerpo grueso del arma (columnas con al menos el 55 % del alto del cajón). */
+function thickEnd(parts: AssembledPart[], box: THREE.Box3, gx: number): number | null {
+  const N = 48, L = box.max.x - box.min.x, lo = new Array<number>(N).fill(Infinity), hi = new Array<number>(N).fill(-Infinity), v = new THREE.Vector3();
+  for (const p of parts) {
+    if (["magazine", "stock", "scope", "device", "accessory", "muzzle", "grip", "charging"].includes(p.role)) continue;
+    p.object.updateMatrixWorld(true);
+    p.object.traverse((o) => {
+      const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position; if (!pos) return;
+      const step = Math.max(1, Math.floor(pos.count / 3000));
+      for (let i = 0; i < pos.count; i += step) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); const k = Math.min(N - 1, Math.max(0, Math.floor(((v.x - box.min.x) / L) * N))); if (v.y < lo[k]) lo[k] = v.y; if (v.y > hi[k]) hi[k] = v.y; }
+    });
+  }
+  const k0 = Math.max(0, Math.floor(((gx - box.min.x) / L) * N));
+  const h = (k: number) => (Number.isFinite(lo[k]) ? hi[k] - lo[k] : 0);
+  const ref = Math.max(...Array.from({ length: Math.min(6, N - k0) }, (_, i) => h(k0 + i)));
+  if (!(ref > 0)) return null;
+  let e = k0; while (e + 1 < N && h(e + 1) >= ref * 0.55) e++;
+  return box.min.x + (L * (e + 1)) / N;
 }
 const DEVICE_SCALE = (type: string) => (type === "pistol" || type === "revolver" ? 0.62 : type === "smg" ? 0.85 : 1);
 
