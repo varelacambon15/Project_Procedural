@@ -14,9 +14,11 @@ function phalanx(r: number, len: number, mat: THREE.Material, flat = 0.9) {
 
 /** Medidas del brazo (datos, no código): cambiar de modelo no obliga a rehacer el IK. */
 export const ARM_DATA = {
-  upper: 0.33, fore: 0.3,
-  shoulderR: new THREE.Vector3(0.24, -0.4, 0.16),
-  shoulderL: new THREE.Vector3(-0.22, -0.44, 0.14),
+  // (brazo de unos 70 cm hasta la palma y hombro izquierdo algo más cerca del centro: con armas largas la mano de apoyo
+  // no llegaba al guardamanos y el brazo quedaba recto, con el arma «sostenida» desde abajo)
+  upper: 0.36, fore: 0.34,
+  shoulderR: new THREE.Vector3(0.22, -0.38, 0.08),
+  shoulderL: new THREE.Vector3(-0.16, -0.38, 0.05),
   poleR: new THREE.Vector3(0.7, -1, 0.1),   // el codo derecho apunta hacia abajo y afuera
   poleL: new THREE.Vector3(-0.6, -1, 0.2),
 };

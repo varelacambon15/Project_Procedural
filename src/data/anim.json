@@ -301,14 +301,16 @@
         "part": "charging",
         "travel": 0.012,
         "time": 0.04
-      }
+      },
+      "gripZ": 0.21
     },
     "rifle": {
       "cycle": {
         "part": "charging",
         "travel": 0.01,
         "time": 0.05
-      }
+      },
+      "gripZ": 0.19
     },
     "bullpup": {
       "gripZ": 0.4,
@@ -392,7 +394,8 @@
         "part": "pump",
         "travel": 0.08,
         "time": 0.45
-      }
+      },
+      "gripZ": 0.19
     },
     "sniper": {
       "hip": [
@@ -423,10 +426,11 @@
         "part": "charging",
         "travel": 0.06,
         "time": 0.45
-      }
+      },
+      "gripZ": 0.19
     },
     "lmg": {
-      "gripZ": 0.29,
+      "gripZ": 0.2,
       "hip": [
         0.16,
         -0.17,

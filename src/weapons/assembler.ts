@@ -673,7 +673,10 @@ export class WeaponAssembler {
     // Cargador en la empuñadura (MP7, Uzi, MP9…: subfusil con el cargador en la mitad trasera): se agarra el cargador
     else if (magBox && spec.type === "smg" && (magBox.min.x + magBox.max.x) / 2 < box.min.x + L * 0.5) grip = new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.25, 0);
     else if (magBox) grip = new THREE.Vector3(magBox.min.x - L * 0.09, box.min.y + H * 0.32, 0);
-    else grip = (!handgun && spec.type !== "bullpup" ? gripFromShape(parts, box) : null) ?? new THREE.Vector3(box.min.x + L * (handgun ? 0.35 : 0.38), box.min.y + H * 0.3, 0);
+    else grip = (spec.type === "smg" ? gripFromShape(parts, box) : null) ?? new THREE.Vector3(box.min.x + L * (handgun ? 0.35 : 0.38), box.min.y + H * 0.3, 0);
+    // Largo de tiro: en un arma de hombro la mano de disparo está a ≥ 30 cm del talón de la culata (si sale menos, el
+    // punto estaba en la culata: «disparar con la culata»)
+    if (!handgun && spec.type !== "bullpup" && spec.type !== "smg" && grip.x < box.min.x + 0.3 && L > 0.8) grip.x = box.min.x + Math.min(0.36, L * 0.3);
     const fp = part("pump") ?? part("front");
     const fb = fp ? boxOf(fp.object) : null;
     const support = handgun ? grip.clone().add(new THREE.Vector3(0.01, -0.01, 0))
@@ -682,7 +685,7 @@ export class WeaponAssembler {
       // largo total (con la culata incluida caía sobre el cañón)
       // (fusiles, escopetas, LMG… de una pieza: la mano va al guardamanos, a un 40 % del tramo empuñadura→boca y a unos
       // 22-28 cm de la empuñadura; antes quedaba a 16 cm, pegada a ella, como agarrando una pistola)
-      : spec.type !== "smg" ? new THREE.Vector3(grip.x + Math.min(0.28, Math.max(0.2, (box.max.x - grip.x) * 0.4)), Math.max(box.min.y + H * 0.35, grip.y), 0)
+      : spec.type !== "smg" ? new THREE.Vector3(grip.x + Math.min(0.4, Math.max(0.24, (box.max.x - grip.x) * 0.4)), Math.max(box.min.y + H * 0.35, grip.y), 0)
       : magBox && magBox.max.x > grip.x ? new THREE.Vector3(Math.max(magBox.max.x + 0.035, grip.x + 0.1), Math.max(grip.y, magBox.max.y - 0.005), 0)
       : new THREE.Vector3(Math.min(box.min.x + L * 0.68, grip.x + 0.16), Math.max(box.min.y + H * 0.35, grip.y), 0);
     const magwell = magBox ? new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.min.y + (magBox.max.y - magBox.min.y) * 0.2, 0) : grip.clone().add(new THREE.Vector3(L * 0.1, -H * 0.1, 0));
@@ -710,12 +713,14 @@ export class WeaponAssembler {
     // delante del cargador
     // Armas largas: la palma de apoyo, en la cara inferior real del guardamanos o del cuerpo a esa altura (leída de la
     // forma), no a media altura (se veía la mano en el costado o por encima)
-    if (!handgun) for (const a of [support, anchors.front]) if (a) { const b = bottomAt(parts, a.x); if (b !== null && a.y > b + 0.006 && a.y - b < 0.05) a.y = b + 0.006; }
     // (solo en subfusiles: en fusiles de una pieza el cargador cuenta como cuerpo y el guardamanos, más fino, quedaba fuera:
     // la mano de apoyo se quedaba junto a la empuñadura, como con una pistola)
     const smg = spec.type === "smg", end = smg ? thickEnd(parts, box, grip.x) : null;
-    const reach = Math.min(smg ? 0.17 : 0.26, (box.max.x - grip.x) * 0.55, end !== null ? Math.max(0.06, end - 0.02 - grip.x) : Infinity);
+    const reach = Math.min(smg ? 0.17 : 0.42, (box.max.x - grip.x) * (smg ? 0.55 : 0.45), end !== null ? Math.max(0.06, end - 0.02 - grip.x) : Infinity);
     for (const a of [support, anchors.front]) if (a) { if (a.x > grip.x + reach) a.x = grip.x + reach; if (smg && !fb && a.x < grip.x + reach * 0.8) a.x = grip.x + reach * 0.8; if (a.y > grip.y + 0.06) a.y = grip.y + 0.06; }
+    // (después de acercarla: la palma de apoyo, pegada a la cara inferior real del arma en su columna, hacia arriba o
+    // hacia abajo; antes se calculaba donde estaba antes de acercarla y quedaba flotando bajo el guardamanos)
+    if (!handgun) for (const a of [support, anchors.front]) if (a) { const b = bottomAt(parts, a.x); if (b !== null && Math.abs(a.y - b) < 0.09) a.y = b + 0.004; }
     return { grip, support, magwell, charge, anchors };
   }
 }

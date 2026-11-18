@@ -7,6 +7,7 @@ import type { WeaponAssembler, AssembledWeapon, AssembledPart } from "../weapons
 import type { WeaponType } from "../weapons/types";
 import { PELLETS } from "../weapons/generator";
 import { isLight, lightKind } from "../weapons/lights";
+const FIT_ENABLED = false;
 import { EffectRunner, type FxAction } from "../weapons/effects";
 import { accessory, isIron } from "../weapons/accessories";
 import type { Item } from "./inventory";
@@ -583,7 +584,8 @@ export class Gun {
     this.recoilYaw += (0 - this.recoilYaw) * Math.min(1, dt * 8);
 
     // ---------- Animación (capa procedural: src/game/anim.ts) ----------
-    if (this.model && (!this.fit || Math.abs(this.fitAspect - this.camera.aspect) > 0.01)) this.computeFit();
+    // (encuadre por arma desactivado: empeoraba la mayoría; la pose de cadera es la de cada clase, como en la 0.16.0)
+    if (FIT_ENABLED && this.model && (!this.fit || Math.abs(this.fitAspect - this.camera.aspect) > 0.01)) this.computeFit();
     const pose = this.anim.update({
       dt, time: performance.now() / 1000, ads: this.aimT, moving: c.moving, sprinting: c.sprinting, grounded: c.grounded, vy: c.vy,
       lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, sightY: this.sightY, sightX: this.sight === "irons" ? this.model?.sightX : undefined, gripX: this.model?.handles.grip.x, gripY: this.model?.handles.grip.y, fit: this.fit ?? undefined, iron: this.sight === "iron",
@@ -631,7 +633,7 @@ export class Gun {
     this.updateDevice(dt);
     // Ajuste fino del encuadre sobre la pose real (la estimación de computeFit no ve la inclinación de la pose): durante
     // el primer segundo y medio en cadera y quieto, se mide en pantalla la empuñadura y la mira y se corrige el desfase
-    if (this.fit && this.model && this.fitTune < 1.5 && this.aimT < 0.02 && this.reloadT <= 0 && this.sprintT < 0.05 && this.equipT <= 0 && this.inspectT <= 0) {
+    if (FIT_ENABLED && this.fit && this.model && this.fitTune < 1.5 && this.aimT < 0.02 && this.reloadT <= 0 && this.sprintT < 0.05 && this.equipT <= 0 && this.inspectT <= 0) {
       this.fitTune += dt;
       const m = this.model; m.group.updateMatrixWorld(true);
       const pr = (x: number, y: number) => new THREE.Vector3(x, y, 0).applyMatrix4(m.group.matrixWorld).project(this.camera);
@@ -905,7 +907,7 @@ export class Gun {
     if (!hold && !base) base = h.support.clone();
     // La mano de apoyo no se estira más allá de un brazo cómodo (en armas largas se iba a la punta del guardamanos)
     // (y nunca más allá del 55 % del tramo empuñadura→boca: en armas cortas como la MP5K agarraba el cañón)
-    const sReach = this.spec?.type === "smg" ? Math.min(0.15, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.32)) : Math.min(0.24, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.34));
+    const sReach = this.spec?.type === "smg" ? Math.min(0.15, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.32)) : Math.min(0.3, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5));
     if (base && base.x - h.grip.x > sReach) base.x = h.grip.x + sReach;
     const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
     let left: THREE.Vector3 | null = base;
@@ -1229,7 +1231,7 @@ const GRIPS: Record<HandKind | "right", HandGrip> = {
   // Empuñadura: dorso a la derecha, dedos rodeando el frente; la palma sigue la inclinación de la empuñadura
   right: { q: rx(-0.3).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.019, 0.012, 0.012), curl: C(1.05, 0.7) },
   // Bajo el guardamanos: palma arriba, dedos hacia la derecha envolviéndolo
-  under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.012, -0.026, 0.004), curl: C(1.0, 0.65) },
+  under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.012, 0.018, 0.004), curl: C(1.25, 0.7) },
   // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
   wrap: { q: rx(-0.3).multiply(handBasis(V(0.32, -0.15, -1), V(-1, 0.12, 0))), off: V(-0.024, -0.016, 0.014), curl: C(1.3, 0.55) },
   // Empuñadura vertical o cargador: mano cerrada alrededor, dorso a la izquierda
