@@ -633,7 +633,6 @@ export class WeaponAssembler {
 
   /** Estima dónde agarran las manos: empuñadura (junta o detrás del cargador), guardamanos, pozo y palanca. */
   private handles(spec: WeaponSpec, parts: AssembledPart[], box: THREE.Box3) {
-    const center = box.getCenter(new THREE.Vector3());
     const L = box.max.x - box.min.x, H = box.max.y - box.min.y;
     const part = (role: PartRole) => parts.find((p) => p.role === role);
     const boxOf = (o: THREE.Object3D) => new THREE.Box3().setFromObject(o);
@@ -649,7 +648,10 @@ export class WeaponAssembler {
     const fb = fp ? boxOf(fp.object) : null;
     const support = handgun ? grip.clone().add(new THREE.Vector3(0.01, -0.01, 0))
       : fb ? new THREE.Vector3(fb.min.x + (fb.max.x - fb.min.x) * 0.35, fb.min.y + (fb.max.y - fb.min.y) * 0.15, 0)
-      : new THREE.Vector3(box.min.x + L * 0.68, center.y - H * 0.05, 0);
+      // Sin guardamanos aparte (armas de una pieza): justo delante del cargador, bajo el cajón; nunca a media altura del
+      // largo total (con la culata incluida caía sobre el cañón)
+      : magBox && magBox.max.x > grip.x ? new THREE.Vector3(Math.max(magBox.max.x + 0.035, grip.x + 0.1), Math.max(grip.y, magBox.max.y - 0.005), 0)
+      : new THREE.Vector3(Math.min(box.min.x + L * 0.68, grip.x + 0.16), Math.max(box.min.y + H * 0.35, grip.y), 0);
     const magwell = magBox ? new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.min.y + (magBox.max.y - magBox.min.y) * 0.2, 0) : grip.clone().add(new THREE.Vector3(L * 0.1, -H * 0.1, 0));
     const charge = new THREE.Vector3(handgun ? box.min.x + L * 0.25 : box.min.x + L * 0.5, box.max.y - H * 0.15, 0);
     // Anclajes de la mano de apoyo por soporte (perfil de agarre): cada uno sobre su pieza
@@ -670,8 +672,8 @@ export class WeaponAssembler {
     };
     // La mano de apoyo nunca agarra la punta del cañón: como mucho a ~55 % del tramo empuñadura→boca y a un antebrazo
     // de distancia (armas cortas tipo MP5K: justo delante del cargador)
-    const reach = Math.min(spec.type === "smg" ? 0.2 : 0.3, (box.max.x - grip.x) * 0.55);
-    for (const a of [support, anchors.front]) if (a && a.x > grip.x + reach) a.x = grip.x + reach;
+    const smg = spec.type === "smg", reach = Math.min(smg ? 0.14 : 0.24, (box.max.x - grip.x) * (smg ? 0.3 : 0.36));
+    for (const a of [support, anchors.front]) if (a) { if (a.x > grip.x + reach) a.x = grip.x + reach; if (a.y > grip.y + 0.06) a.y = grip.y + 0.06; }
     return { grip, support, magwell, charge, anchors };
   }
 }

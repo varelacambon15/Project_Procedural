@@ -813,7 +813,7 @@ export class Gun {
     if (!hold && !base) base = h.support.clone();
     // La mano de apoyo no se estira más allá de un brazo cómodo (en armas largas se iba a la punta del guardamanos)
     // (y nunca más allá del 55 % del tramo empuñadura→boca: en armas cortas como la MP5K agarraba el cañón)
-    const sReach = Math.min(this.spec?.type === "smg" ? 0.22 : 0.3, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.42));
+    const sReach = this.spec?.type === "smg" ? Math.min(0.15, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.32)) : Math.min(0.24, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.34));
     if (base && base.x - h.grip.x > sReach) base.x = h.grip.x + sReach;
     const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
     let left: THREE.Vector3 | null = base;
@@ -1148,6 +1148,8 @@ const GRIPS: Record<HandKind | "right", HandGrip> = {
 function supportKind(s: string | undefined, type: string | undefined): HandKind {
   if (s === "grip") return "wrap";
   if (s === "vgrip" || s === "mag") return "vgrip";
+  // Subfusiles: guardamanos corto pegado al pozo del cargador; la mano lo envuelve de lado (no palma arriba en el aire)
+  if (s === "front" && type === "smg") return "vgrip";
   if (s === "front" || s === "pump" || s === "frame") return "under";
   return type === "pistol" || type === "revolver" ? "wrap" : "under";
 }
