@@ -98,6 +98,9 @@ export class Gun {
   private shotCount = 0;
   private burstLeft = 0; private burstTimer = 0;
   private cycleT = 0; private cycleDur = 0.45;
+  /** Escopeta basculante: piezas que giran con los cañones y punto de la bisagra (coordenadas del arma). */
+  private breakParts: { p: AssembledPart; rz: number }[] = []; private hinge = new THREE.Vector3(); private breakEjected = false;
+  /** Revólver de acción simple: amartillar tras cada disparo (gesto del pulgar). */ private cockT = 0;
   /** Acción real del modelo del arma (campo accion de los packs), para el sonido del ciclo. Lo fija main.ts. */
   actionOf: ((spec: NonNullable<Gun["spec"]>) => string | undefined) | null = null;
   /** Sonido del último disparo (se corta con un fundido si llega otro en cadencia alta) y pasos de recarga sonados. */
@@ -235,6 +238,17 @@ export class Gun {
     this.mag = m.parts.find((p) => p.role === "magazine") ?? null;
     this.moving = {};
     for (const role of ["slide", "pump", "charging"] as MovingPart[]) { const part = m.parts.find((p) => p.role === role); if (part) this.moving[role] = part; }
+    // Escopeta de dos cañones: los cañones (y su guardamanos, banda y boca) giran sobre la bisagra del cajón
+    this.breakParts = [];
+    if (item.spec.archetype === "double") {
+      const rp = m.parts.find((p) => p.role === "receiver" || p.role === "body");
+      const bp = m.parts.filter((p) => ["barrel", "front", "top", "muzzle"].includes(p.role));
+      if (rp && bp.length) {
+        const rb = new THREE.Box3().setFromObject(rp.object), inv = m.group.matrixWorld.clone().invert(); rb.applyMatrix4(inv);
+        this.hinge.set(rb.max.x - 0.005, rb.min.y + (rb.max.y - rb.min.y) * 0.25, 0);
+        this.breakParts = bp.map((p) => ({ p, rz: p.object.rotation.z }));
+      }
+    }
     // Shaders del arma compilados en segundo plano mientras se saca (sin tirón al aparecer)
     if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item || seq !== this.equipSeq) return; }
     this.model = m; this.fitCurl = null;
@@ -346,10 +360,23 @@ export class Gun {
   startReload() {
     const s = this.spec; if (!s || !this.item || this.reloadT > 0 || this.item.ammo >= s.stats.cargador || this.equipT > 0) return;
     let time = (RELOAD[s.type] ?? 2) * (1.35 - s.stats.manejo / 200);
+    const missing = Math.max(1, s.stats.cargador - this.item.ammo);
     // Escopetas: con cargador (cuelga bajo el cajón), cambio de cargador; con tubo, cartucho a cartucho los que falten
     // (antes siempre 4) y solo se bombea si estaba vacía
     this.anim.reloadOverride = null;
-    if (s.type === "shotgun" && this.model) {
+    if (s.type === "shotgun" && this.model && s.archetype === "double") {
+      // Basculante: abrir (los cañones caen sobre la bisagra), expulsar las vainas, meter uno o dos cartuchos y cerrar
+      const n = Math.min(2, missing), ph: [string, number][] = [["tilt", 0.5], ["open", 0.55], ["eject", 0.45], ...Array.from({ length: n }, () => ["load", 1] as [string, number]), ["close", 0.5], ["settle", 0.45]];
+      const tot = ph.reduce((a, x) => a + x[1], 0);
+      this.anim.reloadOverride = { style: "break", phases: ph.map(([id, w]) => [id, w / tot] as [string, number]), tilt: [-0.12, 0.18, -0.3], drop: [0.02, 0.02, 0] };
+      time = (0.95 + 0.4 * n) * (1.35 - s.stats.manejo / 200); this.breakEjected = false;
+    } else if (s.type === "revolver" && this.actionOf?.(s) === "revolver_simple") {
+      // Acción simple: se abre la portilla y se carga bala a bala, girando el tambor una recámara cada vez
+      const ph: [string, number][] = [["tilt", 0.5], ["gate", 0.35], ...Array.from({ length: missing }, () => ["round", 1] as [string, number]), ["close", 0.35], ["settle", 0.45]];
+      const tot = ph.reduce((a, x) => a + x[1], 0);
+      this.anim.reloadOverride = { style: "gate", phases: ph.map(([id, w]) => [id, w / tot] as [string, number]), tilt: [-0.08, 0.35, 0.35], drop: [0.03, 0.04, 0] };
+      time = (0.75 + 0.38 * missing) * (1.35 - s.stats.manejo / 200);
+    } else if (s.type === "shotgun" && this.model) {
       if (this.boxMagShotgun()) {
         this.anim.reloadOverride = { style: "mag", phases: [["tilt", 0.14], ["grab", 0.12], ["out", 0.14], ["pouch", 0.16], ["in", 0.2], ["rack", 0.14], ["settle", 0.1]], mag: [-0.01, -0.2, 0], rackPart: "pump" };
       } else {
@@ -393,7 +420,7 @@ export class Gun {
 
   update(dt: number, c: Control) {
     const s = this.spec, it = this.item;
-    this.cooldown -= dt; this.equipT = Math.max(0, this.equipT - dt); this.cycleT = Math.max(0, this.cycleT - dt);
+    this.cooldown -= dt; this.equipT = Math.max(0, this.equipT - dt); this.cycleT = Math.max(0, this.cycleT - dt); this.cockT = Math.max(0, this.cockT - dt);
     if (this.holsterT > 0) { this.holsterT -= dt; if (this.holsterT <= 0 && this.pending) { const pnd = this.pending; this.pending = null; this.holsterT = 0; void this.doEquip(pnd.item, pnd.rebuild); } }
     this.fx?.tick(dt, { aiming: this.aimT > 0.6, firing: c.fire, sprinting: c.sprinting });
     this.sprintT += ((c.sprinting ? 1 : 0) - this.sprintT) * Math.min(1, dt * 8);
@@ -451,7 +478,7 @@ export class Gun {
       draw: this.equipT > 0 ? this.equipT / this.equipDur : 0,
       holster: this.pending ? 1 - Math.max(0, this.holsterT) / Math.max(0.01, this.anim.p.holster) : 0,
       inspect: this.inspectT > 0 ? 1 - this.inspectT / 2.6 : null,
-      cycle: this.cycleT > 0 ? 1 - this.cycleT / this.cycleDur : null, tactical: this.tacReload, cycleKind: this.spec?.fireMode === "bolt" ? "bolt" : this.spec?.fireMode === "pump" ? "pump" : undefined, empty: !!it && it.ammo <= 0,
+      cycle: this.cycleT > 0 ? 1 - this.cycleT / this.cycleDur : null, tactical: this.tacReload, cycleKind: this.spec?.fireMode === "bolt" ? "bolt" : this.spec?.fireMode === "pump" ? "pump" : undefined, cock: this.cockT > 0 ? 1 - this.cockT / 0.42 : null, empty: !!it && it.ammo <= 0,
       ...this.poseOverride,
     });
     this.reloadPhase = pose.phase;
@@ -461,6 +488,23 @@ export class Gun {
       const ph = pose.phase, cyl = (this.anim.reloadOverride?.style ?? this.anim.p.reload.style) === "cylinder" && ph ? (ph.id === "open" ? ease(ph.t) : ph.id === "eject" || ph.id === "load" ? 1 : ph.id === "close" ? 1 - ease(ph.t) : 0) : 0;
       this.mag.object.position.add(new THREE.Vector3(0, -0.006 * cyl, -0.032 * cyl));
       this.mag.object.rotation.x = -0.45 * cyl;
+    }
+    // Basculante: los cañones giran sobre la bisagra; al abrir del todo salen las dos vainas
+    if (this.breakParts.length) {
+      const ph = pose.phase, st = this.anim.reloadOverride?.style;
+      const ang = st === "break" && ph ? (ph.id === "open" ? ease(ph.t) : ph.id === "eject" || ph.id === "load" ? 1 : ph.id === "close" ? 1 - ease(Math.min(1, ph.t * 1.6)) : 0) : 0;
+      const a = -0.55 * ang, c = Math.cos(a), sn = Math.sin(a);
+      for (const { p, rz } of this.breakParts) {
+        const d = p.base.clone().sub(this.hinge);
+        p.object.position.set(this.hinge.x + d.x * c - d.y * sn, this.hinge.y + d.x * sn + d.y * c, p.base.z);
+        p.object.rotation.z = rz + a;
+      }
+      if (st === "break" && ph?.id === "eject" && !this.breakEjected) { this.breakEjected = true; this.ejectShells(2); }
+    }
+    // Acción simple: el tambor gira una recámara (60°) por cada bala que entra
+    if (this.mag && this.anim.reloadOverride?.style === "gate" && pose.phase) {
+      const ph = pose.phase, k = ph.id === "round" ? ph.index - 2 + ease(Math.min(1, ph.t / 0.7)) : 0;
+      this.mag.object.rotation.x = (k * Math.PI) / 3;
     }
     // Piezas móviles: la pieza retrocede a lo largo del arma (+X = boca)
     for (const [role, part] of Object.entries(this.moving) as [MovingPart, AssembledPart][]) part.object.position.copy(part.base).add(new THREE.Vector3(-pose.parts[role], 0, 0));
@@ -666,9 +710,20 @@ export class Gun {
       shell.visible = true;
     }
   }
+  /** Basculante abierta: las vainas saltan hacia atrás desde la recámara. */
+  private ejectShells(n: number) {
+    const m = this.model; if (!m) return;
+    const camQ = this.camera.getWorldQuaternion(new THREE.Quaternion());
+    for (let i = 0; i < n; i++) {
+      const mesh = new THREE.Mesh(casingGeo.shell, shellMat); mesh.position.copy(m.group.localToWorld(this.hinge.clone().add(new THREE.Vector3(0.01, 0.015, (i - 0.5) * 0.02))));
+      this.scene.add(mesh);
+      this.casings.push({ mesh, vel: new THREE.Vector3(0.3 + (i - 0.5) * 0.4, 2.2 + Math.random() * 0.4, 1.4).applyQuaternion(camQ), spin: new THREE.Vector3(Math.random() * 12, Math.random() * 12, Math.random() * 12), t: 2.5 });
+    }
+    const l = soundManifest?.efectos.casquillo; if (l?.length) playSample(sample(l[0]), 0.3, 0.8, audio().currentTime + 0.4);
+  }
   /** Casquillo expulsado por la ventana del cajón, con física simple. */
   private ejectCasing() {
-    const s = this.spec!; const m = this.model; if (!m || s.type === "revolver") return;
+    const s = this.spec!; const m = this.model; if (!m || s.type === "revolver" || s.archetype === "double") return; // (la basculante expulsa al abrirla)
     // Casquillo al caer al suelo (efectos del pack)
     { const l = soundManifest?.efectos.casquillo; if (l?.length) playSample(sample(l[Math.floor(Math.random() * l.length)]), 0.25, 0.95 + Math.random() * 0.1, audio().currentTime + 0.35 + Math.random() * 0.15); }
     const big = s.type === "sniper" || s.type === "shotgun";
@@ -735,6 +790,23 @@ export class Gun {
       else if (ph.id === "rack") left = sup.clone().add(pumpOff);
       else if (ph.id === "settle") left = h.magwell.clone().lerp(sup, ease(ph.t));
       else left = sup.clone().lerp(h.magwell, ease(ph.t));
+    } else if (ph && style === "break") {
+      // Basculante: la mano baja los cañones (empuja el guardamanos), va a la canana y mete los cartuchos en la
+      // recámara, y sube los cañones para cerrar
+      const ang = ph.id === "open" ? ease(ph.t) : ph.id === "eject" || ph.id === "load" ? 1 : ph.id === "close" ? 1 - ease(Math.min(1, ph.t * 1.6)) : 0;
+      const a = -0.55 * ang, d = sup.clone().sub(this.hinge), onFore = new THREE.Vector3(this.hinge.x + d.x * Math.cos(a) - d.y * Math.sin(a), this.hinge.y + d.x * Math.sin(a) + d.y * Math.cos(a), sup.z);
+      const breech = this.hinge.clone().add(new THREE.Vector3(0.02, 0.03, 0));
+      if (ph.id === "load") left = ph.t < 0.5 ? onFore.clone().lerp(pouch, ease(ph.t * 2)) : pouch.clone().lerp(breech, ease((ph.t - 0.5) * 2));
+      else if (ph.id === "close") left = breech.clone().lerp(onFore, ease(Math.min(1, ph.t * 2)));
+      else if (ph.id === "settle") left = onFore.clone().lerp(sup, ease(ph.t));
+      else left = onFore;
+    } else if (ph && style === "gate") {
+      // Portilla: la mano de apoyo va y viene de la cartuchera a la portilla (lado derecho del tambor) con cada bala
+      const gate = h.magwell.clone().add(new THREE.Vector3(-0.005, 0.012, 0.03));
+      if (ph.id === "round") left = ph.t < 0.5 ? gate.clone().lerp(pouch, ease(ph.t * 2)) : pouch.clone().lerp(gate, ease((ph.t - 0.5) * 2));
+      else if (ph.id === "gate" || ph.id === "tilt") left = sup.clone().lerp(gate, ease(ph.t));
+      else if (ph.id === "close") left = gate;
+      else if (ph.id === "settle") left = gate.clone().lerp(sup, ease(ph.t));
     } else if (ph && style === "cylinder") {
       // Revólver: la mano bascula el tambor (sale a la izquierda), lo vacía, mete un cargador rápido y lo cierra
       const cyl = this.mag ? this.mag.object.position.clone().sub(this.mag.base) : new THREE.Vector3();
@@ -835,6 +907,7 @@ export class Gun {
     } else if (soundManifest && cycleKind(this.actionOf?.(s), s.fireMode, s.type) === "martillo") {
       // Revólver de acción simple: se amartilla tras cada disparo
       const f = cycleSounds(soundManifest, s.type, "martillo")[0]; if (f) playSample(sample(f), 0.5, 1, audio().currentTime + 0.22);
+      this.cockT = 0.42; // (gesto de amartillar: el pulgar tira del martillo y el arma se inclina un poco)
     }
     else if (!echo) this.ejectCasing();
     const quiet = !!accessory(s.muzzle)?.quiet;

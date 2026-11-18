@@ -19,7 +19,7 @@ export interface AnimParams {
   holster: number;
   /** Colocar el arma en cadera por la empuñadura (altura de la mano igual en todas), no por el centro del modelo. */ gripAnchor?: boolean;
   /** Giro en reposo a la cadera (cabeceo, guiñada, alabeo): las armas cortas, con la boca algo abajo y hacia dentro; al apuntar se anula. */ rest?: V3;
-  reload: { style: "mag" | "shells" | "cylinder"; phases: [string, number][]; tilt: V3; drop: V3; mag: V3; rackPart: MovingPart | ""; rackTravel: number };
+  reload: { style: "mag" | "shells" | "cylinder" | "break" | "gate"; phases: [string, number][]; tilt: V3; drop: V3; mag: V3; rackPart: MovingPart | ""; rackTravel: number };
   cycle: { part: MovingPart | ""; travel: number; time: number; lockEmpty: boolean };
 }
 
@@ -84,6 +84,7 @@ export interface AnimInput {
   /** Progreso del ciclo manual (corredera/bombeo/cerrojo) 0..1 o null; cargador vacío (corredera abierta). */
   cycle: number | null; empty: boolean;
   /** Acción manual en curso (cerrojo o bombeo): elige la curva del gesto. */ cycleKind?: "bolt" | "pump";
+  /** Amartillar (revólver de acción simple), 0..1, o null. */ cock?: number | null;
   /** Recarga táctica (quedaban balas): sin montar la palanca o la corredera. */ tactical?: boolean;
 }
 export interface Pose {
@@ -187,6 +188,8 @@ export class ViewAnimator {
       const q = pumpCurve(i.cycle);
       rot[0] += 0.07 * q.pull - 0.03 * q.slam; rot[2] += 0.06 * q.pull; pos[2] += 0.028 * q.pull - 0.012 * q.slam; pos[1] -= 0.01 * q.pull;
     } else if (i.cycle !== null) { const kc = tri(i.cycle, 0.1, 0.9); rot[2] += 0.25 * kc; rot[0] += 0.12 * kc; pos[1] -= 0.02 * kc; }
+    // Amartillar: el arma se ladea un poco hacia el pulgar y vuelve
+    if (i.cock != null) { const kc = tri(i.cock, 0.15, 0.85); rot[2] -= 0.14 * kc; rot[0] += 0.05 * kc; pos[1] += 0.006 * kc; }
 
     // Recarga por fases (datos por clase)
     let phase: Phase | null = null;
@@ -207,6 +210,14 @@ export class ViewAnimator {
       } else if (r.style === "shells" && id === "shell") {
         // Cada cartucho: empujón hacia arriba al meterlo
         const kk = tri(t, 0.55, 1); pos[1] += 0.01 * kk; rot[0] -= 0.03 * kk;
+      } else if (r.style === "break") {
+        // Basculante: al abrir, la boca baja de golpe; al cerrar, un tirón hacia arriba
+        if (id === "open") { const kk = tri(t, 0.3, 1); rot[0] -= 0.12 * kk; }
+        if (id === "load") { const kk = tri(t, 0.55, 1); pos[2] -= 0.01 * kk; }
+        if (id === "close") { const kk = tri(t, 0, 0.6); rot[0] += 0.2 * kk; pos[1] += 0.015 * kk; }
+      } else if (r.style === "gate") {
+        // Portilla: cada bala, un empujón corto con el pulgar
+        if (id === "round") { const kk = tri(t, 0.5, 0.85); pos[2] -= 0.006 * kk; rot[2] += 0.04 * kk; }
       } else if (r.style === "cylinder") {
         // Tambor fuera: el arma se gira de lado; expulsar = boca arriba con una sacudida
         if (id === "eject") { const kk = tri(t, 0, 1); rot[0] += 0.5 * kk; pos[1] += 0.03 * kk; }
