@@ -813,7 +813,7 @@ export class Gun {
     if (!hold && !base) base = h.support.clone();
     // La mano de apoyo no se estira más allá de un brazo cómodo (en armas largas se iba a la punta del guardamanos)
     // (y nunca más allá del 55 % del tramo empuñadura→boca: en armas cortas como la MP5K agarraba el cañón)
-    const sReach = Math.min(0.34, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.55));
+    const sReach = Math.min(this.spec?.type === "smg" ? 0.22 : 0.3, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.42));
     if (base && base.x - h.grip.x > sReach) base.x = h.grip.x + sReach;
     const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
     let left: THREE.Vector3 | null = base;
@@ -909,8 +909,8 @@ export class Gun {
       if (pts.length) this.fitCurl = this.arms.rightHand.fitCurls((q) => { let d = Infinity; for (const x of pts) { const e = x.distanceToSquared(q); if (e < d) d = e; } return Math.sqrt(d); });
     }
     const fc = this.fitCurl;
-    const trig = 0.52 + 0.3 * this.trigT - 0.1 * sp;
-    const right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? fc[0] - 0.12 + 0.15 * this.trigT - 0.1 * sp : trig, (fc?.[1] ?? 1.02) - 0.1 * sp, (fc?.[2] ?? 1.06) - 0.1 * sp, (fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
+    const trig = 0.85 + 0.25 * this.trigT - 0.1 * sp;
+    const right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? Math.max(0.85, fc[0] - 0.12) + 0.15 * this.trigT - 0.1 * sp : trig, Math.max(1.6, fc?.[1] ?? 1.02) - 0.1 * sp, Math.max(1.35, fc?.[2] ?? 1.06) - 0.1 * sp, Math.max(1.4, fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
     // Hombros: siguen la mitad de los movimientos rápidos del arma (retroceso, balanceo) respecto a su media lenta
@@ -1135,11 +1135,11 @@ const C = (f: number, t: number): Curl => ({ fingers: [f, f + 0.04, f + 0.06, f 
 /** Orientación (dedos, dorso), desplazamiento de la palma respecto al anclaje y cierre de cada agarre. */
 const GRIPS: Record<HandKind | "right", HandGrip> = {
   // Empuñadura: dorso a la derecha, dedos rodeando el frente; la palma sigue la inclinación de la empuñadura
-  right: { q: rx(-0.3).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.014, 0.012, 0.012), curl: C(1.05, 0.7) },
+  right: { q: rx(-0.3).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.019, 0.012, 0.012), curl: C(1.05, 0.7) },
   // Bajo el guardamanos: palma arriba, dedos hacia la derecha envolviéndolo
   under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.012, -0.026, 0.004), curl: C(1.0, 0.65) },
   // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
-  wrap: { q: rx(-0.3).multiply(handBasis(V(0.32, -0.15, -1), V(-1, 0.12, 0))), off: V(-0.024, -0.016, 0.014), curl: C(1.08, 0.55) },
+  wrap: { q: rx(-0.2).multiply(handBasis(V(-0.8, -0.35, -0.5), V(0.85, 0.1, -0.35))), off: V(-0.02, -0.02, 0.012), curl: C(1.2, 0.6) },
   // Empuñadura vertical o cargador: mano cerrada alrededor, dorso a la izquierda
   vgrip: { q: rx(-0.1).multiply(handBasis(V(0.35, -0.05, -1), V(-1, 0.2, 0))), off: V(-0.022, 0, 0.026), curl: C(1.1, 0.65) },
   // Coger el cargador o la palanca: mano semiabierta que llega desde la izquierda
