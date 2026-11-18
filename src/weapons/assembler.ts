@@ -645,7 +645,7 @@ export class WeaponAssembler {
     if (!gpart && spec.type === "revolver" && whole) {
       // Revólver: el armazón (o el modelo entero) es todo el arma (cañón, tambor y culata); la empuñadura es su parte baja trasera
       const b = boxOf(whole.object), w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
-      grip = new THREE.Vector3(b.min.x + w * 0.16, b.min.y + hh * 0.42, 0);
+      grip = new THREE.Vector3(b.min.x + w * 0.13, b.min.y + hh * 0.3, 0);
     } else if (gp) { const b = boxOf(gp.object); grip = new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - (b.max.y - b.min.y) * 0.35, 0); }
     else if (handgun && magBox) grip = new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.3, 0);
     else if (magBox) grip = new THREE.Vector3(magBox.min.x - L * 0.09, box.min.y + H * 0.32, 0);
