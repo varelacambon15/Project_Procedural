@@ -232,7 +232,7 @@ export class Gun {
     };
     // Más cerca de la cámara que antes (en las referencias el arma es grande): 6–9 cm según el largo
     // (subfusiles: algo más lejos; la mano de la empuñadura salía enorme delante de la cámara)
-    const o = [0, 0, (t0 === "smg" ? 0.0 : THREE.MathUtils.clamp(0.06 + (m.length - 0.4) * 0.05, 0.05, 0.09)) + (t0 === "revolver" ? 0.025 : 0)];
+    const o = [0, 0, (t0 === "smg" ? 0.0 : t0 === "bullpup" ? -0.07 : THREE.MathUtils.clamp(0.06 + (m.length - 0.4) * 0.05, 0.05, 0.09)) + (t0 === "revolver" ? 0.025 : 0)];
     // La mira cae en el cuadrante derecho (x ≈ 62–68 %, y ≈ 53–56 %) y la mano de la empuñadura no sale por abajo
     const grip = new THREE.Vector3(m.handles.grip.x, m.handles.grip.y, 0).applyMatrix4(m.group.matrix);
     const tx = (t === "pistol" ? 0.22 : 0.3) + vx * 3, ty = (t === "pistol" ? -0.12 : -0.08) + vy * 3;
