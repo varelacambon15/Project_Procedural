@@ -76,7 +76,9 @@ export class Raid {
   private build(map: RaidMap) {
     const pal = PALETTES[map.palette];
     const floorTex = grid(pal.floor, "#00000030", [1, 1]);
-    const floorFor = (w: number, d: number) => { const t = floorTex.clone(); t.repeat.set(w / 4, d / 4); t.needsUpdate = true; return new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 }); };
+    // Rejilla luminosa del color de acento de la incursión (estética de simulación)
+    const gridTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 32; const g = c.getContext("2d")!; g.fillStyle = "#000"; g.fillRect(0, 0, 32, 32); g.fillStyle = "#fff"; g.fillRect(0, 0, 32, 1); g.fillRect(0, 0, 1, 32); g.fillRect(0, 0, 2, 2); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; return t; })();
+    const floorFor = (w: number, d: number) => { const t = floorTex.clone(), e = gridTex.clone(); t.repeat.set(w / 4, d / 4); e.repeat.set(w / 4, d / 4); t.needsUpdate = e.needsUpdate = true; return new THREE.MeshStandardMaterial({ map: t, roughness: 0.9, emissive: pal.accent, emissiveMap: e, emissiveIntensity: 0.35 }); };
     const wallMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(pal.wall), roughness: 0.9 });
     const ceilMat = new THREE.MeshStandardMaterial({ color: 0x3c4046, roughness: 1 });
     const coverMat = new THREE.MeshStandardMaterial({ color: 0x5d636a, metalness: 0.4, roughness: 0.6 });

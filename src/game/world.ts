@@ -58,6 +58,19 @@ export function buildRange(scene: THREE.Scene): World {
   const floor = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.85, metalness: 0.05 });
   const wallTex = pixelTexture(64, 64, (g) => { speckle(g, 64, 64, "#b9bdc2", 300, 0.06); g.fillStyle = "#8e9297"; g.fillRect(0, 0, 64, 1); g.fillRect(0, 0, 1, 64); g.fillStyle = "#c6cacf"; g.fillRect(1, 1, 62, 1); }, [24, 2]);
   const wall = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.9, metalness: 0.05 });
+  // Estética de simulación (Coded Arms): rejilla luminosa fina en el suelo con nodos en los cruces y pistas de
+  // circuito en las paredes. Solo brillo (emisivo): no añade luces. De noche se apaga (la ciudad tiene sus neones).
+  const floorGrid = pixelTexture(64, 64, (g) => {
+    g.fillStyle = "#000"; g.fillRect(0, 0, 64, 64); g.fillStyle = "#7fe8f0"; g.fillRect(0, 0, 64, 1); g.fillRect(0, 0, 1, 64);
+    g.fillStyle = "#c8fbff"; g.fillRect(0, 0, 3, 3); g.fillStyle = "#2a7a80"; g.fillRect(31, 0, 1, 64); g.fillRect(0, 31, 64, 1);
+  }, [W / 2, (BACK - FRONT) / 2]);
+  floor.emissive.set(0x3fd0d8); floor.emissiveMap = floorGrid; floor.emissiveIntensity = 0.32;
+  const wallCircuit = pixelTexture(64, 64, (g) => {
+    g.fillStyle = "#000"; g.fillRect(0, 0, 64, 64); g.fillStyle = "#5fd8e0";
+    g.fillRect(0, 44, 64, 1); g.fillRect(10, 44, 1, 10); g.fillRect(10, 54, 22, 1); g.fillRect(32, 54, 1, 10); g.fillRect(46, 30, 1, 14); g.fillRect(46, 30, 18, 1);
+    for (const [x, y] of [[10, 44], [32, 54], [46, 44], [46, 30]]) { g.fillStyle = "#c8fbff"; g.fillRect(x - 1, y - 1, 3, 3); g.fillStyle = "#5fd8e0"; }
+  }, [24, 2]);
+  wall.emissive.set(0x3fd0d8); wall.emissiveMap = wallCircuit; wall.emissiveIntensity = 0.28;
   const steel = new THREE.MeshStandardMaterial({ color: 0x5d636a, metalness: 0.45, roughness: 0.6 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x80868c, roughness: 0.95 });
   const safety = new THREE.MeshStandardMaterial({ color: 0xe07a2a, roughness: 0.7 });
@@ -353,6 +366,13 @@ export function buildRange(scene: THREE.Scene): World {
   const city = buildNightCity(scene, { W, FRONT, BACK, H });
   const wallDay = wall.map, floorDay = floor.map;
 
+  // ---------- Partículas de datos: cuadraditos que suben despacio por las salas (la simulación «respira») ----------
+  const N = 700, mp = new Float32Array(N * 3);
+  const zones: [number, number, number, number][] = [[-W / 2, W / 2, FRONT, BACK], [-30, 30, BACK + 1, BACK + 74], [W / 2 + 1, W / 2 + 61, -12, 48]];
+  for (let i = 0; i < N; i++) { const z = zones[i % 3]; mp[i * 3] = z[0] + Math.random() * (z[1] - z[0]); mp[i * 3 + 1] = Math.random() * 7; mp[i * 3 + 2] = z[2] + Math.random() * (z[3] - z[2]); }
+  const mg = new THREE.BufferGeometry(); mg.setAttribute("position", new THREE.BufferAttribute(mp, 3));
+  const motes = new THREE.Points(mg, new THREE.PointsMaterial({ color: 0x5fd8e0, size: 0.05, transparent: true, opacity: 0.7, depthWrite: false }));
+  motes.frustumCulled = false; scene.add(motes);
   // ---------- Día y noche ----------
   const hemi = scene.children.find((o) => o instanceof THREE.HemisphereLight) as THREE.HemisphereLight;
   const lampHome = lamps.map((l) => l.light.position.clone());
@@ -362,6 +382,8 @@ export function buildRange(scene: THREE.Scene): World {
     city.group.visible = on; for (const o of dayOnly) o.visible = !on;
     wall.map = on ? city.wallMap : wallDay; floor.map = on ? city.floorMap : floorDay;
     // Suelo mojado de noche: más liso (recoge los brillos del neón)
+    floor.emissiveIntensity = on ? 0 : 0.32; wall.emissiveIntensity = on ? 0 : 0.28;
+    motes.visible = !on;
     floor.roughness = on ? 0.55 : 0.8; floor.metalness = on ? 0.3 : 0.35; wall.needsUpdate = floor.needsUpdate = true;
     // Ambiente: luna fría y neblina violeta de noche; luz de día clara
     hemi.color.set(on ? 0x8a7ab8 : 0xe8eef4); hemi.groundColor.set(on ? 0x3a2a48 : 0x8a8478); hemi.intensity = on ? 1.5 : 2.2;
@@ -385,7 +407,7 @@ export function buildRange(scene: THREE.Scene): World {
   // fuera lo que cambia de visibilidad (noche/día, lámparas) y lo animado (la bandeja del terminal); la ciudad se
   // fusiona dentro de su propio grupo, que se enciende y apaga entero
   const camObj = scene.children.find((o) => (o as THREE.Camera).isCamera);
-  mergeStatic(scene, new Set<THREE.Object3D>([city.group, lidPivot, ...dayOnly, ...lamps.map((l) => l.mesh), ...(camObj ? [camObj] : [])]));
+  mergeStatic(scene, new Set<THREE.Object3D>([motes, city.group, lidPivot, ...dayOnly, ...lamps.map((l) => l.mesh), ...(camObj ? [camObj] : [])]));
   mergeStatic(city.group);
   setNight(true);
 
@@ -402,6 +424,7 @@ export function buildRange(scene: THREE.Scene): World {
       { id: "raid", position: new THREE.Vector3(W / 2 + 1 + 8, 0, 18), radius: 2.2, label: "Incursión", object: raidPc },
     ],
     update(dt: number, data: RangeData) {
+      { const p = motes.geometry.attributes.position as THREE.BufferAttribute; for (let i = 0; i < p.count; i++) { let y = p.getY(i) + dt * (0.15 + (i % 7) * 0.03); if (y > 7) y = 0; p.setY(i, y); } p.needsUpdate = true; }
       // Parpadeo: la mayoría estables; de vez en cuando una lámpara titila un instante
       for (const l of lamps) {
         l.phase += dt;
