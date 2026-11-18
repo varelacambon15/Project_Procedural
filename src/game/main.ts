@@ -872,7 +872,7 @@ async function boot() {
     toastTimer -= dt; if (toastTimer <= 0) $("toast").classList.remove("show");
     saveDotT -= dt; $("savedot").hidden = saveDotT <= 0; if (saveDotT > 0) $("savedot").textContent = t("save.autoDot");
 
-    pickups.update(dt);
+    pickups.update(state === "play" ? dt : 0); // (en los menús el botín del suelo tampoco caduca)
     if (state === "play") {
       // Las oleadas viven en su sala: salir por la puerta las detiene
       if (waves.active && (player.pos.z < world.wavesRoom.z0 || player.pos.z > world.wavesRoom.z1)) { waves.stop(); toast(t("ui.wavesLeft")); }
@@ -895,9 +895,10 @@ async function boot() {
     $("scope").classList.toggle("on", scopeOn);
     const rd = $("reddot"); rd.dataset.kind = gun.sight;
     rd.style.opacity = state === "play" && (gun.sight === "dot" || gun.sight === "holo") ? String(Math.max(0, (gun.aimT - 0.6) / 0.4)) : "0";
-    const stop = state === "play" && hitstop > 0; hitstop = Math.max(0, hitstop - dt);
-    for (const d of dummies) d.update(stop ? 0 : state === "play" ? dt * sfx.timeScale : dt, camera, innerWidth, innerHeight);
-    numbers.update(dt, camera, innerWidth, innerHeight);
+    // (pausa, inventario y demás menús paran el mundo: los enemigos no se mueven ni atacan)
+    const stop = (state === "play" && hitstop > 0) || state !== "play"; hitstop = Math.max(0, hitstop - dt);
+    for (const d of dummies) d.update(stop ? 0 : dt * sfx.timeScale, camera, innerWidth, innerHeight);
+    numbers.update(state === "play" ? dt : 0, camera, innerWidth, innerHeight);
     if (state === "workbench" || state === "pause" || state === "title") view.update(dt);
     if (state === "shop") shop.update(dt);
     hud();
