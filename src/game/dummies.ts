@@ -60,6 +60,18 @@ const mat = (color: number, emissive = 0.55) => new THREE.MeshStandardMaterial({
 // Naranja de muñeco de pruebas: se distingue bien sobre el gris claro de la sala (y de noche, con su rejilla)
 const skin = mat(0xd2702e, 0.18), skinDark = mat(0x3a3f45, 0.25), vest = mat(0x5c5e4a, 0.15);
 const standMat = new THREE.MeshStandardMaterial({ color: 0x23262a, roughness: 0.5, metalness: 0.7 });
+// Equipo de los soldados de la simulación (oleadas e incursiones)
+const armorMat = new THREE.MeshStandardMaterial({ color: 0x3a414b, roughness: 0.45, metalness: 0.55 });
+const pouchMat = new THREE.MeshStandardMaterial({ color: 0x2c3128, roughness: 0.85 });
+const bootMat = new THREE.MeshStandardMaterial({ color: 0x23272d, roughness: 0.6, metalness: 0.3 }), soleMat = new THREE.MeshStandardMaterial({ color: 0x111316, roughness: 0.9 });
+const emblemMat = new THREE.MeshStandardMaterial({ color: 0xe8ecef, roughness: 0.6, side: THREE.DoubleSide });
+/** Color del visor por tipo. */
+const VISOR: Record<string, number> = { commander: 0xffb040, medic: 0x4aff9a, glitch: 0x3fd0ff, caster: 0x8fd8ff, elite: 0xff2a6a, sniper: 0xff2a1a };
+/** Venas de luz (los «víricos» de la simulación): lanzadores, élites y fallos de código. */
+function veinMat(kind: { key: string }) {
+  const c = ({ caster: 0x5fd8ff, elite: 0xff3a8a, glitch: 0x3fd0ff, commander: 0xffb040 } as Record<string, number>)[kind.key];
+  return c ? new THREE.MeshStandardMaterial({ color: 0x0a0a0a, emissive: c, emissiveIntensity: 1.6 }) : null;
+}
 // Robots: chapa clara, metal oscuro y piezas negras (las luces de cada uno van aparte)
 const robotPlate = new THREE.MeshStandardMaterial({ color: 0xb4bcc6, roughness: 0.45, metalness: 0.55 }), robotMetal = new THREE.MeshStandardMaterial({ color: 0x4a525c, roughness: 0.4, metalness: 0.75 }), robotDark = new THREE.MeshStandardMaterial({ color: 0x1c2026, roughness: 0.5, metalness: 0.6 });
 /** Variante de aspecto de un enemigo de oleada. */
@@ -274,6 +286,12 @@ export class Dummy {
         const add = (geo: THREE.BufferGeometry, mat: THREE.Material, y: number, z = 0, zone: Zone | null = "limb") => { const m = new THREE.Mesh(geo, mat); m.position.set(0, y, z); m.castShadow = true; hip.add(m); if (zone) { m.userData = { dummy: this, zone }; this.hitboxes.push(m); } return m; };
         add(cap(0.09, 0.5), skin, -0.33); add(cap(0.075, 0.5), skin, -0.92);
         add(new THREE.BoxGeometry(0.13, 0.08, 0.24), skinDark, -1.23, 0.04);
+        // Soldado de la simulación (referencias de Coded Arms): rodillera, espinillera y bota gruesa con suela
+        add(new THREE.BoxGeometry(0.13, 0.12, 0.1), armorMat, -0.62, 0.07, null);
+        add(new THREE.BoxGeometry(0.11, 0.3, 0.06), armorMat, -0.9, 0.065, null);
+        add(new THREE.BoxGeometry(0.15, 0.12, 0.28), bootMat, -1.2, 0.05, null);
+        add(new THREE.BoxGeometry(0.16, 0.035, 0.3), soleMat, -1.26, 0.05, null);
+        const vein = veinMat(kind); if (vein) { add(new THREE.BoxGeometry(0.012, 0.42, 0.012), vein, -0.4, 0.088, null); add(new THREE.BoxGeometry(0.012, 0.36, 0.012), vein, -0.9, 0.1, null); }
       }
     }
     this.part(new THREE.BoxGeometry(0.36, 0.2, 0.2), skinDark, 0, 1.38, 0, "body");
@@ -293,6 +311,22 @@ export class Dummy {
       if (L.extras.includes("visor")) this.part(new THREE.BoxGeometry(0.2, 0.05, 0.06), new THREE.MeshStandardMaterial({ color: 0x1a1d22, roughness: 0.3, metalness: 0.5 }), 0, 2.16, 0.12, null);
       if (L.extras.includes("pads")) for (const x of [-0.3, 0.3]) this.part(new THREE.BoxGeometry(0.16, 0.08, 0.2), vest, x, 1.86, 0, "limb");
       if (L.bulk !== 1) this.body.scale.x *= L.bulk;
+      // Armadura: casco con visor luminoso, hombreras con emblema, chaleco con bolsas, cinturón y mochila de energía
+      const visor = new THREE.MeshStandardMaterial({ color: 0x220806, emissive: VISOR[kind.key] ?? 0xff3a1e, emissiveIntensity: 1.8 });
+      this.part(new THREE.SphereGeometry(0.155, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), armorMat, 0, 2.15, 0, "head").scale.set(1.04, 1, 1.1);
+      this.part(new THREE.BoxGeometry(0.24, 0.07, 0.06), visor, 0, 2.15, 0.125, null);
+      this.part(new THREE.BoxGeometry(0.2, 0.06, 0.08), armorMat, 0, 2.06, 0.1, null); // (protector de la mandíbula)
+      for (const x of [-0.3, 0.3]) {
+        this.part(new THREE.BoxGeometry(0.2, 0.09, 0.24), armorMat, x, 1.9, 0, "limb").rotation.z = -Math.sign(x) * 0.25;
+        this.part(new THREE.CircleGeometry(0.045, 12), emblemMat, x * 1.12, 1.9, 0.0, null).rotation.y = Math.sign(x) * Math.PI / 2;
+      }
+      this.part(new THREE.BoxGeometry(0.44, 0.36, 0.08), armorMat, 0, 1.68, 0.16, "body");
+      for (const x of [-0.12, 0, 0.12]) this.part(new THREE.BoxGeometry(0.1, 0.11, 0.07), pouchMat, x, 1.48, 0.2, null);
+      this.part(new THREE.BoxGeometry(0.42, 0.06, 0.3), pouchMat, 0, 1.33, 0, null);
+      this.part(new THREE.BoxGeometry(0.32, 0.36, 0.14), armorMat, 0, 1.72, -0.22, "body");
+      this.part(new THREE.BoxGeometry(0.2, 0.04, 0.02), visor, 0, 1.8, -0.295, null); // (luz de la mochila)
+      const vein = veinMat(kind);
+      if (vein) { for (const x of [-0.31, 0.31]) this.part(new THREE.BoxGeometry(0.012, 0.4, 0.012), vein, x, 1.55, 0.07, null); this.part(new THREE.BoxGeometry(0.014, 0.3, 0.012), vein, 0.06, 1.66, 0.205, null); }
     }
     // Soldados: arma en las manos, apuntando al frente (fusil corto o fusil largo con mira)
     if (kind.gun) {
