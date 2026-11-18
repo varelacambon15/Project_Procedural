@@ -1,0 +1,172 @@
+{
+ "nombre": "VSV",
+ "tipo_juego": "sniper",
+ "chasis": "convencional",
+ "accion": "semiautomatica",
+ "era_sugerida": "rústica",
+ "base_real": "Fusil silenciado integral (silueta rústica)",
+ "piezas_ausentes_nota": "sin empuñadura independiente",
+ "largo_m": 0.8875,
+ "alto_m": 0.2287,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 1344,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.1316,
+    0.0262,
+    -0.0372
+   ],
+   "bbox_local_max": [
+    0.1,
+    0.2278,
+    0.0372
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "cargador": {
+   "triangulos": 1932,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    0.0174,
+    0.14,
+    0.0002
+   ],
+   "bbox_local_min": [
+    -0.053,
+    -0.0922,
+    -0.0149
+   ],
+   "bbox_local_max": [
+    0.0418,
+    0.0,
+    0.015
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 366,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.1,
+    0.1939,
+    -0.0001
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0278,
+    -0.0163
+   ],
+   "bbox_local_max": [
+    0.3437,
+    0.0348,
+    0.0165
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "culata": {
+   "triangulos": 282,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.13,
+    0.118,
+    -0.0001
+   ],
+   "bbox_local_min": [
+    -0.3137,
+    -0.118,
+    -0.015
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0918,
+    0.015
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.4437,
+   0.1999,
+   0.0004
+  ],
+  "cara_guardamanos": [
+   0.1,
+   0.1939,
+   -0.0001
+  ],
+  "cara_culata": [
+   -0.13,
+   0.118,
+   -0.0001
+  ],
+  "pozo_cargador": [
+   0.0174,
+   0.14,
+   0.0002
+  ],
+  "raíl_superior": [
+   -0.0158,
+   0.2153,
+   0.0
+  ],
+  "linea_mira": [
+   -0.0158,
+   0.2153,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.2746,
+   0.1743,
+   0.0
+  ],
+  "raíl_frontal": [
+   0.26,
+   0.2284,
+   0.0
+  ]
+ },
+ "triangulos_total": 3924,
+ "piezas_ausentes": [
+  "empunadura",
+  "mira"
+ ],
+ "boca_diametro_m": 0.0121,
+ "mira_integrada": null,
+ "accesorios_de_serie": [],
+ "funcionamiento": "Fusil silenciado integral semiautomático. accion=semiautomatica. El silenciador forma parte del guardamanos_canon (no desmontable). Sin empuñadura independiente. Orientación corregida (estaba del revés) y nivelada.",
+ "accion_detalle": {
+  "ciclo": "un disparo por pulsación; la corredera/cerrojo retrocede y vuelve sola",
+  "anim": "pieza móvil (corredera o cubierta) retrocede ~0,02–0,03 m en -X y vuelve en ~0,06 s; expulsa casquillo hacia +Z"
+ }
+}

@@ -1,0 +1,144 @@
+{
+ "nombre": "DUPLET",
+ "tipo_juego": "sniper",
+ "chasis": "convencional",
+ "accion": "cerrojo",
+ "era_sugerida": "rústica",
+ "base_real": "Rifle de cerrojo rústico (silueta Metro)",
+ "largo_m": 0.95,
+ "alto_m": 0.1767,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 777,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.04,
+    0.1221,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.05,
+    -0.048
+   ],
+   "bbox_local_max": [
+    0.435,
+    0.0417,
+    0.048
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 1458,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.1574,
+    0.0393,
+    -0.048
+   ],
+   "bbox_local_max": [
+    0.3994,
+    0.1605,
+    0.048
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "culata": {
+   "triangulos": 351,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.0954,
+    0.1536,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.3796,
+    -0.1536,
+    -0.0185
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.023,
+    0.0184
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.475,
+   0.1122,
+   -0.0
+  ],
+  "cara_guardamanos": [
+   0.04,
+   0.1221,
+   0.0
+  ],
+  "cara_culata": [
+   -0.0954,
+   0.1536,
+   0.0
+  ],
+  "raíl_superior": [
+   -0.04,
+   0.1538,
+   0.0
+  ],
+  "linea_mira": [
+   -0.04,
+   0.1538,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.2118,
+   0.0775,
+   0.0
+  ],
+  "raíl_frontal": [
+   0.146,
+   0.155,
+   0.0
+  ]
+ },
+ "triangulos_total": 2586,
+ "piezas_ausentes": [
+  "empunadura",
+  "cargador",
+  "mira"
+ ],
+ "boca_diametro_m": 0.0152,
+ "mira_integrada": null,
+ "accesorios_de_serie": [],
+ "funcionamiento": "Rifle de cerrojo rústico. accion=cerrojo: tras cada disparo hay que ciclar el cerrojo a mano. Sin cargador (interno) ni empuñadura independiente.",
+ "accion_detalle": {
+  "ciclo": "un disparo; después hay que cargar el siguiente cartucho manualmente (levantar manija, tirar atrás, empujar, bajar)",
+  "anim": "manija del cerrojo en el lado derecho (+Z) tras la cámara: giro 90° sobre X, recorrido -X ~0,06 m y vuelta, ~0,7–1,0 s en total; el cargador NO se mueve",
+  "recarga": "cargador fijo (interno) o extraíble; con extraíble se cambia y luego se cicla el cerrojo",
+  "nota": "en DUPLET y en Welrod/M24/JNG-90 la manija no está modelada como pieza aparte: animar con 'cuerpo' desplazado o con sonido/retroceso de cámara"
+ }
+}

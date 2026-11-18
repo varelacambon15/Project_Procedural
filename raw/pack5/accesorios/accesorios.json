@@ -1,0 +1,443 @@
+[
+ {
+  "id": "ag_kit_a",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "angulado",
+  "archivo": "accesorios/agarres/ag_kit_a.glb",
+  "triangulos": 514,
+  "largo_m": 0.1187,
+  "alto_m": 0.0452,
+  "bbox_min": [
+   -0.0593,
+   -0.0452,
+   -0.0135
+  ],
+  "bbox_max": [
+   0.0593,
+   0.0,
+   0.0135
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "ag_kit_b",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "angulado",
+  "archivo": "accesorios/agarres/ag_kit_b.glb",
+  "triangulos": 800,
+  "largo_m": 0.1305,
+  "alto_m": 0.0582,
+  "bbox_min": [
+   -0.0652,
+   -0.0582,
+   -0.0253
+  ],
+  "bbox_max": [
+   0.0652,
+   0.0,
+   0.0253
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "ag_kit_c",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "vertical",
+  "archivo": "accesorios/agarres/ag_kit_c.glb",
+  "triangulos": 622,
+  "largo_m": 0.0549,
+  "alto_m": 0.0547,
+  "bbox_min": [
+   -0.0274,
+   -0.0547,
+   -0.0151
+  ],
+  "bbox_max": [
+   0.0274,
+   0.0,
+   0.0151
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "ag_kit_d",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "vertical",
+  "archivo": "accesorios/agarres/ag_kit_d.glb",
+  "triangulos": 800,
+  "largo_m": 0.039,
+  "alto_m": 0.0646,
+  "bbox_min": [
+   -0.0195,
+   -0.0646,
+   -0.0171
+  ],
+  "bbox_max": [
+   0.0195,
+   0.0,
+   0.0171
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "ag_kit_e",
+  "categoria": "agarres",
+  "pieza": "agarre",
+  "ancla": "raíl_inferior",
+  "estilo": "vertical",
+  "archivo": "accesorios/agarres/ag_kit_e.glb",
+  "triangulos": 488,
+  "largo_m": 0.0287,
+  "alto_m": 0.0694,
+  "bbox_min": [
+   -0.0144,
+   -0.0694,
+   -0.0164
+  ],
+  "bbox_max": [
+   0.0144,
+   0.0,
+   0.0164
+  ],
+  "anclas_locales": {},
+  "material": "mat_agarre",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "bo_kit_sup",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "supresor",
+  "diametro_encaje_m": 0.0349,
+  "archivo": "accesorios/bocachas/bo_kit_sup.glb",
+  "triangulos": 422,
+  "largo_m": 0.161,
+  "alto_m": 0.0349,
+  "bbox_min": [
+   0.0,
+   -0.0175,
+   -0.0175
+  ],
+  "bbox_max": [
+   0.161,
+   0.0175,
+   0.0175
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.161,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "bo_kit_freno_a",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "freno",
+  "diametro_encaje_m": 0.0174,
+  "archivo": "accesorios/bocachas/bo_kit_freno_a.glb",
+  "triangulos": 530,
+  "largo_m": 0.0622,
+  "alto_m": 0.0196,
+  "bbox_min": [
+   0.0,
+   -0.0099,
+   -0.01
+  ],
+  "bbox_max": [
+   0.0622,
+   0.0098,
+   0.01
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.0622,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "bo_kit_freno_b",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "freno",
+  "diametro_encaje_m": 0.0171,
+  "archivo": "accesorios/bocachas/bo_kit_freno_b.glb",
+  "triangulos": 544,
+  "largo_m": 0.0622,
+  "alto_m": 0.021,
+  "bbox_min": [
+   0.0,
+   -0.0105,
+   -0.0105
+  ],
+  "bbox_max": [
+   0.0622,
+   0.0105,
+   0.0105
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.0622,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "bo_kit_freno_c",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "freno",
+  "diametro_encaje_m": 0.0163,
+  "archivo": "accesorios/bocachas/bo_kit_freno_c.glb",
+  "triangulos": 700,
+  "largo_m": 0.0622,
+  "alto_m": 0.0158,
+  "bbox_min": [
+   0.0,
+   -0.0079,
+   -0.0097
+  ],
+  "bbox_max": [
+   0.0622,
+   0.0079,
+   0.0097
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.0622,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "mi_kit_telescopica",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "tipo_mira": "telescopica",
+  "aumento": 6,
+  "ve_a_traves": true,
+  "archivo": "accesorios/miras/mi_kit_telescopica.glb",
+  "triangulos": 2519,
+  "largo_m": 0.2277,
+  "alto_m": 0.0541,
+  "bbox_min": [
+   -0.1138,
+   0.0,
+   -0.0215
+  ],
+  "bbox_max": [
+   0.1138,
+   0.0541,
+   0.0215
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.0,
+    0.0423,
+    -0.0001
+   ]
+  },
+  "material": "mat_mira",
+  "origen": "kit_ar",
+  "centro_lente_local": [
+   0.0,
+   0.0423,
+   -0.0001
+  ]
+ },
+ {
+  "id": "mi_kit_holo",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "tipo_mira": "punto_rojo",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "archivo": "accesorios/miras/mi_kit_holo.glb",
+  "triangulos": 1874,
+  "largo_m": 0.093,
+  "alto_m": 0.0556,
+  "bbox_min": [
+   -0.0465,
+   0.0,
+   -0.0294
+  ],
+  "bbox_max": [
+   0.0465,
+   0.0556,
+   0.0294
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.0,
+    0.0344,
+    0.0
+   ]
+  },
+  "material": "mat_mira",
+  "origen": "kit_ar",
+  "centro_lente_local": [
+   0.0,
+   0.0344,
+   0.0
+  ]
+ },
+ {
+  "id": "sup_mg338",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "supresor",
+  "diametro_encaje_m": 0.0283,
+  "archivo": "accesorios/bocachas/sup_mg338.glb",
+  "triangulos": 64,
+  "largo_m": 0.0234,
+  "alto_m": 0.0284,
+  "bbox_min": [
+   0.0,
+   -0.0141,
+   -0.0142
+  ],
+  "bbox_max": [
+   0.0234,
+   0.0143,
+   0.0141
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.0234,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha",
+  "origen": "MG338"
+ },
+ {
+  "id": "pr_mg338",
+  "categoria": "miras",
+  "pieza": "mira",
+  "ancla": "raíl_superior",
+  "tipo_mira": "punto_rojo",
+  "aumento": 1,
+  "ve_a_traves": true,
+  "archivo": "accesorios/miras/pr_mg338.glb",
+  "triangulos": 4553,
+  "largo_m": 0.1595,
+  "alto_m": 0.0708,
+  "bbox_min": [
+   -0.0797,
+   0.0,
+   -0.0316
+  ],
+  "bbox_max": [
+   0.0797,
+   0.0708,
+   0.0316
+  ],
+  "anclas_locales": {
+   "centro_lente": [
+    0.0,
+    0.0439,
+    0.0
+   ]
+  },
+  "material": "mat_mira",
+  "origen": "MG338",
+  "centro_lente_local": [
+   0.0,
+   0.0439,
+   0.0
+  ]
+ },
+ {
+  "id": "bp_mg4",
+  "categoria": "bipodes",
+  "pieza": "bipode",
+  "ancla": "raíl_inferior",
+  "estado": "desplegado",
+  "archivo": "accesorios/bipodes/bp_mg4.glb",
+  "triangulos": 94,
+  "largo_m": 0.0408,
+  "alto_m": 0.2611,
+  "bbox_min": [
+   -0.0204,
+   -0.2611,
+   -0.0901
+  ],
+  "bbox_max": [
+   0.0204,
+   0.0,
+   0.0901
+  ],
+  "anclas_locales": {},
+  "material": "mat_bipode",
+  "origen": "MG4HK"
+ },
+ {
+  "id": "bo_lpm1",
+  "categoria": "bocachas",
+  "pieza": "bocacha",
+  "ancla": "boca",
+  "tipo_bocacha": "freno",
+  "diametro_encaje_m": 0.0346,
+  "archivo": "accesorios/bocachas/bo_lpm1.glb",
+  "triangulos": 144,
+  "largo_m": 0.0072,
+  "alto_m": 0.035,
+  "bbox_min": [
+   0.0,
+   -0.0177,
+   -0.0171
+  ],
+  "bbox_max": [
+   0.0072,
+   0.0173,
+   0.0171
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.0072,
+    0.0,
+    0.0
+   ]
+  },
+  "material": "mat_bocacha",
+  "origen": "LPM1"
+ }
+]

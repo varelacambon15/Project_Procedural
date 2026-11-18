@@ -1,0 +1,206 @@
+{
+ "nombre": "MG4HK",
+ "tipo_juego": "lmg",
+ "chasis": "convencional",
+ "accion": "automatica",
+ "era_sugerida": "moderna",
+ "base_real": "HK MG4",
+ "largo_m": 1.0,
+ "alto_m": 0.2822,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 1226,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.325,
+    0.0737,
+    -0.115
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.2657,
+    0.0078
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "empunadura": {
+   "triangulos": 117,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.2439,
+    0.1137,
+    -0.0536
+   ],
+   "bbox_local_min": [
+    -0.0795,
+    -0.1137,
+    -0.0234
+   ],
+   "bbox_local_max": [
+    0.063,
+    0.0,
+    0.0229
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 703,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    -0.0,
+    0.173,
+    -0.0636
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0573,
+    -0.0488
+   ],
+   "bbox_local_max": [
+    0.5,
+    0.1092,
+    0.0529
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "culata": {
+   "triangulos": 238,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.325,
+    0.166,
+    -0.0472
+   ],
+   "bbox_local_min": [
+    -0.175,
+    -0.0836,
+    -0.0293
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0375,
+    0.0259
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "cargador": {
+   "triangulos": 239,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0729,
+    0.1917,
+    0.0098
+   ],
+   "bbox_local_min": [
+    -0.0621,
+    -0.1668,
+    -0.0467
+   ],
+   "bbox_local_max": [
+    0.0403,
+    0.0,
+    0.1052
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.5,
+   0.2304,
+   -0.032
+  ],
+  "cara_guardamanos": [
+   -0.0,
+   0.173,
+   -0.0636
+  ],
+  "cara_culata": [
+   -0.325,
+   0.166,
+   -0.0472
+  ],
+  "cara_empunadura": [
+   -0.2439,
+   0.1137,
+   -0.0536
+  ],
+  "pozo_cargador": [
+   -0.0729,
+   0.1917,
+   0.0098
+  ],
+  "raíl_superior": [
+   -0.1509,
+   0.228,
+   -0.0186
+  ],
+  "linea_mira": [
+   -0.1509,
+   0.228,
+   -0.0186
+  ],
+  "raíl_inferior": [
+   0.2241,
+   0.1528,
+   -0.0622
+  ],
+  "raíl_frontal": [
+   0.488,
+   0.2426,
+   -0.0186
+  ]
+ },
+ "triangulos_total": 2523,
+ "piezas_ausentes": [
+  "mira"
+ ],
+ "boca_diametro_m": 0.0261,
+ "mira_integrada": null,
+ "accesorios_de_serie": [
+  {
+   "id": "bp_mg4",
+   "categoria": "bipodes",
+   "ancla": "raíl_inferior"
+  }
+ ],
+ "funcionamiento": "Ametralladora ligera de cinta con caja lateral ('cargador' = caja de cinta). accion=automatica. Bípode como accesorio de serie (raíl_inferior).",
+ "accion_detalle": {
+  "ciclo": "fuego continuo mientras se mantiene el gatillo",
+  "anim": "mismo retroceso que la semiautomática, repetido; en LMG el retroceso visual es menor (0,008 m) y la cinta/tambor no gira"
+ }
+}

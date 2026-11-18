@@ -131,6 +131,18 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 - Bullpup: no es categoría propia (decisión del usuario). Se muestra y se filtra como fusil; en el sorteo es una
   variante de fusil (25 %). Internamente conserva su tipo "bullpup" (piezas, animación, estadísticas).
 
+## Ronda 36 (versión 0.16.0): pack 5, sonidos nuevos, animaciones por tipo y visor
+
+- Pack 5 del usuario (`raw/pack5`, ids `x-p5-*` en el pack kit39): MG338, RPD, MG4HK (lmg), LPM1, LPM4 (fusil), VSV,
+  DUPLET (francotirador), MAGNUM (revólver de acción simple), SR410 (escopeta de tambor) y ESC1 (bombeo). Piezas
+  sueltas como donantes (`x-lib5-*`: 4 empuñaduras, 5 guardamanos, 4 culatas) y accesorios del pool (`lp5`: agarres,
+  bocachas, miras, bípode). "sci-fi realista" → era scifi. Revisar en juego: la LPM1 salió con una culata rara en el lote.
+- Sonidos: 63 disparos nuevos (`disparo_gh_*` / `silenciado_gh_*`) recortados de las grabaciones largas del usuario
+  (scratchpad `cutshots.py`: inicio de cada disparo por la envolvente, el que más hueco tiene detrás, fundido final y
+  loudnorm); pistola, revólver (sin silenciado), subfusil, escopeta, francotirador, ametralladora; el M27 también en fusil.
+- Enemigos: animaciones por tipo (`Dummy.animStyle`), visor continuo en banda curva (también la araña).
+- Test del banco (mira en francotirador): busca un francotirador sin raíl en vez de la semilla 1 (cambia con modelos nuevos).
+
 ## Ronda 35 (versión 0.15.0): referencias de Coded Arms, patada, granadas como armas y enemigos pulidos
 
 - Referencias del usuario (capturas de Coded Arms y Destiny): soldados con casco y visor luminoso, venas de luz,

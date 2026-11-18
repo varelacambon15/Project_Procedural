@@ -1,0 +1,172 @@
+{
+ "nombre": "MAGNUM",
+ "tipo_juego": "revolver",
+ "chasis": "revolver",
+ "accion": "revolver_simple",
+ "era_sugerida": "moderna",
+ "base_real": "Revólver magnum de cañón largo con raíl",
+ "largo_m": 0.3,
+ "alto_m": 0.1243,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 1939,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    -0.0287,
+    0.0683,
+    -0.0031
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0117,
+    -0.0084
+   ],
+   "bbox_local_max": [
+    0.1787,
+    0.0523,
+    0.0135
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 2571,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.129,
+    0.0333,
+    -0.017
+   ],
+   "bbox_local_max": [
+    -0.0097,
+    0.1243,
+    0.0165
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "tambor": {
+   "triangulos": 712,
+   "origen_local": "eje_tambor",
+   "posicion_en_arma": [
+    -0.0695,
+    0.0906,
+    0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0302,
+    -0.02
+   ],
+   "bbox_local_max": [
+    0.0535,
+    0.0302,
+    0.02
+   ],
+   "material": "mat_tambor",
+   "color": [
+    0.1,
+    0.1,
+    0.11
+   ]
+  },
+  "empunadura": {
+   "triangulos": 458,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.1033,
+    0.062,
+    -0.0001
+   ],
+   "bbox_local_min": [
+    -0.0467,
+    -0.062,
+    -0.0135
+   ],
+   "bbox_local_max": [
+    0.0283,
+    0.0,
+    0.0138
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.15,
+   0.0949,
+   -0.0004
+  ],
+  "cara_guardamanos": [
+   -0.0287,
+   0.0683,
+   -0.0031
+  ],
+  "cara_empunadura": [
+   -0.1033,
+   0.062,
+   -0.0001
+  ],
+  "eje_tambor": [
+   -0.0695,
+   0.0906,
+   0.0
+  ],
+  "raíl_superior": [
+   -0.045,
+   0.1218,
+   0.0
+  ],
+  "linea_mira": [
+   -0.045,
+   0.1218,
+   0.0
+  ],
+  "cara_culata": [
+   -0.129,
+   0.0637,
+   0.0
+  ],
+  "raíl_frontal": [
+   0.1333,
+   0.1164,
+   0.0
+  ]
+ },
+ "triangulos_total": 5680,
+ "piezas_ausentes": [
+  "culata",
+  "mira"
+ ],
+ "boca_diametro_m": 0.0238,
+ "mira_integrada": null,
+ "accesorios_de_serie": [],
+ "funcionamiento": "Revólver magnum de cañón largo con raíl, single action: amartillar a mano antes de cada disparo (accion=revolver_simple). Pieza tambor con ancla eje_tambor.",
+ "accion_detalle": {
+  "ciclo": "single action: hay que amartillar el martillo a mano antes de cada disparo (no se puede disparar en ráfaga ni 'a abanico')",
+  "anim": "1) amartillar: martillo hacia atrás ~0,3 s y el tambor gira 1/N de vuelta sobre eje_tambor; 2) disparar. Cadencia limitada por el tiempo de amartillado",
+  "nota": "el martillo no es pieza aparte: animar con retroceso del cuerpo o efecto"
+ }
+}

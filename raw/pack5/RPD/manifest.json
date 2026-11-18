@@ -1,0 +1,173 @@
+{
+ "nombre": "RPD",
+ "tipo_juego": "lmg",
+ "chasis": "convencional",
+ "accion": "automatica",
+ "era_sugerida": "clásica",
+ "base_real": "RPD (alimentada por cinta en tambor)",
+ "piezas_ausentes_nota": "empuñadura integrada en la culata",
+ "cargador_tipo": "tambor_cinta",
+ "largo_m": 1.04,
+ "alto_m": 0.2664,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "cuerpo": {
+   "triangulos": 686,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.2774,
+    0.1237,
+    -0.0703
+   ],
+   "bbox_local_max": [
+    0.164,
+    0.2664,
+    0.0362
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "cargador": {
+   "triangulos": 294,
+   "origen_local": "pozo_cargador",
+   "posicion_en_arma": [
+    -0.0488,
+    0.175,
+    0.008
+   ],
+   "bbox_local_min": [
+    -0.0374,
+    -0.175,
+    -0.0913
+   ],
+   "bbox_local_max": [
+    0.0335,
+    0.0,
+    0.0753
+   ],
+   "material": "mat_cargador",
+   "color": [
+    0.09,
+    0.09,
+    0.1
+   ]
+  },
+  "guardamanos_canon": {
+   "triangulos": 312,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.0,
+    0.2083,
+    -0.0102
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0845,
+    -0.0321
+   ],
+   "bbox_local_max": [
+    0.52,
+    0.0516,
+    0.0261
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "culata": {
+   "triangulos": 104,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.275,
+    0.1894,
+    -0.0144
+   ],
+   "bbox_local_min": [
+    -0.245,
+    -0.115,
+    -0.0401
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0528,
+    0.0232
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.52,
+   0.1992,
+   -0.0041
+  ],
+  "cara_guardamanos": [
+   0.0,
+   0.2083,
+   -0.0102
+  ],
+  "cara_culata": [
+   -0.275,
+   0.1894,
+   -0.0144
+  ],
+  "pozo_cargador": [
+   -0.0488,
+   0.175,
+   0.008
+  ],
+  "raíl_superior": [
+   -0.0567,
+   0.2419,
+   0.0
+  ],
+  "linea_mira": [
+   -0.0567,
+   0.2419,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.1625,
+   0.1237,
+   0.0
+  ],
+  "raíl_frontal": [
+   0.482,
+   0.2596,
+   0.0
+  ]
+ },
+ "triangulos_total": 1396,
+ "piezas_ausentes": [
+  "empunadura",
+  "mira"
+ ],
+ "boca_diametro_m": 0.0209,
+ "mira_integrada": null,
+ "accesorios_de_serie": [],
+ "funcionamiento": "Ametralladora ligera clásica de cinta. 'cargador' = el tambor circular bajo el receptor (no un cargador recto). accion=automatica. Empuñadura integrada en la culata (sin pieza empunadura). Sin raíl: solo acepta bocacha.",
+ "accion_detalle": {
+  "ciclo": "fuego continuo mientras se mantiene el gatillo",
+  "anim": "mismo retroceso que la semiautomática, repetido; en LMG el retroceso visual es menor (0,008 m) y la cinta/tambor no gira"
+ }
+}

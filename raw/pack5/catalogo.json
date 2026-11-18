@@ -1,0 +1,198 @@
+[
+ {
+  "nombre": "MG338",
+  "tipo_juego": "lmg",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "sci-fi realista",
+  "base_real": "Sig Sauer MG 338",
+  "largo_m": 1.0504,
+  "triangulos_total": 5736,
+  "boca_diametro_m": 0.0209,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": [
+   {
+    "id": "sup_mg338",
+    "categoria": "bocachas",
+    "ancla": "boca"
+   },
+   {
+    "id": "pr_mg338",
+    "categoria": "miras",
+    "ancla": "raíl_superior"
+   }
+  ],
+  "funcionamiento": "Ametralladora ligera de cinta en tambor. accion=automatica. 'cargador' = tambor de cinta bajo el receptor. Sin mira integrada."
+ },
+ {
+  "nombre": "RPD",
+  "tipo_juego": "lmg",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "clásica",
+  "base_real": "RPD (alimentada por cinta en tambor)",
+  "largo_m": 1.04,
+  "triangulos_total": 1396,
+  "boca_diametro_m": 0.0209,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "empunadura",
+   "mira"
+  ],
+  "accesorios_de_serie": [],
+  "funcionamiento": "Ametralladora ligera clásica de cinta. 'cargador' = el tambor circular bajo el receptor (no un cargador recto). accion=automatica. Empuñadura integrada en la culata (sin pieza empunadura). Sin raíl: solo acepta bocacha."
+ },
+ {
+  "nombre": "MG4HK",
+  "tipo_juego": "lmg",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "moderna",
+  "base_real": "HK MG4",
+  "largo_m": 1.0,
+  "triangulos_total": 2523,
+  "boca_diametro_m": 0.0261,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": [
+   {
+    "id": "bp_mg4",
+    "categoria": "bipodes",
+    "ancla": "raíl_inferior"
+   }
+  ],
+  "funcionamiento": "Ametralladora ligera de cinta con caja lateral ('cargador' = caja de cinta). accion=automatica. Bípode como accesorio de serie (raíl_inferior)."
+ },
+ {
+  "nombre": "LPM1",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "sci-fi realista",
+  "base_real": "Carabina low-poly LP-1",
+  "largo_m": 0.8954,
+  "triangulos_total": 3305,
+  "boca_diametro_m": 0.0312,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "accesorios_de_serie": [
+   {
+    "id": "bo_lpm1",
+    "categoria": "bocachas",
+    "ancla": "boca"
+   }
+  ],
+  "funcionamiento": "Carabina automática con culata plegada. accion=automatica. Freno de boca y agarre vertical de serie."
+ },
+ {
+  "nombre": "LPM4",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "moderna",
+  "base_real": "Fusil low-poly LP-4",
+  "largo_m": 0.9,
+  "triangulos_total": 2939,
+  "boca_diametro_m": 0.017,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [],
+  "accesorios_de_serie": [],
+  "funcionamiento": "Fusil automático con guardamanos M-LOK. accion=automatica."
+ },
+ {
+  "nombre": "VSV",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "accion": "semiautomatica",
+  "era_sugerida": "rústica",
+  "base_real": "Fusil silenciado integral (silueta rústica)",
+  "largo_m": 0.8875,
+  "triangulos_total": 3924,
+  "boca_diametro_m": 0.0121,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "empunadura",
+   "mira"
+  ],
+  "accesorios_de_serie": [],
+  "funcionamiento": "Fusil silenciado integral semiautomático. accion=semiautomatica. El silenciador forma parte del guardamanos_canon (no desmontable). Sin empuñadura independiente. Orientación corregida (estaba del revés) y nivelada."
+ },
+ {
+  "nombre": "DUPLET",
+  "tipo_juego": "sniper",
+  "chasis": "convencional",
+  "accion": "cerrojo",
+  "era_sugerida": "rústica",
+  "base_real": "Rifle de cerrojo rústico (silueta Metro)",
+  "largo_m": 0.95,
+  "triangulos_total": 2586,
+  "boca_diametro_m": 0.0152,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "empunadura",
+   "cargador",
+   "mira"
+  ],
+  "accesorios_de_serie": [],
+  "funcionamiento": "Rifle de cerrojo rústico. accion=cerrojo: tras cada disparo hay que ciclar el cerrojo a mano. Sin cargador (interno) ni empuñadura independiente."
+ },
+ {
+  "nombre": "MAGNUM",
+  "tipo_juego": "revolver",
+  "chasis": "revolver",
+  "accion": "revolver_simple",
+  "era_sugerida": "moderna",
+  "base_real": "Revólver magnum de cañón largo con raíl",
+  "largo_m": 0.3,
+  "triangulos_total": 5680,
+  "boca_diametro_m": 0.0238,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "culata",
+   "mira"
+  ],
+  "accesorios_de_serie": [],
+  "funcionamiento": "Revólver magnum de cañón largo con raíl, single action: amartillar a mano antes de cada disparo (accion=revolver_simple). Pieza tambor con ancla eje_tambor."
+ },
+ {
+  "nombre": "SR410",
+  "tipo_juego": "shotgun",
+  "chasis": "convencional",
+  "accion": "revolver_doble",
+  "era_sugerida": "moderna",
+  "base_real": "Escopeta de tambor SR410 (revólver con culata y guardamanos de madera)",
+  "largo_m": 0.9,
+  "triangulos_total": 5681,
+  "boca_diametro_m": 0.0238,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "empunadura",
+   "mira"
+  ],
+  "accesorios_de_serie": [],
+  "funcionamiento": "Escopeta de tambor (revolver con culata y guardamanos de madera). accion=revolver_doble: cada pulsación amartilla y dispara, el tambor gira. La empuñadura va integrada en la culata. El tambor es pieza propia (eje_tambor)."
+ },
+ {
+  "nombre": "ESC1",
+  "tipo_juego": "shotgun",
+  "chasis": "convencional",
+  "accion": "bombeo",
+  "era_sugerida": "moderna",
+  "base_real": "Escopeta táctica de bombeo con culata telescópica",
+  "largo_m": 1.0,
+  "triangulos_total": 5682,
+  "boca_diametro_m": 0.0227,
+  "mira_integrada": null,
+  "piezas_ausentes": [
+   "cargador",
+   "mira"
+  ],
+  "accesorios_de_serie": [],
+  "funcionamiento": "Escopeta táctica de bombeo: accion=bombeo, hay que bombear (el guardamanos_canon, que incluye el cargador tubular, se desplaza) tras cada disparo. Culata telescópica. Sin cargador suelto."
+ }
+]

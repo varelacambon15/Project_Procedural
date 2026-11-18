@@ -1,0 +1,173 @@
+{
+ "nombre": "SR410",
+ "tipo_juego": "shotgun",
+ "chasis": "convencional",
+ "accion": "revolver_doble",
+ "era_sugerida": "moderna",
+ "base_real": "Escopeta de tambor SR410 (revólver con culata y guardamanos de madera)",
+ "cargador_tipo": "tambor_integrado",
+ "piezas_ausentes_nota": "empuñadura integrada en la culata",
+ "largo_m": 0.9,
+ "alto_m": 0.2095,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 1568,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    0.07,
+    0.1397,
+    0.0001
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.069,
+    -0.0358
+   ],
+   "bbox_local_max": [
+    0.38,
+    0.0511,
+    0.0357
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 2253,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.19,
+    0.0331,
+    -0.0358
+   ],
+   "bbox_local_max": [
+    0.4065,
+    0.2095,
+    0.0358
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "tambor": {
+   "triangulos": 1419,
+   "origen_local": "eje_tambor",
+   "posicion_en_arma": [
+    -0.0671,
+    0.1489,
+    -0.0
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0527,
+    -0.0358
+   ],
+   "bbox_local_max": [
+    0.1252,
+    0.0527,
+    0.0358
+   ],
+   "material": "mat_tambor",
+   "color": [
+    0.1,
+    0.1,
+    0.11
+   ]
+  },
+  "culata": {
+   "triangulos": 441,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.19,
+    0.0932,
+    -0.0011
+   ],
+   "bbox_local_min": [
+    -0.26,
+    -0.0932,
+    -0.0137
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0832,
+    0.0128
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.45,
+   0.1255,
+   0.0004
+  ],
+  "cara_guardamanos": [
+   0.07,
+   0.1397,
+   0.0001
+  ],
+  "cara_culata": [
+   -0.19,
+   0.0932,
+   -0.0011
+  ],
+  "eje_tambor": [
+   -0.0671,
+   0.1489,
+   -0.0
+  ],
+  "raíl_superior": [
+   -0.07,
+   0.195,
+   0.0
+  ],
+  "linea_mira": [
+   -0.07,
+   0.195,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.379,
+   0.0746,
+   0.0001
+  ],
+  "raíl_frontal": [
+   0.146,
+   0.1794,
+   0.0
+  ]
+ },
+ "triangulos_total": 5681,
+ "piezas_ausentes": [
+  "empunadura",
+  "mira"
+ ],
+ "boca_diametro_m": 0.0238,
+ "mira_integrada": null,
+ "accesorios_de_serie": [],
+ "funcionamiento": "Escopeta de tambor (revolver con culata y guardamanos de madera). accion=revolver_doble: cada pulsación amartilla y dispara, el tambor gira. La empuñadura va integrada en la culata. El tambor es pieza propia (eje_tambor).",
+ "accion_detalle": {
+  "ciclo": "cada pulsación amartilla y dispara",
+  "anim": "el tambor gira 1/N de vuelta sobre eje_tambor al disparar"
+ }
+}

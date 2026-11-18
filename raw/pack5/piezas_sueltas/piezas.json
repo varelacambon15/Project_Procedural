@@ -1,0 +1,478 @@
+[
+ {
+  "id": "ep_kit_1",
+  "categoria": "empunaduras",
+  "pieza": "empunadura",
+  "ancla": "cara_empunadura",
+  "largo_m": 0.0828,
+  "archivo": "empunaduras/ep_kit_1.glb",
+  "triangulos": 272,
+  "seccion_union_m": {
+   "largo": 0.0308,
+   "ancho": 0.0302
+  },
+  "bbox_min": [
+   -0.0654,
+   -0.1023,
+   -0.0179
+  ],
+  "bbox_max": [
+   0.0175,
+   0.0,
+   0.0179
+  ],
+  "anclas_locales": {},
+  "material": "mat_empunadura",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "ep_kit_2",
+  "categoria": "empunaduras",
+  "pieza": "empunadura",
+  "ancla": "cara_empunadura",
+  "largo_m": 0.0861,
+  "archivo": "empunaduras/ep_kit_2.glb",
+  "triangulos": 460,
+  "seccion_union_m": {
+   "largo": 0.0308,
+   "ancho": 0.0302
+  },
+  "bbox_min": [
+   -0.0687,
+   -0.1001,
+   -0.0151
+  ],
+  "bbox_max": [
+   0.0175,
+   0.0,
+   0.0151
+  ],
+  "anclas_locales": {},
+  "material": "mat_empunadura",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "ep_kit_3",
+  "categoria": "empunaduras",
+  "pieza": "empunadura",
+  "ancla": "cara_empunadura",
+  "largo_m": 0.0861,
+  "archivo": "empunaduras/ep_kit_3.glb",
+  "triangulos": 500,
+  "seccion_union_m": {
+   "largo": 0.0308,
+   "ancho": 0.0302
+  },
+  "bbox_min": [
+   -0.0687,
+   -0.1001,
+   -0.0151
+  ],
+  "bbox_max": [
+   0.0175,
+   0.0,
+   0.0151
+  ],
+  "anclas_locales": {},
+  "material": "mat_empunadura",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "ep_kit_4",
+  "categoria": "empunaduras",
+  "pieza": "empunadura",
+  "ancla": "cara_empunadura",
+  "largo_m": 0.0848,
+  "archivo": "empunaduras/ep_kit_4.glb",
+  "triangulos": 436,
+  "seccion_union_m": {
+   "largo": 0.0308,
+   "ancho": 0.0302
+  },
+  "bbox_min": [
+   -0.0674,
+   -0.1001,
+   -0.0151
+  ],
+  "bbox_max": [
+   0.0175,
+   0.0,
+   0.0151
+  ],
+  "anclas_locales": {},
+  "material": "mat_empunadura",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "ca_kit_1",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "largo_m": 0.0777,
+  "archivo": "cargadores/ca_kit_1.glb",
+  "triangulos": 796,
+  "seccion_union_m": {
+   "largo": 0.0264,
+   "ancho": 0.0252
+  },
+  "bbox_min": [
+   -0.0286,
+   -0.1692,
+   -0.0167
+  ],
+  "bbox_max": [
+   0.0491,
+   0.0,
+   0.0167
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "ca_kit_2",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "largo_m": 0.0573,
+  "archivo": "cargadores/ca_kit_2.glb",
+  "triangulos": 1400,
+  "seccion_union_m": {
+   "largo": 0.0244,
+   "ancho": 0.0269
+  },
+  "bbox_min": [
+   -0.0286,
+   -0.1121,
+   -0.0151
+  ],
+  "bbox_max": [
+   0.0286,
+   0.0,
+   0.0151
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "ca_kit_3",
+  "categoria": "cargadores",
+  "pieza": "cargador",
+  "ancla": "pozo_cargador",
+  "largo_m": 0.0394,
+  "archivo": "cargadores/ca_kit_3.glb",
+  "triangulos": 658,
+  "seccion_union_m": {
+   "largo": 0.0154,
+   "ancho": 0.0194
+  },
+  "bbox_min": [
+   -0.018,
+   -0.2103,
+   -0.0144
+  ],
+  "bbox_max": [
+   0.0214,
+   0.0,
+   0.0144
+  ],
+  "anclas_locales": {},
+  "material": "mat_cargador",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "gm_kit_1",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.3541,
+  "archivo": "guardamanos/gm_kit_1.glb",
+  "triangulos": 4199,
+  "seccion_union_m": {
+   "alto": 0.0461,
+   "ancho": 0.0418
+  },
+  "bbox_min": [
+   0.0,
+   -0.0292,
+   -0.0268
+  ],
+  "bbox_max": [
+   0.3541,
+   0.0233,
+   0.0268
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.3541,
+    -0.0068,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.1526,
+    -0.0292,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon",
+  "origen": "kit_ar",
+  "boca_diametro_m": 0.0146
+ },
+ {
+  "id": "gm_kit_2",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.3184,
+  "archivo": "guardamanos/gm_kit_2.glb",
+  "triangulos": 3633,
+  "seccion_union_m": {
+   "alto": 0.0472,
+   "ancho": 0.0438
+  },
+  "bbox_min": [
+   0.0,
+   -0.0236,
+   -0.0219
+  ],
+  "bbox_max": [
+   0.3184,
+   0.0236,
+   0.0219
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.3184,
+    -0.0074,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.0269,
+    -0.0236,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon",
+  "origen": "kit_ar",
+  "boca_diametro_m": 0.0155
+ },
+ {
+  "id": "gm_kit_3",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.2546,
+  "archivo": "guardamanos/gm_kit_3.glb",
+  "triangulos": 4200,
+  "seccion_union_m": {
+   "alto": 0.0406,
+   "ancho": 0.0351
+  },
+  "bbox_min": [
+   0.0,
+   -0.0238,
+   -0.0176
+  ],
+  "bbox_max": [
+   0.2546,
+   0.0238,
+   0.0176
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.2546,
+    -0.0067,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.02,
+    -0.0238,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon",
+  "origen": "kit_ar",
+  "boca_diametro_m": 0.0155
+ },
+ {
+  "id": "gm_kit_4",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.1934,
+  "archivo": "guardamanos/gm_kit_4.glb",
+  "triangulos": 1342,
+  "seccion_union_m": {
+   "alto": 0.0416,
+   "ancho": 0.052
+  },
+  "bbox_min": [
+   0.0,
+   -0.0208,
+   -0.026
+  ],
+  "bbox_max": [
+   0.1934,
+   0.0208,
+   0.026
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.1934,
+    -0.0,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.02,
+    -0.0185,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon",
+  "origen": "kit_ar",
+  "boca_diametro_m": 0.0155
+ },
+ {
+  "id": "gm_kit_5",
+  "categoria": "guardamanos",
+  "pieza": "guardamanos_canon",
+  "ancla": "cara_guardamanos",
+  "largo_m": 0.1753,
+  "archivo": "guardamanos/gm_kit_5.glb",
+  "triangulos": 2664,
+  "seccion_union_m": {
+   "alto": 0.0343,
+   "ancho": 0.0295
+  },
+  "bbox_min": [
+   0.0,
+   -0.0256,
+   -0.0176
+  ],
+  "bbox_max": [
+   0.1753,
+   0.0256,
+   0.0176
+  ],
+  "anclas_locales": {
+   "boca": [
+    0.1753,
+    -0.0049,
+    0.0
+   ],
+   "raíl_inferior": [
+    0.02,
+    -0.0256,
+    0.0
+   ]
+  },
+  "material": "mat_guardamanos_canon",
+  "origen": "kit_ar",
+  "boca_diametro_m": 0.0142
+ },
+ {
+  "id": "cu_kit_1",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "largo_m": 0.1845,
+  "archivo": "culatas/cu_kit_1.glb",
+  "triangulos": 418,
+  "seccion_union_m": {
+   "alto": 0.0236,
+   "ancho": 0.0424
+  },
+  "bbox_min": [
+   -0.1845,
+   -0.0951,
+   -0.0212
+  ],
+  "bbox_max": [
+   0.0,
+   0.0158,
+   0.0212
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "cu_kit_2",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "largo_m": 0.1845,
+  "archivo": "culatas/cu_kit_2.glb",
+  "triangulos": 262,
+  "seccion_union_m": {
+   "alto": 0.0236,
+   "ancho": 0.0424
+  },
+  "bbox_min": [
+   -0.1845,
+   -0.0981,
+   -0.0212
+  ],
+  "bbox_max": [
+   0.0,
+   0.0118,
+   0.0212
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "cu_kit_3",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "largo_m": 0.1845,
+  "archivo": "culatas/cu_kit_3.glb",
+  "triangulos": 566,
+  "seccion_union_m": {
+   "alto": 0.0236,
+   "ancho": 0.0424
+  },
+  "bbox_min": [
+   -0.1845,
+   -0.0891,
+   -0.0212
+  ],
+  "bbox_max": [
+   0.0,
+   0.0118,
+   0.0212
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata",
+  "origen": "kit_ar"
+ },
+ {
+  "id": "cu_kit_4",
+  "categoria": "culatas",
+  "pieza": "culata",
+  "ancla": "cara_culata",
+  "largo_m": 0.2281,
+  "archivo": "culatas/cu_kit_4.glb",
+  "triangulos": 856,
+  "seccion_union_m": {
+   "alto": 0.0065,
+   "ancho": 0.0656
+  },
+  "bbox_min": [
+   -0.2281,
+   -0.0632,
+   -0.0406
+  ],
+  "bbox_max": [
+   0.0,
+   0.048,
+   0.0406
+  ],
+  "anclas_locales": {},
+  "material": "mat_culata",
+  "origen": "kit_ar"
+ }
+]

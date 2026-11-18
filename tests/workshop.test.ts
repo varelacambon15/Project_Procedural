@@ -35,7 +35,9 @@ describe("banco de trabajo", () => {
   it("una mira de accesorio encaja en un fusil con raíl pero no en un francotirador", () => {
     const rifle = Array.from({ length: 300 }, (_, s) => gen.generate(s, "rifle")).find((x) => gen.opticOptions(x).length)!;
     expect(fits(gen, rifle, "scope", newPart("scope", "acc:reddot"))).toBe(true);
-    expect(fits(gen, gen.generate(1, "sniper"), "scope", newPart("scope", "acc:reddot"))).toBe(false);
+    // (un francotirador sin raíl; se busca como el fusil, porque las semillas cambian al añadir modelos nuevos)
+    const noRail = Array.from({ length: 300 }, (_, s) => gen.generate(s, "sniper")).find((x) => !gen.opticOptions(x).length)!;
+    expect(fits(gen, noRail, "scope", newPart("scope", "acc:reddot"))).toBe(false);
   });
 
   it("desguazar devuelve las piezas reutilizables y chatarra", () => {

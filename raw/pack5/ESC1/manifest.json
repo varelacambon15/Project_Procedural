@@ -1,0 +1,172 @@
+{
+ "nombre": "ESC1",
+ "tipo_juego": "shotgun",
+ "chasis": "convencional",
+ "accion": "bombeo",
+ "era_sugerida": "moderna",
+ "base_real": "Escopeta táctica de bombeo con culata telescópica",
+ "largo_m": 1.0,
+ "alto_m": 0.1946,
+ "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+ "unidades": "metros",
+ "origen_arma": "centro en X y Z, base en Y = 0",
+ "normales": "aristas vivas por encima de 32°",
+ "piezas": {
+  "guardamanos_canon": {
+   "triangulos": 1507,
+   "origen_local": "cara_guardamanos",
+   "posicion_en_arma": [
+    -0.004,
+    0.089,
+    -0.0001
+   ],
+   "bbox_local_min": [
+    0.0,
+    -0.0268,
+    -0.0266
+   ],
+   "bbox_local_max": [
+    0.504,
+    0.08,
+    0.027
+   ],
+   "material": "mat_guardamanos_canon",
+   "color": [
+    0.16,
+    0.16,
+    0.17
+   ]
+  },
+  "cuerpo": {
+   "triangulos": 1752,
+   "origen_local": "origen del arma",
+   "posicion_en_arma": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bbox_local_min": [
+    -0.295,
+    0.0107,
+    -0.0223
+   ],
+   "bbox_local_max": [
+    0.4978,
+    0.1946,
+    0.0228
+   ],
+   "material": "mat_cuerpo",
+   "color": [
+    0.28,
+    0.28,
+    0.3
+   ]
+  },
+  "culata": {
+   "triangulos": 1818,
+   "origen_local": "cara_culata",
+   "posicion_en_arma": [
+    -0.1189,
+    0.1115,
+    -0.0
+   ],
+   "bbox_local_min": [
+    -0.3811,
+    -0.0799,
+    -0.0269
+   ],
+   "bbox_local_max": [
+    0.0,
+    0.0546,
+    0.0264
+   ],
+   "material": "mat_culata",
+   "color": [
+    0.22,
+    0.22,
+    0.24
+   ]
+  },
+  "empunadura": {
+   "triangulos": 605,
+   "origen_local": "cara_empunadura",
+   "posicion_en_arma": [
+    -0.2375,
+    0.105,
+    -0.0001
+   ],
+   "bbox_local_min": [
+    -0.0543,
+    -0.105,
+    -0.019
+   ],
+   "bbox_local_max": [
+    0.0722,
+    0.0,
+    0.019
+   ],
+   "material": "mat_empunadura",
+   "color": [
+    0.14,
+    0.14,
+    0.15
+   ]
+  }
+ },
+ "anclas": {
+  "boca": [
+   0.5,
+   0.1013,
+   0.0003
+  ],
+  "cara_guardamanos": [
+   -0.004,
+   0.089,
+   -0.0001
+  ],
+  "cara_culata": [
+   -0.1189,
+   0.1115,
+   -0.0
+  ],
+  "cara_empunadura": [
+   -0.2375,
+   0.105,
+   -0.0001
+  ],
+  "raíl_superior": [
+   -0.1354,
+   0.1805,
+   0.0
+  ],
+  "linea_mira": [
+   -0.1354,
+   0.1805,
+   0.0
+  ],
+  "raíl_inferior": [
+   0.4654,
+   0.0622,
+   0.0
+  ],
+  "raíl_frontal": [
+   0.12,
+   0.153,
+   0.0
+  ]
+ },
+ "triangulos_total": 5682,
+ "piezas_ausentes": [
+  "cargador",
+  "mira"
+ ],
+ "boca_diametro_m": 0.0227,
+ "mira_integrada": null,
+ "accesorios_de_serie": [],
+ "funcionamiento": "Escopeta táctica de bombeo: accion=bombeo, hay que bombear (el guardamanos_canon, que incluye el cargador tubular, se desplaza) tras cada disparo. Culata telescópica. Sin cargador suelto.",
+ "accion_detalle": {
+  "ciclo": "escopeta de bombeo: tras cada disparo hay que bombear para cargar el siguiente",
+  "anim": "'guardamanos_canon' (bomba) se desplaza -X 0,08 m y vuelve en ~0,5 s; no se puede disparar durante ese tiempo",
+  "recarga": "cartucho a cartucho por la ventana inferior (sin pieza cargador)"
+ }
+}

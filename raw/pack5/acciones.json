@@ -1,0 +1,40 @@
+{
+ "semiautomatica": {
+  "ciclo": "un disparo por pulsación; la corredera/cerrojo retrocede y vuelve sola",
+  "anim": "pieza móvil (corredera o cubierta) retrocede ~0,02–0,03 m en -X y vuelve en ~0,06 s; expulsa casquillo hacia +Z"
+ },
+ "automatica": {
+  "ciclo": "fuego continuo mientras se mantiene el gatillo",
+  "anim": "mismo retroceso que la semiautomática, repetido; en LMG el retroceso visual es menor (0,008 m) y la cinta/tambor no gira"
+ },
+ "cerrojo": {
+  "ciclo": "un disparo; después hay que cargar el siguiente cartucho manualmente (levantar manija, tirar atrás, empujar, bajar)",
+  "anim": "manija del cerrojo en el lado derecho (+Z) tras la cámara: giro 90° sobre X, recorrido -X ~0,06 m y vuelta, ~0,7–1,0 s en total; el cargador NO se mueve",
+  "recarga": "cargador fijo (interno) o extraíble; con extraíble se cambia y luego se cicla el cerrojo",
+  "nota": "en DUPLET y en Welrod/M24/JNG-90 la manija no está modelada como pieza aparte: animar con 'cuerpo' desplazado o con sonido/retroceso de cámara"
+ },
+ "corredera": {
+  "ciclo": "pistolas: la corredera retrocede al disparar y se queda atrás con el cargador vacío",
+  "anim": "en una pistola la pieza 'guardamanos_canon' ES la corredera: retrocede ~0,025 m en -X y vuelve; con cargador vacío se queda atrás hasta recargar",
+  "nota": "en el generador, accion='semiautomatica' con chasis 'pistola' = corredera"
+ },
+ "bombeo": {
+  "ciclo": "escopeta de bombeo: tras cada disparo hay que bombear para cargar el siguiente",
+  "anim": "'guardamanos_canon' (bomba) se desplaza -X 0,08 m y vuelve en ~0,5 s; no se puede disparar durante ese tiempo",
+  "recarga": "cartucho a cartucho por la ventana inferior (sin pieza cargador)"
+ },
+ "revolver_simple": {
+  "ciclo": "single action: hay que amartillar el martillo a mano antes de cada disparo (no se puede disparar en ráfaga ni 'a abanico')",
+  "anim": "1) amartillar: martillo hacia atrás ~0,3 s y el tambor gira 1/N de vuelta sobre eje_tambor; 2) disparar. Cadencia limitada por el tiempo de amartillado",
+  "nota": "el martillo no es pieza aparte: animar con retroceso del cuerpo o efecto"
+ },
+ "basculante": {
+  "ciclo": "escopeta de dos cañones (basculante): dos disparos, uno por cañón; para recargar se 'abre' el arma por la bisagra y se meten dos cartuchos",
+  "anim": "disparo: retroceso fuerte; recarga: el guardamanos_canon (cañones) cae hacia abajo girando sobre el eje de bisagra bajo el cuerpo (~25° en 0,4 s), se cambian los dos cartuchos y se cierra",
+  "nota": "el efecto del juego 'doble' (×2 perdigones) es independiente de esta acción; chasis=basculante"
+ },
+ "revolver_doble": {
+  "ciclo": "cada pulsación amartilla y dispara",
+  "anim": "el tambor gira 1/N de vuelta sobre eje_tambor al disparar"
+ }
+}

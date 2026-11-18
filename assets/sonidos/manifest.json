@@ -1,16 +1,28 @@
 {
  "version": 1,
  "formato": "ogg-vorbis mono 44.1 kHz",
- "nota": "Rutas relativas a esta carpeta. Cada archivo va normalizado a pico -2 dB (disparos) o -8 dB (foley): el volumen relativo entre tipos se da en volumen_sugerido.",
+ "nota": "Rutas relativas a esta carpeta. Cada archivo va normalizado a pico -2 dB (disparos) o -8 dB (foley): el volumen relativo entre tipos se da en volumen_sugerido. Disparos _gh_: recortados de grabaciones largas (un disparo con su cola).",
  "tipos": {
   "pistol": {
    "disparo": [
     "disparo/pistol/disparo_tac45.ogg",
     "disparo/pistol/disparo_five7.ogg",
-    "disparo/pistol/disparo_b23r.ogg"
+    "disparo/pistol/disparo_b23r.ogg",
+    "disparo/pistol/disparo_gh_m9_1.ogg",
+    "disparo/pistol/disparo_gh_m9_2.ogg",
+    "disparo/pistol/disparo_gh_mp443_1.ogg",
+    "disparo/pistol/disparo_gh_mp443_2.ogg",
+    "disparo/pistol/disparo_gh_p226_1.ogg",
+    "disparo/pistol/disparo_gh_p226_2.ogg",
+    "disparo/pistol/disparo_gh_pdw_1.ogg",
+    "disparo/pistol/disparo_gh_pdw_2.ogg"
    ],
    "silenciado": [
-    "disparo/pistol/silenciado_five7.ogg"
+    "disparo/pistol/silenciado_five7.ogg",
+    "disparo/pistol/silenciado_gh_m9.ogg",
+    "disparo/pistol/silenciado_gh_mp443.ogg",
+    "disparo/pistol/silenciado_gh_p226.ogg",
+    "disparo/pistol/silenciado_gh_pdw.ogg"
    ],
    "grave": [
     "grave/pistol.ogg"
@@ -76,7 +88,9 @@
   "revolver": {
    "disparo": [
     "disparo/revolver/disparo_python.ogg",
-    "disparo/revolver/disparo_judge.ogg"
+    "disparo/revolver/disparo_judge.ogg",
+    "disparo/revolver/disparo_gh_44magnum_1.ogg",
+    "disparo/revolver/disparo_gh_44magnum_2.ogg"
    ],
    "grave": [
     "grave/revolver.ogg"
@@ -155,10 +169,27 @@
     "disparo/smg/disparo_kap.ogg",
     "disparo/smg/disparo_msmc.ogg",
     "disparo/smg/disparo_evo.ogg",
-    "disparo/smg/disparo_vector.ogg"
+    "disparo/smg/disparo_vector.ogg",
+    "disparo/smg/disparo_gh_bizon_1.ogg",
+    "disparo/smg/disparo_gh_bizon_2.ogg",
+    "disparo/smg/disparo_gh_cbjms_1.ogg",
+    "disparo/smg/disparo_gh_cbjms_2.ogg",
+    "disparo/smg/disparo_gh_k7_1.ogg",
+    "disparo/smg/disparo_gh_k7_2.ogg",
+    "disparo/smg/disparo_gh_matrx_1.ogg",
+    "disparo/smg/disparo_gh_matrx_2.ogg",
+    "disparo/smg/disparo_gh_vectorcrb_1.ogg",
+    "disparo/smg/disparo_gh_vectorcrb_2.ogg",
+    "disparo/smg/disparo_gh_vepr_1.ogg",
+    "disparo/smg/disparo_gh_vepr_2.ogg"
    ],
    "silenciado": [
-    "disparo/smg/silenciado_msmc.ogg"
+    "disparo/smg/silenciado_msmc.ogg",
+    "disparo/smg/silenciado_gh_bizon.ogg",
+    "disparo/smg/silenciado_gh_cbjms.ogg",
+    "disparo/smg/silenciado_gh_matrx.ogg",
+    "disparo/smg/silenciado_gh_vectorcrb.ogg",
+    "disparo/smg/silenciado_gh_vepr.ogg"
    ],
    "grave": [
     "grave/smg.ogg"
@@ -261,10 +292,13 @@
     "disparo/rifle/disparo_smr.ogg",
     "disparo/rifle/disparo_scar.ogg",
     "disparo/rifle/disparo_sig556.ogg",
-    "disparo/rifle/disparo_type95.ogg"
+    "disparo/rifle/disparo_type95.ogg",
+    "disparo/lmg/disparo_gh_m27iar_1.ogg",
+    "disparo/lmg/disparo_gh_m27iar_2.ogg"
    ],
    "silenciado": [
-    "disparo/rifle/silenciado_m27.ogg"
+    "disparo/rifle/silenciado_m27.ogg",
+    "disparo/lmg/silenciado_gh_m27iar.ogg"
    ],
    "grave": [
     "grave/rifle.ogg"
@@ -412,10 +446,22 @@
    "disparo": [
     "disparo/shotgun/disparo_ksg.ogg",
     "disparo/shotgun/disparo_m1216.ogg",
-    "disparo/shotgun/disparo_r870.ogg"
+    "disparo/shotgun/disparo_r870.ogg",
+    "disparo/shotgun/disparo_gh_bulldog_1.ogg",
+    "disparo/shotgun/disparo_gh_bulldog_2.ogg",
+    "disparo/shotgun/disparo_gh_fp6_1.ogg",
+    "disparo/shotgun/disparo_gh_fp6_2.ogg",
+    "disparo/shotgun/disparo_gh_mts255_1.ogg",
+    "disparo/shotgun/disparo_gh_mts255_2.ogg",
+    "disparo/shotgun/disparo_gh_tac12_1.ogg",
+    "disparo/shotgun/disparo_gh_tac12_2.ogg"
    ],
    "silenciado": [
-    "disparo/shotgun/silenciado_s12.ogg"
+    "disparo/shotgun/silenciado_s12.ogg",
+    "disparo/shotgun/silenciado_gh_bulldog.ogg",
+    "disparo/shotgun/silenciado_gh_fp6.ogg",
+    "disparo/shotgun/silenciado_gh_mts255.ogg",
+    "disparo/shotgun/silenciado_gh_tac12.ogg"
    ],
    "grave": [
     "grave/shotgun.ogg"
@@ -492,10 +538,21 @@
     "disparo/sniper/disparo_ballista.ogg",
     "disparo/sniper/disparo_dsr.ogg",
     "disparo/sniper/disparo_svu.ogg",
-    "disparo/sniper/disparo_xpr50.ogg"
+    "disparo/sniper/disparo_xpr50.ogg",
+    "disparo/sniper/disparo_gh_l115_1.ogg",
+    "disparo/sniper/disparo_gh_l115_2.ogg",
+    "disparo/sniper/disparo_gh_lynx_1.ogg",
+    "disparo/sniper/disparo_gh_lynx_2.ogg",
+    "disparo/sniper/disparo_gh_usr_1.ogg",
+    "disparo/sniper/disparo_gh_usr_2.ogg",
+    "disparo/sniper/disparo_gh_vks_1.ogg",
+    "disparo/sniper/disparo_gh_vks_2.ogg"
    ],
    "silenciado": [
-    "disparo/sniper/silenciado_ballista.ogg"
+    "disparo/sniper/silenciado_ballista.ogg",
+    "disparo/sniper/silenciado_gh_l115.ogg",
+    "disparo/sniper/silenciado_gh_lynx.ogg",
+    "disparo/sniper/silenciado_gh_usr.ogg"
    ],
    "grave": [
     "grave/sniper.ogg"
@@ -584,10 +641,22 @@
     "disparo/lmg/disparo_lsat.ogg",
     "disparo/lmg/disparo_hamr.ogg",
     "disparo/lmg/disparo_mk48.ogg",
-    "disparo/lmg/disparo_qbb.ogg"
+    "disparo/lmg/disparo_qbb.ogg",
+    "disparo/lmg/disparo_gh_ameli_1.ogg",
+    "disparo/lmg/disparo_gh_ameli_2.ogg",
+    "disparo/lmg/disparo_gh_chainsaw_1.ogg",
+    "disparo/lmg/disparo_gh_chainsaw_2.ogg",
+    "disparo/lmg/disparo_gh_lsat_1.ogg",
+    "disparo/lmg/disparo_gh_lsat_2.ogg",
+    "disparo/lmg/disparo_gh_m27iar_1.ogg",
+    "disparo/lmg/disparo_gh_m27iar_2.ogg"
    ],
    "silenciado": [
-    "disparo/lmg/silenciado_lsat.ogg"
+    "disparo/lmg/silenciado_lsat.ogg",
+    "disparo/lmg/silenciado_gh_ameli.ogg",
+    "disparo/lmg/silenciado_gh_chainsaw.ogg",
+    "disparo/lmg/silenciado_gh_lsat.ogg",
+    "disparo/lmg/silenciado_gh_m27iar.ogg"
    ],
    "grave": [
     "grave/lmg.ogg"

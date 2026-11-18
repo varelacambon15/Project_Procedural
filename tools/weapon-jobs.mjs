@@ -199,9 +199,9 @@ const attJobs = Object.entries(ATT).flatMap(([name, slot]) => ["East", "West"].m
   // Packs con las mismas convenciones (raw/pack3 y raw/pack4) entran en el mismo pack del juego: comparten piezas.
   // (Su catálogo puede no traer las piezas: se leen del manifest de cada arma.)
   const KIT = "raw/kit39", read = (f) => JSON.parse(readFileSync(new URL(`../${f}`, import.meta.url), "utf8"));
-  const cat = [["raw/kit39", "x-"], ["raw/pack2", "x-p2-"], ["raw/pack3", "x-p3-"], ["raw/pack4", "x-p4-"]].flatMap(([dir, pre]) =>
+  const cat = [["raw/kit39", "x-"], ["raw/pack2", "x-p2-"], ["raw/pack3", "x-p3-"], ["raw/pack4", "x-p4-"], ["raw/pack5", "x-p5-"]].flatMap(([dir, pre]) =>
     read(`${dir}/catalogo.json`).map((w) => { const m = read(`${dir}/${w.nombre}/manifest.json`); return { ...w, dir, pre, piezas: w.piezas ?? m.piezas, era_sugerida: m.era_sugerida ?? w.era_sugerida }; }));
-  const ERA = { "clásica": "classic", moderna: "modern", "rústica": "rustic", "sci-fi": "scifi" };
+  const ERA = { "clásica": "classic", moderna: "modern", "rústica": "rustic", "sci-fi": "scifi", "sci-fi realista": "scifi" };
   const typeOf = (w) => (w.chasis === "bullpup" && w.tipo_juego === "rifle" ? "bullpup" : w.tipo_juego);
   // Largo real relativo dentro del tipo (mediana = 1), acotado: variedad sin salirse de la escala del juego
   const med = {}; for (const t of new Set(cat.map(typeOf))) { const ls = cat.filter((w) => typeOf(w) === t).map((w) => w.largo_m).sort((a, b) => a - b); med[t] = ls[Math.floor(ls.length / 2)]; }
@@ -213,11 +213,14 @@ const attJobs = Object.entries(ATT).flatMap(([name, slot]) => ["East", "West"].m
   }
   // Piezas sueltas de la biblioteca (culatas, guardamanos, empuñaduras): "donantes" del pack kit39. No salen como arma;
   // solo prestan su pieza a las armas modulares del kit (mixLong), con la escala de un fusil medio del kit.
-  const lib = JSON.parse(readFileSync(new URL(`../${KIT}/piezas_sueltas/piezas.json`, import.meta.url), "utf8"));
   const ROLE = { culatas: "stock", guardamanos: "front", empunaduras: "grip" };
-  for (const p of lib.filter((x) => ROLE[x.categoria])) {
-    ALL.push({ kind: "kit39part", pack: "kit39", id: "x-lib-" + p.id.replace(/[^a-z0-9]+/g, "-"), label: p.id, type: "rifle", role: ROLE[p.categoria],
-      glb: `${KIT}/piezas_sueltas/${p.archivo}`, section: p.seccion_union_m ?? {}, realScale: 0.9 / med.rifle, wood: /madera/.test(p.id) });
+  // (biblioteca del kit y piezas sueltas del pack 5, con el mismo formato)
+  for (const [dir, pre] of [[`${KIT}/piezas_sueltas`, "x-lib-"], ["raw/pack5/piezas_sueltas", "x-lib5-"]]) {
+    const lib = JSON.parse(readFileSync(new URL(`../${dir}/piezas.json`, import.meta.url), "utf8"));
+    for (const p of lib.filter((x) => ROLE[x.categoria])) {
+      ALL.push({ kind: "kit39part", pack: "kit39", id: pre + p.id.replace(/[^a-z0-9]+/g, "-"), label: p.id, type: "rifle", role: ROLE[p.categoria],
+        glb: `${dir}/${p.archivo}`, section: p.seccion_union_m ?? {}, realScale: 0.9 / med.rifle, wood: /madera/.test(p.id) });
+    }
   }
 }
 
@@ -225,7 +228,7 @@ const attJobs = Object.entries(ATT).flatMap(([name, slot]) => ["East", "West"].m
 const libSightJobs = [];
 {
   const read = (f) => JSON.parse(readFileSync(new URL(`../${f}`, import.meta.url), "utf8"));
-  const libs = [["raw/kit39/piezas_sueltas", "piezas.json", ""], ["raw/pack4", "accesorios/accesorios.json", "p4"]];
+  const libs = [["raw/kit39/piezas_sueltas", "piezas.json", ""], ["raw/pack4", "accesorios/accesorios.json", "p4"], ["raw/pack5", "accesorios/accesorios.json", "p5"]];
   const kindOf = (t) => (/^punto_rojo/.test(t) ? "reddot" : t === "holografica" ? "holographic" : /^visor|^telescopica/.test(t) ? "scope" : "magnified");
   const muzzleOf = { supresor: "suppressor", freno: "brake", compensador: "compensator", apagallamas: "flashhider" };
   const slug = (id) => id.replace(/[^a-z0-9]+/g, "");
