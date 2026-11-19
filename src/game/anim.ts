@@ -150,7 +150,7 @@ export class ViewAnimator {
     const eyeX = i.sightX === undefined ? 0 : i.gripX !== undefined && i.sightX - 0.025 < i.gripX + (p.adsGrip ?? 0.06) - 0.015 ? Math.min(i.sightX - 0.025, i.gripX - (p.adsGrip ?? 0.06)) : i.sightX - 0.025;
     const adsZ = i.sightX !== undefined ? eyeX : -(i.length * 0.5 + p.aimZ);
     // (las muy altas —miras grandes, tambores, cuerpos voluminosos— un poco más lejos: no tapan la vista)
-    const hipZ = (i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, (p.rearMax ?? 0.34) - i.length * 0.5) : -(i.length * 0.5 + p.hip[2])) - (p.gripAnchor ? 0 : Math.min(0.14, Math.max(0, (i.bulk ?? 0) - 0.23) * 1.2));
+    const hipZ = (i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, (p.rearMax ?? 0.34) - i.length * 0.5) : -(i.length * 0.5 + p.hip[2])) - (p.gripAnchor ? 0 : Math.min(0.12, Math.max(0, (i.bulk ?? 0) - 0.28) * 1.6));
     // Mira de hierro: se acerca el arma hacia el centro, por debajo de la vista (la cámara hace zoom); con óptica, la
     // línea de mira pasa por el centro de la óptica
     const ironPos: V3 = [p.hip[0] * 0.45, p.hip[1] * 0.78, hipZ + 0.05 - (p.adsGrip ? p.adsGrip * 0.6 : 0)]; // (pistolas: al apuntar, el brazo se extiende)
