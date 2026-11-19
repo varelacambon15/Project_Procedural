@@ -1054,7 +1054,7 @@ export class Gun {
       : supportKind(left && base && left.equals(base) ? (k > 0.5 ? hold?.ads : hold?.hip) : undefined, this.spec?.type);
     const pose = (at: THREE.Vector3, g: HandGrip, curl: Curl): HandPose => ({ pos: toCam(at).add(g.off.clone().applyQuaternion(hq)), orient: hq.clone().multiply(g.q), curl });
     // Índice siempre en el gatillo (sin disciplina de gatillo); al disparar aprieta un poco más
-    const R = GRIPS.right, sp = this.sprintT;
+    const R = this.spec?.type === "pistol" || this.spec?.type === "revolver" ? GRIPS.rightHandgun : GRIPS.right, sp = this.sprintT;
     // Dedos que rodean la empuñadura de verdad: unos fotogramas después de equipar (la mano ya está en su sitio) se busca
     // el cierre de cada dedo que apoya sus falanges en la superficie de la empuñadura (antes era fijo y en armas de
     // empuñadura fina los dedos quedaban flotando)
@@ -1297,9 +1297,12 @@ const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 const rx = (a: number) => new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), a);
 const C = (f: number, t: number): Curl => ({ fingers: [f, f + 0.04, f + 0.06, f + 0.08], thumb: t });
 /** Orientación (dedos, dorso), desplazamiento de la palma respecto al anclaje y cierre de cada agarre. */
-const GRIPS: Record<HandKind | "right", HandGrip> = {
+const GRIPS: Record<HandKind | "right" | "rightHandgun", HandGrip> = {
   // Empuñadura: dorso a la derecha, dedos rodeando el frente; la palma sigue la inclinación de la empuñadura
   right: { q: rx(-0.3).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.019, 0.012, 0.012), curl: C(1.05, 0.7) },
+  // Pistolas: la mano más baja en la empuñadura (la membrana entre pulgar e índice justo bajo la corredera, que asoma
+  // por encima de la mano como en los shooters de referencia) y la muñeca algo menos inclinada
+  rightHandgun: { q: rx(-0.22).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.016, -0.014, 0.016), curl: C(1.05, 0.7) },
   // Bajo el guardamanos: palma arriba, dedos hacia la derecha envolviéndolo
   under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.016, -0.012, 0.004), curl: C(1.15, 0.7) },
   // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
