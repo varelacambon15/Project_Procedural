@@ -179,6 +179,8 @@ async function boot() {
       // Respuesta física al impacto (retroceso por zona, partículas, marca, destello) y pausa mínima al matar o hacer crítico
       d.react(zone, point, point.clone().sub(camera.position).normalize(), dmg, crit, settings.impactFx);
       if (wasAlive && !d.alive) hitstop = Math.max(hitstop, d.kind.boss ? 0.12 : 0.05); else if (crit) hitstop = Math.max(hitstop, 0.025);
+      // Parón al recibir: el enemigo frena un instante (más en la cabeza y con críticos); los jefes, casi nada
+      if (d.alive && dealt > 0) { const k = d.kind.boss ? 0.15 : 1; d.slow((0.12 + (crit ? 0.1 : 0) + (zone === "head" ? 0.08 : 0)) * k, zone === "head" || crit ? 0.15 : 0.45); }
       // Desmembramiento pixelado con impactos muy fuertes en cabeza o extremidades (francotirador, revólver, escopeta…),
       // solo con el golpe que lo mata (antes podía quitarle la cabeza y seguir vivo)
       if (!d.alive && (zone === "head" || zone === "limb") && settings.impactFx && (dmg >= 120 || (zone === "head" && crit && dmg >= 80) || (gun.spec?.type === "shotgun" && dmg * 8 >= 150 && point.distanceTo(camera.position) < 7))) {
