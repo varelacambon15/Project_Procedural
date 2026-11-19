@@ -22,6 +22,8 @@ export interface SuperHooks {
   sig?(id: SuperId): void;
   /** Hace flotar al jugador (Gravedad cero). */
   levitate?(sec: number, h: number): void;
+  /** Ojo y dirección de la vista (rayo del cañón de riel, abanico de cristal, lanzamiento de la bomba). */
+  view?(): { o: THREE.Vector3; dir: THREE.Vector3 };
 }
 type VfxKind = "ring" | "flash" | "bolt" | "mark" | "beam" | "spin";
 interface Vfx { mesh: THREE.Mesh; t: number; dur: number; r: number; kind: VfxKind }
@@ -34,14 +36,20 @@ const COLOR: Record<SuperId, number> = {
   overload: 0xffd070, shockwave: 0xff9a50, storm: 0x8fd8ff, inferno: 0xff5a1e, stasis: 0x9fe8ff, orbital: 0xffe2a0,
   seekers: 0xff7ad0, aegis: 0x7affc8, deadeye: 0xff4050, vortex: 0xa070ff,
   sentry: 0x6ad8ff, zerog: 0xc0a0ff, chrono: 0x80c0ff, leech: 0xd03060, decoy: 0x50f0ff,
+  spirit: 0x8fe6ff, railgun: 0x7ab8ff, meteor: 0xff7a2a, mines: 0xff3040, shards: 0xb8f4ff,
 };
 /** Súperes con efecto que dura (el medidor no carga y no se puede volver a invocar mientras). */
-const LASTING = new Set<SuperId>(["overload", "storm", "stasis", "orbital", "aegis", "deadeye", "vortex", "sentry", "zerog", "chrono", "leech", "decoy"]);
+const LASTING = new Set<SuperId>(["overload", "storm", "stasis", "orbital", "aegis", "deadeye", "vortex", "sentry", "zerog", "chrono", "leech", "decoy", "meteor", "mines"]);
 
 export class SuperFx {
   private vfx: Vfx[] = [];
   private missiles: Missile[] = [];
   /** Torreta centinela y holograma señuelo (mientras dura su efecto). */ private sentry: THREE.Group | null = null; private holo: THREE.Group | null = null;
+  /** Bomba espiritual: la esfera que crece sobre el jugador durante la invocación y, al lanzarla, su vuelo. */
+  private orb: { core: THREE.Mesh; halo: THREE.Mesh; shell: THREE.Mesh; v: THREE.Vector3 | null; to: THREE.Vector3 | null; t: number } | null = null;
+  /** Minas sembradas (cada una con su luz que parpadea). */ private mines: { g: THREE.Group; armed: number }[] = [];
+  /** Esquirlas de cristal en vuelo (atraviesan: cada una golpea una vez a cada enemigo). */
+  private shardsFly: { m: THREE.Mesh; v: THREE.Vector3; left: number; hit: Set<Dummy> }[] = [];
   /** Invocación en curso (animación de manos) y efecto activo. */
   private cast_: { id: SuperId; t: number; hit: boolean } | null = null;
   private active: { id: SuperId; t: number; next: number; at: THREE.Vector3 } | null = null;
@@ -60,7 +68,7 @@ export class SuperFx {
   get activeTotal() { return this.active ? this.dur(this.active.id) : 1; }
   get activeId(): SuperId | null { return this.active?.id ?? null; }
   /** ¿Hay misiles en vuelo? (no se puede volver a invocar hasta que acaben). */
-  get busy() { return this.active != null || this.missiles.length > 0; }
+  get busy() { return this.active != null || this.missiles.length > 0 || this.orb != null || this.shardsFly.length > 0; }
   /** Modificadores del arma (Sobrecarga, Ojo letal). */
   get buff() {
     const id = this.active?.id;
@@ -75,7 +83,7 @@ export class SuperFx {
     if (this.cast_ || this.busy) return false; this.cast_ = { id, t: 0, hit: false };
     this.hooks.sound("cast"); return true; }
   /** Corta la invocación (muerte, cambio de pantalla). */
-  cancel() { this.cast_ = null; }
+  cancel() { if (this.cast_?.id === "spirit" && this.orb && !this.orb.v) this.dropOrb(); this.cast_ = null; }
   /** Quita todo lo que haya activo (torreta, señuelo, misiles…): al volver de una incursión o cargar partida. */
   reset() {
     this.cast_ = null; this.active = null;
@@ -83,6 +91,8 @@ export class SuperFx {
     this.sentry = this.holo = null;
     for (const m of this.missiles) this.scene.remove(m.mesh);
     this.missiles = [];
+    this.dropOrb(); for (const m of this.mines) this.scene.remove(m.g); this.mines = [];
+    for (const x of this.shardsFly) this.scene.remove(x.m); this.shardsFly = [];
   }
 
   /** Manos, cámara y arma de este fotograma, o null si no se está invocando. */
@@ -99,6 +109,9 @@ export class SuperFx {
     const c = this.cast_;
     if (c) {
       c.t += dt; const tl = SUPERS[c.id];
+      if (c.id === "spirit" && !c.hit) this.chargeOrb(c.t, tl, origin);
+      // Cañón de riel: la carga brilla entre las manos y crece hasta el disparo
+      if (c.id === "railgun" && !c.hit && c.t > 0.35 && this.hooks.hand) { const k = (c.t - 0.35) / (tl.hit - 0.35); this.spawn(new THREE.Mesh(sphereGeo, add(Math.random() < 0.5 ? COLOR.railgun : 0xffffff)), this.hooks.hand().add(new THREE.Vector3((Math.random() - 0.5) * 0.04, (Math.random() - 0.5) * 0.04, (Math.random() - 0.5) * 0.04)), 0.12, 0.02 + 0.06 * k, "flash"); }
       if (!c.hit && c.t >= tl.hit) { c.hit = true; this.trigger(c.id, origin); }
       if (c.t >= tl.duration) this.cast_ = null;
     }
@@ -109,12 +122,14 @@ export class SuperFx {
       if (a.id === "vortex") this.vortexTick(a, dt);
       if (a.id === "aegis" && a.t >= a.next) { a.next += 0.5; this.spawn(new THREE.Mesh(ringGeo, add(COLOR.aegis)), origin.clone().setY(0.05), 0.5, 1.6, "ring"); }
       if (a.id === "sentry") this.sentryTick(a, dt);
+      if (a.id === "meteor" && a.t >= a.next) { a.next += tl.interval ?? 0.3; this.meteorFall(a.at); }
       if (a.id === "leech" && a.t >= a.next) { a.next += tl.interval ?? 0.25; this.drain(origin); }
       if (a.id === "decoy" && this.holo) { this.holo.rotation.y += dt * 1.5; this.holo.children.forEach((c, i) => (((c as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(a.t * 12 + i))); }
       if (a.t >= this.dur(a.id)) {
         if (a.id === "orbital") this.orbitalBlast(a.at);
         if (a.id === "vortex") this.vortexCollapse(a.at);
         if (a.id === "zerog") this.slam();
+        if (a.id === "mines") { for (const m of this.mines) { this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.mines)), m.g.position.clone().setY(0.2), 0.2, 0.5, "flash"); this.scene.remove(m.g); } this.mines = []; }
         if (a.id === "sentry" && this.sentry) { this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.sentry)), this.sentry.position.clone().setY(0.8), 0.35, 1.4, "flash"); this.scene.remove(this.sentry); this.sentry = null; }
         if (a.id === "decoy" && this.holo) {
           const p = this.holo.position.clone(), r = SUPERS.decoy.radius ?? 6;
@@ -124,7 +139,7 @@ export class SuperFx {
         this.active = null;
       }
     }
-    this.updateMissiles(dt);
+    this.updateMissiles(dt); this.updateOrb(dt); this.updateMines(dt); this.updateShards(dt);
     for (const v of [...this.vfx]) {
       v.t += dt; const k = v.t / v.dur;
       if (v.kind === "ring") v.mesh.scale.setScalar(v.r * Math.min(1, k * 1.6));
@@ -260,6 +275,16 @@ export class SuperFx {
         this.scene.add(g); this.holo = g; this.spawn(new THREE.Mesh(sphereGeo, add(col)), p.clone().setY(1), 0.3, 1.2, "flash");
         this.hooks.sound("zap"); break;
       }
+      case "spirit": this.launchOrb(o); break;
+      case "railgun": this.railShot(o); break;
+      case "meteor": {
+        const p = this.aimAt(tl.range ?? 45, o).setY(0.05); this.active!.at = p; const r = tl.radius ?? 10;
+        this.spawn(new THREE.Mesh(discGeo, add(col)), p.clone(), this.dur(id), r, "mark");
+        this.spawn(new THREE.Mesh(ringGeo, add(0xffd080)), p.clone().setY(0.07), this.dur(id), r, "mark");
+        this.hooks.sound("cast"); break;
+      }
+      case "mines": this.plantMines(o); break;
+      case "shards": this.fireShards(); break;
       case "vortex": {
         const p = this.aimAt(tl.range ?? 24, o).setY(1.2); this.active!.at = p;
         this.spawn(new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: 0x080210, transparent: true, opacity: 0.9 })), p, this.dur(id), 1.1, "spin");
@@ -267,6 +292,137 @@ export class SuperFx {
         this.spawn(new THREE.Mesh(discGeo, add(col)), p.clone().setY(0.05), this.dur(id), tl.pull ?? 16, "mark");
         this.hooks.sound("zap"); break;
       }
+    }
+  }
+
+  // ---------- Bomba espiritual ----------
+  /** Mientras se invoca (10 s): la esfera crece sobre la cabeza y la energía del entorno llega hasta ella en hilos. */
+  private chargeOrb(t: number, tl: (typeof SUPERS)["spirit"], o: THREE.Vector3) {
+    if (!this.orb) {
+      const core = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: 0xf2fcff, transparent: true, opacity: 0.95, toneMapped: false }));
+      const halo = new THREE.Mesh(sphereGeo, add(COLOR.spirit, THREE.BackSide)), shell = new THREE.Mesh(sphereGeo, add(0x4aa8ff));
+      for (const m of [core, halo, shell]) this.scene.add(m);
+      this.orb = { core, halo, shell, v: null, to: null, t: 0 };
+    }
+    const k = Math.min(1, t / tl.hit), size = 0.15 + 3.2 * Math.pow(k, 0.8), ob = this.orb;
+    // Delante y por encima del jugador (se ve crecer en la parte alta de la pantalla, sobre las manos alzadas)
+    const v = this.hooks.view?.(), fwd = v ? v.dir.clone().setY(0).normalize() : new THREE.Vector3(0, 0, -1);
+    const at = o.clone().addScaledVector(fwd, 5 + size * 0.8).setY(o.y + 3.2 + size * 0.75);
+    ob.core.position.copy(at); ob.halo.position.copy(at); ob.shell.position.copy(at);
+    ob.core.scale.setScalar(size * 0.72); ob.halo.scale.setScalar(size * (1.25 + 0.06 * Math.sin(t * 9))); ob.shell.scale.setScalar(size);
+    (ob.shell.material as THREE.MeshBasicMaterial).opacity = 0.35 + 0.15 * Math.sin(t * 5);
+    // Hilos de energía que llegan desde lejos (más a medida que crece)
+    if (Math.random() < 0.35 + k * 0.6) {
+      const a = Math.random() * Math.PI * 2, from = at.clone().add(new THREE.Vector3(Math.cos(a) * (14 + Math.random() * 12), -3 + Math.random() * 10, Math.sin(a) * (14 + Math.random() * 12)));
+      this.zap(from, at, Math.random() < 0.5 ? COLOR.spirit : 0xffffff, 0.22);
+    }
+    if (Math.random() < 0.08) this.spawn(new THREE.Mesh(ringGeo, add(COLOR.spirit)), o.clone().setY(0.05), 0.6, 3 + k * 4, "ring");
+    if (Math.random() < 0.05 + k * 0.1) this.hooks.shake(0.02 + k * 0.05);
+  }
+  /** Lanza la bomba hacia donde se mira: vuela despacio, dejando estela, y estalla al llegar. */
+  private launchOrb(o: THREE.Vector3) {
+    const tl = SUPERS.spirit; if (!this.orb) this.chargeOrb(tl.hit, tl, o);
+    const ob = this.orb!, to = this.aimAt(tl.range ?? 60, o).setY(0.3), from = ob.core.position.clone();
+    ob.to = to; ob.v = to.clone().sub(from).normalize().multiplyScalar(tl.rate ?? 16); ob.t = 0;
+    this.hooks.shake(0.4); this.hooks.sound("boom");
+  }
+  private updateOrb(dt: number) {
+    const ob = this.orb; if (!ob || !ob.v || !ob.to) return;
+    ob.t += dt; const p = ob.core.position.addScaledVector(ob.v, dt); ob.halo.position.copy(p); ob.shell.position.copy(p);
+    ob.halo.scale.setScalar(ob.shell.scale.x * (1.25 + 0.1 * Math.sin(ob.t * 20)));
+    if (Math.random() < 0.7) this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.spirit)), p.clone().add(new THREE.Vector3((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2)), 0.5, 0.9, "flash");
+    const near = this.alive().some((d) => d.center.distanceTo(p) < ob.shell.scale.x * 0.8);
+    if (p.y <= ob.shell.scale.x * 0.6 || p.distanceTo(ob.to) < 1 || near || ob.t > 6) {
+      const tl = SUPERS.spirit, r = tl.radius ?? 22, g = p.clone().setY(0.05);
+      this.spawn(new THREE.Mesh(sphereGeo, add(0xffffff)), p.clone(), 0.9, r * 0.55, "flash");
+      this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.spirit, THREE.BackSide)), p.clone(), 1.4, r * 0.85, "flash");
+      for (let i = 0; i < 4; i++) this.spawn(new THREE.Mesh(ringGeo, add(i % 2 ? 0xffffff : COLOR.spirit)), g.clone().setY(0.05 + i * 0.4), 0.9 + i * 0.35, r * (1.1 - i * 0.12), "ring");
+      this.spawn(new THREE.Mesh(boltGeo, add(COLOR.spirit)), g.clone().setY(20), 1.1, r * 0.3, "beam").scale.y = 40;
+      this.blast(g, (tl.damage ?? 3000) * this.power, r, "explosive", 2.2);
+      this.hooks.shake(0.8); this.hooks.sound("boom"); this.hooks.sound("boom");
+      this.dropOrb();
+    }
+  }
+  private dropOrb() { if (!this.orb) return; for (const m of [this.orb.core, this.orb.halo, this.orb.shell]) this.scene.remove(m); this.orb = null; }
+
+  // ---------- Cañón de riel ----------
+  /** Haz que atraviesa todo lo que hay en la línea de la vista (daño completo a cada uno). */
+  private railShot(o: THREE.Vector3) {
+    const tl = SUPERS.railgun, v = this.hooks.view?.() ?? { o: o.clone().setY(1.6), dir: new THREE.Vector3(0, 0, -1) };
+    const range = tl.range ?? 90, w = tl.radius ?? 1.3, from = (this.hooks.hand?.() ?? v.o.clone().addScaledVector(v.dir, 0.6)), to = v.o.clone().addScaledVector(v.dir, range);
+    // (sale de las manos, algo abajo a la derecha, hacia el centro: desde la cámara se ve como un haz y no como un punto)
+    const len = from.distanceTo(to), mid = from.clone().lerp(to, 0.5), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().sub(from).normalize());
+    for (const [r, c, dur] of [[0.16, COLOR.railgun, 0.7], [0.06, 0xffffff, 0.5], [0.4, 0x2050ff, 0.4]] as [number, number, number][]) {
+      const m = this.spawn(new THREE.Mesh(boltGeo, add(c)), mid, dur, r, "beam"); m.scale.y = len; m.quaternion.copy(q);
+    }
+    for (let i = 1; i < 10; i++) { const ring = this.spawn(new THREE.Mesh(ringGeo, add(COLOR.railgun)), from.clone().lerp(to, i / 10), 0.5, 1.2 + i * 0.08, "ring"); ring.quaternion.copy(q); }
+    for (const d of this.alive()) {
+      const c = d.center, t = c.clone().sub(v.o).dot(v.dir); if (t < 0 || t > range) continue;
+      if (v.o.clone().addScaledVector(v.dir, t).distanceTo(c) < w + 0.3 * (d.kind.scale ?? 1)) { this.hooks.onHit(d, c, (tl.damage ?? 1500) * this.power, "electrico"); d.push(v.dir.clone().setY(0).normalize(), 2.5); this.spawn(new THREE.Mesh(sphereGeo, add(0xffffff)), c, 0.25, 0.9, "flash"); }
+    }
+    this.hooks.shake(0.5); this.hooks.sound("zap"); this.hooks.sound("boom");
+  }
+
+  // ---------- Lluvia de meteoritos ----------
+  private meteorFall(at: THREE.Vector3) {
+    const tl = SUPERS.meteor, R = tl.radius ?? 10, a = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * R;
+    const p = at.clone().add(new THREE.Vector3(Math.cos(a) * rr, 0, Math.sin(a) * rr)).setY(0.05), sky = p.clone().add(new THREE.Vector3(-8, 38, -4));
+    const len = sky.distanceTo(p), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), sky.clone().sub(p).normalize());
+    const trail = this.spawn(new THREE.Mesh(boltGeo, add(COLOR.meteor)), sky.clone().lerp(p, 0.5), 0.35, 0.35, "beam"); trail.scale.y = len; trail.quaternion.copy(q);
+    const core = this.spawn(new THREE.Mesh(boltGeo, add(0xffe0a0)), sky.clone().lerp(p, 0.5), 0.25, 0.14, "beam"); core.scale.y = len; core.quaternion.copy(q);
+    this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.meteor)), p.clone().setY(0.6), 0.45, 2.4, "flash");
+    this.spawn(new THREE.Mesh(ringGeo, add(0xffb060)), p, 0.5, 4, "ring");
+    this.spawn(new THREE.Mesh(discGeo, add(0x401000)), p.clone().setY(0.03), 2.5, 1.6, "mark");
+    this.blast(p, (tl.damage ?? 340) * this.power, 4, "fuego", 0.8); this.hooks.shake(0.18); this.hooks.sound("boom");
+  }
+
+  // ---------- Campo de minas ----------
+  private plantMines(o: THREE.Vector3) {
+    const tl = SUPERS.mines, n = tl.count ?? 8;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + Math.random() * 0.3, r = 3 + Math.random() * 2.5, g = new THREE.Group();
+      g.position.set(o.x + Math.cos(a) * r, 0, o.z + Math.sin(a) * r);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.09, 12), new THREE.MeshStandardMaterial({ color: 0x2a2e33, metalness: 0.6, roughness: 0.5 })); body.position.y = 0.045; g.add(body);
+      const led = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), new THREE.MeshBasicMaterial({ color: COLOR.mines, toneMapped: false })); led.position.y = 0.1; led.name = "led"; g.add(led);
+      this.scene.add(g); this.mines.push({ g, armed: 0.6 + i * 0.05 });
+      this.zap(o.clone().setY(1.2), g.position.clone().setY(0.1), COLOR.mines, 0.2);
+    }
+    this.hooks.sound("zap");
+  }
+  private updateMines(dt: number) {
+    const tl = SUPERS.mines;
+    for (const m of [...this.mines]) {
+      m.armed -= dt; const led = m.g.getObjectByName("led") as THREE.Mesh; led.visible = m.armed > 0 ? Math.sin(m.armed * 30) > 0 : Math.sin(performance.now() / 180) > 0.2;
+      if (m.armed > 0) continue;
+      const p = m.g.position, near = this.alive().find((d) => Math.hypot(d.group.position.x - p.x, d.group.position.z - p.z) < (tl.range ?? 2.3) + 0.3 * (d.kind.scale ?? 1));
+      if (!near) continue;
+      const r = tl.radius ?? 4.2;
+      this.spawn(new THREE.Mesh(sphereGeo, add(0xffa040)), p.clone().setY(0.6), 0.4, r * 0.45, "flash"); this.spawn(new THREE.Mesh(ringGeo, add(COLOR.mines)), p.clone().setY(0.05), 0.45, r, "ring");
+      this.blast(p, (tl.damage ?? 450) * this.power, r, "explosive", 1.1); this.hooks.shake(0.2); this.hooks.sound("boom");
+      this.scene.remove(m.g); this.mines.splice(this.mines.indexOf(m), 1);
+    }
+  }
+
+  // ---------- Abanico de cristal ----------
+  private fireShards() {
+    const tl = SUPERS.shards, v = this.hooks.view?.(); if (!v) return; const n = tl.count ?? 26;
+    const right = new THREE.Vector3().crossVectors(v.dir, new THREE.Vector3(0, 1, 0)).normalize();
+    for (let i = 0; i < n; i++) {
+      const spread = ((i / (n - 1)) - 0.5) * 0.9, dir = v.dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -spread).addScaledVector(new THREE.Vector3(0, 1, 0), (Math.random() - 0.5) * 0.12).normalize();
+      const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.09, 0), add(i % 3 ? COLOR.shards : 0xffffff)); m.scale.set(0.6, 0.6, 2.6);
+      m.position.copy(v.o).addScaledVector(v.dir, 0.7).addScaledVector(right, spread * 0.4).add(new THREE.Vector3(0, -0.15, 0)); m.lookAt(m.position.clone().add(dir));
+      this.scene.add(m); this.shardsFly.push({ m, v: dir.multiplyScalar(tl.rate ?? 50), left: (tl.range ?? 38) / (tl.rate ?? 50), hit: new Set() });
+    }
+    this.hooks.shake(0.2); this.hooks.sound("zap");
+  }
+  private updateShards(dt: number) {
+    const tl = SUPERS.shards;
+    for (const s of [...this.shardsFly]) {
+      s.left -= dt; s.m.position.addScaledVector(s.v, dt); s.m.rotation.z += dt * 12;
+      for (const d of this.alive()) if (!s.hit.has(d) && d.center.distanceTo(s.m.position) < 0.7 * (d.kind.scale ?? 1)) {
+        s.hit.add(d); this.hooks.onHit(d, s.m.position.clone(), (tl.damage ?? 130) * this.power, null); this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.shards)), s.m.position.clone(), 0.15, 0.35, "flash");
+      }
+      if (s.left <= 0 || s.m.position.y < 0) { this.scene.remove(s.m); this.shardsFly.splice(this.shardsFly.indexOf(s), 1); }
     }
   }
 

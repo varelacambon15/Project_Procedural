@@ -129,7 +129,7 @@ export class InventoryScreen {
     return list.filter(ok).sort((a, b) => { const x = key(a), y = key(b); return x < y ? -1 : x > y ? 1 : 0; });
   }
 
-  private static GLYPH: Record<SuperId, string> = { overload: "⟐", shockwave: "◎", storm: "ϟ", inferno: "♨", stasis: "❄", orbital: "⊕", seekers: "⁂", aegis: "⬡", deadeye: "◉", vortex: "@", sentry: "⊤", zerog: "⇡", chrono: "⧗", leech: "♥", decoy: "♙" };
+  private static GLYPH: Record<SuperId, string> = { overload: "⟐", shockwave: "◎", storm: "ϟ", inferno: "♨", stasis: "❄", orbital: "⊕", seekers: "⁂", aegis: "⬡", deadeye: "◉", vortex: "@", sentry: "⊤", zerog: "⇡", chrono: "⧗", leech: "♥", decoy: "♙", spirit: "☀", railgun: "═", meteor: "☄", mines: "✲", shards: "✧" };
   /** Parámetros de la descripción de un súper. */
   private static spArgs(id: SuperId) { const s = SUPERS[id]; return { s: Math.round((s.slow ?? 1) * 100), h: Math.round((s.heal ?? 0) * 100), a: s.active ?? 0, d: s.damage ?? 0, r: s.radius ?? 0, n: s.count ?? 0, g: Math.round((1 - (s.guard ?? 1)) * 100), v: Math.round(((s.vuln ?? 1) - 1) * 100), c: Math.round(((s.crit ?? 1) - 1) * 100) }; }
   /** Pestaña Progreso: nivel, experiencia y árbol de habilidades (tres ramas). */

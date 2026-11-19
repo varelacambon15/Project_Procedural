@@ -228,7 +228,8 @@ async function boot() {
     heal: (n) => { php.value = n == null ? php.max : Math.min(php.max, php.value + n); },
     levitate: (sec, h) => player.levitate(sec, h),
     sig: (id) => superSig(id),
-    hand: () => camera.localToWorld(new THREE.Vector3(0.15, -0.15, -0.6)),
+    hand: (): THREE.Vector3 => camera.localToWorld(new THREE.Vector3(0.04, -0.14, -0.55)),
+    view: () => ({ o: camera.getWorldPosition(new THREE.Vector3()), dir: camera.getWorldDirection(new THREE.Vector3()) }),
     sound(kind) {
       const e = soundManifest?.efectos; if (!e) return;
       if (kind === "boom") { const l = e.explosion_grave; if (l?.length) playSample(sample(l[0]), 0.7); const x = e.explosion; if (x?.length) playSample(sample(x[Math.floor(Math.random() * x.length)]), 0.5, 0.8); }
@@ -255,6 +256,11 @@ async function boot() {
     chrono: { f0: 800, f1: 100, wave: "triangle", len: 1.5, noise: 0.05, lp: 2000, vol: 0.12, chord: [0.5] },
     leech: { f0: 140, f1: 90, wave: "sawtooth", len: 0.9, noise: 0.2, lp: 900, vol: 0.12, chord: [1.06] },
     decoy: { f0: 700, f1: 1100, wave: "triangle", len: 0.6, noise: 0.05, lp: 4000, vol: 0.08, chord: [1.33] },
+    spirit: { f0: 70, f1: 30, wave: "sawtooth", len: 2.2, noise: 0.6, lp: 1400, vol: 0.32, chord: [1.5, 2] },
+    railgun: { f0: 2400, f1: 180, wave: "sawtooth", len: 0.7, noise: 0.25, lp: 7000, vol: 0.12, chord: [1.01] },
+    meteor: { f0: 400, f1: 80, wave: "triangle", len: 0.8, noise: 0.4, lp: 2200, vol: 0.12 },
+    mines: { f0: 900, f1: 1300, wave: "square", len: 0.25, noise: 0, lp: 3000, vol: 0.05, chord: [1.5] },
+    shards: { f0: 2600, f1: 3600, wave: "triangle", len: 0.45, noise: 0.15, lp: 8000, vol: 0.08, chord: [1.26, 1.5] },
   };
   function superSig(id: SuperId) {
     try {
