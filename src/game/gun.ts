@@ -963,7 +963,8 @@ export class Gun {
     // Pistolas y revólveres: en la cadera a una mano (la otra entra al apuntar), como en los shooters de referencia;
     // si el jugador eligió otro agarre en el banco, se respeta
     const handgun = this.spec?.type === "pistol" || this.spec?.type === "revolver";
-    const hipS: Support | undefined = handgun && hold?.hip === "grip" && !hold.chosen ? "none" : hold?.hip;
+    // (variedad: cada pistola trae su agarre de serie, a una o a dos manos; ya no se fuerza a una mano)
+    void handgun; const hipS: Support | undefined = hold?.hip;
     const hipP = at(hipS ?? "front"), adsP = at(hold?.ads ?? "front");
     let base: THREE.Vector3 | null = hipP && adsP ? hipP.lerp(adsP, k) : adsP ? (k < 0.03 ? null : rest.clone().lerp(adsP, k)) : hipP ? (k > 0.97 ? null : hipP.lerp(rest, k)) : null;
     if (!hold && !base) base = h.support.clone();
@@ -1302,7 +1303,8 @@ const GRIPS: Record<HandKind | "right", HandGrip> = {
   // Bajo el guardamanos: palma arriba, dedos hacia la derecha envolviéndolo
   under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.016, -0.012, 0.004), curl: C(1.15, 0.7) },
   // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
-  wrap: { q: rx(-0.3).multiply(handBasis(V(0.32, -0.15, -1), V(-1, 0.12, 0))), off: V(-0.024, -0.016, 0.014), curl: C(1.3, 0.55) },
+  // (agarre en C: la izquierda queda debajo de la derecha y la envuelve, pulgares hacia delante)
+  wrap: { q: rx(-0.3).multiply(handBasis(V(0.32, -0.15, -1), V(-1, 0.12, 0))), off: V(-0.02, -0.032, 0.008), curl: C(1.3, 0.55) },
   // Empuñadura vertical o cargador: mano cerrada alrededor, dorso a la izquierda
   vgrip: { q: rx(-0.1).multiply(handBasis(V(0.35, -0.05, -1), V(-1, 0.2, 0))), off: V(-0.022, 0, 0.026), curl: C(1.1, 0.65) },
   // Coger el cargador o la palanca: mano semiabierta que llega desde la izquierda
