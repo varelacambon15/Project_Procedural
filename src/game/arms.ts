@@ -27,7 +27,7 @@ export const ARM_DATA = {
 
 /** Cierre de la mano: índice, corazón, anular, meñique (0 abierta … 1 puño) y pulgar. */
 export interface Curl { fingers: [number, number, number, number]; thumb: number }
-export interface HandPose { pos: THREE.Vector3; orient: THREE.Quaternion; curl: Curl }
+export interface HandPose { pos: THREE.Vector3; orient: THREE.Quaternion; curl: Curl; /** Muñeca recta: el antebrazo sigue el eje de la mano (0 = no, 1 = del todo; pistolas). */ straight?: number }
 export interface HandTargets { right: HandPose; left: HandPose | null; dt?: number; /** Desplazamiento de los hombros (movimientos rápidos del arma). */ shoulder?: THREE.Vector3 }
 
 /** IK de dos huesos: devuelve la posición del codo. */
@@ -224,8 +224,11 @@ class Arm {
     // hombro fijo, que doblaba la muñeca hacia abajo. El hombro queda fuera de cuadro y se estira lo que haga falta.
     const ik = solveTwoBone(shoulder, wrist, ARM_DATA.upper, ARM_DATA.fore, pole);
     // (dirección natural del antebrazo en primera persona: hacia abajo, hacia atrás y por fuera, como en los shooters)
-    const along = new THREE.Vector3(0.3 * this.side, -0.72, 0.62).normalize();
-    const dIk = ik.clone().sub(wrist).normalize(), dir = dIk.clone().lerp(along, ARM_DATA.wristStraight).normalize();
+    const natural = new THREE.Vector3(0.3 * this.side, -0.72, 0.62).normalize();
+    // (con `straight`, el antebrazo continúa el eje de la mano, un poco hacia abajo: muñeca sin quebrar)
+    const handAxis = new THREE.Vector3(0, 0, 1).applyQuaternion(this.hand.g.quaternion).add(new THREE.Vector3(0, -1.8, 0)).normalize();
+    const along = p.straight ? natural.clone().lerp(handAxis, p.straight).normalize() : natural;
+    const dIk = ik.clone().sub(wrist).normalize(), dir = dIk.clone().lerp(along, p.straight ? 0.92 : ARM_DATA.wristStraight).normalize();
     const elbow = wrist.clone().addScaledVector(dir, ARM_DATA.fore);
     this.upper.set(shoulder, elbow); this.elbowM.position.copy(elbow);
     this.fore.set(elbow, wrist);
