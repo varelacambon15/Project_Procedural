@@ -112,11 +112,10 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   }
   const nFights = fights.length;
   fights.forEach((f, k) => (f.enemies = roomEnemies(r, k, nFights, opt.difficulty)));
-  // Objetivos: la primera sala siempre «limpiar»; luego, alguna de dos oleadas o a contrarreloj
+  // Objetivos: la primera sala siempre «limpiar»; luego, alguna a contrarreloj
   fights.forEach((f, k) => {
     if (k === 0) return; const x = r();
-    if (x < 0.3) { f.goal = "waves"; f.enemies = [...f.enemies, ...roomEnemies(r, k, nFights, opt.difficulty).slice(0, 3 + opt.difficulty)]; }
-    else if (x < 0.55) { f.goal = "timed"; f.limit = Math.round(18 + f.enemies.length * 3.2); }
+    if (x < 0.3) { f.goal = "timed"; f.limit = Math.round(18 + f.enemies.length * 3.2); }
   });
   const boss = rooms.find((x) => x.kind === "boss")!;
   for (const f of fights) if (f.enemies.length >= 9 && r() < 0.4) f.enemies[0] = "commander";
