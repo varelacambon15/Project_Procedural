@@ -28,6 +28,10 @@ export interface World {
   /** Noche (sala a oscuras con neón) o día (luz de mantenimiento). */
   setNight(on: boolean): void;
   readonly night: boolean;
+  /** Del sistema local del campo de tiro (línea de tiro en z = 0, blancos hacia -z) al mundo (sala de detrás del hall). */
+  rangePt(x: number, z: number): THREE.Vector3;
+  /** Llegada a la arena de supervivencia (se entra desde el ordenador de modos). */
+  survivalAt: { pos: THREE.Vector3; yaw: number };
 }
 
 /** Textura pixelada (filtro "nearest"), dibujada en un lienzo pequeño. */
@@ -49,7 +53,12 @@ export function buildRange(scene: THREE.Scene): World {
   const colliders: THREE.Box3[] = [];
   const shootables: THREE.Object3D[] = [];
   // (ampliado: antes 40 × 86 m; ahora 48 m de ancho, campo de tiro hasta 80 m y vestíbulo más hondo)
-  const W = 48, FRONT = -82, BACK = 28, H = 7.5;
+  // Hall (zona de inicio) z ∈ [0, BACK]; el campo de tiro va detrás (grupo `rg`, girado 180°): en su sistema local la
+  // línea de tiro está en z = 0 y los blancos hacia -z, como antes; en el mundo, la línea queda en z = RF.
+  const W = 48, FRONT = -82, BACK = 28, H = 7.5, RF = BACK + 5.5;
+  const rg = new THREE.Group(); rg.position.set(0, 0, RF); rg.rotation.y = Math.PI; scene.add(rg);
+  const rangePt = (x: number, z: number) => new THREE.Vector3(-x, 0, RF - z);
+  const rgMeshes: THREE.Mesh[] = [];
   const lanes = [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5];
 
   // Materiales de panel: losas oscuras con juntas y remaches, pixeladas
@@ -92,50 +101,77 @@ export function buildRange(scene: THREE.Scene): World {
   const neonA = new THREE.MeshStandardMaterial({ color: NEON_AMBER, emissive: NEON_AMBER, emissiveIntensity: 1.4 });
   const hazard = new THREE.MeshStandardMaterial({ map: pixelTexture(16, 4, (g) => { for (let x = 0; x < 16; x++) { g.fillStyle = Math.floor(x / 2) % 2 ? "#c99a2e" : "#1c1c1c"; g.fillRect(x, 0, 1, 4); } }, [W, 1]), roughness: 0.7 });
 
+  let into: THREE.Object3D = scene;
   const box = (w: number, h: number, d: number, x: number, y: number, z: number, mat: THREE.Material, collide = true, shoot = true) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-    m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; scene.add(m);
-    if (collide) colliders.push(new THREE.Box3().setFromObject(m));
+    m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; into.add(m);
+    if (collide) { if (into === rg) rgMeshes.push(m); else colliders.push(new THREE.Box3().setFromObject(m)); }
     if (shoot) shootables.push(m);
     return m;
   };
 
-  // Suelo, paredes, techo y fondo de la sala
-  const fl = new THREE.Mesh(new THREE.PlaneGeometry(W, BACK - FRONT), floor);
-  fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, (BACK + FRONT) / 2); fl.receiveShadow = true; scene.add(fl); shootables.push(fl);
-  box(1, H, BACK - FRONT, -W / 2 - 0.5, H / 2, (BACK + FRONT) / 2, wall);
-  // Pared derecha con puerta (4 m) hacia la sala nueva, a la altura del vestíbulo
+  // ---------- Hall (zona de inicio): sala cerrada; detrás, la puerta al campo de tiro ----------
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(W, BACK), floor);
+  fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, BACK / 2); fl.receiveShadow = true; scene.add(fl); shootables.push(fl);
+  // Pared izquierda con la puerta sellada (4 m, de z = 20 a 24): se abrirá con 4 piezas
+  const LD0 = 20, LD1 = 24;
+  box(1, H, LD0, -W / 2 - 0.5, H / 2, LD0 / 2, wall);
+  box(1, H, BACK - LD1, -W / 2 - 0.5, H / 2, (BACK + LD1) / 2, wall);
+  box(1, H - 3.4, LD1 - LD0, -W / 2 - 0.5, (H + 3.4) / 2, (LD0 + LD1) / 2, wall, false);
+  // Pared derecha con puerta (4 m) hacia la sala de modos
   const SD0 = 16, SD1 = 20;
-  box(1, H, SD0 - FRONT, W / 2 + 0.5, H / 2, (SD0 + FRONT) / 2, wall);
+  box(1, H, SD0, W / 2 + 0.5, H / 2, SD0 / 2, wall);
   box(1, H, BACK - SD1, W / 2 + 0.5, H / 2, (BACK + SD1) / 2, wall);
   box(1, H - 3.4, SD1 - SD0, W / 2 + 0.5, (H + 3.4) / 2, (SD0 + SD1) / 2, wall, false);
-  // Pared del fondo con puerta (4 m) hacia la sala de oleadas
+  // Pared del fondo con puerta (4 m) hacia el campo de tiro; delante, pared cerrada
   const DOOR = 2, DOOR_H = 3.2;
   box(W / 2 + 1 - DOOR, H, 1, -(W / 2 + 1 + DOOR) / 2, H / 2, BACK + 0.5, wall);
   box(W / 2 + 1 - DOOR, H, 1, (W / 2 + 1 + DOOR) / 2, H / 2, BACK + 0.5, wall);
   box(DOOR * 2, H - DOOR_H, 1, 0, (H + DOOR_H) / 2, BACK + 0.5, wall, false); // dintel: sin colisión (el jugador choca por planta)
+  box(W + 2, H, 1, 0, H / 2, -0.5, wall);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W + 2, BACK + 2), dark); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, H, BACK / 2); scene.add(ceil);
+  const dayOnly: THREE.Object3D[] = [];
+  for (let z = BACK - 4; z > 0; z -= 8) {
+    box(W, 0.3, 0.3, 0, H - 0.15, z, steel, false, false);
+    for (const x of [-18, -9, 0, 9, 18]) box(5, 0.06, 1.4, x, H - 0.05, z - 4, panelLight, false, false);
+  }
+  box(0.04, 0.25, BACK, -W / 2 + 0.03, 1.1, BACK / 2, safety, false, false);
+  box(0.04, 0.25, BACK, W / 2 - 0.03, 1.1, BACK / 2, safety, false, false);
+  // Puerta sellada: hoja de acero con 4 huecos para las piezas (vacíos por ahora) y su rótulo
+  const sealed = new THREE.Group(); sealed.position.set(-W / 2 - 0.5, 0, (LD0 + LD1) / 2); scene.add(sealed);
+  { const add = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; sealed.add(o); return o; };
+    add(0.5, 3.4, LD1 - LD0, 0, 1.7, 0, steel);
+    add(0.6, 0.25, LD1 - LD0 + 0.4, 0.05, 3.5, 0, safety); for (const s of [-1, 1]) add(0.6, 3.4, 0.2, 0.05, 1.7, s * ((LD1 - LD0) / 2 + 0.1), safety);
+    add(0.52, 0.06, LD1 - LD0 - 0.4, 0.02, 1.7, 0, dark);
+    const slotOff = new THREE.MeshStandardMaterial({ color: 0x20262c, emissive: 0x3a1010, emissiveIntensity: 0.6, roughness: 0.5 });
+    for (let i = 0; i < 4; i++) { add(0.56, 0.42, 0.42, 0.03, 2.3, -1.2 + i * 0.8, dark); add(0.58, 0.26, 0.26, 0.03, 2.3, -1.2 + i * 0.8, slotOff); }
+    add(0.56, 0.05, 3.2, 0.03, 2.72, 0, neonA); }
+  colliders.push(new THREE.Box3(new THREE.Vector3(-W / 2 - 1, 0, LD0), new THREE.Vector3(-W / 2 + 0.1, 3.4, LD1)));
+  { const m = sign(t("sign.sealed"), "#c8402e", 3.2, 0.8); m.position.set(-W / 2 + 0.04, 4.2, (LD0 + LD1) / 2); m.rotation.y = Math.PI / 2; scene.add(m); }
+
+  // ---------- Campo de tiro (sala de detrás, en el grupo `rg`; coordenadas locales como el campo original) ----------
+  into = rg;
+  { const rf = new THREE.Mesh(new THREE.PlaneGeometry(W, 4.5 - FRONT), floor); rf.rotation.x = -Math.PI / 2; rf.position.set(0, 0, (4.5 + FRONT) / 2); rf.receiveShadow = true; rg.add(rf); shootables.push(rf); }
+  box(1, H, 4.5 - FRONT, -W / 2 - 0.5, H / 2, (4.5 + FRONT) / 2, wall);
+  box(1, H, 4.5 - FRONT, W / 2 + 0.5, H / 2, (4.5 + FRONT) / 2, wall);
   box(W + 2, H, 1, 0, H / 2, FRONT - 0.5, wall);
-  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W + 2, BACK - FRONT + 2), dark); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, H, (BACK + FRONT) / 2); scene.add(ceil);
-  // Vigas del techo y zócalos de neón (acento pequeño, cian a un lado y ámbar al otro)
-  // (techo, vigas y zócalos solo de día: de noche la sala queda al aire libre, entre edificios)
-  const dayOnly: THREE.Object3D[] = [ceil];
-  for (let z = BACK - 4; z > FRONT; z -= 8) {
+  { const rc = new THREE.Mesh(new THREE.PlaneGeometry(W + 2, 4.5 - FRONT + 2), dark); rc.rotation.x = Math.PI / 2; rc.position.set(0, H, (4.5 + FRONT) / 2); rg.add(rc); dayOnly.push(rc); }
+  for (let z = 0; z > FRONT; z -= 8) {
     dayOnly.push(box(W, 0.3, 0.3, 0, H - 0.15, z, steel, false, false));
     for (const x of [-18, -9, 0, 9, 18]) dayOnly.push(box(5, 0.06, 1.4, x, H - 0.05, z - 4, panelLight, false, false));
   }
-  // Franja de seguridad a media altura en las paredes laterales (de día)
-  dayOnly.push(box(0.04, 0.25, BACK - FRONT, -W / 2 + 0.03, 1.1, (BACK + FRONT) / 2, safety, false, false));
-  dayOnly.push(box(0.04, 0.25, BACK - FRONT, W / 2 - 0.03, 1.1, (BACK + FRONT) / 2, safety, false, false));
+  dayOnly.push(box(0.04, 0.25, 4.5 - FRONT, -W / 2 + 0.03, 1.1, (4.5 + FRONT) / 2, safety, false, false));
+  dayOnly.push(box(0.04, 0.25, 4.5 - FRONT, W / 2 - 0.03, 1.1, (4.5 + FRONT) / 2, safety, false, false));
 
   // Líneas de distancia en el suelo (finas y claras) con su rótulo de terminal en las paredes
   const lineMat = new THREE.MeshBasicMaterial({ color: 0xf4f4f0, transparent: true, opacity: 0.85 });
   for (const d of [5, 10, 15, 25, 35, 50, 75]) {
-    const ln = new THREE.Mesh(new THREE.PlaneGeometry(W, d % 25 === 0 || d === 10 ? 0.14 : 0.08), lineMat); ln.rotation.x = -Math.PI / 2; ln.position.set(0, 0.012, -d); scene.add(decal(ln));
+    const ln = new THREE.Mesh(new THREE.PlaneGeometry(W, d % 25 === 0 || d === 10 ? 0.14 : 0.08), lineMat); ln.rotation.x = -Math.PI / 2; ln.position.set(0, 0.012, -d); rg.add(decal(ln));
     const tex = pixelTexture(64, 24, (g) => { g.fillStyle = "#f2f2ee"; g.fillRect(0, 0, 64, 24); g.fillStyle = "#1c1f22"; g.font = "bold 18px monospace"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(`${d}M`, 32, 14); g.fillStyle = "#e07a2a"; g.fillRect(0, 0, 64, 3); });
     for (const x of [-W / 2 + 0.02, W / 2 - 0.02]) {
       const bm = new THREE.MeshBasicMaterial({ map: tex }); boardMats.push(bm);
       const s = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.9), bm);
-      s.position.set(x, 2.4, -d); s.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2; scene.add(decal(s));
+      s.position.set(x, 2.4, -d); s.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2; rg.add(decal(s));
     }
   }
 
@@ -148,22 +184,24 @@ export function buildRange(scene: THREE.Scene): World {
     box(0.08, 0.9, 0.7, x + 1.7, 0.48, 0.25, steel, false);
     box(0.36, 0.015, 0.04, x + 1.2, 1.05, 0.55, pilot, false, false); // piloto de la calle
   }
-  colliders.push(new THREE.Box3(new THREE.Vector3(-15.2, 0, -0.3), new THREE.Vector3(15.2, 1.05, 0.7)));
+  colliders.push(new THREE.Box3().setFromPoints([rangePt(-15.2, -0.3), rangePt(15.2, 0.7).setY(1.05)]));
   for (const x of [-15, -10, -5, 0, 5, 10, 15]) box(0.1, 2.4, 1.6, x, 1.2, 0.6, new THREE.MeshStandardMaterial({ color: 0x3a4248, transparent: true, opacity: 0.7, roughness: 0.3, metalness: 0.3 }));
-  const stripe = new THREE.Mesh(new THREE.PlaneGeometry(W, 0.25), hazard); stripe.rotation.x = -Math.PI / 2; stripe.position.set(0, 0.006, 1.2); scene.add(decal(stripe));
+  const stripe = new THREE.Mesh(new THREE.PlaneGeometry(W, 0.25), hazard); stripe.rotation.x = -Math.PI / 2; stripe.position.set(0, 0.006, 1.2); rg.add(decal(stripe));
 
   // Cobertura de prueba: bloques de simulación (cajas de paneles)
   for (const [x, z, w, h] of [[-17, -18, 1.4, 1.1], [-15.6, -18.4, 1, 1.6], [17, -36, 1.4, 1.2], [-4.8, -40, 1.6, 1], [4.9, -22, 1.2, 1.3], [-19, -58, 2, 1.4], [18, -62, 1.6, 2], [-8, -68, 2.4, 1.2], [9, -74, 1.4, 1.6], [0, -60, 1, 2.2]]) box(w, h, w, x, h / 2, z, wall);
+  { const m = sign(t("sign.range"), "#3a9ad8", 4, 1); m.position.set(0, DOOR_H + 0.9, BACK - 0.02); m.rotation.y = Math.PI; scene.add(m); }
 
-  // ---------- Cuadros de datos y mensajes del sistema ----------
+  into = scene;
+  // ---------- Cuadros de datos y mensajes del sistema (en el campo de tiro) ----------
   const dataCanvas = document.createElement("canvas"); dataCanvas.width = 160; dataCanvas.height = 96;
   const dataTex = new THREE.CanvasTexture(dataCanvas); dataTex.colorSpace = THREE.SRGBColorSpace; dataTex.magFilter = THREE.NearestFilter; dataTex.minFilter = THREE.NearestFilter;
   const dataPanel = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({ map: dataTex }));
-  dataPanel.position.set(-W / 2 + 0.03, 3.8, -6); dataPanel.rotation.y = Math.PI / 2; scene.add(decal(dataPanel));
+  dataPanel.position.set(-W / 2 + 0.03, 3.8, -6); dataPanel.rotation.y = Math.PI / 2; rg.add(decal(dataPanel));
   const msgCanvas = document.createElement("canvas"); msgCanvas.width = 256; msgCanvas.height = 32;
   const msgTex = new THREE.CanvasTexture(msgCanvas); msgTex.colorSpace = THREE.SRGBColorSpace; msgTex.magFilter = THREE.NearestFilter; msgTex.minFilter = THREE.NearestFilter;
   const msgPanel = new THREE.Mesh(new THREE.PlaneGeometry(16, 2), new THREE.MeshBasicMaterial({ map: msgTex, transparent: true }));
-  msgPanel.position.set(0, H - 1.6, FRONT + 0.05); scene.add(decal(msgPanel));
+  msgPanel.position.set(0, H - 1.6, FRONT + 0.05); rg.add(decal(msgPanel));
   let dataT = 0, blink = 0;
   const drawData = (d: RangeData) => {
     const g = dataCanvas.getContext("2d")!;
@@ -188,7 +226,7 @@ export function buildRange(scene: THREE.Scene): World {
   };
 
   // ---------- Terminal de la simulación (sustituye al cofre) ----------
-  const chest = new THREE.Group(); chest.position.set(-12, 0, 13);
+  const chest = new THREE.Group(); chest.position.set(-12, 0, 13); chest.rotation.y = Math.PI; // (de cara a la entrada del hall)
   const term = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.6, 0.8), wall); term.position.y = 0.8; term.castShadow = true; chest.add(term);
   const screenCanvas = document.createElement("canvas"); screenCanvas.width = 64; screenCanvas.height = 40;
   { const g = screenCanvas.getContext("2d")!; g.fillStyle = "#081013"; g.fillRect(0, 0, 64, 40); g.fillStyle = "#3fd0d8"; g.font = "bold 9px monospace"; g.fillText("ARMORY", 6, 14); g.fillText("MODULE", 6, 26); g.fillRect(6, 31, 52, 2); }
@@ -212,7 +250,7 @@ export function buildRange(scene: THREE.Scene): World {
   colliders.push(new THREE.Box3(new THREE.Vector3(-12.75, 0, 12.55), new THREE.Vector3(-11.25, 1.6, 13.45)));
 
   // ---------- Banco de trabajo ----------
-  const bench = new THREE.Group(); bench.position.set(12, 0, 13);
+  const bench = new THREE.Group(); bench.position.set(12, 0, 13); bench.rotation.y = Math.PI;
   const top = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 1.1), steel); top.position.y = 0.95; top.castShadow = true; top.receiveShadow = true; bench.add(top);
   for (const [x, z] of [[-1.2, -0.48], [1.2, -0.48], [-1.2, 0.48], [1.2, 0.48]]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 0.08), steel); leg.position.set(x, 0.47, z); bench.add(leg); }
   const board = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.3, 0.05), wall); board.position.set(0, 1.75, -0.53); bench.add(board);
@@ -230,6 +268,7 @@ export function buildRange(scene: THREE.Scene): World {
   colliders.push(new THREE.Box3(new THREE.Vector3(10.6, 0, 12.4), new THREE.Vector3(13.4, 1.0, 13.6)));
 
   // ---------- Consola de oleadas y pedestal de inspección ----------
+  // (consola con anillo holográfico: ya no se usa en el hall, se deja para salas futuras)
   const consoleAt = (x: number, label: string, color: THREE.Material, z = 13.2, rotY = 0) => {
     const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rotY;
     const ped = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.05, 0.6), wall); ped.position.y = 0.52; g.add(ped);
@@ -245,8 +284,9 @@ export function buildRange(scene: THREE.Scene): World {
     scene.add(g); colliders.push(new THREE.Box3(new THREE.Vector3(x - 0.45, 0, z - 0.35), new THREE.Vector3(x + 0.45, 1.1, z + 0.35)));
     return g;
   };
+  void consoleAt;
   // ---------- Almacén: taquillas de armas (sustituye al pedestal de inspección; el banco ya enseña el arma) ----------
-  const storage = new THREE.Group(); storage.position.set(4, 0, 13.2);
+  const storage = new THREE.Group(); storage.position.set(4, 0, 13.2); storage.rotation.y = Math.PI;
   const locker = new THREE.MeshStandardMaterial({ color: 0x4f7a5c, roughness: 0.6, metalness: 0.35 });
   for (const x of [-0.82, 0, 0.82]) {
     const door = new THREE.Mesh(new THREE.BoxGeometry(0.78, 2.1, 0.6), locker); door.position.set(x, 1.05, 0); door.castShadow = door.receiveShadow = true; storage.add(door);
@@ -302,7 +342,7 @@ export function buildRange(scene: THREE.Scene): World {
   { const m = sign(t("sign.raid"), "#3fd0d8", 3.2, 0.8); m.position.set(NX0 + 9.6, 3.4, 18); m.rotation.y = -Math.PI / 2; scene.add(m); }
 
   // ---------- Tablero de contratos (vestíbulo, entre la terminal y el almacén) ----------
-  const ctBoard = new THREE.Group(); ctBoard.position.set(-4, 0, 13.2);
+  const ctBoard = new THREE.Group(); ctBoard.position.set(-4, 0, 13.2); ctBoard.rotation.y = Math.PI;
   { const add = (w: number, h: number, d: number, x: number, y: number, z: number, mm: THREE.Material) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mm); b.position.set(x, y, z); b.castShadow = true; ctBoard.add(b); return b; };
     for (const sx of [-1.05, 1.05]) add(0.1, 2.4, 0.12, sx, 1.2, 0, steel);
     add(2.2, 1.3, 0.08, 0, 1.6, 0, dark); add(2.3, 0.1, 0.3, 0, 0.05, 0, steel);
@@ -319,7 +359,7 @@ export function buildRange(scene: THREE.Scene): World {
   {
     const core = new THREE.MeshStandardMaterial({ color: 0xbff6ff, emissive: 0x5fe0ff, emissiveIntensity: 1.3 }), shell = new THREE.MeshStandardMaterial({ color: 0xc8d4dc, transparent: true, opacity: 0.3, roughness: 0.2 });
     const cap = new THREE.MeshStandardMaterial({ color: 0x3a414b, metalness: 0.5, roughness: 0.4 });
-    for (const [x, z] of [[-W / 2 + 1.2, 2], [W / 2 - 1.2, 2], [-W / 2 + 1.2, BACK - 1.5], [W / 2 - 1.2, BACK - 1.5]]) {
+    for (const [x, z] of [[-W / 2 + 1.2, 1.5], [W / 2 - 1.2, 1.5], [-W / 2 + 1.2, BACK - 1.5], [W / 2 - 1.2, BACK - 1.5]]) {
       const c1 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, H - 1.4, 10), core); c1.position.set(x, H / 2, z); scene.add(c1);
       const c2 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, H - 1.4, 6), shell); c2.position.set(x, H / 2, z); scene.add(c2);
       for (const y of [0.35, H - 0.35]) { const k = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.7, 6), cap); k.position.set(x, y, z); scene.add(k); }
@@ -327,12 +367,13 @@ export function buildRange(scene: THREE.Scene): World {
     }
     for (const [i, z] of [-20, -45, -68].entries()) for (const sx of [-1, 1]) {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({ map: holoData("#3fc0d0", 40 + i * 5 + sx), transparent: true, opacity: 0.55, depthWrite: false }));
-      m.position.set(sx * (W / 2 - 0.04), 4.6, z); m.rotation.y = -sx * Math.PI / 2; scene.add(m); dayOnly.push(m);
+      m.position.set(sx * (W / 2 - 0.04), 4.6, z); m.rotation.y = -sx * Math.PI / 2; rg.add(m); dayOnly.push(m);
     }
   }
 
-  // ---------- Sala de oleadas (detrás de la pared del fondo, entrando por la puerta) ----------
-  const RW = 60, R0 = BACK + 1, R1 = BACK + 74, RH = 9; // (más grande: antes 46 × 56 m)
+  // ---------- Arena de supervivencia (delante del hall, cerrada: se entra desde el ordenador de modos) ----------
+  // La entrada (R0) queda al fondo y los enemigos aparecen junto a la pared del hall (R1)
+  const RW = 60, R0 = -75.5, R1 = -1.5, RH = 9;
   // Arena con la estética de las referencias (Coded Arms): baldosas hexagonales oscuras con juntas luminosas,
   // paredes de paneles con molduras de neón, columnas de luz y paneles holográficos de datos (todo emisivo: sin luces)
   const hx = hexFloor("#4a505a", "#2a2e35", [RW / 3.2, (R1 - R0) / 5.5]);
@@ -345,9 +386,11 @@ export function buildRange(scene: THREE.Scene): World {
   box(1, RH, R1 - R0, -RW / 2 - 0.5, RH / 2, (R0 + R1) / 2, arenaWall);
   box(1, RH, R1 - R0, RW / 2 + 0.5, RH / 2, (R0 + R1) / 2, arenaWall);
   box(RW + 2, RH, 1, 0, RH / 2, R1 + 0.5, arenaWall);
+  box(RW + 2, RH, 1, 0, RH / 2, R0 - 0.5, arenaWall);
   // Molduras de neón (rosa abajo, cian arriba) a lo largo de las paredes
   for (const sx of [-1, 1]) { box(0.06, 0.08, R1 - R0, sx * (RW / 2 - 0.02), 0.45, (R0 + R1) / 2, neonPink, false, false); box(0.06, 0.06, R1 - R0, sx * (RW / 2 - 0.02), RH - 1.4, (R0 + R1) / 2, neonCyan, false, false); }
   box(RW, 0.08, 0.06, 0, 0.45, R1 - 0.02, neonPink, false, false); box(RW, 0.06, 0.06, 0, RH - 1.4, R1 - 0.02, neonCyan, false, false);
+  box(RW, 0.08, 0.06, 0, 0.45, R0 + 0.02, neonPink, false, false);
   // Columnas de luz: núcleo naranja brillante en una funda translúcida, con remates hexagonales rojos
   const core = new THREE.MeshStandardMaterial({ color: 0xffb060, emissive: 0xff9a40, emissiveIntensity: 1.6 });
   const shell = new THREE.MeshStandardMaterial({ color: 0x9ab0c0, transparent: true, opacity: 0.25, roughness: 0.2, metalness: 0.3 });
@@ -364,9 +407,6 @@ export function buildRange(scene: THREE.Scene): World {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(6, 4.2), new THREE.MeshBasicMaterial({ map: holoData(i % 2 ? "#ff6aa8" : "#5fe0ff", 7 + i * 3 + sx), transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
     m.position.set(sx * (RW / 2 - 0.05), 4.2, z); m.rotation.y = -sx * Math.PI / 2; scene.add(m);
   }
-  // (la sala es más ancha y alta que el vestíbulo: se cierran los costados y la franja de encima de su pared)
-  for (const sd of [-1, 1]) box((RW - W) / 2 + 1, RH, 1, sd * (W / 2 + 1 + (RW - W) / 4), RH / 2, BACK + 0.5, wall);
-  if (RH > H) box(W + 2, RH - H, 1, 0, H + (RH - H) / 2, BACK + 0.5, wall, false);
   const roomCeil = new THREE.Mesh(new THREE.PlaneGeometry(RW + 2, R1 - R0 + 1), dark); roomCeil.rotation.x = Math.PI / 2; roomCeil.position.set(0, RH, (R0 + R1) / 2); scene.add(roomCeil);
   const roomPanel = panelLight.clone(); // propio: de noche se atenúa (si no, con la niebla y el resplandor quema la sala)
   for (let z = R0 + 4; z < R1; z += 8) for (const x of [-25, -15, -5, 5, 15, 25]) box(4, 0.06, 1.2, x, RH - 0.04, z, roomPanel, false, false);
@@ -378,26 +418,18 @@ export function buildRange(scene: THREE.Scene): World {
   // (las coberturas de la arena se generan al azar: arena.ts / arenagen.ts)
   // Cartel del fondo: por ahí entran los enemigos
   { const m = sign(t("sign.spawn"), "#c8402e", 6, 1.2); m.position.set(0, 3.6, R1 - 0.02); m.rotation.y = Math.PI; scene.add(m); }
-  // Marco de la puerta y cartel encima (por los dos lados)
-  const frame = new THREE.MeshStandardMaterial({ color: 0xc8402e, roughness: 0.6 });
-  box(0.2, DOOR_H, 1.1, -DOOR - 0.1, DOOR_H / 2, BACK + 0.5, frame, false, false); box(0.2, DOOR_H, 1.1, DOOR + 0.1, DOOR_H / 2, BACK + 0.5, frame, false, false);
-  box(DOOR * 2 + 0.4, 0.2, 1.1, 0, DOOR_H + 0.1, BACK + 0.5, frame, false, false);
-  { const m = sign(t("sign.waves"), "#c8402e", 4, 1); m.position.set(0, DOOR_H + 0.9, BACK - 0.02); m.rotation.y = Math.PI; scene.add(m); }
-  const wavesConsole = consoleAt(-4, "WAVES", neonA, R0 + 2.5, Math.PI);
-  const WAVES_AT = new THREE.Vector3(-4, 0, R0 + 2.5);
-
   // ---------- Luz: cálida de mantenimiento con parpadeo, ambiente oscuro y niebla ligera ----------
   scene.add(new THREE.HemisphereLight(0x8a9aa8, 0x2a241c, 1.1));
   const key = new THREE.DirectionalLight(0xd8e2ec, 1.5);
-  key.position.set(-10, 20, 12); key.target.position.set(0, 0, -20);
+  key.position.set(-10, 20, 40); key.target.position.set(0, 0, 20);
   key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
-  Object.assign(key.shadow.camera, { left: -60, right: 95, top: 80, bottom: -80, near: 1, far: 200 });
+  Object.assign(key.shadow.camera, { left: -90, right: 110, top: 120, bottom: -120, near: 1, far: 260 });
   key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03; // (sin acné de sombra que parpadee al moverse)
   scene.add(key, key.target);
   const lamps: { light: THREE.PointLight; mesh: THREE.Mesh; base: number; phase: number }[] = [];
   const lampMat = () => new THREE.MeshStandardMaterial({ color: WARM, emissive: WARM, emissiveIntensity: 1.6 });
   // 8 luces en total (el número de luces no cambia nunca: cambiarlo recompila todos los shaders)
-  for (const [x, z, y] of [[-14, 12, H], [14, 12, H], [0, -8, H], [0, -30, H], [0, -52, H], [0, -72, H], [-10, BACK + 20, RH], [10, BACK + 52, RH]]) {
+  for (const [x, z, y] of [[-14, 8, H], [14, 8, H], ...[-8, -30, -52, -72].map((rz) => [0, rangePt(0, rz).z, H]), [-10, -55, RH], [10, -22, RH]]) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.3), lampMat()); mesh.position.set(x, y - 0.55, z); scene.add(mesh);
     const light = new THREE.PointLight(WARM, 34, 24, 1.4); light.position.set(x, y - 0.8, z); scene.add(light);
     lamps.push({ light, mesh, base: 34, phase: Math.random() * 10 });
@@ -406,12 +438,12 @@ export function buildRange(scene: THREE.Scene): World {
   scene.fog = new THREE.Fog(0xb9c0c7, 90, 200);
 
   // ---------- Noche: callejón urbano (ver nightcity.ts) ----------
-  const city = buildNightCity(scene, { W, FRONT, BACK, H });
+  const city = buildNightCity(rg as unknown as THREE.Scene, { W, FRONT, BACK: 4.5, H });
   const wallDay = wall.map, floorDay = floor.map;
 
   // ---------- Partículas de datos: cuadraditos que suben despacio por las salas (la simulación «respira») ----------
   const N = 700, mp = new Float32Array(N * 3);
-  const zones: [number, number, number, number][] = [[-W / 2, W / 2, FRONT, BACK], [-30, 30, BACK + 1, BACK + 74], [W / 2 + 1, W / 2 + 61, -12, 48]];
+  const zones: [number, number, number, number][] = [[-W / 2, W / 2, 0, RF - FRONT], [-30, 30, R0, R1], [W / 2 + 1, W / 2 + 61, -12, 48]];
   for (let i = 0; i < N; i++) { const z = zones[i % 3]; mp[i * 3] = z[0] + Math.random() * (z[1] - z[0]); mp[i * 3 + 1] = Math.random() * 7; mp[i * 3 + 2] = z[2] + Math.random() * (z[3] - z[2]); }
   const mg = new THREE.BufferGeometry(); mg.setAttribute("position", new THREE.BufferAttribute(mp, 3));
   const motes = new THREE.Points(mg, new THREE.PointsMaterial({ color: 0x5fd8e0, size: 0.05, transparent: true, opacity: 0.7, depthWrite: false }));
@@ -437,15 +469,17 @@ export function buildRange(scene: THREE.Scene): World {
     key.color.set(on ? 0xa0a0e0 : 0xfff6ea); key.intensity = on ? 0.8 : 1.6;
     key.position.set(on ? 20 : -10, on ? 40 : 20, on ? -60 : 12);
     // Las lámparas de la sala pasan a ser la luz de los rótulos y farolas (mismo número de luces: sin coste extra)
+    // (de noche, las cuatro del campo de tiro pasan a ser las luces de la calle; las del hall y la arena siguen)
     lamps.forEach((l, i) => {
-      const sp = city.keyLights[i];
-      l.mesh.visible = !on;
-      if (on && sp && i < 6) { l.light.position.copy(sp.pos); l.light.color.set(sp.color); l.base = sp.power; l.light.distance = 18; l.light.decay = 1.5; }
+      const sp = i >= 2 && i < 6 ? city.keyLights[i - 2] : undefined;
+      l.mesh.visible = !on || !sp;
+      if (on && sp) { l.light.position.copy(rg.localToWorld(sp.pos.clone())); l.light.color.set(sp.color); l.base = sp.power; l.light.distance = 18; l.light.decay = 1.5; }
       else { l.light.position.copy(lampHome[i]); l.light.color.set(0xfff4e6); l.base = 22; l.light.distance = 24; l.light.decay = 1.4; }
     });
     const bg = on ? 0x1a1430 : 0xb9c0c7; (scene.background as THREE.Color).set(bg);
     scene.fog = new THREE.Fog(on ? 0x2a1f40 : bg, on ? 35 : 70, on ? 130 : 160);
   };
+  rg.updateMatrixWorld(true); for (const m of rgMeshes) colliders.push(new THREE.Box3().setFromObject(m));
   // Rendimiento: lo estático se fusiona por material (cientos de mallas → unas decenas de llamadas de dibujo). Quedan
   // fuera lo que cambia de visibilidad (noche/día, lámparas) y lo animado (la bandeja del terminal); la ciudad se
   // fusiona dentro de su propio grupo, que se enciende y apaga entero
@@ -457,11 +491,11 @@ export function buildRange(scene: THREE.Scene): World {
   let lastMsg = "";
   return {
     setNight, get night() { return night; },
-    colliders, shootables, lanes, chestLid: lidPivot, chestGlow, wavesRoom: { z0: R0 - 0.5, z1: R1, x0: -RW / 2, x1: RW / 2 },
+    colliders, shootables, lanes, chestLid: lidPivot, chestGlow, wavesRoom: { z0: R0 - 0.5, z1: R1, x0: -RW / 2, x1: RW / 2 }, rangePt,
+    survivalAt: { pos: new THREE.Vector3(0, 0, R0 + 3), yaw: Math.PI },
     interactables: [
       { id: "chest", position: new THREE.Vector3(-12, 0, 13), radius: 2.2, label: "Terminal", object: chest },
       { id: "workbench", position: new THREE.Vector3(12, 0, 13), radius: 2.4, label: "Banco", object: bench },
-      { id: "waves", position: WAVES_AT, radius: 1.8, label: "Oleadas", object: wavesConsole },
       { id: "storage", position: new THREE.Vector3(4, 0, 12.6), radius: 2.0, label: "Almacén", object: storage },
       { id: "contracts", position: new THREE.Vector3(-4, 0, 12.6), radius: 2.0, label: "Contratos", object: ctBoard },
       { id: "raid", position: new THREE.Vector3(W / 2 + 1 + 8, 0, 18), radius: 2.2, label: "Incursión", object: raidPc },

@@ -46,7 +46,7 @@ export const KINDS: Record<string, Kind> = {
 const ELEMENT_COLOR: Record<string, string> = { fuego: "#f07a2a", electrico: "#5cc8f0", explosive: "#ffb060" };
 const BURN_DPS_CAP = 60;
 /** Frontera entre el campo de tiro y la sala de oleadas (pared del fondo, ver world.ts). */
-export const WAVES_ROOM_Z = 22.5; // tope de daño por segundo de la quemadura
+export const WAVES_ROOM_Z = 28.5; // tope de daño por segundo de la quemadura
 
 // Maniquí de simulación: cuerpo oscuro con una rejilla de luz tenue (textura pixelada) y peana metálica
 function gridTexture() {
@@ -696,17 +696,20 @@ export class DamageNumbers {
 }
 
 /** Coloca los muñecos del campo de tiro. */
-export function spawnDummies(scene: THREE.Scene, lanes: number[], overlay: HTMLElement, onDamage: ConstructorParameters<typeof Dummy>[4]): Dummy[] {
+export function spawnDummies(scene: THREE.Scene, lanes: number[], overlay: HTMLElement, onDamage: ConstructorParameters<typeof Dummy>[4], pt: (x: number, z: number) => THREE.Vector3 = (x, z) => new THREE.Vector3(x, 0, z)): Dummy[] {
   const list: Dummy[] = [];
-  const add = (kind: keyof typeof KINDS, x: number, z: number) => { const d = new Dummy(KINDS[kind], `${kind}-${list.length}`, new THREE.Vector3(x, 0, z), overlay, onDamage); scene.add(d.group); list.push(d); return d; };
+  const at = (kind: keyof typeof KINDS, p: THREE.Vector3) => { const d = new Dummy(KINDS[kind], `${kind}-${list.length}`, p, overlay, onDamage); scene.add(d.group); list.push(d); return d; };
+  // (los del campo de tiro: coordenadas locales del campo, línea de tiro en z = 0; `pt` los lleva a su sala y miran a la línea)
+  const face = pt(0, 0).sub(pt(0, -1)), yaw = Math.atan2(face.x, face.z);
+  const add = (kind: keyof typeof KINDS, x: number, z: number) => { const d = at(kind, pt(x, z)); d.group.rotation.y = yaw; return d; };
   // Tamaños distintos (pequeño, normal, grande), todos solo con vida
   add("small", lanes[0], -10); add("basic", lanes[1], -15); add("sturdy", lanes[2], -25);
   add("basic", lanes[3], -25); add("large", lanes[4], -35); add("small", lanes[5], -50);
   add("large", lanes[0], -40); add("basic", lanes[5], -18); add("small", lanes[2], -12);
-  add("basic", 0, -20).setPath(new THREE.Vector3(-14, 0, -20), new THREE.Vector3(14, 0, -20), 3);
-  add("elite", 0, -42).setPath(new THREE.Vector3(12, 0, -42), new THREE.Vector3(-12, 0, -42), 2.2);
+  add("basic", 0, -20).setPath(pt(-14, -20), pt(14, -20), 3);
+  add("elite", 0, -42).setPath(pt(12, -42), pt(-12, -42), 2.2);
   add("boss", 0, -64);
   // Zona de entrenamiento (puños): tres muñecos junto a la pared izquierda del vestíbulo, mirando hacia el centro
-  for (const z of [4.5, 7.5, 10.5]) add(z === 7.5 ? "basic" : "small", -22, z).group.rotation.y = Math.PI / 2;
+  for (const z of [4.5, 7.5, 10.5]) at(z === 7.5 ? "basic" : "small", new THREE.Vector3(-22, 0, z)).group.rotation.y = Math.PI / 2;
   return list;
 }

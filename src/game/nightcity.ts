@@ -239,7 +239,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
 
   // ---------- Más calle: persianas metálicas, valla al fondo, andamio, rejilla de desagüe, alcantarilla y foco ----------
   const shutterTex = canvasTex(16, 32, (c) => { c.fillStyle = "#4a3a3e"; c.fillRect(0, 0, 16, 32); for (let y = 0; y < 32; y += 2) { c.fillStyle = "#2c2226"; c.fillRect(0, y, 16, 1); } for (let i = 0; i < 40; i++) { c.fillStyle = `rgba(140,90,70,${r() * 0.4})`; c.fillRect(Math.floor(r() * 16), Math.floor(r() * 32), 1, 1); } });
-  for (const [side, z] of [[-1, -6], [1, -18], [-1, -31], [1, -42], [-1, 14]] as [number, number][]) {
+  for (const [side, z] of [[-1, -6], [1, -18], [-1, -31], [1, -42]] as [number, number][]) {
     const sh = decal(new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.8), new THREE.MeshLambertMaterial({ map: shutterTex })));
     sh.position.set(side * (W / 2 - 0.03), 1.4, z); sh.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2; add(sh);
     const box2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.35, 2.8), metal); box2.position.set(side * (W / 2 - 0.12), 2.95, z); add(box2);

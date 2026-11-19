@@ -8,7 +8,7 @@ export class Player {
   /** Velocidad extra (árbol de habilidades). */ speedMult = 1;
   readonly pos = new THREE.Vector3(0, 0, 6);
   readonly vel = new THREE.Vector3();
-  yaw = 0; pitch = 0;
+  yaw = Math.PI; pitch = 0; // (de cara al interior del hall)
   onGround = true;
   readonly radius = 0.35;
   /** Altura de los ojos: baja al agacharse o deslizarse. */

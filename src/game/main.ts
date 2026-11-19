@@ -129,7 +129,7 @@ const numbers = new DamageNumbers($("numbers"));
 const onDummyDamage = (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => { if (settings.damageNumbers) numbers.spawn(amount, color, crit, at, d); };
 /** Pausa mínima del mundo (hitstop) al matar o al hacer crítico: da peso a los impactos. */
 let hitstop = 0;
-const dummies: Dummy[] = spawnDummies(scene, world.lanes, $("bars"), onDummyDamage);
+const dummies: Dummy[] = spawnDummies(scene, world.lanes, $("bars"), onDummyDamage, world.rangePt);
 const cursor = new MenuCursor();
 const nav = new MenuNav(cursor);
 const saves = new SaveManager(platformStorage());
@@ -343,6 +343,7 @@ async function boot() {
     listSlots: () => saves.list(),
     save: (slot) => saveSlot(slot), load: (slot) => loadSlot(slot), remove: async (slot) => { await saves.remove(slot); toast(t("save.deleted")); await refreshLatest(); },
     exportSlot: (slot) => exportSlot(slot), importSlot: (slot) => importSlot(slot),
+    toHub: () => toHub(), canHub: () => raid.active || waves.active,
     quit: () => quit(), canQuit: () => inGame || !!(window as unknown as { ppApp?: unknown }).ppApp,
     current: () => inv.current?.spec ?? showcase,
     bindPad: (action, done) => input.capturePad((btn) => { if (btn >= 0) setSetting("padBinds", { ...settings.padBinds, [action]: btn }); done(); }),
@@ -660,6 +661,7 @@ async function boot() {
       if (raid.active && hack.active) { hackEnd(false); return; }
       if (raid.active && dmode.active) { defenseEnd(); return; }
       if (raid.active) { toast(t("rd.lost")); returnHub(false); return; }
+      if (waves.active) { leaveSurvival(); return; }
       waves.stop(); php.reset(); toast(t("ui.simReset"));
     }
   }
@@ -699,6 +701,30 @@ async function boot() {
     player.pos.set(pc.x - 2.5, 0, pc.z); player.vel.set(0, 0, 0); player.yaw = Math.PI / 2; player.pitch = 0;
     loot.forEach((p, i) => { p.root.position.set(pc.x - 4.5, 1.1, pc.z - 2 + i * 0.9); p.vel.set(0, 0, 0); p.resting = false; });
     php.reset(); autosave();
+  }
+  /** Al hall, junto al ordenador de modos (sin tocar la incursión). */
+  function toHall() {
+    const pc = world.interactables.find((i) => i.id === "raid")!.position;
+    player.pos.set(pc.x - 2.5, 0, pc.z); player.vel.set(0, 0, 0); player.yaw = Math.PI / 2; player.pitch = 0;
+  }
+  // ---------- Supervivencia: oleadas sin fin en la arena cerrada (se entra desde el ordenador de modos) ----------
+  function startSurvival() {
+    if (raid.active) return;
+    const at = world.survivalAt; sfx.reset();
+    player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
+    php.reset(); arena.set(generateArena((Math.random() * 2 ** 31) | 0, arena.bounds), true, player.pos); waves.start(); toast(t("ui.wavesGo"));
+  }
+  function leaveSurvival() {
+    const n = waves.index + 1; waves.stop(); sfx.reset(); php.reset(); toHall(); autosave();
+    toast(t("sv.end", { n }));
+  }
+  /** Botón de pausa «Volver al hall»: sale del modo en curso (como rendirse; en el hack, si se puede, extrae). */
+  function toHub() {
+    if (hack.active) hackEnd(hack.extractable);
+    else if (dmode.active) defenseEnd();
+    else if (raid.active) { toast(t("rd.left2")); returnHub(false); }
+    else if (waves.active) leaveSurvival();
+    resume();
   }
   function startRaid() {
     const at = raid.start((Math.random() * 2 ** 31) | 0, raidOpt);
@@ -830,6 +856,7 @@ async function boot() {
       <h2>${t("rd.difficulty")}</h2><div class="chips">${[0, 1, 2].map((d) => chip("diff", d, raidOpt.difficulty === d, t(`rd.diff${d}`))).join("")}</div>
       <p class="note">${t(`rd.diffd${raidOpt.difficulty}`)}</p>
       <div class="actions"><button type="button" class="btn" data-go="1" data-nav>${t("rd.start")}</button></div>
+      <h2>${t("sv.title")}</h2><p class="note">${t("sv.desc")}</p><div class="actions"><button type="button" class="btn" data-surv="1" data-nav>${t("sv.start")}</button></div>
       <h2>${t("df.title")}</h2><p class="note">${t("df.desc")}</p><div class="actions"><button type="button" class="btn" data-def="1" data-nav>${t("df.start")}</button></div>
       <h2>${t("hk.title")}</h2><p class="note">${t("hk.desc")}</p><div class="actions"><button type="button" class="btn" data-hack="1" data-nav>${t("hk.start")}</button></div></section></div>`;
     nav.setRoot(el); setTimeout(() => el.querySelector<HTMLElement>("[data-go]")?.focus(), 0);
@@ -844,6 +871,7 @@ async function boot() {
     if (tg.closest("[data-go]")) { closeRaidMenu(); startRaid(); }
     if (tg.closest("[data-hack]")) { $("raidmenu").hidden = true; startHack(); }
     if (tg.closest("[data-def]")) { $("raidmenu").hidden = true; resume(); startDefense(); }
+    if (tg.closest("[data-surv]")) { closeRaidMenu(); startSurvival(); }
   });
   // Arena de oleadas: al azar al empezar; cambia un poco tras cada jefe
   const arena = new WaveArena(scene, world.colliders, world.shootables, { x0: world.wavesRoom.x0, x1: world.wavesRoom.x1, z0: world.wavesRoom.z0 + 0.5, z1: world.wavesRoom.z1 });

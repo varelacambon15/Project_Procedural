@@ -20,6 +20,8 @@ export interface StartHooks {
   save(slot: SlotId): Promise<void>; load(slot: SlotId): Promise<void>; remove(slot: SlotId): Promise<void>;
   exportSlot(slot: SlotId): Promise<void>; importSlot(slot: SlotId): Promise<void>;
   quit(): void; canQuit(): boolean;
+  /** Volver al hall desde cualquier modo (incursión, hack, defensa, supervivencia). */
+  toHub?(): void; canHub?(): boolean;
   current(): WeaponSpec | null;
   /** Atajos del modo desarrollador (subir niveles, créditos, módulos…). */
   dev?(action: string): void;
@@ -49,7 +51,7 @@ export class StartScreen {
     $("start-ver").textContent = `v${VERSION} · ${t("ui.simBuild")}`;
     $("start-mode").textContent = pause ? t("ui.pause") : t("ui.simReady");
     const items: [string, string, boolean][] = pause
-      ? [["play", t("ui.resume"), true], ["saves", t("ui.saves"), true], ["settings", t("ui.settings"), true], ["controls", t("ui.controls"), true], ["lang", `${t("ui.language")}: ${LANGS.find((l) => l.id === getLang())!.name}`, true], ["title", t("ui.toTitle"), true]]
+      ? [["play", t("ui.resume"), true], ["hub", t("ui.toHub"), !!this.hooks.canHub?.()], ["saves", t("ui.saves"), true], ["settings", t("ui.settings"), true], ["controls", t("ui.controls"), true], ["lang", `${t("ui.language")}: ${LANGS.find((l) => l.id === getLang())!.name}`, true], ["title", t("ui.toTitle"), true]]
       : [["continue", t("ui.continue"), this.hooks.hasSaves()], ["new", t("ui.newGame"), true], ["saves", t("ui.load"), true], ["settings", t("ui.settings"), true], ["controls", t("ui.controls"), true], ["lang", `${t("ui.language")}: ${LANGS.find((l) => l.id === getLang())!.name}`, true], ["quit", t("ui.quit"), this.hooks.canQuit()]];
     $("start-menu").innerHTML = items.filter(([, , show]) => show).map(([id, label]) => `<button type="button" class="mi ${this.panel === id ? "on" : ""}" data-menu="${id}"><span class="caret">▸</span>${label}</button>`).join("");
     const sub = $("start-sub");
@@ -131,6 +133,7 @@ export class StartScreen {
       if (m === "continue") return this.hooks.continueLatest();
       if (m === "new") return this.hooks.newGame();
       if (m === "quit") return this.hooks.quit();
+      if (m === "hub") { this.hooks.toHub?.(); return; }
       if (m === "title") { const b = target.closest<HTMLElement>("[data-menu]")!; if (!softConfirm(b, t("ui.toTitleConfirm"))) return; return this.hooks.quit(); }
       if (m === "lang") { const i = LANGS.findIndex((l) => l.id === getLang()); setLang(LANGS[(i + 1) % LANGS.length].id); this.render(); this.el.querySelector<HTMLElement>('[data-menu="lang"]')?.focus(); return; }
       this.panel = this.panel === m ? "show" : (m as Panel); this.render();
