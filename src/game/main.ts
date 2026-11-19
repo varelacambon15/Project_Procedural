@@ -947,6 +947,8 @@ async function boot() {
       const wdt = hitstop > 0 ? 0 : dt;
       waves.update(wdt * ts); arena.update(dt);
       if (raid.active) { mobs.update(wdt * ts); raid.update(dt, player.pos); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
+      // Nova espiritual: hay que quedarse quieto mientras se carga; si te mueves se cancela y pierdes la carga
+      if (sfx.castingId === "spirit" && !sfx.castHit && (Math.abs(f.moveX) > 0.15 || Math.abs(f.moveZ) > 0.15 || f.jump)) { sfx.cancel(); toast(t("sp.spiritCancel")); }
       if (!sfx.casting && !sfx.busy) meter.update(dt); sfx.update(dt, player.pos); superHud();
       pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }

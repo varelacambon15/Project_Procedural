@@ -58,6 +58,10 @@ export class SuperFx {
   constructor(private scene: THREE.Scene, private hooks: SuperHooks) {}
 
   get casting() { return this.cast_ != null; }
+  /** Id de la invocación en curso (o null). */
+  get castingId(): SuperId | null { return this.cast_?.id ?? null; }
+  /** ¿Ya se ha desatado la invocación en curso? */
+  get castHit() { return !!this.cast_?.hit; }
   private dur(id: SuperId) { const a = SUPERS[id].active ?? 0; return id === "orbital" || id === "vortex" || id === "zerog" ? a : a * this.span; }
   /** Velocidad del resto del mundo (Dilatación temporal: todo va más lento menos tú). */
   get timeScale() { return this.active?.id === "chrono" ? SUPERS.chrono.slow ?? 0.25 : 1; }
