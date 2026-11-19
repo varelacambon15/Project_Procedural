@@ -463,6 +463,10 @@ export class Gun {
   }
 
   /** Ruido blanco con envolvente, filtrado. */
+  /** Barrido de aire de un puño o una patada que no da en nada: ruido grave filtrado, sin el silbido metálico. */
+  private airWhoosh(k: number) {
+    try { const a = audio(), t0 = a.currentTime; this.noise(a, 0.16 + 0.06 * k, 2.2, "bandpass", 380 + Math.random() * 120, 0.16 * k, t0, 0.9 + Math.random() * 0.1); this.noise(a, 0.1, 3, "lowpass", 250, 0.1 * k, t0 + 0.02); } catch { /* sin audio */ }
+  }
   private noise(a: AudioContext, len: number, decay: number, filter: BiquadFilterType, freq: number, gain: number, when: number, rate = 1, dest: AudioNode = out()) {
     const buf = a.createBuffer(1, Math.max(1, Math.floor(a.sampleRate * len)), a.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, decay);
@@ -481,10 +485,13 @@ export class Gun {
    */
   private sampleShot(type: WeaponType, quiet: boolean): boolean {
     const m = soundManifest; if (!m) return false;
-    const p = pickShot(m, type, quiet); if (!p) return false;
+    const p = pickShot(m, type, quiet, Math.random, this.spec?.seed); if (!p) return false;
     // Revólver: siempre el disparo del Python (el del Judge sonaba a escopeta; el usuario pondrá otro más adelante)
     if (type === "revolver") { const py = m.tipos.revolver?.disparo.find((f) => /python/.test(f)); if (py) p.main = py; }
-    const buf = sample(p.main); if (!buf) return false;
+    // (si la suya aún no se ha cargado, otra ya cargada del mismo grupo: nunca la síntesis, que sonaba sin silenciador)
+    let buf = sample(p.main);
+    if (!buf) { const k = type === "bullpup" ? "rifle" : type, t = m.tipos[k], list = (p.quiet ? t?.silenciado : t?.disparo) ?? []; for (const f of list) { const b = sample(f); if (b) { buf = b; break; } } }
+    if (!buf) return false;
     const a = audio(), now = a.currentTime;
     if (this.lastShot && now - this.lastShotT < 0.25) fadeOut(this.lastShot, 0.025);
     const rate = 0.96 + Math.random() * 0.08, vol = p.gain * (0.9 + Math.random() * 0.2) * (p.quiet ? 0.8 : 1);
@@ -768,7 +775,7 @@ export class Gun {
     this.kickCd -= dt;
     if (c.kick && this.kickCd <= 0 && this.kickT <= 0 && this.equipT <= 0) {
       this.kickT = 1e-4; this.kickDone = false; this.kickCd = 0.85; this.hooks.onShot?.();
-      { const l = soundManifest?.efectos.melee_cuchillo_swing; if (l?.length) playSample(sample(l[0]), 0.35, 0.7); }
+      this.airWhoosh(0.9);
     }
     const DUR = 0.55;
     if (this.kickT > 0) { this.kickT += dt; if (!this.kickDone && this.kickT >= DUR * 0.38) { this.kickDone = true; this.meleeHit(2.5, 55, 2.4, true); } if (this.kickT >= DUR) this.kickT = 0; }
@@ -830,7 +837,7 @@ export class Gun {
       this.recoil += this.punchHeavy ? 0.03 : 0.014; this.recoilYaw += (Math.random() - 0.5) * 0.01; // sacudida de impacto
       return;
     }
-    { const l = soundManifest?.efectos.melee_cuchillo_swing; if (!(l?.length && playSample(sample(l[Math.floor(Math.random() * l.length)]), 0.45))) this.sfx("cycle"); } // golpe al aire
+    this.airWhoosh(this.punchHeavy ? 1 : 0.75); // golpe al aire: barrido de aire (no el filo de un cuchillo)
   }
   /** Pose de los puños en guardia (espacio de la cámara) y animación del golpe, del esprint y de sacarlos. */
   private updateFists(dt: number) {

@@ -28,10 +28,12 @@ const pickOf = <T>(l: T[] | undefined, rand: () => number): T | null => (l && l.
  * Muestras de un disparo: la principal (silenciada si hay bocacha silenciadora y el tipo la tiene), la capa grave y
  * la ganancia del tipo. null si el tipo no está en el pack.
  */
-export function pickShot(m: SoundManifest, type: string, quiet: boolean, rand: () => number = Math.random) {
+export function pickShot(m: SoundManifest, type: string, quiet: boolean, rand: () => number = Math.random, seed?: number) {
   const k = soundType(type), t = k ? m.tipos[k] : undefined;
   if (!t) return null;
-  const main = pickOf(quiet && t.silenciado?.length ? t.silenciado : t.disparo, rand);
+  // Con semilla: siempre la misma grabación para la misma arma (antes, una distinta en cada disparo)
+  const list = quiet && t.silenciado?.length ? t.silenciado : t.disparo;
+  const main = seed !== undefined && list.length ? list[(seed >>> 0) % list.length] : pickOf(list, rand);
   if (!main) return null;
   return { main, grave: quiet ? null : pickOf(t.grave, rand), gain: t.volumen_sugerido ?? 0.7, quiet: quiet && !!t.silenciado?.length };
 }
