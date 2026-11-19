@@ -218,6 +218,7 @@ async function boot() {
   const meter = new SuperMeter();
   /** Últimos segundos de posición y vida (Rebobinado). */
   const rewindHist: { t: number; p: THREE.Vector3; hp: number }[] = [];
+  /** Último movimiento pedido (dirección del Impulso). */ const lastMove = { x: 0, z: 0 };
   const sfx = new SuperFx(scene, {
     dummies: () => dummies,
     onHit(d, point, dmg, element) { const alive = d.alive; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); },
@@ -231,6 +232,11 @@ async function boot() {
     levitate: (sec, h) => player.levitate(sec, h),
     sig: (id) => superSig(id),
     hand: (): THREE.Vector3 => camera.localToWorld(new THREE.Vector3(0.04, -0.14, -0.55)),
+    dash(dist) {
+      // Dirección: la que se pulsa (o hacia delante si no se pulsa ninguna)
+      const mx = lastMove.x, mz = lastMove.z, dir = Math.hypot(mx, mz) > 0.2 ? new THREE.Vector3(mx, 0, -mz).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.yaw).normalize() : new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+      const from = player.pos.clone(); player.lunge(dir, dist, 0.16); return { from, to: from.clone().addScaledVector(dir, dist) };
+    },
     rewind(sec) {
       const want = performance.now() - sec * 1000, h = rewindHist.find((x) => x.t >= want) ?? rewindHist[0]; if (!h) return null;
       const from = player.pos.clone(); player.pos.copy(h.p); player.vel.set(0, 0, 0); php.value = Math.max(php.value, h.hp); rewindHist.length = 0; return from;
@@ -264,7 +270,7 @@ async function boot() {
     decoy: { f0: 700, f1: 1100, wave: "triangle", len: 0.6, noise: 0.05, lp: 4000, vol: 0.08, chord: [1.33] },
     spirit: { f0: 70, f1: 30, wave: "sawtooth", len: 2.2, noise: 0.6, lp: 1400, vol: 0.32, chord: [1.5, 2] },
     railgun: { f0: 2400, f1: 180, wave: "sawtooth", len: 0.7, noise: 0.25, lp: 7000, vol: 0.12, chord: [1.01] },
-    lance: { f0: 1600, f1: 400, wave: "sawtooth", len: 0.5, noise: 0.15, lp: 6000, vol: 0.1, chord: [1.5] },
+    dash: { f0: 300, f1: 1400, wave: "sawtooth", len: 0.35, noise: 0.5, lp: 5000, vol: 0.12 },
     rewind: { f0: 1200, f1: 150, wave: "triangle", len: 1.0, noise: 0.1, lp: 3000, vol: 0.12, chord: [0.5, 0.75] },
     shards: { f0: 2600, f1: 3600, wave: "triangle", len: 0.45, noise: 0.15, lp: 8000, vol: 0.08, chord: [1.26, 1.5] },
   };
@@ -955,6 +961,7 @@ async function boot() {
       if (raid.active) { mobs.update(wdt * ts); raid.update(dt, player.pos); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
       // Nova espiritual: hay que quedarse quieto mientras se carga; si te mueves se cancela y pierdes la carga
       if (sfx.castingId === "spirit" && !sfx.castHit && (Math.abs(f.moveX) > 0.15 || Math.abs(f.moveZ) > 0.15 || f.jump)) { sfx.cancel(); toast(t("sp.spiritCancel")); }
+      lastMove.x = f.moveX; lastMove.z = f.moveZ;
       rewindHist.push({ t: performance.now(), p: player.pos.clone(), hp: php.value }); while (rewindHist.length > 2 && performance.now() - rewindHist[0].t > 6000) rewindHist.shift();
       if (!sfx.casting && !sfx.busy) meter.update(dt); sfx.update(dt, player.pos); superHud();
       pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);

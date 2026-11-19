@@ -26,6 +26,8 @@ export interface SuperHooks {
   view?(): { o: THREE.Vector3; dir: THREE.Vector3 };
   /** Rebobinado: devuelve al jugador a donde estaba hace `sec` s (y su vida); da la posición de la que se va. */
   rewind?(sec: number): THREE.Vector3 | null;
+  /** Impulso: lanza al jugador `dist` m en la dirección pulsada; da el tramo recorrido. */
+  dash?(dist: number): { from: THREE.Vector3; to: THREE.Vector3 };
 }
 type VfxKind = "ring" | "flash" | "bolt" | "mark" | "beam" | "spin";
 interface Vfx { mesh: THREE.Mesh; t: number; dur: number; r: number; kind: VfxKind }
@@ -38,10 +40,10 @@ const COLOR: Record<SuperId, number> = {
   overload: 0xffd070, shockwave: 0xff9a50, storm: 0x8fd8ff, inferno: 0xff5a1e, stasis: 0x9fe8ff, orbital: 0xffe2a0,
   seekers: 0xff7ad0, aegis: 0x7affc8, deadeye: 0xff4050, vortex: 0xa070ff,
   sentry: 0x6ad8ff, zerog: 0xc0a0ff, chrono: 0x80c0ff, leech: 0xd03060, decoy: 0x50f0ff,
-  spirit: 0x8fe6ff, railgun: 0x7ab8ff, lance: 0x9ad8ff, rewind: 0xd6b0ff, shards: 0xb8f4ff,
+  spirit: 0x8fe6ff, railgun: 0x7ab8ff, dash: 0x5affd8, rewind: 0xd6b0ff, shards: 0xb8f4ff,
 };
 /** Súperes con efecto que dura (el medidor no carga y no se puede volver a invocar mientras). */
-const LASTING = new Set<SuperId>(["overload", "storm", "stasis", "orbital", "aegis", "deadeye", "vortex", "sentry", "zerog", "chrono", "leech", "decoy"]);
+const LASTING = new Set<SuperId>(["overload", "storm", "stasis", "orbital", "aegis", "deadeye", "vortex", "sentry", "zerog", "chrono", "leech", "decoy", "dash"]);
 
 export class SuperFx {
   private vfx: Vfx[] = [];
@@ -49,7 +51,8 @@ export class SuperFx {
   /** Torreta centinela y holograma señuelo (mientras dura su efecto). */ private sentry: THREE.Group | null = null; private holo: THREE.Group | null = null;
   /** Bomba espiritual: la esfera que crece sobre el jugador durante la invocación y, al lanzarla, su vuelo. */
   private orb: { core: THREE.Mesh; halo: THREE.Mesh; shell: THREE.Mesh; v: THREE.Vector3 | null; to: THREE.Vector3 | null; t: number } | null = null;
-  /** Lanza de tormenta en vuelo o clavada (estalla al poco). */ private lance: { m: THREE.Mesh; v: THREE.Vector3; left: number; stuck: Dummy | null; fuse: number } | null = null;
+  /** Rastro del Impulso (tramo que quema). */ private trail: { from: THREE.Vector3; to: THREE.Vector3 } | null = null;
+
   /** Esquirlas de cristal en vuelo (atraviesan: cada una golpea una vez a cada enemigo). */
   private shardsFly: { m: THREE.Mesh; v: THREE.Vector3; left: number; hit: Set<Dummy> }[] = [];
   /** Invocación en curso (animación de manos) y efecto activo. */
@@ -74,7 +77,7 @@ export class SuperFx {
   get activeTotal() { return this.active ? this.dur(this.active.id) : 1; }
   get activeId(): SuperId | null { return this.active?.id ?? null; }
   /** ¿Hay misiles en vuelo? (no se puede volver a invocar hasta que acaben). */
-  get busy() { return this.active != null || this.missiles.length > 0 || this.orb != null || this.shardsFly.length > 0 || this.lance != null; }
+  get busy() { return this.active != null || this.missiles.length > 0 || this.orb != null || this.shardsFly.length > 0; }
   /** Modificadores del arma (Sobrecarga, Ojo letal). */
   get buff() {
     const id = this.active?.id;
@@ -97,7 +100,7 @@ export class SuperFx {
     this.sentry = this.holo = null;
     for (const m of this.missiles) this.scene.remove(m.mesh);
     this.missiles = [];
-    this.dropOrb(); if (this.lance) { this.scene.remove(this.lance.m); this.lance = null; }
+    this.dropOrb();
     for (const x of this.shardsFly) this.scene.remove(x.m); this.shardsFly = [];
   }
 
@@ -128,12 +131,14 @@ export class SuperFx {
       if (a.id === "vortex") this.vortexTick(a, dt);
       if (a.id === "aegis" && a.t >= a.next) { a.next += 0.5; this.spawn(new THREE.Mesh(ringGeo, add(COLOR.aegis)), origin.clone().setY(0.05), 0.5, 1.6, "ring"); }
       if (a.id === "sentry") this.sentryTick(a, dt);
+      if (a.id === "dash" && a.t >= a.next && this.trail) { a.next += tl.interval ?? 0.25; this.trailTick(); }
       if (a.id === "leech" && a.t >= a.next) { a.next += tl.interval ?? 0.25; this.drain(origin); }
       if (a.id === "decoy" && this.holo) { this.holo.rotation.y += dt * 1.5; this.holo.children.forEach((c, i) => (((c as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(a.t * 12 + i))); }
       if (a.t >= this.dur(a.id)) {
         if (a.id === "orbital") this.orbitalBlast(a.at);
         if (a.id === "vortex") this.vortexCollapse(a.at);
         if (a.id === "zerog") this.slam();
+        if (a.id === "dash") this.trail = null;
         if (a.id === "sentry" && this.sentry) { this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.sentry)), this.sentry.position.clone().setY(0.8), 0.35, 1.4, "flash"); this.scene.remove(this.sentry); this.sentry = null; }
         if (a.id === "decoy" && this.holo) {
           const p = this.holo.position.clone(), r = SUPERS.decoy.radius ?? 6;
@@ -143,7 +148,7 @@ export class SuperFx {
         this.active = null;
       }
     }
-    this.updateMissiles(dt); this.updateOrb(dt); this.updateLance(dt); this.updateShards(dt);
+    this.updateMissiles(dt); this.updateOrb(dt); this.updateShards(dt);
     for (const v of [...this.vfx]) {
       v.t += dt; const k = v.t / v.dur;
       if (v.kind === "ring") v.mesh.scale.setScalar(v.r * Math.min(1, k * 1.6));
@@ -281,7 +286,7 @@ export class SuperFx {
       }
       case "spirit": this.launchOrb(o); break;
       case "railgun": this.railShot(o); break;
-      case "lance": this.throwLance(); break;
+      case "dash": this.doDash(at); break;
       case "rewind": this.doRewind(o); break;
       case "shards": this.fireShards(); break;
       case "vortex": {
@@ -362,32 +367,20 @@ export class SuperFx {
     this.hooks.shake(0.5); this.hooks.sound("zap"); this.hooks.sound("boom");
   }
 
-  // ---------- Lanza de tormenta ----------
-  private throwLance() {
-    const tl = SUPERS.lance, v = this.hooks.view?.(); if (!v) return;
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 6).rotateX(Math.PI / 2), add(COLOR.lance)); m.add(new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.35, 6).rotateX(-Math.PI / 2).translate(0, 0, -0.95), add(0xffffff)));
-    m.position.copy(v.o).addScaledVector(v.dir, 0.8).add(new THREE.Vector3(0, -0.1, 0)); m.lookAt(m.position.clone().add(v.dir));
-    this.scene.add(m); this.lance = { m, v: v.dir.clone().multiplyScalar(tl.rate ?? 42), left: (tl.range ?? 45) / (tl.rate ?? 42), stuck: null, fuse: 0 };
-    this.hooks.sound("zap");
+  // ---------- Impulso de fase ----------
+  private segDist(p: THREE.Vector3, a: THREE.Vector3, b: THREE.Vector3) { const ab = b.clone().sub(a).setY(0), ap = p.clone().sub(a).setY(0), t = Math.max(0, Math.min(1, ap.dot(ab) / Math.max(1e-6, ab.lengthSq()))); return ap.sub(ab.multiplyScalar(t)).length(); }
+  private doDash(at: THREE.Vector3) {
+    const tl = SUPERS.dash, seg = this.hooks.dash?.(tl.range ?? 10); if (!seg) return;
+    const { from, to } = seg; this.trail = { from: from.clone().setY(0.05), to: to.clone().setY(0.05) }; void at;
+    const w = tl.radius ?? 1.6, n = 12, life = this.dur("dash");
+    for (let i = 0; i <= n; i++) { const p = from.clone().lerp(to, i / n).setY(0.05); this.spawn(new THREE.Mesh(discGeo, add(COLOR.dash)), p, life, 0.75, "mark"); if (i % 3 === 0) this.spawn(new THREE.Mesh(sphereGeo, add(0xffffff)), p.clone().setY(0.9), 0.25, 0.6, "flash"); }
+    for (const d of this.alive()) if (this.segDist(d.group.position, from, to) < w + 0.3 * (d.kind.scale ?? 1)) { this.hooks.onHit(d, d.center, (tl.damage ?? 650) * this.power, "electrico"); d.push(to.clone().sub(from).setY(0).normalize(), 2); }
+    this.hooks.shake(0.25); this.hooks.sound("zap");
   }
-  private updateLance(dt: number) {
-    const L = this.lance; if (!L) return; const tl = SUPERS.lance;
-    if (!L.stuck && L.fuse <= 0) {
-      L.m.position.addScaledVector(L.v, dt); L.left -= dt;
-      if (Math.random() < 0.6) this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.lance)), L.m.position.clone(), 0.2, 0.25, "flash");
-      const hit = this.alive().find((d) => d.center.distanceTo(L.m.position) < 0.8 * (d.kind.scale ?? 1));
-      if (hit) { L.stuck = hit; L.fuse = 0.9; this.hooks.onHit(hit, hit.center, (tl.damage ?? 900) * this.power, "electrico"); this.hooks.sound("zap"); }
-      else if (L.left <= 0 || L.m.position.y < 0.05) L.fuse = 0.9;
-      return;
-    }
-    if (L.stuck?.alive) L.m.position.copy(L.stuck.center);
-    L.fuse -= dt; if (Math.random() < 0.5) this.zap(L.m.position.clone(), L.m.position.clone().add(new THREE.Vector3((Math.random() - 0.5) * 2, Math.random() * 1.5, (Math.random() - 0.5) * 2)), COLOR.lance, 0.1);
-    if (L.fuse > 0) return;
-    const p = L.m.position.clone(), r = tl.radius ?? 14;
-    this.spawn(new THREE.Mesh(sphereGeo, add(0xffffff)), p, 0.35, 2.2, "flash"); this.spawn(new THREE.Mesh(ringGeo, add(COLOR.lance)), p.clone().setY(0.05), 0.5, 5, "ring");
-    const near = this.alive().filter((d) => d !== L.stuck && d.center.distanceTo(p) < r).sort((x, y) => x.center.distanceToSquared(p) - y.center.distanceToSquared(p)).slice(0, tl.count ?? 8);
-    for (const d of near) { this.zap(p, d.center, 0xe0f4ff, 0.25); this.hooks.onHit(d, d.center, (tl.tick ?? 320) * this.power, "electrico"); }
-    this.hooks.shake(0.3); this.hooks.sound("boom"); this.scene.remove(L.m); this.lance = null;
+  private trailTick() {
+    const t = this.trail!, tl = SUPERS.dash;
+    for (const d of this.alive()) if (this.segDist(d.group.position, t.from, t.to) < 0.9 + 0.3 * (d.kind.scale ?? 1)) this.hooks.onHit(d, d.center, (tl.tick ?? 70) * this.power, "fuego");
+    if (Math.random() < 0.7) { const p = t.from.clone().lerp(t.to, Math.random()); this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.dash)), p.setY(0.3), 0.35, 0.35, "flash"); }
   }
 
   // ---------- Rebobinado ----------
