@@ -953,7 +953,11 @@ export class Gun {
       return (A[s] ?? (this.spec?.type === "pistol" || this.spec?.type === "revolver" ? A.grip : null) ?? h.support).clone();
     };
     const rest = h.grip.clone().add(new THREE.Vector3(-0.05, -0.24, -0.12));
-    const hipP = at(hold?.hip ?? "front"), adsP = at(hold?.ads ?? "front");
+    // Pistolas y revólveres: en la cadera a una mano (la otra entra al apuntar), como en los shooters de referencia;
+    // si el jugador eligió otro agarre en el banco, se respeta
+    const handgun = this.spec?.type === "pistol" || this.spec?.type === "revolver";
+    const hipS: Support | undefined = handgun && hold?.hip === "grip" && !hold.chosen ? "none" : hold?.hip;
+    const hipP = at(hipS ?? "front"), adsP = at(hold?.ads ?? "front");
     let base: THREE.Vector3 | null = hipP && adsP ? hipP.lerp(adsP, k) : adsP ? (k < 0.03 ? null : rest.clone().lerp(adsP, k)) : hipP ? (k > 0.97 ? null : hipP.lerp(rest, k)) : null;
     if (!hold && !base) base = h.support.clone();
     // La mano de apoyo no se estira más allá de un brazo cómodo (en armas largas se iba a la punta del guardamanos)
@@ -962,7 +966,7 @@ export class Gun {
     if (base && base.x - h.grip.x > sReach) base.x = h.grip.x + sReach;
     // …y nunca pegada a la empuñadura cuando agarra el guardamanos (en armas por código el guardamanos empezaba junto a
     // la empuñadura y la mano izquierda quedaba encima de la derecha, como con una pistola)
-    const sup0 = (k > 0.5 ? hold?.ads : hold?.hip) ?? "front";
+    const sup0 = (k > 0.5 ? hold?.ads : hipS) ?? "front";
     if (base && (sup0 === "front" || sup0 === "pump" || sup0 === "frame") && this.spec?.type !== "pistol" && this.spec?.type !== "revolver") {
       const sMin = Math.min(sReach, this.spec?.type === "bullpup" ? 0.1 : this.spec?.type === "smg" ? Math.max(0.14, (m.muzzle.x - h.grip.x) * 0.35) : Math.max(0.2, (m.muzzle.x - h.grip.x) * 0.32));
       if (base.x - h.grip.x < sMin) base.x = h.grip.x + sMin;
