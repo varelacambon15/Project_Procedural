@@ -939,7 +939,7 @@ export class WeaponGenerator {
       if (type !== "pistol") ops.push({ id: "stock", run: () => (tw.stock = away(0.8, 1.2, 0.08)) });
       // (sin culata solo en escopetas: en los fusiles del kit quedaba un cajón suelto con un cañón larguísimo)
       if (type === "shotgun") if (rare.nostock) ops.push({ id: "nostock", run: () => (tw.nostock = true) });
-      if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = type === "pistol" ? 1.18 + r() * 0.2 : 1.2 + r() * 0.3) });
+      if (type !== "shotgun") ops.push({ id: "mag", run: () => (tw.magLen = type === "pistol" ? 1.12 + r() * 0.1 : 1.2 + r() * 0.3) });
       // Culata y guardamanos por código sobre los sockets de la plataforma (el cañón real del kit se conserva)
       const plat = this.kit.byId.get(parts[0].from);
       const sStock = plat?.sockets.Stock?.[0], sHand = plat?.sockets.Handguard?.[0];
@@ -1249,8 +1249,9 @@ function procStock(r: Rng, type: BaseType, at: [number, number], h: number, w: n
 function procFront(r: Rng, type: BaseType, at: [number, number], h: number, w: number) {
   const kinds: FrontKind[] = ["quad", "tube", "slot"];
   const len = ({ smg: [0.09, 0.16], rifle: [0.2, 0.32], shotgun: [0.22, 0.34], lmg: [0.24, 0.34], sniper: [0.26, 0.38], bullpup: [0.12, 0.2] } as Record<string, [number, number]>)[type] ?? [0.2, 0.3];
-  const hh = Math.min(0.065, Math.max(0.028, h * 0.95));
-  return { kind: kinds[Math.floor(r() * kinds.length)], at, h: hh, w: Math.min(0.05, Math.max(0.024, w)), len: len[0] + r() * (len[1] - len[0]), barrel: (type === "smg" ? 0.03 : 0.05) + r() * 0.1, d: type === "shotgun" ? 0.022 : Math.min(0.02, Math.max(0.012, hh * 0.3)) };
+  // (más grueso y con menos cañón asomando: un guardamanos fino y un cañón largo se veían como «un palo con mira»)
+  const hh = Math.min(0.065, Math.max(0.036, h * 0.95));
+  return { kind: kinds[Math.floor(r() * kinds.length)], at, h: hh, w: Math.min(0.05, Math.max(0.03, w)), len: len[0] + r() * (len[1] - len[0]), barrel: (type === "smg" ? 0.025 : 0.035) + r() * 0.06, d: type === "shotgun" ? 0.022 : Math.min(0.02, Math.max(0.012, hh * 0.3)) };
 }
 
 /** Cajas en la silueta de los añadidos de era que cambian el perfil. */
