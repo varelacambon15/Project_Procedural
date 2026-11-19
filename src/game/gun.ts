@@ -1095,6 +1095,7 @@ export class Gun {
         curl: { fingers: [1.05, 1.15, 1.2, 1.25], thumb: 0.25 }, straight: 1,
       };
     }
+    else if (leftPose) leftPose.straight = 0.75; // (armas largas: el antebrazo de apoyo baja casi vertical, sin cruzar la pantalla)
     this.arms.update({ right, left: this.helmetLeft(leftPose), dt, shoulder });
   }
 
