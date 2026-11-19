@@ -12,6 +12,7 @@ export const PROC_LIGHTS: { id: string; kind: LightKind }[] = [
   { id: "pa-laser-module", kind: "laser" },   // módulo láser largo con dos ventanas
   { id: "pa-combo", kind: "both" },           // caja combinada: linterna y láser
   { id: "pa-strobe", kind: "strobe" },        // linterna estroboscópica (parpadea al encender)
+  { id: "pa-killcounter", kind: "light" },    // contador de bajas (pantallita en el costado)
 ];
 
 /** ¿Es una linterna o un láser (ranura de accesorio) y no algo de bajo el cañón? */
@@ -47,6 +48,9 @@ export function buildLight(id: string): THREE.Group {
   } else if (id === "pa-combo") {
     clamp(0, 0.03); box(0.05, 0.03, 0.024, body, 0.002, -0.02); cyl(0.0095, 0.004, glass, 0.028, -0.016); cyl(0.0032, 0.004, glass, 0.028, -0.03);
     box(0.008, 0.006, 0.006, dark, -0.016, -0.036);
+  } else if (id === "pa-killcounter") {
+    // Contador de bajas: caja fina con una pantalla (la cifra la dibuja gun.ts)
+    clamp(0, 0.03); box(0.06, 0.026, 0.012, body, 0, -0.017);
   } else {
     // Estroboscópica: cuerpo hexagonal con bisel dentado
     clamp(0, 0.028); cyl(0.012, 0.075, body, 0.004, -0.02, 0, 6); cyl(0.0145, 0.016, dark, 0.046, -0.02, 0, 12); cyl(0.0125, 0.003, glass, 0.055, -0.02);

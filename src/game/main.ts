@@ -163,6 +163,7 @@ async function boot() {
     for (const c of applyEvent(contracts, e)) toast(t("ct.done", { what: contractText(c), c: c.reward }));
   };
   const contractText = (c: Contract) => t(`ct.${c.kind}`, { n: c.goal, w: c.weapon ? t(`type.${c.weapon}`) : t("ct.any"), d: c.dist ?? 0 });
+  /** La baja la hace una granada o un súper (no cuenta para el contador del arma). */ let notGun = false;
   const gun = new Gun(camera, scene, asm, world.shootables, {
     dummies: () => dummies,
     lunge: (dir, dist) => player.lunge(dir, dist),
@@ -190,6 +191,8 @@ async function boot() {
       return dealt;
     },
     onKill(d) {
+      // Contador de bajas del arma (accesorio): solo las bajas hechas con ella, no con granadas ni súperes
+      if (!notGun && gun.item && !d.respawn) { gun.item.spec.kills = (gun.item.spec.kills ?? 0) + 1; gun.refreshCounter(); }
       { const h = lastHit.get(d); contractEvent({ type: "kill", weapon: h?.weapon ?? null, head: !!h?.head, dist: h?.dist ?? 0, boss: !!d.kind.boss }); }
       if (d.kind.boss) toast(t("ui.bossDown"));
       if (d.kind.key === "roller") gun.explode(d.center, 220, "explosive", d); // (el kamikaze revienta sobre los suyos)
@@ -212,7 +215,7 @@ async function boot() {
   const pouch = new GrenadePouch(null);
   const nades = new GrenadeFx(scene, {
     dummies: () => dummies,
-    onHit(d, point, dmg, element) { const alive = d.alive; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); },
+    onHit(d, point, dmg, element) { const alive = d.alive; notGun = true; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); notGun = false; },
   });
   // Súper: se carga con bajas (y algo con el tiempo); V / cruceta arriba / ✦ lo invoca con su animación en primera persona
   const meter = new SuperMeter();
@@ -221,7 +224,7 @@ async function boot() {
   /** Último movimiento pedido (dirección del Impulso). */ const lastMove = { x: 0, z: 0 };
   const sfx = new SuperFx(scene, {
     dummies: () => dummies,
-    onHit(d, point, dmg, element) { const alive = d.alive; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); },
+    onHit(d, point, dmg, element) { const alive = d.alive; notGun = true; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); notGun = false; },
     shake: (n) => { if (settings.screenShake) shake = Math.min(0.8, shake + n); },
     aim(max) {
       // Punto del suelo al que se mira (o el más lejano en esa dirección si se mira al horizonte)

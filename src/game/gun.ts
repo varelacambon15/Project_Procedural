@@ -160,9 +160,10 @@ export class Gun {
   }
   private buildDeviceFx(m: AssembledWeapon) {
     if (this.devFx?.dot) this.scene.remove(this.devFx.dot);
-    this.devFx = null;
+    this.devFx = null; this.counter = null;
     const part = m.parts.find((p) => (p.role === "accessory" || p.role === "device") && isLight(p.from.id));
     if (!part) return;
+    if (part.from.id === "pa-killcounter") { this.buildCounter(m, part); return; }
     const id = part.from.id ?? "", lk = lightKind(id), kind: "light" | "laser" | "both" = lk === "strobe" ? "light" : lk;
     this.strobe = lk === "strobe";
     m.group.updateMatrixWorld(true);
@@ -196,6 +197,30 @@ export class Gun {
     for (const o of [lens, cone, beam]) if (o) o.renderOrder = 11;
     this.devFx = { kind, root, cone, lens, beam, dot, laserCol, lampCol };
     this.applyDevice();
+  }
+  /** Contador de bajas (estilo pantalla de 7 segmentos): una pantallita en el lado visible del accesorio. */
+  private counter: { ctx: CanvasRenderingContext2D; tex: THREE.CanvasTexture } | null = null;
+  private buildCounter(m: AssembledWeapon, part: AssembledWeapon["parts"][number]) {
+    m.group.updateMatrixWorld(true); part.object.visible = false;
+    // (como en los shooters: la pantallita va en el costado del cajón, delante de la mano, donde se ve siempre)
+    const inv = m.group.matrixWorld.clone().invert(), hx = m.handles.grip.x + 0.11, v = new THREE.Vector3(); let zMin = 0, yTop = -1, yBot = 1;
+    for (const p of m.parts) { if (["magazine", "scope", "accessory", "device", "muzzle", "stock"].includes(p.role)) continue; p.object.traverse((o) => { const me = o as THREE.Mesh; if (!me.isMesh) return; const pos = me.geometry.attributes.position; for (let i = 0; i < pos.count; i += 2) { v.fromBufferAttribute(pos, i).applyMatrix4(me.matrixWorld).applyMatrix4(inv); if (Math.abs(v.x - hx) < 0.02) { zMin = Math.min(zMin, v.z); yTop = Math.max(yTop, v.y); yBot = Math.min(yBot, v.y); } } }); }
+    const b = new THREE.Box3(new THREE.Vector3(hx - 0.025, yBot + (yTop - yBot) * 0.72 - 0.01, zMin), new THREE.Vector3(hx + 0.025, yBot + (yTop - yBot) * 0.72 + 0.01, zMin)), c = b.getCenter(new THREE.Vector3());
+    const bezel = new THREE.Mesh(new THREE.BoxGeometry(0.058, 0.026, 0.006), new THREE.MeshStandardMaterial({ color: 0x1c1e21, roughness: 0.6, metalness: 0.4 })); bezel.position.set(c.x, c.y, zMin - 0.002); m.group.add(bezel);
+    const cv = document.createElement("canvas"); cv.width = 128; cv.height = 48; const ctx = cv.getContext("2d")!, tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    const sc = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.019), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+    // (el accesorio va en el costado izquierdo, que es el que se ve: la pantalla mira hacia ese lado)
+    sc.position.set(c.x, c.y, zMin - 0.0055); sc.rotation.y = Math.PI; sc.renderOrder = 11; m.group.add(sc);
+    this.counter = { ctx, tex }; this.refreshCounter();
+  }
+  /** Redibuja la cifra del contador (al cambiar de arma o al hacer una baja). */
+  refreshCounter() {
+    const c = this.counter; if (!c) return; const g = c.ctx, n = Math.min(999999, this.item?.spec.kills ?? 0);
+    g.fillStyle = "#120802"; g.fillRect(0, 0, 128, 48);
+    g.font = "bold 30px monospace"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillStyle = "rgba(255,120,20,0.15)"; g.fillText("888888", 64, 26);
+    g.fillStyle = "#ff8a1a"; g.fillText(String(n).padStart(6, "0"), 64, 26);
+    c.tex.needsUpdate = true;
   }
   /** Largo del láser hasta el primer obstáculo (raycast cada fotograma) y punto de impacto. */
   private updateDevice(dt = 0) {

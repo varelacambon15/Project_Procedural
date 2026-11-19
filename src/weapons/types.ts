@@ -77,6 +77,7 @@ export interface PartPick { role: PartRole; from: string }
 /** Descripción completa de un arma generada (todo lo necesario para montarla y mostrarla). */
 export interface WeaponSpec {
   seed: number;
+  /** Bajas con esta arma (contador de bajas del accesorio). */ kills?: number;
   type: WeaponType;
   /** Variante del tipo (p. ej. pistola automática, subfusil táctico). */
   archetype: string;
