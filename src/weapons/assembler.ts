@@ -9,7 +9,7 @@ import { midZone, stretchAll, stretchX, type Stretches } from "./variation";
 import { KIT_FLIP, isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
 import { accessory, buildFrontSight, buildMuzzle, buildOptic, isIron } from "./accessories";
 import { applyFinish } from "./finish";
-import { contactAO } from "./ao";
+import { contactAO, contactAOAsync } from "./ao";
 import { ADDON_ROLE, buildAddon } from "./addons";
 import { buildPistol } from "./pistolmesh";
 import { buildLong } from "./longmesh";
@@ -61,6 +61,7 @@ function vgripAnchor(parts: { object: THREE.Object3D; role: PartRole }[]): THREE
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
 export interface AssembledWeapon {
   group: THREE.Group; parts: AssembledPart[]; length: number;
+  /** Se cumple cuando la oclusión de contacto ya está aplicada (con `asyncAO`, se calcula después, en tramos). */ ao?: Promise<void>;
   /** Punta del cañón (o del accesorio de boca), en coordenadas del grupo. */ muzzle: THREE.Vector3;
   /** Altura de la línea de mira (centro de la mira, si la lleva), en coordenadas del grupo. */ sightY: number | null;
   /** Con miras de hierro: posición (X, hacia la boca) del alza respecto al centro; el ojo se pone justo detrás. */ sightX?: number;
@@ -78,6 +79,8 @@ const v3 = (a: readonly number[]) => new THREE.Vector3(a[0], a[1], a[2]);
 export class WeaponAssembler {
   private loader = new GLTFLoader();
   private cache = new Map<string, Promise<THREE.Group>>();
+  /** En el juego: la oclusión de contacto se calcula en tramos tras montar el arma (sin tirones). */
+  asyncAO = false;
 
   constructor(private gen: WeaponGenerator, private baseUrl: string) {}
 
@@ -572,7 +575,8 @@ export class WeaponAssembler {
     }
 
     // Oclusión de contacto entre piezas (una vez por arma montada)
-    contactAO(group, parts.map((p) => p.object), undefined, undefined, undefined, JSON.stringify(spec));
+    const aoKey = JSON.stringify(spec);
+    const ao = this.asyncAO ? contactAOAsync(group, parts.map((p) => p.object), undefined, undefined, undefined, aoKey) : (contactAO(group, parts.map((p) => p.object), undefined, undefined, undefined, aoKey), Promise.resolve());
     // Las legendarias: un único detalle pequeño en latón (gatillo o palanca), nunca el cargador ni la boca
     const legendary = spec.rarity.id === "legendaria";
     // (nunca una pieza grande como el accesorio de boca: parecería un juguete; solo gatillo o palanca)
@@ -650,7 +654,7 @@ export class WeaponAssembler {
     const muzzleOut = (muzzle ?? new THREE.Vector3(box.max.x, center.y, 0)).clone().sub(center);
     group.updateMatrixWorld(true);
     const handles = this.handles(spec, parts, new THREE.Box3().setFromObject(group));
-    return { group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, sightX: ironRearX === null ? undefined : ironRearX - center.x, ownSight, zoom, handles };
+    return { ao, group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, sightX: ironRearX === null ? undefined : ironRearX - center.x, ownSight, zoom, handles };
   }
 
   /** Estima dónde agarran las manos: empuñadura (junta o detrás del cargador), guardamanos, pozo y palanca. */

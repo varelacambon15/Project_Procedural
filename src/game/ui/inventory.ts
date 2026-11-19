@@ -203,7 +203,7 @@ export class InventoryScreen {
       </section>`;
     $("inv-credits").textContent = `${i.credits} ${t("unit.cr")}`;
     $("inv-foot").innerHTML = `<span>${t("ui.bankCount", { n: i.bank.length })}</span>` +
-      keyHint("Enter", "Ⓐ", t("ui.select")) + keyHint("1 / 2", "LB / RB", t("ui.equipSlot")) + keyHint("R", "Ⓨ", t("ui.rename")) + keyHint("G", "RS", t("ui.drop")) + keyHint("X", "Ⓧ", t("ui.scrapAction")) + keyHint("Esc", "Ⓑ", t("ui.back"));
+      keyHint("Enter", "Ⓐ Ⓐ", t("ui.selectEquip")) + keyHint("1 / 2", "LT / RT", t("ui.equipSlot")) + keyHint("Q / E", "LB / RB", t("ui.tabs")) + keyHint("R", "Ⓨ", t("ui.rename")) + keyHint("G", "RS", t("ui.drop")) + keyHint("X", "Ⓧ", t("ui.scrapAction")) + keyHint("Esc", "Ⓑ", t("ui.back"));
     this.el.querySelectorAll<HTMLElement>(".tile[data-uid]").forEach((x) => { x.draggable = true; });
     this.thumbs.fill(this.el, this.storageMode ? i.all : i.carried);
     fillNadeThumbs(this.el); fillArmorThumbs(this.el);
@@ -339,6 +339,9 @@ export class InventoryScreen {
     const na = target.closest<HTMLElement>("[data-nact]");
     if (na) return this.nadeAction(na.dataset.nact!);
     const tile = target.closest<HTMLElement>(".tile[data-uid]");
+    // Con mando, Ⓐ sobre el arma ya elegida (el cursor o la cruceta la eligen al pasar): de la mochila a la mano
+    // (ranura activa); si ya está equipada, pasa a ser la de la mano. Un solo botón, sin arrastrar.
+    if (tile && document.body.classList.contains("pad") && Number(tile.dataset.uid) === this.sel) return this.padQuick();
     if (tile) return this.select(Number(tile.dataset.uid));
     const chip = target.closest<HTMLElement>("[data-rar]");
     if (chip) { this.filter.rarity = chip.dataset.rar!; return this.renderKeep(chip); }
@@ -380,6 +383,11 @@ export class InventoryScreen {
       this.reselect(); this.hooks.changed(null); this.render();
     }
   }
+  private padQuick() {
+    const it = this.selected; if (!it) return; const w = this.inv.find(it.uid)!;
+    if (w.area === "equip") { this.action("use"); this.hooks.toast(t("ui.nowInHand", { n: it.spec.customName || it.spec.name })); return; }
+    this.quickEquip();
+  }
   /** Clic derecho / atajo: equipar en la ranura activa o guardar en la mochila. */
   quickEquip() {
     const it = this.selected; if (!it) return; const w = this.inv.find(it.uid)!;
@@ -394,7 +402,7 @@ export class InventoryScreen {
   pad(b: number) {
     // LB / RB: pestaña anterior / siguiente (Equipo, Armadura, Habilidades, Progreso)
     if (b === 4 || b === 5) { this.cycleTab(b === 4 ? -1 : 1); return true; }
-    const map: Record<number, string> = { 3: "rename", 11: "drop", 2: "scrap" };
+    const map: Record<number, string> = { 3: "rename", 11: "drop", 2: "scrap", 6: "eq0", 7: "eq1" };
     if (map[b]) { this.action(map[b]); return true; }
     return false;
   }

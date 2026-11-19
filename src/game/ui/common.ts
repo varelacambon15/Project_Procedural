@@ -95,11 +95,14 @@ export class Thumbnails {
     const k = new THREE.DirectionalLight(0xfff0dd, 1.8); k.position.set(1, 2, 3); this.scene.add(k);
   }
   forget(uid: number) { this.cache.delete(uid); }
+  /** Dibuja un arma una vez (sin guardar nada) para compilar sus materiales antes de la primera miniatura. */
+  warm(obj: THREE.Object3D) { const prev = obj.parent; this.scene.add(obj); this.renderer.render(this.scene, this.camera); this.scene.remove(obj); prev?.add(obj); }
   get(it: Item): Promise<string> {
     if (!this.cache.has(it.uid)) {
       const spec = structuredClone(it.spec);
       const p = this.queue.then(async () => {
-        const built = await this.asm.assemble(spec);
+        const built = await this.asm.assemble(spec); await built.ao;
+        await new Promise((r) => setTimeout(r, 0)); // (una miniatura por tramo: la interfaz no se congela)
         const g = built.group; g.rotation.set(0.05, -0.32, 0);
         this.scene.add(g);
         const b = new THREE.Box3().setFromObject(g), size = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());

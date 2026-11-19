@@ -13,6 +13,20 @@ const memoAO = new Map<string, (Float32Array | null)[]>();
 const MEMO_MAX = 32;
 
 export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist = 0.022, rays = 10, strength = 0.6, cacheKey?: string) {
+  const it = contactAOSteps(root, parts, maxDist, rays, strength, cacheKey);
+  while (!it.next().done);
+}
+/**
+ * Igual que `contactAO`, pero repartido en tramos de ~`budget` ms entre fotogramas: el arma aparece al momento y la
+ * oclusión se le aplica en cuanto termina (mismo resultado). Así montar un arma no congela el juego.
+ */
+export async function contactAOAsync(root: THREE.Object3D, parts: THREE.Object3D[], maxDist = 0.022, rays = 10, strength = 0.6, cacheKey?: string, budget = 5) {
+  const it = contactAOSteps(root, parts, maxDist, rays, strength, cacheKey);
+  let t0 = performance.now();
+  while (!it.next().done) if (performance.now() - t0 > budget) { await new Promise((r) => setTimeout(r, 0)); t0 = performance.now(); }
+}
+/** El cálculo, como generador: cede cada cierto número de vértices. */
+function* contactAOSteps(root: THREE.Object3D, parts: THREE.Object3D[], maxDist: number, rays: number, strength: number, cacheKey?: string): Generator<void, void, void> {
   const meshList = () => { const out: THREE.Mesh[] = []; for (const p of parts) p.traverse((n) => { const m = n as THREE.Mesh; if (m.isMesh && m.geometry.attributes.position) out.push(m); }); return out; };
   const cached = cacheKey !== undefined ? memoAO.get(cacheKey) : undefined;
   if (cached) {
@@ -25,7 +39,10 @@ export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist
   }
   root.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
-  const toRoot = (o: THREE.Object3D) => new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
+  // (matrices tomadas al empezar: si el arma se mueve mientras se calcula en tramos, el resultado no cambia)
+  const mats = new Map<THREE.Object3D, THREE.Matrix4>();
+  for (const p of parts) p.traverse((o) => mats.set(o, new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld)));
+  const toRoot = (o: THREE.Object3D) => mats.get(o) ?? new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
   // Triángulos de todas las piezas en el espacio del arma, con la pieza a la que pertenecen
   const tri: number[] = [], owner: number[] = [];
   const meshesOf = (o: THREE.Object3D) => { const out: THREE.Mesh[] = []; o.traverse((n) => { const m = n as THREE.Mesh; if (m.isMesh && m.geometry.attributes.position) out.push(m); }); return out; };
@@ -69,7 +86,7 @@ export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist
   const q = new THREE.Quaternion(), Z = new THREE.Vector3(0, 0, 1), p = new THREE.Vector3(), nn = new THREE.Vector3(), d = new THREE.Vector3();
   const seen = new Int32Array(T).fill(-1), cand: number[] = [];
   let stamp = 0;
-  parts.forEach((part, pi) => {
+  for (let pi = 0; pi < parts.length; pi++) { const part = parts[pi];
     // Vértices repetidos (misma posición y normal en la pieza, típico de mallas sin índice): se calculan una vez
     const memo = new Map<number, number[]>(); // hash → [x, y, z, nx, ny, nz, resultado, ...] (comparación exacta)
     for (const m of meshesOf(part)) {
@@ -78,6 +95,7 @@ export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist
       if (!nor) continue;
       let col: Float32Array | null = null;
       for (let i = 0; i < pos.count; i++) {
+        if ((i & 63) === 63) yield;
         p.fromBufferAttribute(pos, i).applyMatrix4(M); nn.fromBufferAttribute(nor, i).applyMatrix3(N).normalize();
         const mk = Math.round(p.x * 1e5) * 73856093 ^ Math.round(p.y * 1e5) * 19349663 ^ Math.round(p.z * 1e5) * 83492791 ^ Math.round(nn.x * 100 + nn.y * 1e4 + nn.z * 1e6);
         let bucket = memo.get(mk), hit: number | undefined;
@@ -122,8 +140,9 @@ export function contactAO(root: THREE.Object3D, parts: THREE.Object3D[], maxDist
         const f = 1 - strength * Math.min(1, (hit / rays) * 1.6);
         col[i * 3] *= f; col[i * 3 + 1] *= f; col[i * 3 + 2] *= f;
       }
+      if (col) m.geometry.attributes.color.needsUpdate = true;
     }
-  });
+  }
   if (cacheKey !== undefined) {
     memoAO.set(cacheKey, meshList().map((m) => (m.geometry.attributes.color && m.geometry.userData.aoOwn ? (m.geometry.attributes.color.array as Float32Array).slice() : null)));
     while (memoAO.size > MEMO_MAX) memoAO.delete(memoAO.keys().next().value!);

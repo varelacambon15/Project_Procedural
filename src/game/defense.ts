@@ -64,19 +64,24 @@ export const BUILD = Object.fromEntries(BUILDS.map((b) => [b.id, b])) as Record<
 export const sellValue = (b: Build, level: number) => Math.floor(b.cost.slice(0, level).reduce((a, c) => a + c, 0) * 0.5);
 
 export const CORE_HP = 2500;
-export const START_CREDITS = 450;
+export const START_CREDITS = 600;
 /** Créditos por baja según el enemigo y premio al acabar cada oleada. */
 export const killReward = (kind: string, boss: boolean) => (boss ? 300 : ["large", "elite", "sturdy", "guardian"].includes(kind) ? 40 : ["small", "roller"].includes(kind) ? 10 : 20);
 export const waveReward = (w: number) => 120 + w * 25;
-/** Segundos para construir entre oleadas. */
-export const BUILD_TIME = 25;
+/** Segundos para construir: antes de la primera oleada y entre oleadas (se pueden saltar). */
+export const BUILD_TIME = 20;
+export const BUILD_BETWEEN = 12;
+/** Créditos extra por cada segundo que se adelanta la oleada. */
+export const EARLY_BONUS = 6;
+/** Segundos entre apariciones (salen de dos en dos). */
+export const SPAWN_GAP = 0.45;
 
 /** Enemigos que no van a por el núcleo sino a por ti (te obligan a moverte). */
 export const HUNTERS = new Set(["drone", "glitch", "sniper"]);
 
 /** Oleada `w` (1, 2, 3…): cada 5, un jefe. */
 export function coreWave(w: number, rnd: () => number): string[] {
-  const n = 6 + Math.floor(w * 2.2);
+  const n = 8 + Math.floor(w * 3);
   const pool = ["small", "basic", "basic", "spider", "roller", "sturdy", "gunner", "drone", "guardian", "caster", "glitch", "large", "elite", "sniper"];
   const out = Array.from({ length: n }, () => pool[Math.floor(rnd() * Math.min(pool.length, 5 + w))]);
   if (w % 5 === 0) out.push("warden");

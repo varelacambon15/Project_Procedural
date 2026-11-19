@@ -19,7 +19,7 @@ import { WeaponAssembler } from "../weapons/assembler";
 import { archName, rarityName, typeName } from "../weapons/labels";
 import { displayName, rename } from "../weapons/naming";
 import { setAccUid } from "../weapons/accbank";
-import { BUILD, BUILDS, BUILD_TIME, HUNTERS, START_CREDITS, coreWave, killReward, sellValue, waveReward } from "./defense";
+import { BUILD, BUILDS, BUILD_BETWEEN, BUILD_TIME, EARLY_BONUS, HUNTERS, SPAWN_GAP, START_CREDITS, coreWave, killReward, sellValue, waveReward } from "./defense";
 import { DefenseFx, type Pad } from "./defensefx";
 import { rng as seedRng } from "./raidgen";
 import { DEATH_LOSS, HACK_BUFFS, HACK_BUFF_VALUE, cipherLimit, hackChoices, hackEnemies, nodeData, type HackBuff, type HackNode } from "./hackgen";
@@ -148,7 +148,7 @@ async function boot() {
   const manifest: Manifest = await (await fetch(ASSETS + "manifest.json")).json();
   const gen = new WeaponGenerator(manifest);
   const asm = new WeaponAssembler(gen, ASSETS);
-  asm.preloadKit();
+  asm.preloadKit(); asm.asyncAO = true;
 
   // Números de daño (tecla N) y nivel de pixelado (tecla P): atajos en la sala; también en Ajustes. Se guardan.
   addEventListener("keydown", (e) => {
@@ -750,12 +750,14 @@ async function boot() {
     defense.update(dt, dmode.phase === "wave");
     if (dmode.phase === "build") {
       dmode.t -= dt;
+      // E lejos de las plataformas: lanzar ya la oleada (con premio por cada segundo adelantado)
+      if (f.interact && !defense.padNear(player.pos) && dmode.t < (dmode.wave ? BUILD_BETWEEN : BUILD_TIME) - 1.5) { const bonus = Math.round(dmode.t * EARLY_BONUS); if (bonus > 0) { dmode.credits += bonus; toast(t("df.early", { c: bonus })); } dmode.t = 0; }
       if (dmode.t <= 0) { dmode.wave++; dmode.phase = "wave"; dmode.queue = coreWave(dmode.wave, dmode.rnd); dmode.spawnT = 0.5; mobs.index = Math.floor(dmode.wave * 0.8); defense.waveStart(); toast(t("df.wave", { n: dmode.wave })); }
     } else {
-      if (dmode.queue.length) { dmode.spawnT -= dt; if (dmode.spawnT <= 0) { dmode.spawnT = 0.7; const room = raid.map!.rooms[1], side = Math.floor(Math.random() * 3), u = (Math.random() - 0.5) * room.w * 0.8;
+      if (dmode.queue.length) { dmode.spawnT -= dt; if (dmode.spawnT <= 0) { dmode.spawnT = SPAWN_GAP; for (let k = 0; k < 2 && dmode.queue.length; k++) { const room = raid.map!.rooms[1], side = Math.floor(Math.random() * 3), u = (Math.random() - 0.5) * room.w * 0.8;
         const ox = RAID_ORIGIN.x + room.cx, oz = RAID_ORIGIN.z + room.cz, hx = room.w / 2 - 2, hz = room.d / 2 - 2; const pos = side === 0 ? new THREE.Vector3(ox + u, 0, oz + hz) : side === 1 ? new THREE.Vector3(ox + hx, 0, oz + u) : new THREE.Vector3(ox - hx, 0, oz + u);
-        mobs.spawnAt(dmode.queue.shift() as never, pos); } }
-      else if (mobs.living === 0) { const gain = waveReward(dmode.wave) + defense.income(); dmode.credits += gain; dmode.phase = "build"; dmode.t = BUILD_TIME; toast(t("df.cleared", { n: dmode.wave, c: gain, s: BUILD_TIME })); lootChime(2); }
+        mobs.spawnAt(dmode.queue.shift() as never, pos); } } }
+      else if (mobs.living === 0) { const gain = waveReward(dmode.wave) + defense.income(); dmode.credits += gain; dmode.phase = "build"; dmode.t = BUILD_BETWEEN; toast(t("df.cleared", { n: dmode.wave, c: gain, s: BUILD_BETWEEN })); lootChime(2); }
     }
     // Construir: junto a una plataforma, E (o mantener Ⓧ)
     const pad = defense.padNear(player.pos);
@@ -1088,7 +1090,7 @@ async function boot() {
         if (edges[12]) nav.move("up"); if (edges[13]) nav.move("down"); if (edges[14]) nav.move("left"); if (edges[15]) nav.move("right");
         if (edges[0]) { if (state === "shop") shop.skip(); if (nav.current && document.body.classList.contains("nav-keys")) nav.activate(); else cursor.click(); }
         if (edges[1]) back();
-        const scr = activeScreen(); if (scr) for (const b of [2, 3, 4, 5, 11]) if (edges[b]) scr.pad(b);
+        const scr = activeScreen(); if (scr) for (const b of [2, 3, 4, 5, 6, 7, 11]) if (edges[b]) scr.pad(b);
         if (state === "inventory" && edges[8]) invScreen.close();
         if ((state === "pause") && edges[9]) resume();
       } else if (pad && dialog.isOpen) {
@@ -1158,6 +1160,26 @@ async function boot() {
   player.applyCamera(camera, 0);
   await refreshLatest();
   openStart();
+  // Precalentado (en la pantalla de inicio): se montan armas de muestra de cada tipo y se compilan sus materiales,
+  // también los recortados del efecto de aparición, aquí y en el renderizador de miniaturas. Así la primera vez que
+  // aparece un arma en la tienda, el suelo o la mano no hay que compilar nada en mitad del juego.
+  setTimeout(async () => {
+    const warm = new THREE.Group(); warm.position.set(0, -60, 0); scene.add(warm);
+    const clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e4);
+    const types = ["rifle", "smg", "pistol", "shotgun", "sniper", "lmg", "bullpup", "revolver"] as const;
+    for (let i = 0; i < types.length * 2; i++) {
+      try {
+        const spec = gen.generate(7001 + i * 37, types[i % types.length]);
+        const built = await asm.assemble(spec);
+        warm.add(built.group);
+        const clipped = built.group.clone(); clipped.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.material = ([] as THREE.Material[]).concat(m.material).map((x) => { const c = x.clone(); c.clippingPlanes = [clip]; return c; })[0]; }); warm.add(clipped);
+        thumbs.warm(built.group);
+      } catch { /* (un arma de muestra que falle no importa) */ }
+      await new Promise((r) => setTimeout(r, 30));
+    }
+    try { await renderer.compileAsync(scene, camera); } catch { /* sin compilación en paralelo: se compila al dibujar */ }
+    scene.remove(warm);
+  }, 1500);
   frame();
   (window as unknown as Record<string, unknown>).__game = {
     debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
