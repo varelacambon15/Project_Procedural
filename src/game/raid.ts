@@ -27,7 +27,21 @@ const PALETTES = [
   { floor: "#4e545c", wall: "#5e646d", trim: 0xff4a8a, accent: 0x3fd0d8 },  // instalación
   { floor: "#3e4856", wall: "#4e5b6b", trim: 0x3a9ad8, accent: 0x7affc8 },  // laboratorio azul
   { floor: "#4e4842", wall: "#625a50", trim: 0xc99a2e, accent: 0xff7a4a },  // almacén oxidado
+  { floor: "#3a3e3a", wall: "#4a524a", trim: 0x9aff3a, accent: 0xd8ff5a },  // planta química
+  { floor: "#45383a", wall: "#57474a", trim: 0xff3a3a, accent: 0xffa040 },  // alerta roja
 ];
+/** Paneles de pared: placas con juntas, remaches y una banda inferior más oscura (pixelado, como el resto). */
+function wallPanels(base: string) {
+  const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d")!;
+  g.fillStyle = base; g.fillRect(0, 0, 64, 64);
+  for (let i = 0; i < 260; i++) { const v = Math.random() > 0.5 ? 255 : 0; g.fillStyle = `rgba(${v},${v},${v},${Math.random() * 0.06})`; g.fillRect(Math.floor(Math.random() * 64), Math.floor(Math.random() * 64), 1, 1); }
+  g.fillStyle = "rgba(0,0,0,0.38)"; g.fillRect(0, 0, 64, 1); g.fillRect(0, 0, 1, 64); g.fillRect(31, 0, 1, 40); g.fillRect(0, 40, 64, 1);
+  g.fillStyle = "rgba(255,255,255,0.08)"; g.fillRect(1, 1, 62, 1); g.fillRect(1, 41, 62, 1);
+  g.fillStyle = "rgba(0,0,0,0.22)"; g.fillRect(0, 41, 64, 23);
+  for (const [x, y] of [[4, 4], [27, 4], [35, 4], [59, 4], [4, 36], [59, 36]]) { g.fillStyle = "rgba(0,0,0,0.4)"; g.fillRect(x, y, 2, 2); g.fillStyle = "rgba(255,255,255,0.15)"; g.fillRect(x, y, 1, 1); }
+  for (let x = 6; x < 58; x += 4) { g.fillStyle = "rgba(0,0,0,0.3)"; g.fillRect(x, 50, 2, 8); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace; return t;
+}
 function grid(base: string, line: string, rep: [number, number]) {
   const c = document.createElement("canvas"); c.width = c.height = 32; const g = c.getContext("2d")!;
   g.fillStyle = base; g.fillRect(0, 0, 32, 32);
@@ -117,6 +131,14 @@ export class Raid {
     const core = new THREE.MeshStandardMaterial({ color: 0xffb060, emissive: 0xff9a40, emissiveIntensity: 1.6 }), shell = new THREE.MeshStandardMaterial({ color: 0x9ab0c0, transparent: true, opacity: 0.25, roughness: 0.2 });
     const capMat = new THREE.MeshStandardMaterial({ color: 0x401018, emissive: pal.trim, emissiveIntensity: 1.1 });
     const wallMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(pal.wall), roughness: 0.9 });
+    // Paredes con paneles: un material por tramo (la textura se repite cada 4 m × 3,2 m del tramo)
+    const panelTex = wallPanels(pal.wall), wallMats = new Map<string, THREE.MeshStandardMaterial>();
+    const wallFor = (len: number, h: number) => { const k = `${Math.round(len)}x${Math.round(h * 2)}`; let m = wallMats.get(k); if (!m) { const t = panelTex.clone(); t.repeat.set(Math.max(1, Math.round(len / 4)), Math.max(1, h / 3.2)); t.needsUpdate = true; m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.85, metalness: 0.15 }); wallMats.set(k, m); } return m; };
+    const crateMat = new THREE.MeshStandardMaterial({ color: 0x6a6450, roughness: 0.85 }), crateDark = new THREE.MeshStandardMaterial({ color: 0x3a3830, roughness: 0.9 });
+    const barrelMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(pal.trim).multiplyScalar(0.45), roughness: 0.6, metalness: 0.3 });
+    const screenMat = new THREE.MeshBasicMaterial({ map: dataPanel(`#${new THREE.Color(pal.accent).getHexString()}`, map.seed % 97) });
+    const beamMat = new THREE.MeshStandardMaterial({ color: 0x2a2e34, metalness: 0.6, roughness: 0.5 });
+    const lineMat = new THREE.MeshBasicMaterial({ color: pal.trim, transparent: true, opacity: 0.55 });
     const ceilMat = new THREE.MeshStandardMaterial({ color: 0x3c4046, roughness: 1 });
     const coverMat = new THREE.MeshStandardMaterial({ color: 0x5d636a, metalness: 0.4, roughness: 0.6 });
     const trimMat = new THREE.MeshStandardMaterial({ color: pal.trim, emissive: pal.trim, emissiveIntensity: 0.5 });
@@ -151,7 +173,8 @@ export class Raid {
         const alongX = s === "n" || s === "s", len = alongX ? w : d, pos = s === "n" ? cz + d / 2 + 0.5 : s === "s" ? cz - d / 2 - 0.5 : s === "e" ? cx + w / 2 + 0.5 : cx - w / 2 - 0.5;
         const put = (a: number, b: number, y0: number, y1: number, collide = true) => {
           const c = (a + b) / 2, l = b - a; if (l <= 0.01) return;
-          if (alongX) box(l, y1 - y0, 1, cx + c, (y0 + y1) / 2, pos, wallMat, collide); else box(1, y1 - y0, l, pos, (y0 + y1) / 2, cz + c, wallMat, collide);
+          const wm = wallFor(l, y1 - y0);
+          if (alongX) box(l, y1 - y0, 1, cx + c, (y0 + y1) / 2, pos, wm, collide); else box(1, y1 - y0, l, pos, (y0 + y1) / 2, cz + c, wm, collide);
         };
         const half = len / 2 + 1;
         if (doors.includes(s)) { put(-half, -DOOR_W / 2, 0, H); put(DOOR_W / 2, half, 0, H); put(-DOOR_W / 2, DOOR_W / 2, CH, H, false); }
@@ -160,6 +183,7 @@ export class Raid {
         if (alongX) box(len, 0.2, 0.05, cx, 1.1, pos + (s === "n" ? -0.53 : 0.53), trimMat, false); else box(0.05, 0.2, len, pos + (s === "e" ? -0.53 : 0.53), 1.1, cz, trimMat, false);
       };
       (["n", "s", "e", "w"] as const).forEach(side);
+      this.dress(room, doors, H, { box, plane, crateMat, crateDark, barrelMat, screenMat, beamMat, lineMat, rackMat, trimMat, accentMat, g, O });
       // Columnas de luz en dos esquinas y un panel holográfico de datos en una pared (salas de combate y jefe)
       if (room.kind === "fight" || room.kind === "boss") {
         for (const [sx, sz] of [[-1, -1], [1, 1]] as const) {
@@ -207,6 +231,53 @@ export class Raid {
       }
     }
     this.scene.add(g);
+  }
+
+  /**
+   * Atrezo de una sala (sin tocar el centro, donde se combate): pilastras y vigas, zócalo, línea de señalización en el
+   * suelo, y junto a las paredes cajas apiladas, bidones, consolas con pantalla y rejillas de ventilación. Todo sale de
+   * la semilla de la sala; lo que se puede pisar o tocar tiene colisión.
+   */
+  private dress(room: RaidRoom, doors: string[], H: number, k: { box: (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material, collide?: boolean) => THREE.Mesh; plane: (w: number, d: number, x: number, y: number, z: number, m: THREE.Material, up?: boolean) => THREE.Mesh; crateMat: THREE.Material; crateDark: THREE.Material; barrelMat: THREE.Material; screenMat: THREE.Material; beamMat: THREE.Material; lineMat: THREE.Material; rackMat: THREE.Material; trimMat: THREE.Material; accentMat: THREE.Material; g: THREE.Group; O: THREE.Vector3 }) {
+    const { cx, cz, w, d } = room, r = rng((room.i + 1) * 7919 + Math.round(cx * 13 + cz * 31));
+    const { box } = k;
+    // Vigas del techo y pilastras en las paredes (ritmo de nave industrial)
+    for (let x = cx - w / 2 + 3; x < cx + w / 2 - 1; x += 6) box(0.35, 0.45, d, x, H - 0.22, cz, k.beamMat, false);
+    const nearDoor = (s: string, t: number) => doors.includes(s) && Math.abs(t) < DOOR_W / 2 + 1.2;
+    for (const s of ["n", "s", "e", "w"] as const) {
+      const alongX = s === "n" || s === "s", len = alongX ? w : d, sg = s === "n" || s === "e" ? 1 : -1, off = (alongX ? d : w) / 2 - 0.15;
+      for (let t = -len / 2 + 2; t <= len / 2 - 2; t += 6) { if (nearDoor(s, t)) continue; if (alongX) box(0.5, H, 0.3, cx + t, H / 2, cz + sg * off, k.beamMat, false); else box(0.3, H, 0.5, cx + sg * off, H / 2, cz + t, k.beamMat, false); }
+      // zócalo
+      if (alongX) box(len, 0.22, 0.12, cx, 0.11, cz + sg * (off + 0.05), k.rackMat, false); else box(0.12, 0.22, len, cx + sg * (off + 0.05), 0.11, cz, k.rackMat, false);
+    }
+    // Línea de señalización en el suelo, a 1,6 m de las paredes
+    const inset = 1.6;
+    for (const [lx, lz, lw, ld] of [[cx, cz - d / 2 + inset, w - inset * 2, 0.12], [cx, cz + d / 2 - inset, w - inset * 2, 0.12], [cx - w / 2 + inset, cz, 0.12, d - inset * 2], [cx + w / 2 - inset, cz, 0.12, d - inset * 2]] as const) {
+      const m = k.plane(lw, ld, lx, 0.015, lz, k.lineMat); (m.material as THREE.Material).polygonOffset = true;
+    }
+    if (room.kind === "start") return;
+    // Atrezo junto a las paredes: 4–7 grupos por sala, nunca delante de una puerta
+    const n = 4 + Math.floor(r() * 4);
+    for (let i = 0; i < n; i++) {
+      const s = (["n", "s", "e", "w"] as const)[Math.floor(r() * 4)], alongX = s === "n" || s === "s", len = alongX ? w : d, sg = s === "n" || s === "e" ? 1 : -1;
+      const t = (r() - 0.5) * (len - 5); if (nearDoor(s, t) || Math.abs(t) > len / 2 - 2) continue;
+      const depth = (alongX ? d : w) / 2 - 0.9;
+      const P = (along: number, out: number) => alongX ? [cx + t + along, cz + sg * (depth - out)] as const : [cx + sg * (depth - out), cz + t + along] as const;
+      const kind = r();
+      if (kind < 0.35) { // cajas apiladas
+        const [x, z] = P(0, 0); const sz = 0.9 + r() * 0.3; box(sz, sz, sz, x, sz / 2, z, k.crateMat); box(sz + 0.02, 0.08, sz + 0.02, x, sz * 0.5, z, k.crateDark, false);
+        if (r() < 0.6) { const [x2, z2] = P(sz * 0.9, 0); box(sz * 0.8, sz * 0.8, sz * 0.8, x2, sz * 0.4, z2, k.crateMat); }
+        if (r() < 0.5) box(sz * 0.7, sz * 0.7, sz * 0.7, x + (r() - 0.5) * 0.15, sz + sz * 0.35, z, k.crateMat);
+      } else if (kind < 0.6) { // bidones
+        for (let j = 0; j < 2 + Math.floor(r() * 3); j++) { const [x, z] = P((j - 1) * 0.7, (j % 2) * 0.55); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.9, 12), k.barrelMat); b.position.set(k.O.x + x, 0.45, k.O.z + z); k.g.add(b); const bb = new THREE.Box3().setFromObject(b); this.boxes.push(bb); this.hooks.colliders.push(bb); this.hooks.shootables.push(b); }
+      } else if (kind < 0.82) { // consola con pantalla
+        const [x, z] = P(0, -0.3); const c = box(alongX ? 1.4 : 0.7, 1.1, alongX ? 0.7 : 1.4, x, 0.55, z, k.rackMat);
+        const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55), k.screenMat); scr.position.set(c.position.x - (alongX ? 0 : sg * 0.36), 1.45, c.position.z - (alongX ? sg * 0.36 : 0)); scr.rotation.y = alongX ? (sg > 0 ? Math.PI : 0) : (sg > 0 ? -Math.PI / 2 : Math.PI / 2); k.g.add(scr);
+        box(alongX ? 1.3 : 0.05, 0.04, alongX ? 0.05 : 1.3, x - (alongX ? 0 : sg * 0.36), 1.1, z - (alongX ? sg * 0.36 : 0), k.accentMat, false);
+      } else { // rejilla de ventilación en la pared
+        const [x, z] = P(0, -0.85); for (let y = 0; y < 5; y++) box(alongX ? 1.4 : 0.06, 0.06, alongX ? 0.06 : 1.4, x, 1.6 + y * 0.14, z, k.rackMat, false);
+      }
+    }
   }
 
   /** Cofre de una sala de botín: se abre al pasar cerca. */

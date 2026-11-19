@@ -120,7 +120,7 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   const boss = rooms.find((x) => x.kind === "boss")!;
   for (const f of fights) if (f.enemies.length >= 9 && r() < 0.4) f.enemies[0] = "commander";
   boss.enemies = ["warden", ...roomEnemies(r, nFights, nFights, opt.difficulty).slice(0, 3 + opt.difficulty * 2)];
-  return { seed, rooms, corridors, palette: Math.floor(r() * 3) };
+  return { seed, rooms, corridors, palette: Math.floor(r() * 5) };
 }
 
 /** Lados de una sala por los que entra un pasillo ("n" = +Z, "s" = −Z, "e" = +X, "w" = −X). */

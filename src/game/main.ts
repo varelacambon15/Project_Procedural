@@ -741,7 +741,7 @@ async function boot() {
     sound: (k) => { const e = soundManifest?.efectos; if (!e) return; if (k === "boom") { const x = e.explosion; if (x?.length) playSample(sample(x[Math.floor(Math.random() * x.length)]), 0.25, 1.2); } else if (k === "zap") { const l = e.flash_aturdidora; if (l?.length) playSample(sample(l[0]), 0.12, 1.8); } },
   });
   function startDefense() {
-    const seed = (Math.random() * 2 ** 31) | 0, at = raid.startNode(seed, "fight", [], 0, Math.floor(Math.random() * 3), true), room = raid.map!.rooms[1];
+    const seed = (Math.random() * 2 ** 31) | 0, at = raid.startNode(seed, "fight", [], 0, Math.floor(Math.random() * 5), true), room = raid.map!.rooms[1];
     Object.assign(dmode, { active: true, wave: 0, credits: START_CREDITS, phase: "build", t: BUILD_TIME, queue: [], spawnT: 0, rnd: seedRng(seed) });
     defense.setup(new THREE.Vector3(RAID_ORIGIN.x + room.cx, 0, RAID_ORIGIN.z + room.cz), Math.min(room.w, room.d) / 2 - 2, seedRng(seed ^ 77), room.covers.map((c) => ({ x: RAID_ORIGIN.x + c.x, z: RAID_ORIGIN.z + c.z, r: Math.max(c.w, c.d) / 2 })));
     mobs.core = { pos: defense.core.pos, targets: (k) => !HUNTERS.has(k), hit: (dmg) => { if (defense.hitCore(dmg)) defenseEnd(); } };
@@ -821,7 +821,7 @@ async function boot() {
   function hackEnter(node: HackNode) {
     $("raidmenu").hidden = true; resume();
     hack.node = node; hack.depth = node.depth; hack.extractable = false; mobs.index = Math.floor(node.depth * 1.5);
-    const en = hackEnemies(node), at = raid.startNode(node.seed, node.kind === "loot" ? "loot" : "fight", en, node.kind === "cipher" ? cipherLimit(en.length) : 0, node.depth % 3);
+    const en = hackEnemies(node), at = raid.startNode(node.seed, node.kind === "loot" ? "loot" : "fight", en, node.kind === "cipher" ? cipherLimit(en.length) : 0, node.depth % 5);
     player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
     toast(t(`hk.go.${node.kind}`, { s: cipherLimit(en.length) }));
   }
