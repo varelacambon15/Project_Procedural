@@ -226,11 +226,14 @@ class Arm {
     // (dirección natural del antebrazo en primera persona: hacia abajo, hacia atrás y por fuera, como en los shooters)
     const natural = new THREE.Vector3(0.3 * this.side, -0.72, 0.62).normalize();
     // (con `straight`, el antebrazo continúa el eje de la mano, un poco hacia abajo: muñeca sin quebrar)
-    const handAxis = new THREE.Vector3(0, 0, 1).applyQuaternion(this.hand.g.quaternion).add(new THREE.Vector3(0, -1.8, 0)).normalize();
+    const handAxis = new THREE.Vector3(0, 0, 1).applyQuaternion(this.hand.g.quaternion).multiply(new THREE.Vector3(0.25, 1, 1)).add(new THREE.Vector3(0, -1.8, 0)).normalize();
     const along = p.straight ? natural.clone().lerp(handAxis, p.straight).normalize() : natural;
     const dIk = ik.clone().sub(wrist).normalize(), dir = dIk.clone().lerp(along, p.straight ? 0.92 : ARM_DATA.wristStraight).normalize();
     const elbow = wrist.clone().addScaledVector(dir, ARM_DATA.fore);
-    this.upper.set(shoulder, elbow); this.elbowM.position.copy(elbow);
+    // (pistolas: el brazo superior sigue hacia abajo, fuera de cuadro; desde el hombro fijo pasaba pegado a la cámara
+    // y en perspectiva se veía como un tubo enorme hacia el lado)
+    const sh = p.straight ? elbow.clone().addScaledVector(dir.clone().add(new THREE.Vector3(0.1 * this.side, -0.6, 0)).normalize(), ARM_DATA.upper) : shoulder;
+    this.upper.set(sh, elbow); this.elbowM.position.copy(elbow);
     this.fore.set(elbow, wrist);
   }
 }
