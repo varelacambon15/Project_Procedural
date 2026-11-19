@@ -24,8 +24,6 @@ export interface SuperHooks {
   levitate?(sec: number, h: number): void;
   /** Ojo y dirección de la vista (rayo del cañón de riel, abanico de cristal, lanzamiento de la bomba). */
   view?(): { o: THREE.Vector3; dir: THREE.Vector3 };
-  /** Rebobinado: devuelve al jugador a donde estaba hace `sec` s (y su vida); da la posición de la que se va. */
-  rewind?(sec: number): THREE.Vector3 | null;
   /** Impulso: lanza al jugador `dist` m en la dirección pulsada; da el tramo recorrido. */
   dash?(dist: number): { from: THREE.Vector3; to: THREE.Vector3 };
 }
@@ -40,10 +38,10 @@ const COLOR: Record<SuperId, number> = {
   overload: 0xffd070, shockwave: 0xff9a50, storm: 0x8fd8ff, inferno: 0xff5a1e, stasis: 0x9fe8ff, orbital: 0xffe2a0,
   seekers: 0xff7ad0, aegis: 0x7affc8, deadeye: 0xff4050, vortex: 0xa070ff,
   sentry: 0x6ad8ff, zerog: 0xc0a0ff, chrono: 0x80c0ff, leech: 0xd03060, decoy: 0x50f0ff,
-  spirit: 0x8fe6ff, railgun: 0x7ab8ff, dash: 0x5affd8, rewind: 0xd6b0ff, shards: 0xb8f4ff,
+  spirit: 0x8fe6ff, railgun: 0x7ab8ff, dash: 0x5affd8, dome: 0x7ad8ff, shards: 0xb8f4ff,
 };
 /** Súperes con efecto que dura (el medidor no carga y no se puede volver a invocar mientras). */
-const LASTING = new Set<SuperId>(["overload", "storm", "stasis", "orbital", "aegis", "deadeye", "vortex", "sentry", "zerog", "chrono", "leech", "decoy", "dash"]);
+const LASTING = new Set<SuperId>(["overload", "storm", "stasis", "orbital", "aegis", "deadeye", "vortex", "sentry", "zerog", "chrono", "leech", "decoy", "dash", "dome"]);
 
 export class SuperFx {
   private vfx: Vfx[] = [];
@@ -131,6 +129,7 @@ export class SuperFx {
       if (a.id === "vortex") this.vortexTick(a, dt);
       if (a.id === "aegis" && a.t >= a.next) { a.next += 0.5; this.spawn(new THREE.Mesh(ringGeo, add(COLOR.aegis)), origin.clone().setY(0.05), 0.5, 1.6, "ring"); }
       if (a.id === "sentry") this.sentryTick(a, dt);
+      if (a.id === "dome") this.domeTick(a, dt);
       if (a.id === "dash" && a.t >= a.next && this.trail) { a.next += tl.interval ?? 0.25; this.trailTick(); }
       if (a.id === "leech" && a.t >= a.next) { a.next += tl.interval ?? 0.25; this.drain(origin); }
       if (a.id === "decoy" && this.holo) { this.holo.rotation.y += dt * 1.5; this.holo.children.forEach((c, i) => (((c as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(a.t * 12 + i))); }
@@ -156,7 +155,7 @@ export class SuperFx {
       else if (v.kind === "spin") { v.mesh.rotation.y += dt * 5; v.mesh.scale.setScalar(v.r * (0.85 + 0.15 * Math.sin(v.t * 9))); }
       else if (v.kind === "beam") v.mesh.scale.x = v.mesh.scale.z = v.r * (1 - k * 0.7);
       const fade = v.kind === "mark" || v.kind === "spin" ? Math.min(1, (1 - k) * 5) : 1 - k;
-      (v.mesh.material as THREE.MeshBasicMaterial).opacity = 0.8 * fade * (v.kind === "bolt" ? (Math.random() > 0.3 ? 1 : 0.4) : 1);
+      (v.mesh.material as THREE.MeshBasicMaterial).opacity = (v.mesh.userData.op ?? 0.8) * fade * (v.kind === "bolt" ? (Math.random() > 0.3 ? 1 : 0.4) : 1);
       if (k >= 1) { this.scene.remove(v.mesh); (v.mesh.material as THREE.Material).dispose(); this.vfx.splice(this.vfx.indexOf(v), 1); }
     }
   }
@@ -287,7 +286,14 @@ export class SuperFx {
       case "spirit": this.launchOrb(o); break;
       case "railgun": this.railShot(o); break;
       case "dash": this.doDash(at); break;
-      case "rewind": this.doRewind(o); break;
+      case "dome": {
+        const r = tl.radius ?? 8; this.active!.at = o.clone().setY(0);
+        const m = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), add(col, THREE.DoubleSide)); m.userData.op = 0.1;
+        this.spawn(m, this.active!.at.clone(), this.dur(id), r, "mark");
+        this.spawn(new THREE.Mesh(ringGeo, add(col)), at, this.dur(id), r, "mark");
+        this.spawn(new THREE.Mesh(ringGeo, add(0xffffff)), at, 0.6, r, "ring");
+        this.hooks.sound("zap"); break;
+      }
       case "shards": this.fireShards(); break;
       case "vortex": {
         const p = this.aimAt(tl.range ?? 24, o).setY(1.2); this.active!.at = p;
@@ -383,16 +389,12 @@ export class SuperFx {
     if (Math.random() < 0.7) { const p = t.from.clone().lerp(t.to, Math.random()); this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.dash)), p.setY(0.3), 0.35, 0.35, "flash"); }
   }
 
-  // ---------- Rebobinado ----------
-  /** Vuelve unos segundos atrás (posición y vida) y deja una explosión de energía donde estabas. */
-  private doRewind(o: THREE.Vector3) {
-    const tl = SUPERS.rewind, from = this.hooks.rewind?.(tl.rate ?? 4); if (!from) return;
-    const r = tl.radius ?? 6;
-    this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.rewind)), from.clone().setY(1), 0.5, r * 0.4, "flash"); this.spawn(new THREE.Mesh(ringGeo, add(0xffffff)), from.clone().setY(0.05), 0.6, r, "ring");
-    this.blast(from, (tl.damage ?? 650) * this.power, r, "explosive", 1);
-    this.zap(from.clone().setY(1.2), o.clone().setY(1.2), COLOR.rewind, 0.5);
-    this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.rewind, THREE.BackSide)), o.clone().setY(1.3), 0.5, 2.5, "flash");
-    this.hooks.shake(0.35); this.hooks.sound("boom");
+  // ---------- Cúpula de contención ----------
+  /** ¿El jugador está dentro de la cúpula activa? (los golpes de fuera no le llegan) */
+  shieldsPlayer(p: THREE.Vector3) { const a = this.active; return a?.id === "dome" && Math.hypot(p.x - a.at.x, p.z - a.at.z) < (SUPERS.dome.radius ?? 8); }
+  private domeTick(a: NonNullable<SuperFx["active"]>, dt: number) {
+    const r = SUPERS.dome.radius ?? 8, slow = SUPERS.dome.slow ?? 0.45;
+    for (const d of this.alive()) { const dist = Math.hypot(d.group.position.x - a.at.x, d.group.position.z - a.at.z); if (Math.abs(dist - r) < 1.2) d.drag(d.group.position.clone().add(d.group.position.clone().sub(a.at).setY(0).normalize()), dt * (1 - slow) * 3); }
   }
 
   // ---------- Abanico de cristal ----------

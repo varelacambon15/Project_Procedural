@@ -237,10 +237,6 @@ async function boot() {
       const mx = lastMove.x, mz = lastMove.z, dir = Math.hypot(mx, mz) > 0.2 ? new THREE.Vector3(mx, 0, -mz).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.yaw).normalize() : new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
       const from = player.pos.clone(); player.lunge(dir, dist, 0.16); return { from, to: from.clone().addScaledVector(dir, dist) };
     },
-    rewind(sec) {
-      const want = performance.now() - sec * 1000, h = rewindHist.find((x) => x.t >= want) ?? rewindHist[0]; if (!h) return null;
-      const from = player.pos.clone(); player.pos.copy(h.p); player.vel.set(0, 0, 0); php.value = Math.max(php.value, h.hp); rewindHist.length = 0; return from;
-    },
     view: () => ({ o: camera.getWorldPosition(new THREE.Vector3()), dir: camera.getWorldDirection(new THREE.Vector3()) }),
     sound(kind) {
       const e = soundManifest?.efectos; if (!e) return;
@@ -271,7 +267,7 @@ async function boot() {
     spirit: { f0: 70, f1: 30, wave: "sawtooth", len: 2.2, noise: 0.6, lp: 1400, vol: 0.32, chord: [1.5, 2] },
     railgun: { f0: 2400, f1: 180, wave: "sawtooth", len: 0.7, noise: 0.25, lp: 7000, vol: 0.12, chord: [1.01] },
     dash: { f0: 300, f1: 1400, wave: "sawtooth", len: 0.35, noise: 0.5, lp: 5000, vol: 0.12 },
-    rewind: { f0: 1200, f1: 150, wave: "triangle", len: 1.0, noise: 0.1, lp: 3000, vol: 0.12, chord: [0.5, 0.75] },
+    dome: { f0: 220, f1: 330, wave: "triangle", len: 1.2, noise: 0.05, lp: 2500, vol: 0.14, chord: [1.5, 2] },
     shards: { f0: 2600, f1: 3600, wave: "triangle", len: 0.45, noise: 0.15, lp: 8000, vol: 0.08, chord: [1.26, 1.5] },
   };
   function superSig(id: SuperId) {
@@ -640,6 +636,9 @@ async function boot() {
   function selfDestruct(d: Dummy) { const at = d.center; d.damage(1e9, null, false, at); gun.explode(at, 140, "explosive", d); if (settings.screenShake) shake = Math.min(0.8, shake + 0.35); }
   /** Daño al jugador: Égida y resistencia del árbol; Segundo aliento salva una vez por oleada. */
   function hurtPlayer(dmg: number, kind: "melee" | "orb" | "explosive" = "melee") {
+    // (mientras está el señuelo los enemigos le atacan a él: sus golpes no te llegan; dentro de la cúpula, tampoco los de fuera)
+    if (sfx.decoyPos) return;
+    if (sfx.shieldsPlayer(player.pos)) return;
     dmg *= sfx.guard * curPerks.guard * damageTaken(armorT, kind); // (armadura: reducción y resistencias)
     if (curPerks.secondWind && !windUsed && php.value - dmg <= 0) { windUsed = true; php.value = php.max * 0.4; toast(t("pg.secondWind")); return; }
     if (php.hit(dmg)) {
