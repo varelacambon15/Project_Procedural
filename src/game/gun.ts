@@ -1303,7 +1303,7 @@ const GRIPS: Record<HandKind | "right" | "rightHandgun", HandGrip> = {
   right: { q: rx(-0.3).multiply(handBasis(V(-0.33, -0.1, -0.94), V(0.97, 0.24, 0))), off: V(0.019, 0.012, 0.012), curl: C(1.05, 0.7) },
   // Pistolas: la mano más baja en la empuñadura (la membrana entre pulgar e índice justo bajo la corredera, que asoma
   // por encima de la mano como en los shooters de referencia) y la muñeca algo menos inclinada
-  rightHandgun: { q: rx(-0.22).multiply(handBasis(V(-0.1, -0.1, -0.99), V(0.99, 0.12, 0))), off: V(0.016, -0.014, 0.016), curl: C(1.05, 0.7) },
+  rightHandgun: { q: rx(-0.22).multiply(handBasis(V(-0.1, -0.1, -0.99), V(0.99, 0.12, 0))), off: V(0.014, 0.002, 0.012), curl: C(1.1, 0.75) },
   // Bajo el guardamanos: palma arriba, dedos hacia la derecha envolviéndolo
   under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.016, -0.012, 0.004), curl: C(1.15, 0.7) },
   // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
