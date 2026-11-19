@@ -73,6 +73,7 @@ export interface AnimInput {
   /** 0 cadera … 1 apuntando. */ ads: number;
   moving: number; sprinting: boolean; grounded: boolean; vy: number;
   lookX: number; lookY: number;
+  /** Alto del arma (m), para alejar las muy voluminosas. */ bulk?: number;
   /** Largo del modelo y altura de la línea de mira (para la posición de apuntado). */ length: number; sightY: number;
   /** X local de la empuñadura respecto al centro del modelo (la boca está en +X). */ gripX?: number;
   /** Ajuste de encuadre en cadera propio de cada arma (dx, dy, dz, giro hacia el centro); se desvanece al apuntar. */ fit?: [number, number, number, number];
@@ -148,7 +149,8 @@ export class ViewAnimator {
     // retrasa hasta 6 cm por detrás de la empuñadura)
     const eyeX = i.sightX === undefined ? 0 : i.gripX !== undefined && i.sightX - 0.025 < i.gripX + (p.adsGrip ?? 0.06) - 0.015 ? Math.min(i.sightX - 0.025, i.gripX - (p.adsGrip ?? 0.06)) : i.sightX - 0.025;
     const adsZ = i.sightX !== undefined ? eyeX : -(i.length * 0.5 + p.aimZ);
-    const hipZ = i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, (p.rearMax ?? 0.34) - i.length * 0.5) : -(i.length * 0.5 + p.hip[2]);
+    // (las muy altas —miras grandes, tambores, cuerpos voluminosos— un poco más lejos: no tapan la vista)
+    const hipZ = (i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, (p.rearMax ?? 0.34) - i.length * 0.5) : -(i.length * 0.5 + p.hip[2])) - (p.gripAnchor ? 0 : Math.min(0.14, Math.max(0, (i.bulk ?? 0) - 0.23) * 1.2));
     // Mira de hierro: se acerca el arma hacia el centro, por debajo de la vista (la cámara hace zoom); con óptica, la
     // línea de mira pasa por el centro de la óptica
     const ironPos: V3 = [p.hip[0] * 0.45, p.hip[1] * 0.78, hipZ + 0.05 - (p.adsGrip ? p.adsGrip * 0.6 : 0)]; // (pistolas: al apuntar, el brazo se extiende)

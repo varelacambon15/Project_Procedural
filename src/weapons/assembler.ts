@@ -61,6 +61,7 @@ function vgripAnchor(parts: { object: THREE.Object3D; role: PartRole }[]): THREE
 export interface AssembledPart { object: THREE.Object3D; role: PartRole; from: AssetEntry; explode: THREE.Vector3; base: THREE.Vector3 }
 export interface AssembledWeapon {
   group: THREE.Group; parts: AssembledPart[]; length: number;
+  /** Alto del arma montada (m, sin girar). */ height?: number;
   /** Se cumple cuando la oclusión de contacto ya está aplicada (con `asyncAO`, se calcula después, en tramos). */ ao?: Promise<void>;
   /** Punta del cañón (o del accesorio de boca), en coordenadas del grupo. */ muzzle: THREE.Vector3;
   /** Altura de la línea de mira (centro de la mira, si la lleva), en coordenadas del grupo. */ sightY: number | null;
@@ -654,7 +655,7 @@ export class WeaponAssembler {
     const muzzleOut = (muzzle ?? new THREE.Vector3(box.max.x, center.y, 0)).clone().sub(center);
     group.updateMatrixWorld(true);
     const handles = this.handles(spec, parts, new THREE.Box3().setFromObject(group));
-    return { ao, group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, sightX: ironRearX === null ? undefined : ironRearX - center.x, ownSight, zoom, handles };
+    return { ao, height: raw.max.y - raw.min.y, group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, sightX: ironRearX === null ? undefined : ironRearX - center.x, ownSight, zoom, handles };
   }
 
   /** Estima dónde agarran las manos: empuñadura (junta o detrás del cargador), guardamanos, pozo y palanca. */
