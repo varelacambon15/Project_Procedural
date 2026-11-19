@@ -19,6 +19,7 @@ import { WeaponAssembler } from "../weapons/assembler";
 import { archName, rarityName, typeName } from "../weapons/labels";
 import { displayName, rename } from "../weapons/naming";
 import { setAccUid } from "../weapons/accbank";
+import { DEATH_LOSS, HACK_BUFFS, HACK_BUFF_VALUE, cipherLimit, hackChoices, hackEnemies, nodeData, type HackBuff, type HackNode } from "./hackgen";
 import type { Manifest, RarityId, WeaponSpec } from "../weapons/types";
 import { getLang, onLang, setLang, t, type Lang } from "../i18n";
 import { DEFAULT_BINDS, DEFAULT_PAD, Input, PAD_NAMES } from "./input";
@@ -510,6 +511,8 @@ async function boot() {
   // ---------- Nivel y habilidades ----------
   let curPerks = skillPerks(inv.progress), windUsed = false, xpShown = "", xpShowT = 0, armorT = armorTotals([]);
   /** Aplica el árbol y el nivel: arma, vida, regeneración, súper, granadas y velocidad. */
+  /** Partida del modo Hack en curso. */
+  const hack = { active: false, seed: 0, depth: 0, data: 0, node: null as HackNode | null, extractable: false, buffs: { damage: 0, rate: 0, health: 0, speed: 0, crit: 0 } as Record<HackBuff, number> };
   function applyPerks() {
     const p = curPerks = skillPerks(inv.progress); CARD.playerLevel = inv.progress.level;
     gun.perks.rate = p.rate; gun.perks.critMult = p.critMult; gun.perks.ammoSave = p.ammoSave; gun.perks.dmg = p.dmg;
@@ -520,6 +523,8 @@ async function boot() {
     php.setMax(php.max * (1 + q.health)); php.regenMult *= 1 + q.regen; php.delayMult *= Math.max(0.3, 1 - q.regenDelay);
     player.speedMult *= Math.max(0.7, 1 + q.speed - A.slow); meter.gain *= 1 + q.superGain; gun.perks.critMult *= 1 + q.critDmg; gun.perks.reload = q.reload;
     armorNade = 1 + q.nadeRecharge;
+    // Modo Hack: mejoras temporales de la partida
+    if (hack.active) { const b = hack.buffs; gun.perks.dmg *= 1 + b.damage; gun.perks.rate *= 1 + b.rate; gun.perks.critMult *= 1 + b.crit; php.setMax(php.max * (1 + b.health)); player.speedMult *= 1 + b.speed; }
     xpShown = "";
   }
   /** Módulo de súper: desbloquea uno que no tengas (si ya los tienes todos, se cambia por créditos). */
@@ -646,6 +651,7 @@ async function boot() {
     if (curPerks.secondWind && !windUsed && php.value - dmg <= 0) { windUsed = true; php.value = php.max * 0.4; toast(t("pg.secondWind")); return; }
     if (php.hit(dmg)) {
       windUsed = false;
+      if (raid.active && hack.active) { hackEnd(false); return; }
       if (raid.active) { toast(t("rd.lost")); returnHub(false); return; }
       waves.stop(); php.reset(); toast(t("ui.simReset"));
     }
@@ -663,8 +669,8 @@ async function boot() {
     mobs, colliders: world.colliders, shootables: world.shootables, toast,
     announce: (k, p) => toast(t(k, p)),
     onBossPhase: () => { if (settings.screenShake) shake = Math.min(0.8, shake + 0.6); lootChime(2); },
-    onClear: (n, of) => toast(t("rd.cleared", { n, of: of - 1 })),
-    onChest: (at) => { if (Math.random() < MODULE_CHANCE.raidChest) grantModule(); for (let i = 0; i < 2; i++) dropLoot("big", at.clone().add(new THREE.Vector3((i - 0.5) * 0.8, 0, 0))); toast(t("rd.chest")); },
+    onClear: (n, of) => hack.active ? hackCleared() : toast(t("rd.cleared", { n, of: of - 1 })),
+    onChest: (at) => { if (hack.active) setTimeout(() => { if (hack.active) hackCleared(); }, 2500); if (Math.random() < MODULE_CHANCE.raidChest) grantModule(); for (let i = 0; i < 2; i++) dropLoot("big", at.clone().add(new THREE.Vector3((i - 0.5) * 0.8, 0, 0))); toast(t("rd.chest")); },
     onWin: () => {
       const D = RAID_DIFF[raidOpt.difficulty], k = raidOpt.rooms / 6;
       const rarity = (D.rarity === "legendaria" && Math.random() < 0.5 ? "epica" : D.rarity) as RarityId;
@@ -693,6 +699,59 @@ async function boot() {
     player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
     php.reset(); waves.stop(); toast(t("rd.go"));
   }
+  // ---------- Modo Hack: red de nodos por profundidad, extracción o seguir bajando ----------
+  function startHack() {
+    Object.assign(hack, { active: true, seed: (Math.random() * 2 ** 31) | 0, depth: 0, data: 0, node: null, extractable: false });
+    for (const k of HACK_BUFFS) hack.buffs[k] = 0;
+    applyPerks(); php.reset(); waves.stop(); openHackMap();
+  }
+  function hackPanel(body: string) {
+    state = "raidmenu"; input.unlock();
+    const el = $("raidmenu"); el.hidden = false;
+    const buffs = HACK_BUFFS.filter((b) => hack.buffs[b] > 0).map((b) => `${t(`hk.buff.${b}`)} +${Math.round(hack.buffs[b] * 100)} %`).join(" · ") || "—";
+    el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">HACK//</span><h1>${t("hk.title")}</h1><span class="credits">${t("hk.depth", { n: hack.depth })} · ${t("hk.data", { n: hack.data })}</span></header>
+      <section class="panel ct-list"><p class="note">${t("hk.buffs")}: ${buffs}</p>${body}</section></div>`;
+    nav.setRoot(el); setTimeout(() => el.querySelector<HTMLElement>("[data-nav]")?.focus(), 0);
+  }
+  function openHackMap() {
+    const opts = hackChoices(hack.seed, hack.depth + 1);
+    hackPanel(`<h2>${t("hk.next", { n: hack.depth + 1 })}</h2><div class="hknodes">${opts.map((o, i) => `<button type="button" class="tile hknode ${o.kind}" data-hk="${i}" data-nav><b>${t(`hk.node.${o.kind}`)}</b><span>${t(`hk.nd.${o.kind}`)}</span><i>+${nodeData(o)} ${t("hk.dataU")}</i></button>`).join("")}</div>
+      ${hack.extractable ? `<div class="actions"><button type="button" class="btn" data-hkx="1" data-nav>${t("hk.extract", { n: hack.data })}</button></div><p class="note">${t("hk.extractNote", { p: Math.round(DEATH_LOSS * 100) })}</p>` : `<p class="note">${t("hk.howto", { p: Math.round(DEATH_LOSS * 100) })}</p>`}`);
+    (hackMapOpts = opts);
+  }
+  let hackMapOpts: HackNode[] = [], hackBuffOpts: HackBuff[] = [];
+  function hackEnter(node: HackNode) {
+    $("raidmenu").hidden = true; resume();
+    hack.node = node; hack.depth = node.depth; hack.extractable = false; mobs.index = Math.floor(node.depth * 1.5);
+    const en = hackEnemies(node), at = raid.startNode(node.seed, node.kind === "loot" ? "loot" : "fight", en, node.kind === "cipher" ? cipherLimit(en.length) : 0, node.depth % 3);
+    player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
+    toast(t(`hk.go.${node.kind}`, { s: cipherLimit(en.length) }));
+  }
+  function hackCleared() {
+    const node = hack.node; if (!node) return;
+    hack.data += Math.round(nodeData(node) * curPerks.fortune); lootChime(2);
+    if (node.kind === "guardian") hack.extractable = true;
+    setTimeout(() => {
+      if (!hack.active) return;
+      if (node.kind === "cipher" && raid.lastTimedOk) { hackBuffOpts = [...HACK_BUFFS].sort(() => Math.random() - 0.5).slice(0, 3); hackPanel(`<h2>${t("hk.pickBuff")}</h2><div class="hknodes">${hackBuffOpts.map((b, i) => `<button type="button" class="tile hknode buff" data-hkb="${i}" data-nav><b>${t(`hk.buff.${b}`)}</b><i>+${Math.round(HACK_BUFF_VALUE[b] * 100)} %</i></button>`).join("")}</div>`); return; }
+      if (node.kind === "cipher") toast(t("hk.cipherFail"));
+      openHackMap();
+    }, 1800);
+  }
+  function hackEnd(extracted: boolean) {
+    const pay = Math.round(hack.data * (extracted ? 1 : 1 - DEATH_LOSS));
+    hack.active = false; applyPerks();
+    if (pay > 0) earn(pay);
+    gainXp(xpToNext(inv.progress.level) * Math.min(1.5, hack.depth * 0.12));
+    toast(t(extracted ? "hk.extracted" : "hk.lost", { n: pay, d: hack.depth }));
+    $("raidmenu").hidden = true; returnHub(extracted); resume();
+  }
+  $("raidmenu").addEventListener("click", (e) => {
+    if (!hack.active) return; const tg = e.target as HTMLElement;
+    const n = tg.closest<HTMLElement>("[data-hk]"); if (n) { hackEnter(hackMapOpts[Number(n.dataset.hk)]); return; }
+    const b = tg.closest<HTMLElement>("[data-hkb]"); if (b) { const id = hackBuffOpts[Number(b.dataset.hkb)]; hack.buffs[id] += HACK_BUFF_VALUE[id]; applyPerks(); toast(t("hk.gotBuff", { b: t(`hk.buff.${id}`) })); openHackMap(); return; }
+    if (tg.closest("[data-hkx]")) hackEnd(true);
+  });
   function openRaidMenu() {
     state = "raidmenu"; input.unlock();
     const el = $("raidmenu"); el.hidden = false;
@@ -702,16 +761,19 @@ async function boot() {
       <h2>${t("rd.length")}</h2><div class="chips">${[4, 6, 8].map((n) => chip("rooms", n, raidOpt.rooms === n, t(`rd.len${n}`, { n }))).join("")}</div>
       <h2>${t("rd.difficulty")}</h2><div class="chips">${[0, 1, 2].map((d) => chip("diff", d, raidOpt.difficulty === d, t(`rd.diff${d}`))).join("")}</div>
       <p class="note">${t(`rd.diffd${raidOpt.difficulty}`)}</p>
-      <div class="actions"><button type="button" class="btn" data-go="1" data-nav>${t("rd.start")}</button></div></section></div>`;
+      <div class="actions"><button type="button" class="btn" data-go="1" data-nav>${t("rd.start")}</button></div>
+      <h2>${t("hk.title")}</h2><p class="note">${t("hk.desc")}</p><div class="actions"><button type="button" class="btn" data-hack="1" data-nav>${t("hk.start")}</button></div></section></div>`;
     nav.setRoot(el); setTimeout(() => el.querySelector<HTMLElement>("[data-go]")?.focus(), 0);
   }
   function closeRaidMenu() { $("raidmenu").hidden = true; resume(); }
   $("raidmenu").addEventListener("click", (e) => {
     const tg = e.target as HTMLElement;
+    if (hack.active) return;
     if (tg.closest("[data-close]")) return closeRaidMenu();
     const r = tg.closest<HTMLElement>("[data-rooms]"); if (r) { raidOpt.rooms = Number(r.dataset.rooms); return openRaidMenu(); }
     const d = tg.closest<HTMLElement>("[data-diff]"); if (d) { raidOpt.difficulty = Number(d.dataset.diff) as 0 | 1 | 2; return openRaidMenu(); }
     if (tg.closest("[data-go]")) { closeRaidMenu(); startRaid(); }
+    if (tg.closest("[data-hack]")) { $("raidmenu").hidden = true; startHack(); }
   });
   // Arena de oleadas: al azar al empezar; cambia un poco tras cada jefe
   const arena = new WaveArena(scene, world.colliders, world.shootables, { x0: world.wavesRoom.x0, x1: world.wavesRoom.x1, z0: world.wavesRoom.z0 + 0.5, z1: world.wavesRoom.z1 });
@@ -722,7 +784,7 @@ async function boot() {
     const el = $("phealth"); const show = state === "play";
     el.hidden = !show; if (!show) return;
     el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
-    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
+    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active && hack.active ? `  ·  HACK · ${t("hk.depth", { n: hack.depth })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
   }
 
   // ---------- Botín de enemigos ----------
@@ -1001,7 +1063,7 @@ async function boot() {
   frame();
   (window as unknown as Record<string, unknown>).__game = {
     debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
-    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, returnHub, mobs, openRaidMenu, arena, mutateArena,
+    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, returnHub, mobs, openRaidMenu, arena, mutateArena,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };
 }

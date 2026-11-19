@@ -457,3 +457,8 @@ body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family
 @keyframes holoscan { from { transform: translateY(0); } to { transform: translateY(232px); } }
 @media (max-width: 760px) { .armor-rig { grid-template-columns: 110px minmax(0, 1fr); } .holo { height: 200px; } }
 .holo .hb .vis { fill: rgba(191, 248, 255, .55); stroke: none; } .holo .hb .line { fill: none; stroke-width: 1; opacity: .6; }
+/* Modo Hack: nodos de la red */
+.hknodes { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 10px 0; }
+.hknode { display: flex; flex-direction: column; gap: 4px; padding: 14px; text-align: left; border-left: 3px solid #3fd0d8; }
+.hknode b { font-size: 1.05em; } .hknode span { opacity: .8; font-size: .85em; } .hknode i { color: #7affc8; font-style: normal; font-size: .85em; }
+.hknode.elite { border-color: #ff4a8a; } .hknode.loot { border-color: #f2a541; } .hknode.cipher { border-color: #a35cf0; } .hknode.guardian { border-color: #ff5a3a; } .hknode.buff { border-color: #7affc8; }

@@ -67,6 +67,20 @@ export class Raid {
     return { pos: new THREE.Vector3(s.cx, 0, s.cz).add(RAID_ORIGIN), yaw: Math.atan2(-dir.x, -dir.z) };
   }
 
+  /** Modo Hack: ¿la última sala de contrarreloj se superó a tiempo? */
+  lastTimedOk = false;
+  /** Modo Hack: construye una sola sala de nodo (con su entrada) y devuelve dónde aparece el jugador. */
+  startNode(seed: number, kind: "fight" | "loot", enemies: string[], timed: number, palette: number) {
+    this.end();
+    const base = generateRaid(seed, { rooms: 3, difficulty: 0 }), start = base.rooms[0], room = { ...base.rooms[1], kind, enemies, goal: (timed > 0 ? "timed" : "purge") as RaidRoom["goal"], limit: timed };
+    if (kind === "loot") room.covers = [];
+    this.map = { seed, rooms: [start, room], corridors: base.corridors.filter((c) => c.a < 2 && c.b < 2), palette };
+    this.opt = { rooms: 2, difficulty: 0 }; this.active = true; this.won = false; this.fightsDone = 0; this.bossPhase = 1; this.lastTimedOk = false;
+    this.build(this.map);
+    const dir = new THREE.Vector3(room.cx - start.cx, 0, room.cz - start.cz).normalize();
+    return { pos: new THREE.Vector3(start.cx, 0, start.cz).add(RAID_ORIGIN), yaw: Math.atan2(-dir.x, -dir.z) };
+  }
+
   /** Desmonta el mapa (al ganar, morir o salir). */
   end() {
     this.hooks.mobs.stop();
@@ -212,7 +226,7 @@ export class Raid {
     if (!st.started) return;
     st.t += dt;
     if (st.queue.length) { st.spawnT -= dt; if (st.spawnT <= 0) { st.spawnT = 0.5; this.spawnIn(st, player, st.queue.shift()!); } }
-    if (st.room.kind === "boss") this.bossPhases(st, player);
+    if (st.room.kind === "boss" || st.room.enemies.includes("warden")) this.bossPhases(st, player);
     if (!st.queue.length && this.hooks.mobs.living === 0) {
       // Dos oleadas: al acabar la primera, respiro corto y llega la segunda
       if (st.second.length) { st.queue = st.second; st.second = []; st.spawnT = 2; this.hooks.announce("rd.wave2"); return; }
@@ -272,8 +286,9 @@ export class Raid {
     this.hooks.onClear(this.fightsDone, this.fights);
     // Contrarreloj superado: cofre de premio en el centro de la sala
     if (st.room.goal === "timed") {
-      if (st.t <= st.room.limit) { st.chest = this.chest(new THREE.Vector3(RAID_ORIGIN.x + st.room.cx, 0, RAID_ORIGIN.z + st.room.cz), 0xffd040); this.hooks.announce("rd.timedOk", { s: Math.round(st.t) }); }
-      else this.hooks.announce("rd.timedFail");
+      this.lastTimedOk = st.t <= st.room.limit;
+      if (this.lastTimedOk && this.opt.rooms !== 2) { st.chest = this.chest(new THREE.Vector3(RAID_ORIGIN.x + st.room.cx, 0, RAID_ORIGIN.z + st.room.cz), 0xffd040); this.hooks.announce("rd.timedOk", { s: Math.round(st.t) }); }
+      else if (!this.lastTimedOk) this.hooks.announce("rd.timedFail");
     }
   }
 }
