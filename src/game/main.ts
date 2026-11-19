@@ -19,6 +19,9 @@ import { WeaponAssembler } from "../weapons/assembler";
 import { archName, rarityName, typeName } from "../weapons/labels";
 import { displayName, rename } from "../weapons/naming";
 import { setAccUid } from "../weapons/accbank";
+import { BUILD, BUILDS, BUILD_TIME, HUNTERS, START_CREDITS, coreWave, killReward, sellValue, waveReward } from "./defense";
+import { DefenseFx, type Pad } from "./defensefx";
+import { rng as seedRng } from "./raidgen";
 import { DEATH_LOSS, HACK_BUFFS, HACK_BUFF_VALUE, cipherLimit, hackChoices, hackEnemies, nodeData, type HackBuff, type HackNode } from "./hackgen";
 import type { Manifest, RarityId, WeaponSpec } from "../weapons/types";
 import { getLang, onLang, setLang, t, type Lang } from "../i18n";
@@ -31,7 +34,7 @@ import { WaveArena } from "./arena";
 import { ARMOR_RARITY, armorTotals, damageTaken, makeArmor, setArmorUid, type ArmorRarity, type ArmorSpec } from "./armor";
 import { armorObject, fillArmorThumbs } from "./armormodel";
 import { generateArena, mutateArena } from "./arenagen";
-import { Raid } from "./raid";
+import { Raid, RAID_ORIGIN } from "./raid";
 import { spawnDummies, DamageNumbers, type Dummy } from "./dummies";
 import { Player } from "./player";
 import { Gun } from "./gun";
@@ -193,6 +196,7 @@ async function boot() {
     },
     onKill(d) {
       // Contador de bajas del arma (accesorio): solo las bajas hechas con ella, no con granadas ni súperes
+      if (dmode.active && !d.respawn) dmode.credits += killReward(d.kind.key ?? "", !!d.kind.boss);
       if (!notGun && gun.item && !d.respawn) { gun.item.spec.kills = (gun.item.spec.kills ?? 0) + 1; gun.refreshCounter(); }
       { const h = lastHit.get(d); contractEvent({ type: "kill", weapon: h?.weapon ?? null, head: !!h?.head, dist: h?.dist ?? 0, boss: !!d.kind.boss }); }
       if (d.kind.boss) toast(t("ui.bossDown"));
@@ -513,6 +517,8 @@ async function boot() {
   /** Aplica el árbol y el nivel: arma, vida, regeneración, súper, granadas y velocidad. */
   /** Partida del modo Hack en curso. */
   const hack = { active: false, seed: 0, depth: 0, data: 0, node: null as HackNode | null, extractable: false, buffs: { damage: 0, rate: 0, health: 0, speed: 0, crit: 0 } as Record<HackBuff, number> };
+  /** Defensa del núcleo en curso. */
+  const dmode = { active: false, wave: 0, credits: 0, phase: "build" as "build" | "wave", t: 0, queue: [] as string[], spawnT: 0, rnd: Math.random };
   function applyPerks() {
     const p = curPerks = skillPerks(inv.progress); CARD.playerLevel = inv.progress.level;
     gun.perks.rate = p.rate; gun.perks.critMult = p.critMult; gun.perks.ammoSave = p.ammoSave; gun.perks.dmg = p.dmg;
@@ -652,6 +658,7 @@ async function boot() {
     if (php.hit(dmg)) {
       windUsed = false;
       if (raid.active && hack.active) { hackEnd(false); return; }
+      if (raid.active && dmode.active) { defenseEnd(); return; }
       if (raid.active) { toast(t("rd.lost")); returnHub(false); return; }
       waves.stop(); php.reset(); toast(t("ui.simReset"));
     }
@@ -662,7 +669,7 @@ async function boot() {
     onPlayerHit: (dmg, kind) => { if (settings.screenShake) shake = Math.min(0.5, shake + 0.18); hurtPlayer(dmg, kind); $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on"); },
   });
   mobs.playerLevel = () => inv.progress.level;
-  waves.decoy = mobs.decoy = () => sfx.decoyPos;
+  waves.decoy = () => sfx.decoyPos; mobs.decoy = () => sfx.decoyPos ?? (dmode.active ? defense.decoyPos : null);
   let raidOpt: { rooms: number; difficulty: 0 | 1 | 2 } = { rooms: 6, difficulty: 0 }, raidReturnT = -1;
   const RAID_DIFF = [{ rarity: "rara", cr: 1, xp: 0.3 }, { rarity: "epica", cr: 1.6, xp: 0.45 }, { rarity: "legendaria", cr: 2.4, xp: 0.6 }] as const;
   const raid = new Raid(scene, {
@@ -699,6 +706,67 @@ async function boot() {
     player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
     php.reset(); waves.stop(); toast(t("rd.go"));
   }
+  // ---------- Defensa del núcleo: construir entre oleadas en las plataformas y aguantar con el núcleo en pie ----------
+  const defense = new DefenseFx(scene, {
+    enemies: () => mobs.list,
+    onHit(d, point, dmg, element) { const alive = d.alive; notGun = true; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); notGun = false; },
+    sound: (k) => { const e = soundManifest?.efectos; if (!e) return; if (k === "boom") { const x = e.explosion; if (x?.length) playSample(sample(x[Math.floor(Math.random() * x.length)]), 0.25, 1.2); } else if (k === "zap") { const l = e.flash_aturdidora; if (l?.length) playSample(sample(l[0]), 0.12, 1.8); } },
+  });
+  function startDefense() {
+    const seed = (Math.random() * 2 ** 31) | 0, at = raid.startNode(seed, "fight", [], 0, 0, true), room = raid.map!.rooms[1];
+    Object.assign(dmode, { active: true, wave: 0, credits: START_CREDITS, phase: "build", t: BUILD_TIME, queue: [], spawnT: 0, rnd: seedRng(seed) });
+    defense.setup(new THREE.Vector3(RAID_ORIGIN.x + room.cx, 0, RAID_ORIGIN.z + room.cz), room.w / 2 - 2);
+    mobs.core = { pos: defense.core.pos, targets: (k) => !HUNTERS.has(k), hit: (dmg) => { if (defense.hitCore(dmg)) defenseEnd(); } };
+    player.pos.copy(defense.core.pos).add(new THREE.Vector3(0, 0, 4)); player.vel.set(0, 0, 0); player.yaw = 0; player.pitch = 0; void at;
+    php.reset(); waves.stop(); toast(t("df.go", { s: BUILD_TIME }));
+  }
+  function defenseTick(dt: number, f: { interact: boolean; holdUse?: boolean; reload: boolean }) {
+    defense.update(dt, dmode.phase === "wave");
+    if (dmode.phase === "build") {
+      dmode.t -= dt;
+      if (dmode.t <= 0) { dmode.wave++; dmode.phase = "wave"; dmode.queue = coreWave(dmode.wave, dmode.rnd); dmode.spawnT = 0.5; mobs.index = Math.floor(dmode.wave * 0.8); defense.waveStart(); toast(t("df.wave", { n: dmode.wave })); }
+    } else {
+      if (dmode.queue.length) { dmode.spawnT -= dt; if (dmode.spawnT <= 0) { dmode.spawnT = 0.7; const room = raid.map!.rooms[1], side = Math.floor(Math.random() * 3), u = (Math.random() - 0.5) * room.w * 0.8;
+        const ox = RAID_ORIGIN.x + room.cx, oz = RAID_ORIGIN.z + room.cz, h = room.w / 2 - 2; const pos = side === 0 ? new THREE.Vector3(ox + u, 0, oz + h) : side === 1 ? new THREE.Vector3(ox + h, 0, oz + u) : new THREE.Vector3(ox - h, 0, oz + u);
+        mobs.spawnAt(dmode.queue.shift() as never, pos); } }
+      else if (mobs.living === 0) { const gain = waveReward(dmode.wave) + defense.income(); dmode.credits += gain; dmode.phase = "build"; dmode.t = BUILD_TIME; toast(t("df.cleared", { n: dmode.wave, c: gain, s: BUILD_TIME })); lootChime(2); }
+    }
+    // Construir: junto a una plataforma, E (o mantener Ⓧ)
+    const pad = defense.padNear(player.pos);
+    if (pad && (f.interact || f.holdUse)) openBuildMenu(pad);
+  }
+  let buildPad: Pad | null = null;
+  function openBuildMenu(pad: Pad) {
+    buildPad = pad; state = "raidmenu"; input.unlock(); const el = $("raidmenu"); el.hidden = false;
+    const p = pad.placed, head = `<header class="termbar"><span class="sim">CORE//</span><h1>${t("df.title")}</h1><span class="credits">⚡ ${dmode.credits}</span><button type="button" class="btn ghost sm" data-dfclose="1">${t("ui.back")}</button></header>`;
+    let body = "";
+    if (p) {
+      const nx = p.level < 3 ? p.b.cost[p.level] : 0;
+      body = `<h2>${t(`df.b.${p.b.id}`)} · ${t("df.lvl", { n: p.level })}</h2><p class="note">${t(`df.d.${p.b.id}`)}</p>
+        <div class="actions">${p.level < 3 ? `<button type="button" class="btn" data-dfup="1" data-nav ${dmode.credits < nx ? "disabled" : ""}>${t("df.upgrade", { c: nx })}</button>` : `<span class="note">${t("df.max")}</span>`}
+        <button type="button" class="btn ghost" data-dfsell="1" data-nav>${t("df.sell", { c: sellValue(p.b, p.level) })}</button></div>`;
+    } else {
+      const cats = ["turret", "trap", "structure", "support"] as const;
+      body = cats.map((c) => `<h2>${t(`df.cat.${c}`)}</h2><div class="hknodes">${BUILDS.filter((b) => b.cat === c).map((b) => `<button type="button" class="tile hknode" style="border-color:#${b.color.toString(16).padStart(6, "0")}" data-dfb="${b.id}" data-nav ${dmode.credits < b.cost[0] ? "aria-disabled=\"true\"" : ""}><b>${t(`df.b.${b.id}`)}</b><span>${t(`df.d.${b.id}`)}</span><i>⚡ ${b.cost[0]}</i></button>`).join("")}</div>`).join("");
+    }
+    el.innerHTML = `<div class="term">${head}<section class="panel ct-list">${body}</section></div>`;
+    nav.setRoot(el); setTimeout(() => el.querySelector<HTMLElement>("[data-nav]")?.focus(), 0);
+  }
+  function closeBuildMenu() { $("raidmenu").hidden = true; buildPad = null; resume(); }
+  $("raidmenu").addEventListener("click", (e) => {
+    if (!dmode.active || !buildPad) return; const tg = e.target as HTMLElement, pad = buildPad;
+    if (tg.closest("[data-dfclose]")) return closeBuildMenu();
+    const b = tg.closest<HTMLElement>("[data-dfb]"); if (b) { const id = b.dataset.dfb!, c = BUILD[id].cost[0]; if (dmode.credits < c) { toast(t("df.noCr")); return; } dmode.credits -= c; defense.build(pad, id); closeBuildMenu(); return; }
+    if (tg.closest("[data-dfup]") && pad.placed && pad.placed.level < 3) { const c = pad.placed.b.cost[pad.placed.level]; if (dmode.credits < c) { toast(t("df.noCr")); return; } dmode.credits -= c; defense.upgrade(pad); openBuildMenu(pad); return; }
+    if (tg.closest("[data-dfsell]") && pad.placed) { dmode.credits += sellValue(pad.placed.b, pad.placed.level); defense.sell(pad); closeBuildMenu(); }
+  });
+  function defenseEnd() {
+    if (!dmode.active) return; dmode.active = false; mobs.core = null;
+    const cr = Math.round(dmode.wave * (60 + inv.progress.level * 4) * curPerks.fortune); if (cr > 0) earn(cr);
+    gainXp(xpToNext(inv.progress.level) * Math.min(2, dmode.wave * 0.1));
+    toast(t("df.end", { n: dmode.wave, c: cr })); defense.clear(); $("raidmenu").hidden = true; returnHub(false); resume();
+  }
+
   // ---------- Modo Hack: red de nodos por profundidad, extracción o seguir bajando ----------
   function startHack() {
     Object.assign(hack, { active: true, seed: (Math.random() * 2 ** 31) | 0, depth: 0, data: 0, node: null, extractable: false });
@@ -762,18 +830,20 @@ async function boot() {
       <h2>${t("rd.difficulty")}</h2><div class="chips">${[0, 1, 2].map((d) => chip("diff", d, raidOpt.difficulty === d, t(`rd.diff${d}`))).join("")}</div>
       <p class="note">${t(`rd.diffd${raidOpt.difficulty}`)}</p>
       <div class="actions"><button type="button" class="btn" data-go="1" data-nav>${t("rd.start")}</button></div>
+      <h2>${t("df.title")}</h2><p class="note">${t("df.desc")}</p><div class="actions"><button type="button" class="btn" data-def="1" data-nav>${t("df.start")}</button></div>
       <h2>${t("hk.title")}</h2><p class="note">${t("hk.desc")}</p><div class="actions"><button type="button" class="btn" data-hack="1" data-nav>${t("hk.start")}</button></div></section></div>`;
     nav.setRoot(el); setTimeout(() => el.querySelector<HTMLElement>("[data-go]")?.focus(), 0);
   }
   function closeRaidMenu() { $("raidmenu").hidden = true; resume(); }
   $("raidmenu").addEventListener("click", (e) => {
     const tg = e.target as HTMLElement;
-    if (hack.active) return;
+    if (hack.active || dmode.active) return;
     if (tg.closest("[data-close]")) return closeRaidMenu();
     const r = tg.closest<HTMLElement>("[data-rooms]"); if (r) { raidOpt.rooms = Number(r.dataset.rooms); return openRaidMenu(); }
     const d = tg.closest<HTMLElement>("[data-diff]"); if (d) { raidOpt.difficulty = Number(d.dataset.diff) as 0 | 1 | 2; return openRaidMenu(); }
     if (tg.closest("[data-go]")) { closeRaidMenu(); startRaid(); }
     if (tg.closest("[data-hack]")) { $("raidmenu").hidden = true; startHack(); }
+    if (tg.closest("[data-def]")) { $("raidmenu").hidden = true; resume(); startDefense(); }
   });
   // Arena de oleadas: al azar al empezar; cambia un poco tras cada jefe
   const arena = new WaveArena(scene, world.colliders, world.shootables, { x0: world.wavesRoom.x0, x1: world.wavesRoom.x1, z0: world.wavesRoom.z0 + 0.5, z1: world.wavesRoom.z1 });
@@ -784,7 +854,7 @@ async function boot() {
     const el = $("phealth"); const show = state === "play";
     el.hidden = !show; if (!show) return;
     el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
-    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active && hack.active ? `  ·  HACK · ${t("hk.depth", { n: hack.depth })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
+    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active && dmode.active ? `  ·  ${t("df.hud", { w: dmode.wave, hp: Math.ceil(defense.core.hp), max: defense.core.max, c: dmode.credits })}${defense.core.shield > 0 ? ` · 🛡 ${Math.ceil(defense.core.shield)}` : ""}${dmode.phase === "build" ? ` · ${t("df.buildT", { s: Math.ceil(dmode.t) })}` : raid.enemiesLeft || mobs.living ? ` · ${t("rd.left", { n: mobs.living + dmode.queue.length })}` : ""}`: raid.active && hack.active ? `  ·  HACK · ${t("hk.depth", { n: hack.depth })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
   }
 
   // ---------- Botín de enemigos ----------
@@ -1024,7 +1094,7 @@ async function boot() {
       const ts = sfx.timeScale; // (Dilatación temporal: enemigos y esferas a cámara lenta)
       const wdt = hitstop > 0 ? 0 : dt;
       waves.update(wdt * ts); arena.update(dt);
-      if (raid.active) { mobs.update(wdt * ts); raid.update(dt, player.pos); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
+      if (raid.active) { mobs.update(wdt * ts); raid.update(dt, player.pos); if (dmode.active) defenseTick(dt, f); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
       // Nova espiritual: hay que quedarse quieto mientras se carga; si te mueves se cancela y pierdes la carga
       if (sfx.castingId === "spirit" && !sfx.castHit && (Math.abs(f.moveX) > 0.15 || Math.abs(f.moveZ) > 0.15 || f.jump)) { sfx.cancel(); toast(t("sp.spiritCancel")); }
       lastMove.x = f.moveX; lastMove.z = f.moveZ;
@@ -1063,7 +1133,7 @@ async function boot() {
   frame();
   (window as unknown as Record<string, unknown>).__game = {
     debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
-    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, returnHub, mobs, openRaidMenu, arena, mutateArena,
+    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, startDefense, defense, dmode, returnHub, mobs, openRaidMenu, arena, mutateArena,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };
 }

@@ -39,7 +39,7 @@ function extraWave(n: number, wave: number): Record<string, number> {
 }
 
 /** Esfera de energía lanzada por un enemigo: va en línea recta hacia donde estaba el jugador; se puede esquivar. */
-interface Orb { mesh: THREE.Mesh; v: THREE.Vector3; t: number; dmg: number }
+interface Orb { mesh: THREE.Mesh; v: THREE.Vector3; t: number; dmg: number; core?: boolean }
 const orbGeo = new THREE.SphereGeometry(0.22, 12, 8), orbHalo = new THREE.SphereGeometry(0.38, 10, 6);
 const bulletGeo = new THREE.BoxGeometry(0.04, 0.04, 0.5), laserGeo = new THREE.BoxGeometry(0.012, 0.012, 1);
 
@@ -64,6 +64,8 @@ export class Waves {
   playerLevel: (() => number) | null = null;
   /** Señuelo (súper): si hay uno, los enemigos van a por él en lugar de a por el jugador. */
   decoy: (() => THREE.Vector3 | null) | null = null;
+  /** Defensa del núcleo: dónde está el núcleo, qué enemigos van a por él (el resto, a por ti) y el golpe que recibe. */
+  core: { pos: THREE.Vector3; targets(kind: string): boolean; hit(dmg: number): void } | null = null;
 
   constructor(private scene: THREE.Scene, private dummies: Dummy[], private overlay: HTMLElement, private player: () => THREE.Vector3,
     private onDamage: ConstructorParameters<typeof Dummy>[4], private ev: WaveEvents) {}
@@ -110,14 +112,17 @@ export class Waves {
     const sp = ((data.speed as Record<string, number>)[kind] ?? 2.4) * (M && !k.boss ? M.speed : 1), dmg = ((data.damage as Record<string, number>)[kind] ?? 8) * (M ? M.dmg : 1) * dm;
     const rg = (data.ranged as Record<string, { range: number; interval: number; orbSpeed: number; orbDamage: number; volleyEvery?: number }>)[kind];
     // (lanzador: se para lejos y dispara esferas; jefe: golpea de cerca y además lanza ráfagas de esferas cada pocos s)
-    d.chase = { target: () => this.decoy?.() ?? this.player(), speed: sp, range: rg?.range ?? (k.shape === "roller" ? 1.4 : data.attackRange), interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
+    const toCore = !!this.core && this.core.targets(kind);
+    (d as unknown as { toCore: boolean }).toCore = toCore;
+    const hitP = (x: number, k?: "melee" | "orb" | "explosive") => { if (toCore && this.core) this.core.hit(x); else this.ev.onPlayerHit(x, k); };
+    d.chase = { target: () => this.decoy?.() ?? (toCore && this.core ? this.core.pos : null) ?? this.player(), speed: sp, range: rg?.range ?? (k.shape === "roller" ? 1.4 : data.attackRange), interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
       onAttack: (x) => {
-        if (k.shape === "roller") { this.ev.onPlayerHit(x, "explosive"); this.ev.onSelfDestruct?.(d); return; } // (el kamikaze explota al llegar)
+        if (k.shape === "roller") { hitP(x, "explosive"); this.ev.onSelfDestruct?.(d); return; } // (el kamikaze explota al llegar)
         const od = (rg?.orbDamage ?? 0) * (M ? M.dmg : 1) * dm;
         if (kind === "medic") { this.healBeam(d); return; }
         if (k.gun === "rifle" && rg) { this.bursts.push({ d, n: 3, t: 0, speed: rg.orbSpeed, dmg: od }); return; }
         if (k.gun === "sniper" && rg) { this.aimAt(d, rg.orbSpeed, od); return; }
-        if (rg && !k.boss) this.orb(d, rg.orbSpeed, od); else this.ev.onPlayerHit(x);
+        if (rg && !k.boss) this.orb(d, rg.orbSpeed, od); else hitP(x);
       } };
     if (kind === "commander") { const ring = new THREE.Mesh(new THREE.RingGeometry(9.6, 10, 48), new THREE.MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; d.group.add(ring); }
     if (k.boss) { d.alwaysBar = true; if (rg?.volleyEvery) this.volleys.push({ d, every: rg.volleyEvery, t: 2, speed: rg.orbSpeed, dmg: rg.orbDamage * dm }); }
@@ -132,7 +137,8 @@ export class Waves {
   /** Lanza una esfera desde el pecho del enemigo hacia el jugador (con un poco de dispersión). */
   private orb(from: Dummy, speed: number, dmg: number, spread = 0, bullet = false) {
     if (!from.alive) return;
-    const at = from.center.clone(), target = (this.decoy?.() ?? this.player()).clone().add(new THREE.Vector3(0, 1.4, 0));
+    const core = (from as unknown as { toCore?: boolean }).toCore && this.core ? this.core.pos : null;
+    const at = from.center.clone(), target = (core ?? this.decoy?.() ?? this.player()).clone().add(new THREE.Vector3(0, core ? 1.2 : 1.4, 0));
     if (bullet) at.y += 0.05 * (from.kind.scale ?? 1); // (las balas salen del arma, a la altura del pecho)
     const dir = target.sub(at).normalize(); if (spread) dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), spread).normalize();
     // (sin luz: el número de luces de la escena es fijo; brillo con material básico y un halo aditivo)
@@ -140,7 +146,7 @@ export class Waves {
     if (bullet) m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
     else m.add(new THREE.Mesh(orbHalo, new THREE.MeshBasicMaterial({ color: 0x4ad8ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })));
     m.position.copy(at).addScaledVector(dir, 0.6 * (from.kind.scale ?? 1));
-    this.scene.add(m); this.orbs.push({ mesh: m, v: dir.multiplyScalar(speed), t: 5, dmg });
+    this.scene.add(m); this.orbs.push({ mesh: m, v: dir.multiplyScalar(speed), t: 5, dmg, core: !!core });
   }
 
   /** Médico: cura al aliado más herido cerca (rayo verde visible). */
@@ -172,8 +178,10 @@ export class Waves {
     for (const o of [...this.orbs]) {
       o.t -= dt; o.mesh.position.addScaledVector(o.v, dt); o.mesh.rotation.y += dt * 6;
       const p = o.mesh.position, hit = Math.abs(p.x - eye.x) < 0.55 && Math.abs(p.z - eye.z) < 0.55 && p.y > eye.y - 1.2 && p.y < eye.y + 0.6;
-      if (hit) this.ev.onPlayerHit(o.dmg, "orb");
-      if (hit || o.t <= 0 || p.y < 0) { this.scene.remove(o.mesh); this.orbs.splice(this.orbs.indexOf(o), 1); }
+      const coreHit = o.core && this.core && p.distanceTo(this.core.pos.clone().setY(1.2)) < 1.4;
+      if (coreHit) this.core!.hit(o.dmg);
+      else if (hit) this.ev.onPlayerHit(o.dmg, "orb");
+      if (hit || coreHit || o.t <= 0 || p.y < 0) { this.scene.remove(o.mesh); this.orbs.splice(this.orbs.indexOf(o), 1); }
     }
     for (const b of [...this.beams]) { b.t -= dt; (b.m.material as THREE.MeshBasicMaterial).opacity = Math.max(0, b.t / 0.3) * 0.8; if (b.t <= 0) { this.scene.remove(b.m); this.beams.splice(this.beams.indexOf(b), 1); } }
     // Comandante: los suyos a menos de 10 m van más rápido y pegan más fuerte (anillo bajo él)

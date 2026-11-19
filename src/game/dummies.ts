@@ -355,6 +355,8 @@ export class Dummy {
   private rollBall: THREE.Object3D | null = null; private turretHead: THREE.Object3D | null = null; private blink: THREE.MeshStandardMaterial | null = null;
   /** Salto de la araña (se abalanza al acercarse). */ private pounceT = 0; private pounceCd = 2;
   /** Aura del comandante: más velocidad y daño mientras dura. */ buffT = 0;
+  /** Ralentizado (torreta criogénica, brea): fracción de su velocidad mientras dura. */ slowT = 0; slowF = 1;
+  slow(sec: number, f: number) { this.slowT = Math.max(this.slowT, sec); this.slowF = Math.min(this.slowT > sec ? this.slowF : 1, f); }
   /** Brazos de los humanoides (balanceo al andar y zarpazo al atacar). */ private armsH: THREE.Mesh[] = []; private attackT = 0;
   /** Fallo de código: tiempo hasta el siguiente salto y salto en curso (intocable). */ private glitchT = 2 + Math.random() * 2; private phaseT = 0;
   /** Cura (médico): no pasa de la vida máxima. Devuelve lo curado. */
@@ -543,7 +545,7 @@ export class Dummy {
       // Araña: se abalanza cuando está cerca (salto rápido)
       this.pounceCd -= dt; if (this.kind.shape === "spider" && d < 7 && d > c.range && this.pounceCd <= 0) { this.pounceT = 0.35; this.pounceCd = 3 + Math.random() * 2; }
       this.pounceT = Math.max(0, this.pounceT - dt);
-      const sp = c.speed * (this.pounceT > 0 ? 4 : 1) * (this.buffT > 0 ? 1.25 : 1);
+      const sp = c.speed * (this.pounceT > 0 ? 4 : 1) * (this.buffT > 0 ? 1.25 : 1) * (this.slowT > 0 ? this.slowF : 1);
       if (d > c.range) { this.group.position.addScaledVector(to.clone().normalize(), Math.min(d - c.range, sp * dt)); moving = 1; }
       else {
         // A distancia (dron): se mueve de lado mientras dispara, para no ser un blanco fijo
@@ -556,7 +558,7 @@ export class Dummy {
       else this.legs.forEach((l) => (l.rotation.x *= 0.85));
     }
     if (this.kind.shape && this.kind.shape !== "humanoid") { this.walkT += dt * (1 + moving * 4); this.animRobot(dt, moving, toTarget); }
-    this.buffT = Math.max(0, this.buffT - dt);
+    this.buffT = Math.max(0, this.buffT - dt); this.slowT = Math.max(0, this.slowT - dt);
     this.animStyle(dt, moving);
     // Fallo de código: parpadea y cada pocos segundos salta a otro sitio cerca del jugador (intocable durante el salto)
     if (this.kind.glitch && this.alive) {

@@ -70,13 +70,15 @@ export class Raid {
   /** Modo Hack: ¿la última sala de contrarreloj se superó a tiempo? */
   lastTimedOk = false;
   /** Modo Hack: construye una sola sala de nodo (con su entrada) y devuelve dónde aparece el jugador. */
-  startNode(seed: number, kind: "fight" | "loot", enemies: string[], timed: number, palette: number) {
+  startNode(seed: number, kind: "fight" | "loot", enemies: string[], timed: number, palette: number, bare = false) {
     this.end();
     const base = generateRaid(seed, { rooms: 3, difficulty: 0 }), start = base.rooms[0], room = { ...base.rooms[1], kind, enemies, goal: (timed > 0 ? "timed" : "purge") as RaidRoom["goal"], limit: timed };
-    if (kind === "loot") room.covers = [];
+    if (kind === "loot" || bare) room.covers = [];
+    if (bare) { room.w = room.d = 36; }
     this.map = { seed, rooms: [start, room], corridors: base.corridors.filter((c) => c.a < 2 && c.b < 2), palette };
     this.opt = { rooms: 2, difficulty: 0 }; this.active = true; this.won = false; this.fightsDone = 0; this.bossPhase = 1; this.lastTimedOk = false;
     this.build(this.map);
+    if (bare) { this.states[1].cleared = true; this.states[1].started = true; }
     const dir = new THREE.Vector3(room.cx - start.cx, 0, room.cz - start.cz).normalize();
     return { pos: new THREE.Vector3(start.cx, 0, start.cz).add(RAID_ORIGIN), yaw: Math.atan2(-dir.x, -dir.z) };
   }
