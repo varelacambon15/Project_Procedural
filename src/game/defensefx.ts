@@ -27,7 +27,7 @@ export class DefenseFx {
   constructor(private scene: THREE.Scene, private hooks: DefenseHooks) { scene.add(this.group); }
 
   /** Monta el núcleo en `center` y las plataformas alrededor (en dos anillos). */
-  setup(center: THREE.Vector3, radius: number) {
+  setup(center: THREE.Vector3, radius: number, rnd: () => number = Math.random, avoid: { x: number; z: number; r: number }[] = []) {
     this.clear(); this.core.pos.copy(center); this.core.hp = this.core.max = CORE_HP; this.core.shield = 0;
     const g = new THREE.Group(); g.position.copy(center);
     const base = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.7, 0.5, 8), metal(0x2c3036)); base.position.y = 0.25; g.add(base);
@@ -35,9 +35,11 @@ export class DefenseFx {
     const halo = new THREE.Mesh(sphereGeo, add(0x3ad8c0, 0.25)); halo.scale.setScalar(1.2); halo.position.y = 1.6; g.add(halo);
     for (let i = 0; i < 4; i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.6, 0.18), metal(0x3a4048)); const a = (i / 4) * Math.PI * 2; p.position.set(Math.cos(a) * 1.15, 1, Math.sin(a) * 1.15); g.add(p); }
     this.group.add(g); this.core.mesh = g;
-    const rings: [number, number][] = [[radius * 0.32, 6], [radius * 0.62, 10]];
-    for (const [r, n] of rings) for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + (n === 10 ? Math.PI / 10 : 0), pos = center.clone().add(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r));
+    // Anillos de plataformas con número y giro al azar (y sin pisar los obstáculos de la sala)
+    const rings: [number, number, number][] = [[radius * (0.28 + rnd() * 0.06), 5 + Math.floor(rnd() * 3), rnd() * Math.PI], [radius * (0.6 + rnd() * 0.06), 8 + Math.floor(rnd() * 4), rnd() * Math.PI]];
+    for (const [r, n, off] of rings) for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + off, pos = center.clone().add(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r));
+      if (avoid.some((c) => Math.hypot(c.x - pos.x, c.z - pos.z) < c.r + 1.6)) continue;
       const marker = new THREE.Mesh(new THREE.RingGeometry(0.75, 0.95, 6).rotateX(-Math.PI / 2), add(0x3fd0d8, 0.6)); marker.position.copy(pos).setY(0.04); this.group.add(marker);
       const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.06, 6), metal(0x24282d)); plate.position.copy(pos).setY(0.03); this.group.add(plate);
       this.pads.push({ pos, marker, placed: null });

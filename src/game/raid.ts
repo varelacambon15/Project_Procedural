@@ -74,7 +74,17 @@ export class Raid {
     this.end();
     const base = generateRaid(seed, { rooms: 3, difficulty: 0 }), start = base.rooms[0], room = { ...base.rooms[1], kind, enemies, goal: (timed > 0 ? "timed" : "purge") as RaidRoom["goal"], limit: timed };
     if (kind === "loot" || bare) room.covers = [];
-    if (bare) { room.w = room.d = 36; }
+    if (bare) {
+      // Defensa: sala amplia y distinta cada vez (tamaño, proporción y obstáculos al azar), con el centro y los anillos
+      // de plataformas libres
+      const r = rng(seed ^ 0x5bd1e995); room.w = 42 + Math.floor(r() * 13); room.d = 42 + Math.floor(r() * 13); room.h = 7 + r() * 3;
+      const R = Math.min(room.w, room.d) / 2 - 2, n = 6 + Math.floor(r() * 8);
+      for (let i = 0, tries = 0; i < n && tries < 80; tries++) {
+        const a = r() * Math.PI * 2, rr = R * (r() < 0.5 ? 0.46 + r() * 0.06 : 0.76 + r() * 0.12), x = room.cx + Math.cos(a) * rr, z = room.cz + Math.sin(a) * rr;
+        if (room.covers.some((c) => Math.hypot(c.x - x, c.z - z) < 5)) continue;
+        const pillar = r() < 0.4; room.covers.push(pillar ? { x, z, w: 1.4, d: 1.4, h: room.h, kind: "pillar" } : { x, z, w: 1.6 + r() * 2.4, d: 1 + r() * 1.4, h: 1.1 + r() * 0.6, kind: "crate" }); i++;
+      }
+    }
     this.map = { seed, rooms: [start, room], corridors: base.corridors.filter((c) => c.a < 2 && c.b < 2), palette };
     this.opt = { rooms: 2, difficulty: 0 }; this.active = true; this.won = false; this.fightsDone = 0; this.bossPhase = 1; this.lastTimedOk = false;
     this.build(this.map);

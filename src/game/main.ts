@@ -713,9 +713,9 @@ async function boot() {
     sound: (k) => { const e = soundManifest?.efectos; if (!e) return; if (k === "boom") { const x = e.explosion; if (x?.length) playSample(sample(x[Math.floor(Math.random() * x.length)]), 0.25, 1.2); } else if (k === "zap") { const l = e.flash_aturdidora; if (l?.length) playSample(sample(l[0]), 0.12, 1.8); } },
   });
   function startDefense() {
-    const seed = (Math.random() * 2 ** 31) | 0, at = raid.startNode(seed, "fight", [], 0, 0, true), room = raid.map!.rooms[1];
+    const seed = (Math.random() * 2 ** 31) | 0, at = raid.startNode(seed, "fight", [], 0, Math.floor(Math.random() * 3), true), room = raid.map!.rooms[1];
     Object.assign(dmode, { active: true, wave: 0, credits: START_CREDITS, phase: "build", t: BUILD_TIME, queue: [], spawnT: 0, rnd: seedRng(seed) });
-    defense.setup(new THREE.Vector3(RAID_ORIGIN.x + room.cx, 0, RAID_ORIGIN.z + room.cz), room.w / 2 - 2);
+    defense.setup(new THREE.Vector3(RAID_ORIGIN.x + room.cx, 0, RAID_ORIGIN.z + room.cz), Math.min(room.w, room.d) / 2 - 2, seedRng(seed ^ 77), room.covers.map((c) => ({ x: RAID_ORIGIN.x + c.x, z: RAID_ORIGIN.z + c.z, r: Math.max(c.w, c.d) / 2 })));
     mobs.core = { pos: defense.core.pos, targets: (k) => !HUNTERS.has(k), hit: (dmg) => { if (defense.hitCore(dmg)) defenseEnd(); } };
     player.pos.copy(defense.core.pos).add(new THREE.Vector3(0, 0, 4)); player.vel.set(0, 0, 0); player.yaw = 0; player.pitch = 0; void at;
     php.reset(); waves.stop(); toast(t("df.go", { s: BUILD_TIME }));
@@ -727,7 +727,7 @@ async function boot() {
       if (dmode.t <= 0) { dmode.wave++; dmode.phase = "wave"; dmode.queue = coreWave(dmode.wave, dmode.rnd); dmode.spawnT = 0.5; mobs.index = Math.floor(dmode.wave * 0.8); defense.waveStart(); toast(t("df.wave", { n: dmode.wave })); }
     } else {
       if (dmode.queue.length) { dmode.spawnT -= dt; if (dmode.spawnT <= 0) { dmode.spawnT = 0.7; const room = raid.map!.rooms[1], side = Math.floor(Math.random() * 3), u = (Math.random() - 0.5) * room.w * 0.8;
-        const ox = RAID_ORIGIN.x + room.cx, oz = RAID_ORIGIN.z + room.cz, h = room.w / 2 - 2; const pos = side === 0 ? new THREE.Vector3(ox + u, 0, oz + h) : side === 1 ? new THREE.Vector3(ox + h, 0, oz + u) : new THREE.Vector3(ox - h, 0, oz + u);
+        const ox = RAID_ORIGIN.x + room.cx, oz = RAID_ORIGIN.z + room.cz, hx = room.w / 2 - 2, hz = room.d / 2 - 2; const pos = side === 0 ? new THREE.Vector3(ox + u, 0, oz + hz) : side === 1 ? new THREE.Vector3(ox + hx, 0, oz + u) : new THREE.Vector3(ox - hx, 0, oz + u);
         mobs.spawnAt(dmode.queue.shift() as never, pos); } }
       else if (mobs.living === 0) { const gain = waveReward(dmode.wave) + defense.income(); dmode.credits += gain; dmode.phase = "build"; dmode.t = BUILD_TIME; toast(t("df.cleared", { n: dmode.wave, c: gain, s: BUILD_TIME })); lootChime(2); }
     }
