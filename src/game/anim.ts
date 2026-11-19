@@ -8,7 +8,7 @@ export type MovingPart = "slide" | "pump" | "charging";
 export interface Phase { id: string; t: number; index: number }
 
 export interface AnimParams {
-  hip: V3; aimZ: number; adsRoll: number; gripZ?: number; /** Hasta dónde puede quedar la culata detrás del ojo (m; bullpups: el cuerpo va detrás de la empuñadura). */ rearMax?: number;
+  hip: V3; aimZ: number; adsRoll: number; gripZ?: number; /** Al apuntar, distancia mínima del ojo por detrás de la empuñadura (m; pistolas: brazo extendido). */ adsGrip?: number; /** Hasta dónde puede quedar la culata detrás del ojo (m; bullpups: el cuerpo va detrás de la empuñadura). */ rearMax?: number;
   kick: { k: number; zeta: number; peak: number; back: number; up: number; pitch: number; roll: number };
   recoil: { power: number; vertical: number; horizontal: number };
   sway: { gain: number; maxX: number; maxY: number; lag: number; adsKeep: number };
@@ -146,12 +146,12 @@ export class ViewAnimator {
     // (con miras de hierro, el ojo justo detrás del alza: si no, la culata quedaba delante de una línea de mira tan baja)
     // (si con eso la mano de la empuñadura quedaba casi en el plano de la cámara, tapaba toda la vista: el ojo se
     // retrasa hasta 6 cm por detrás de la empuñadura)
-    const eyeX = i.sightX === undefined ? 0 : i.gripX !== undefined && i.sightX - 0.025 < i.gripX + 0.045 ? Math.min(i.sightX - 0.025, i.gripX - 0.06) : i.sightX - 0.025;
+    const eyeX = i.sightX === undefined ? 0 : i.gripX !== undefined && i.sightX - 0.025 < i.gripX + (p.adsGrip ?? 0.06) - 0.015 ? Math.min(i.sightX - 0.025, i.gripX - (p.adsGrip ?? 0.06)) : i.sightX - 0.025;
     const adsZ = i.sightX !== undefined ? eyeX : -(i.length * 0.5 + p.aimZ);
     const hipZ = i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, (p.rearMax ?? 0.34) - i.length * 0.5) : -(i.length * 0.5 + p.hip[2]);
     // Mira de hierro: se acerca el arma hacia el centro, por debajo de la vista (la cámara hace zoom); con óptica, la
     // línea de mira pasa por el centro de la óptica
-    const ironPos: V3 = [p.hip[0] * 0.45, p.hip[1] * 0.78, hipZ + 0.05];
+    const ironPos: V3 = [p.hip[0] * 0.45, p.hip[1] * 0.78, hipZ + 0.05 - (p.adsGrip ? p.adsGrip * 0.6 : 0)]; // (pistolas: al apuntar, el brazo se extiende)
     const tgt: V3 = i.iron ? ironPos : [0, -i.sightY, adsZ];
     // (armas cortas: la empuñadura siempre a la misma altura; un cargador largo o un tambor ya no suben el arma entera)
     const hipY = p.gripAnchor && i.gripY !== undefined ? p.hip[1] - i.gripY : p.hip[1];
