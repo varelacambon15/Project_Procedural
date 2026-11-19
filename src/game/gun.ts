@@ -1085,7 +1085,17 @@ export class Gun {
     // La mano de apoyo viaja (en coordenadas del arma) solo en los saltos de agarre reales: cartuchera, cambio de soporte
     if (left) { if (!this.leftLocal || this.leftLocal.distanceTo(left) < 0.02) this.leftLocal = left.clone(); else this.leftLocal.lerp(left, Math.min(1, dt * 14)); }
     else this.leftLocal = null;
-    this.arms.update({ right, left: this.helmetLeft(left && this.leftLocal ? pose(this.leftLocal, L, loose) : null), dt, shoulder });
+    // Pistola a dos manos: agarre en C. La izquierda se coloca respecto a la derecha (a su izquierda y algo más baja),
+    // con los dedos envolviendo los de la derecha por delante, pulgar hacia delante y la muñeca recta
+    let leftPose = left && this.leftLocal ? pose(this.leftLocal, L, loose) : null;
+    if (leftPose && kind === "wrap" && (this.spec?.type === "pistol" || this.spec?.type === "revolver")) {
+      leftPose = {
+        pos: right.pos.clone().add(new THREE.Vector3(-0.034, -0.016, -0.006).applyQuaternion(hq)),
+        orient: hq.clone().multiply(rx(-0.2).multiply(handBasis(V(0.7, 0.2, -0.68), V(-0.55, 0.15, -0.82)))),
+        curl: { fingers: [1.05, 1.15, 1.2, 1.25], thumb: 0.25 }, straight: 1,
+      };
+    }
+    this.arms.update({ right, left: this.helmetLeft(leftPose), dt, shoulder });
   }
 
   private fire(moving: number, echo = false) {
