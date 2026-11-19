@@ -980,7 +980,8 @@ export class WeaponGenerator {
     if (layout === "kit" && type === "shotgun") { wantAdd("shield"); wantAdd("rib"); }
     // Añadidos grandes (cambian de verdad la silueta): asa, camisa y carrillera
     if (layout !== "kit") {
-      if (type === "rifle" || type === "bullpup" || type === "lmg") wantAdd("handle");
+      // (sin asa en fusiles tipo AK: el cajón con tapa no la lleva y quedaba como una montura rara)
+      if ((type === "rifle" || type === "bullpup" || type === "lmg") && !/ak|kalash|assaultrifle-2/i.test(parts[0].from)) wantAdd("handle");
       if (type === "lmg" || (type === "smg" && layout === "modular-long")) wantAdd("jacket");
       if ((type === "sniper" || type === "rifle") && layout === "modular-long") wantAdd("cheek");
     }
@@ -1142,13 +1143,15 @@ export class WeaponGenerator {
           const t0 = near(x0), t1 = near(x1), hi = Math.max(...tops);
           if (t0 == null || t1 == null || hi - Math.min(t0, t1) > 0.02) continue;
           const lo = Math.min(t0, t1) - 0.002;
-          out.push({ kind: k, x0, x1, y: lo, h: hi - lo + Math.min(0.026, Math.max(0.018, H * 0.16)) });
+          out.push({ kind: k, x0, x1, y: lo, h: hi - lo + Math.min(0.018, Math.max(0.012, H * 0.12)) }); // (más baja: no tapa la vista)
         } else out.push({ kind: k, x0, x1, y: Math.max(...tops) - 0.002, h: 0.02 });
       } else if (k === "ladder") {
         const x0 = sx0 - 0.07, c = cols.filter((cc) => Math.abs(cc.x - x0) < 0.012);
         if (c.length) out.push({ kind: k, x0, x1: x0 + 0.034, y: Math.max(...c.map((cc) => cc.hi)) - 0.002, h: 0.028 });
       }
     }
+    // (asa y alza de escalera juntas sobre el cajón se veían como un trasto desde detrás: solo una)
+    if (out.some((a) => a.kind === "handle")) { const i = out.findIndex((a) => a.kind === "ladder"); if (i >= 0) out.splice(i, 1); }
     const ok = out.filter((a) => a.x1 - a.x0 > 0.012);
     return ok.length ? ok : null;
   }
