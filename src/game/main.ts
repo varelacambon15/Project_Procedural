@@ -658,6 +658,8 @@ async function boot() {
   const RAID_DIFF = [{ rarity: "rara", cr: 1, xp: 0.3 }, { rarity: "epica", cr: 1.6, xp: 0.45 }, { rarity: "legendaria", cr: 2.4, xp: 0.6 }] as const;
   const raid = new Raid(scene, {
     mobs, colliders: world.colliders, shootables: world.shootables, toast,
+    announce: (k, p) => toast(t(k, p)),
+    onBossPhase: () => { if (settings.screenShake) shake = Math.min(0.8, shake + 0.6); lootChime(2); },
     onClear: (n, of) => toast(t("rd.cleared", { n, of: of - 1 })),
     onChest: (at) => { if (Math.random() < MODULE_CHANCE.raidChest) grantModule(); for (let i = 0; i < 2; i++) dropLoot("big", at.clone().add(new THREE.Vector3((i - 0.5) * 0.8, 0, 0))); toast(t("rd.chest")); },
     onWin: () => {
@@ -717,7 +719,7 @@ async function boot() {
     const el = $("phealth"); const show = state === "play";
     el.hidden = !show; if (!show) return;
     el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
-    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}` : "");
+    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
   }
 
   // ---------- Botín de enemigos ----------

@@ -51,3 +51,16 @@ describe("arena de oleadas", () => {
     expect(m.accent).not.toBe(a.accent); expect(m.stage).toBe(1);
   });
 });
+
+describe("objetivos de sala de la incursión", () => {
+  it("la primera sala es limpiar; hay de dos oleadas y a contrarreloj (con tiempo razonable)", async () => {
+    const { generateRaid } = await import("../src/game/raidgen");
+    const goals: Record<string, number> = { purge: 0, waves: 0, timed: 0 };
+    for (let s = 1; s < 60; s++) {
+      const m = generateRaid(s, { rooms: 8, difficulty: 1 }), f = m.rooms.filter((r) => r.kind === "fight");
+      expect(f[0].goal).toBe("purge");
+      for (const r of f) { goals[r.goal]++; if (r.goal === "timed") { expect(r.limit).toBeGreaterThan(30); expect(r.limit).toBeLessThan(90); } }
+    }
+    expect(goals.waves).toBeGreaterThan(20); expect(goals.timed).toBeGreaterThan(20); expect(goals.purge).toBeGreaterThan(60);
+  });
+});

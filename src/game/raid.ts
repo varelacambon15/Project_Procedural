@@ -17,8 +17,10 @@ export interface RaidHooks {
   /** Sala despejada (índice entre las de combate, total). */ onClear(n: number, of: number): void;
   onWin(): void;
   /** Cofre de una sala de botín abierto. */ onChest(at: THREE.Vector3): void;
+  /** Aviso del objetivo de la sala o de una fase del jefe (clave de texto y parámetros). */ announce(key: string, p?: Record<string, string | number>): void;
+  /** Fase nueva del jefe (2 o 3): golpe de efecto en main. */ onBossPhase?(n: number): void;
 }
-interface RoomState { room: RaidRoom; started: boolean; cleared: boolean; queue: string[]; spawnT: number; barriers: { mesh: THREE.Mesh; box: THREE.Box3 }[]; chest?: THREE.Group }
+interface RoomState { room: RaidRoom; started: boolean; cleared: boolean; queue: string[]; spawnT: number; second: string[]; t: number; barriers: { mesh: THREE.Mesh; box: THREE.Box3 }[]; chest?: THREE.Group }
 
 const PALETTES = [
   // (más oscuras y con neón, como las salas de las referencias de Coded Arms)
@@ -42,6 +44,7 @@ export class Raid {
   private boxes: THREE.Box3[] = [];
   private states: RoomState[] = [];
   private fightsDone = 0;
+  /** Fases del jefe ya desatadas (al 66 % y al 33 % de vida). */ private bossPhase = 1;
   private won = false;
   current: RoomState | null = null;
   constructor(private scene: THREE.Scene, private hooks: RaidHooks) {}
@@ -49,12 +52,14 @@ export class Raid {
   get fights() { return this.states.filter((s) => s.room.kind === "fight" || s.room.kind === "boss").length; }
   get cleared() { return this.fightsDone; }
   get enemiesLeft() { return this.current && this.current.started && !this.current.cleared ? this.current.queue.length + this.hooks.mobs.living : 0; }
+  /** Segundos que quedan del contrarreloj de la sala actual (null si no lo hay). */
+  get timeLeft() { const c = this.current; return c && c.started && !c.cleared && c.room.goal === "timed" ? Math.max(0, c.room.limit - c.t) : null; }
   get inBoss() { return this.current?.room.kind === "boss" && this.current.started; }
 
   /** Construye el mapa y devuelve dónde aparece el jugador (y hacia dónde mira). */
   start(seed: number, opt: RaidOptions): { pos: THREE.Vector3; yaw: number } {
     this.end();
-    this.opt = opt; this.map = generateRaid(seed, opt); this.active = true; this.won = false; this.fightsDone = 0;
+    this.opt = opt; this.map = generateRaid(seed, opt); this.active = true; this.won = false; this.fightsDone = 0; this.bossPhase = 1;
     this.build(this.map);
     const s = this.map.rooms[0], nx = this.map.rooms[1];
     const dir = new THREE.Vector3(nx.cx - s.cx, 0, nx.cz - s.cz).normalize();
@@ -153,7 +158,7 @@ export class Raid {
           box(c.w, c.h, c.d, c.x, c.h / 2, c.z, wallMat); box(c.w + 0.04, 0.08, c.d + 0.04, c.x, c.h + 0.02, c.z, trimMat, false);
         } else { box(c.w, c.h, c.d, c.x, c.h / 2, c.z, coverMat); box(c.w + 0.02, 0.1, c.d + 0.02, c.x, c.h * 0.7, c.z, trimMat, false); }
       }
-      const st: RoomState = { room, started: false, cleared: room.kind === "start" || room.kind === "loot", queue: [], spawnT: 0, barriers: [] };
+      const st: RoomState = { room, started: false, cleared: room.kind === "start" || room.kind === "loot", queue: [], spawnT: 0, barriers: [], second: [], t: 0 };
       if (room.kind === "loot") st.chest = this.chest(new THREE.Vector3(O.x + cx, 0, O.z + cz), pal.accent);
       if (room.kind === "boss") { const m = new THREE.Mesh(new THREE.RingGeometry(6, 6.4, 48), new THREE.MeshBasicMaterial({ color: 0xff4a3a, transparent: true, opacity: 0.6 })); m.rotation.x = -Math.PI / 2; m.position.set(O.x + cx, 0.02, O.z + cz); g.add(m); }
       this.states.push(st);
@@ -205,12 +210,22 @@ export class Raid {
     if (!st || st.cleared) return;
     if (!st.started && here === st) this.begin(st, player);
     if (!st.started) return;
+    st.t += dt;
     if (st.queue.length) { st.spawnT -= dt; if (st.spawnT <= 0) { st.spawnT = 0.5; this.spawnIn(st, player, st.queue.shift()!); } }
-    if (!st.queue.length && this.hooks.mobs.living === 0) this.clear(st);
+    if (st.room.kind === "boss") this.bossPhases(st, player);
+    if (!st.queue.length && this.hooks.mobs.living === 0) {
+      // Dos oleadas: al acabar la primera, respiro corto y llega la segunda
+      if (st.second.length) { st.queue = st.second; st.second = []; st.spawnT = 2; this.hooks.announce("rd.wave2"); return; }
+      this.clear(st);
+    }
   }
 
   private begin(st: RoomState, player: THREE.Vector3) {
-    st.started = true; st.queue = [...st.room.enemies]; st.spawnT = 0.6;
+    st.started = true; st.queue = [...st.room.enemies]; st.spawnT = 0.6; st.t = 0;
+    const g = st.room.goal;
+    if (g === "waves") { const k = Math.ceil(st.queue.length * 0.55); st.second = st.queue.slice(k); st.queue = st.queue.slice(0, k); }
+    if (st.room.kind === "boss") this.hooks.announce("rd.goal.boss");
+    else this.hooks.announce(`rd.goal.${g}`, { s: st.room.limit });
     // Barreras de energía en las puertas (no se sale hasta acabar)
     const r = st.room, O = RAID_ORIGIN, mat = new THREE.MeshBasicMaterial({ color: 0xff5a3a, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
     for (const s of doorsOf(this.map!, r)) {
@@ -237,11 +252,28 @@ export class Raid {
     this.hooks.mobs.spawnAt(kind as keyof typeof KINDS, best);
   }
 
+  /** Jefe: al bajar al 66 % y al 33 % de vida entra en una fase nueva con refuerzos (más en dificultades altas). */
+  private bossPhases(st: RoomState, player: THREE.Vector3) {
+    const w = this.hooks.mobs.list.find((d) => d.alive && d.kind.boss); if (!w) return;
+    const max = w.layers.reduce((a, l) => a + l.max, 0), cur = w.layers.reduce((a, l) => a + l.value, 0), f = cur / Math.max(1, max);
+    const want = f < 0.33 ? 3 : f < 0.66 ? 2 : 1;
+    if (want <= this.bossPhase) return;
+    this.bossPhase = want; this.hooks.onBossPhase?.(want); this.hooks.announce(`rd.phase${want}`);
+    const adds = ["guardian", "gunner", "drone", "spider", "caster", "elite"], n = 2 + this.opt.difficulty + (want === 3 ? 2 : 0);
+    for (let i = 0; i < n; i++) st.queue.push(adds[Math.floor(Math.random() * adds.length)]);
+    void player;
+  }
+
   private clear(st: RoomState) {
     st.cleared = true; this.fightsDone++;
     for (const b of st.barriers) { this.group.remove(b.mesh); const i = this.hooks.colliders.indexOf(b.box); if (i >= 0) this.hooks.colliders.splice(i, 1); }
     st.barriers = [];
-    if (st.room.kind === "boss") { if (!this.won) { this.won = true; this.hooks.onWin(); } }
-    else this.hooks.onClear(this.fightsDone, this.fights);
+    if (st.room.kind === "boss") { if (!this.won) { this.won = true; this.hooks.onWin(); } return; }
+    this.hooks.onClear(this.fightsDone, this.fights);
+    // Contrarreloj superado: cofre de premio en el centro de la sala
+    if (st.room.goal === "timed") {
+      if (st.t <= st.room.limit) { st.chest = this.chest(new THREE.Vector3(RAID_ORIGIN.x + st.room.cx, 0, RAID_ORIGIN.z + st.room.cz), 0xffd040); this.hooks.announce("rd.timedOk", { s: Math.round(st.t) }); }
+      else this.hooks.announce("rd.timedFail");
+    }
   }
 }

@@ -125,6 +125,8 @@ export class Waves {
     return d;
   }
   /** Enemigos vivos de este gestor. */
+  /** Enemigos vivos (lista). */
+  get list() { return this.alive.filter((d) => d.alive); }
   get living() { return this.alive.filter((d) => d.alive).length; }
 
   /** Lanza una esfera desde el pecho del enemigo hacia el jugador (con un poco de dispersión). */

@@ -5,7 +5,9 @@
 export type RoomKind = "start" | "fight" | "loot" | "boss";
 /** Distribución de una sala: cajas sueltas, bosque de pilares, filas de servidores o un ruedo con barreras bajas. */
 export type RoomStyle = "crates" | "pillars" | "racks" | "arena";
-export interface RaidRoom { i: number; kind: RoomKind; cx: number; cz: number; w: number; d: number; cell: [number, number]; covers: RaidBox[]; enemies: string[]; style: RoomStyle; h: number }
+/** Objetivo de una sala de combate: limpiarla, aguantar dos oleadas o limpiarla a contrarreloj (premio extra). */
+export type RoomGoal = "purge" | "waves" | "timed";
+export interface RaidRoom { i: number; kind: RoomKind; goal: RoomGoal; limit: number; cx: number; cz: number; w: number; d: number; cell: [number, number]; covers: RaidBox[]; enemies: string[]; style: RoomStyle; h: number }
 /** Caja en el plano (centro, medidas) y altura. */
 export interface RaidBox { x: number; z: number; w: number; d: number; h: number; kind?: "crate" | "pillar" | "rack" | "barrier" }
 export interface RaidCorridor { a: number; b: number; x0: number; z0: number; x1: number; z1: number; width: number }
@@ -54,7 +56,7 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   const mk = (cell: [number, number], kind: RoomKind): RaidRoom => {
     const big = kind === "boss" ? 38 : kind === "start" ? 18 : kind === "loot" ? 14 : 22 + Math.floor(r() * 10);
     const w = kind === "boss" ? big : Math.min(CELL - 10, big + Math.floor(r() * 6)), d = kind === "boss" ? big : Math.min(CELL - 10, big + Math.floor(r() * 6));
-    return { i: rooms.length, kind, cx: cell[0] * CELL, cz: cell[1] * CELL, w, d, cell, covers: [], enemies: [], style: "crates", h: 6 };
+    return { i: rooms.length, kind, goal: "purge", limit: 0, cx: cell[0] * CELL, cz: cell[1] * CELL, w, d, cell, covers: [], enemies: [], style: "crates", h: 6 };
   };
   path.forEach((c, i) => rooms.push(mk(c, i === 0 ? "start" : i === path.length - 1 ? "boss" : "fight")));
   const link = (a: RaidRoom, b: RaidRoom) => corridors.push({ a: a.i, b: b.i, x0: a.cx, z0: a.cz, x1: b.cx, z1: b.cz, width: DOOR_W });
@@ -110,6 +112,12 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   }
   const nFights = fights.length;
   fights.forEach((f, k) => (f.enemies = roomEnemies(r, k, nFights, opt.difficulty)));
+  // Objetivos: la primera sala siempre «limpiar»; luego, alguna de dos oleadas o a contrarreloj
+  fights.forEach((f, k) => {
+    if (k === 0) return; const x = r();
+    if (x < 0.3) { f.goal = "waves"; f.enemies = [...f.enemies, ...roomEnemies(r, k, nFights, opt.difficulty).slice(0, 3 + opt.difficulty)]; }
+    else if (x < 0.55) { f.goal = "timed"; f.limit = Math.round(18 + f.enemies.length * 3.2); }
+  });
   const boss = rooms.find((x) => x.kind === "boss")!;
   for (const f of fights) if (f.enemies.length >= 9 && r() < 0.4) f.enemies[0] = "commander";
   boss.enemies = ["warden", ...roomEnemies(r, nFights, nFights, opt.difficulty).slice(0, 3 + opt.difficulty * 2)];
