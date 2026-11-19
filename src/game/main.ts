@@ -848,19 +848,24 @@ async function boot() {
     const b = tg.closest<HTMLElement>("[data-hkb]"); if (b) { const id = hackBuffOpts[Number(b.dataset.hkb)]; hack.buffs[id] += HACK_BUFF_VALUE[id]; applyPerks(); toast(t("hk.gotBuff", { b: t(`hk.buff.${id}`) })); openHackMap(); return; }
     if (tg.closest("[data-hkx]")) hackEnd(true);
   });
-  function openRaidMenu() {
+  let modeMenu: "raid" | "survival" | "defense" | "hack" = "raid";
+  /** Menú del ordenador de un modo (cada modo tiene el suyo en la sala de modos). */
+  function openRaidMenu(mode: typeof modeMenu = modeMenu) {
+    modeMenu = mode;
     state = "raidmenu"; input.unlock();
     const el = $("raidmenu"); el.hidden = false;
     const chip = (k: string, v: number, on: boolean, label: string) => `<button type="button" class="chip ${on ? "on" : ""}" data-${k}="${v}" data-nav>${label}</button>`;
-    el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">SIM//</span><h1>${t("rd.title")}</h1><span class="credits">${t("pg.lv")} ${inv.progress.level}</span><button type="button" class="btn ghost sm" data-close="1">${t("ui.back")}</button></header>
-      <section class="panel ct-list"><p class="note">${t("rd.desc")}</p>
+    const title = mode === "raid" ? t("rd.title") : mode === "survival" ? t("sv.title") : mode === "defense" ? t("df.title") : t("hk.title");
+    const body = mode === "raid" ? `<p class="note">${t("rd.desc")}</p>
       <h2>${t("rd.length")}</h2><div class="chips">${[4, 6, 8].map((n) => chip("rooms", n, raidOpt.rooms === n, t(`rd.len${n}`, { n }))).join("")}</div>
       <h2>${t("rd.difficulty")}</h2><div class="chips">${[0, 1, 2].map((d) => chip("diff", d, raidOpt.difficulty === d, t(`rd.diff${d}`))).join("")}</div>
       <p class="note">${t(`rd.diffd${raidOpt.difficulty}`)}</p>
-      <div class="actions"><button type="button" class="btn" data-go="1" data-nav>${t("rd.start")}</button></div>
-      <h2>${t("sv.title")}</h2><p class="note">${t("sv.desc")}</p><div class="actions"><button type="button" class="btn" data-surv="1" data-nav>${t("sv.start")}</button></div>
-      <h2>${t("df.title")}</h2><p class="note">${t("df.desc")}</p><div class="actions"><button type="button" class="btn" data-def="1" data-nav>${t("df.start")}</button></div>
-      <h2>${t("hk.title")}</h2><p class="note">${t("hk.desc")}</p><div class="actions"><button type="button" class="btn" data-hack="1" data-nav>${t("hk.start")}</button></div></section></div>`;
+      <div class="actions"><button type="button" class="btn" data-go="1" data-nav>${t("rd.start")}</button></div>`
+      : mode === "survival" ? `<p class="note">${t("sv.desc")}</p><div class="actions"><button type="button" class="btn" data-surv="1" data-go="1" data-nav>${t("sv.start")}</button></div>`
+      : mode === "defense" ? `<p class="note">${t("df.desc")}</p><div class="actions"><button type="button" class="btn" data-def="1" data-go="1" data-nav>${t("df.start")}</button></div>`
+      : `<p class="note">${t("hk.desc")}</p><div class="actions"><button type="button" class="btn" data-hack="1" data-go="1" data-nav>${t("hk.start")}</button></div>`;
+    el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">SIM//</span><h1>${title}</h1><span class="credits">${t("pg.lv")} ${inv.progress.level}</span><button type="button" class="btn ghost sm" data-close="1">${t("ui.back")}</button></header>
+      <section class="panel ct-list">${body}</section></div>`;
     nav.setRoot(el); setTimeout(() => el.querySelector<HTMLElement>("[data-go]")?.focus(), 0);
   }
   function closeRaidMenu() { $("raidmenu").hidden = true; resume(); }
@@ -870,10 +875,10 @@ async function boot() {
     if (tg.closest("[data-close]")) return closeRaidMenu();
     const r = tg.closest<HTMLElement>("[data-rooms]"); if (r) { raidOpt.rooms = Number(r.dataset.rooms); return openRaidMenu(); }
     const d = tg.closest<HTMLElement>("[data-diff]"); if (d) { raidOpt.difficulty = Number(d.dataset.diff) as 0 | 1 | 2; return openRaidMenu(); }
+    if (tg.closest("[data-surv]")) { closeRaidMenu(); startSurvival(); return; }
+    if (tg.closest("[data-hack]")) { $("raidmenu").hidden = true; startHack(); return; }
+    if (tg.closest("[data-def]")) { $("raidmenu").hidden = true; resume(); startDefense(); return; }
     if (tg.closest("[data-go]")) { closeRaidMenu(); startRaid(); }
-    if (tg.closest("[data-hack]")) { $("raidmenu").hidden = true; startHack(); }
-    if (tg.closest("[data-def]")) { $("raidmenu").hidden = true; resume(); startDefense(); }
-    if (tg.closest("[data-surv]")) { closeRaidMenu(); startSurvival(); }
   });
   // Arena de oleadas: al azar al empezar; cambia un poco tras cada jefe
   const arena = new WaveArena(scene, world.colliders, world.shootables, { x0: world.wavesRoom.x0, x1: world.wavesRoom.x1, z0: world.wavesRoom.z0 + 0.5, z1: world.wavesRoom.z1 });
@@ -1018,7 +1023,8 @@ async function boot() {
 
     if (state === "play") {
       if (f.pause) { input.unlock(); openStart(); }
-      if (f.inventory) openScreen("inventory");
+      // Inventario: primero el gesto (la mano izquierda pulsa un botón del casco) y se abre al pulsar
+      if (f.inventory && !gun.helmetBusy && !gun.superPose) { gun.helmetTap(); setTimeout(() => { if (state === "play") openScreen("inventory"); }, Gun.HELMET_PRESS * 1000); }
       syncNade();
       if (settings.dev) meter.charge = 1;
       if (f.super && !inv.hasSuper(inv.superId)) toast(t("sp.noModule"));
@@ -1036,7 +1042,7 @@ async function boot() {
       if (ground) $("prompt").innerHTML = `${key}${t("ui.pickup")}`;
       else if (gnade) $("prompt").innerHTML = `${key}${t("ui.pickupNade")}`;
       else if (garmor) $("prompt").innerHTML = `${key}${t("ar.pickup")}`;
-      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : near.id === "raid" ? "rd.use" : "ui.useBench")}`;
+      else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : near.id === "raid" ? "rd.use" : near.id === "survival" ? "sv.use" : near.id === "defense" ? "df.use" : near.id === "hack" ? "hk.use" : "ui.useBench")}`;
       // Ficha del arma del suelo comparada con la que llevas
       const card = $("pickcard");
       if ((ground ?? gnade ?? garmor) !== shownPickup) {
@@ -1056,7 +1062,7 @@ async function boot() {
           else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); arena.set(generateArena((Math.random() * 2 ** 31) | 0, arena.bounds), true, player.pos); waves.start(); toast(t("ui.wavesGo")); } }
           else if (near.id === "storage") openScreen("inventory", true);
           else if (near.id === "contracts") openContracts();
-          else if (near.id === "raid") openRaidMenu();
+          else if (near.id === "raid" || near.id === "survival" || near.id === "defense" || near.id === "hack") openRaidMenu(near.id);
           else { bench.inspect = false; openScreen("workbench"); }
         }
       }

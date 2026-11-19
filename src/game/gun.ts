@@ -96,6 +96,30 @@ export class Gun {
   hidden = false;
   /** Súper: pose de invocación (manda sobre las manos y baja el arma) y mejoras temporales de la sobrecarga. */
   superPose: { right: HandPose; left: HandPose; lower: number } | null = null;
+  /** Gesto del casco (abrir el inventario): la izquierda sube al lateral del casco y pulsa un botón. -1 = inactivo. */
+  private helmetT = -1;
+  static readonly HELMET_DUR = 0.6;
+  /** Momento del gesto en que el dedo pulsa el botón (ahí se abre el inventario). */
+  static readonly HELMET_PRESS = 0.3;
+  helmetTap() { if (this.helmetT < 0) this.helmetT = 0; }
+  get helmetBusy() { return this.helmetT >= 0; }
+  /** Mezcla la mano izquierda con el gesto del casco (si está en curso). */
+  private helmetLeft(base: HandPose | null): HandPose | null {
+    const t = this.helmetT; if (t < 0) return base;
+    const ss = (a: number, b: number, x: number) => { const k = THREE.MathUtils.clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
+    const w = ss(0, 0.22, t) * (1 - ss(0.42, Gun.HELMET_DUR, t));
+    const press = Math.sin(THREE.MathUtils.clamp((t - 0.22) / 0.16, 0, 1) * Math.PI); // empuje corto hacia el casco
+    // (arriba a la izquierda, casi fuera de cuadro; el índice apunta atrás y arriba, hacia el lateral del casco)
+    const pos = new THREE.Vector3(-0.17, 0.035, -0.2).lerp(new THREE.Vector3(-0.15, 0.06, -0.13), press);
+    const orient = handBasis(new THREE.Vector3(-0.25, 0.55, 0.8), new THREE.Vector3(-0.45, 0.15, -0.88));
+    const curl: Curl = { fingers: [0.05, 1.35, 1.45, 1.5], thumb: 0.9 }; // índice estirado, el resto recogidos
+    const from = base ?? { pos: new THREE.Vector3(-0.3, -0.75, 0.2), orient, curl: { fingers: [0.4, 0.45, 0.5, 0.55], thumb: 0.2 } };
+    return {
+      // (sube por fuera, en arco hacia la izquierda: no cruza el centro de la pantalla)
+      pos: from.pos.clone().lerp(pos, w).add(new THREE.Vector3(-0.14 * Math.sin(w * Math.PI), -0.04 * Math.sin(w * Math.PI), 0.05 * Math.sin(w * Math.PI))), orient: from.orient.clone().slerp(orient, w),
+      curl: { fingers: from.curl.fingers.map((f, i) => f + (curl.fingers[i] - f) * w) as Curl["fingers"], thumb: from.curl.thumb + (curl.thumb - from.curl.thumb) * w },
+    };
+  }
   buff = { dmg: 1, rate: 1, freeAmmo: false, crit: false, critMult: 1 };
   /** Árbol de habilidades y nivel: daño, cadencia, daño crítico y probabilidad de no gastar bala. */
   perks = { dmg: 1, rate: 1, critMult: 1, ammoSave: 0, reload: 0 };
@@ -680,6 +704,7 @@ export class Gun {
     this.trigT = Math.max(0, this.trigT - dt * 9);
     this.onTrigT = Math.max(0, this.onTrigT - dt);
     if (c.fire) this.onTrigT = 1.2;
+    if (this.helmetT >= 0 && (this.helmetT += dt) > Gun.HELMET_DUR) this.helmetT = -1;
     if (this.model) this.updateHands(dt); else if (fists) this.updateFists(dt);
     // Invocación de un súper: las manos siguen la línea de tiempo y el arma baja fuera de la vista
     this.arms.override = this.superPose ? { right: this.superPose.right, left: this.superPose.left } : null;
@@ -829,7 +854,7 @@ export class Gun {
       } else if (this.punchT > 0) pos = base.clone().add(new THREE.Vector3(0, 0.01 * ext, 0.05 * ext)); // la otra se recoge
       return { pos, orient: handBasis(new THREE.Vector3(-side * 0.12, 0.05, -1), back), curl: { fingers: [1, 1, 1, 1], thumb: 0.85 } };
     };
-    this.arms.update({ right: fist(1), left: fist(-1), dt, shoulder: new THREE.Vector3(0, 0, -0.06 * ext) });
+    this.arms.update({ right: fist(1), left: this.helmetLeft(fist(-1)), dt, shoulder: new THREE.Vector3(0, 0, -0.06 * ext) });
   }
   /** El cargador vacío cae al suelo (copia del real, con física simple como los casquillos). */
   private dropMag() {
@@ -1047,7 +1072,7 @@ export class Gun {
     // La mano de apoyo viaja (en coordenadas del arma) solo en los saltos de agarre reales: cartuchera, cambio de soporte
     if (left) { if (!this.leftLocal || this.leftLocal.distanceTo(left) < 0.02) this.leftLocal = left.clone(); else this.leftLocal.lerp(left, Math.min(1, dt * 14)); }
     else this.leftLocal = null;
-    this.arms.update({ right, left: left && this.leftLocal ? pose(this.leftLocal, L, loose) : null, dt, shoulder });
+    this.arms.update({ right, left: this.helmetLeft(left && this.leftLocal ? pose(this.leftLocal, L, loose) : null), dt, shoulder });
   }
 
   private fire(moving: number, echo = false) {
