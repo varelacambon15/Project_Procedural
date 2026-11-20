@@ -341,7 +341,7 @@ export class Dummy {
       const vein = veinMat(kind);
       if (vein) { for (const x of [-0.31, 0.31]) this.part(new THREE.BoxGeometry(0.012, 0.4, 0.012), vein, x, 1.55, 0.07, null); this.part(new THREE.BoxGeometry(0.014, 0.3, 0.012), vein, 0.06, 1.66, 0.205, null); }
     }
-    if (L) this.dressKind(kind);
+    if (L) { this.bulkUp(kind); this.dressKind(kind); }
     // Soldados: arma en las manos, apuntando al frente (fusil corto o fusil largo con mira)
     if (kind.gun) {
       const g = new THREE.Group(); g.position.set(0.12, 1.55, 0.26); this.body.add(g);
@@ -443,7 +443,7 @@ export class Dummy {
    * con el escudo. Robots: el dron se inclina y retrocede al disparar, la bola bota, la torreta retrocede, la araña salta.
    */
   private animStyle(dt: number, moving: number) {
-    const P = this.pose; P.lean = P.dip = P.roll = 0;
+    const P = this.pose; P.lean = P.dip = P.roll = 0; P.lean = this.huntch;
     this.orbsK.forEach((o, i) => { o.position.y += Math.sin(this.walkT * 1.5 + i) * 0.002; o.rotation.y += dt * 2; });
     this.attackT = Math.max(0, this.attackT - dt);
     const k = this.attackT > 0 ? 1 - this.attackT / 0.4 : 0, a = this.attackT > 0 ? Math.sin(k * Math.PI) : 0, key = this.kind.key;
@@ -511,6 +511,34 @@ export class Dummy {
       }
     }
   }
+  /**
+   * Volumen de soldado de la simulación (como las referencias): casco grande con visor estrecho, hombreras
+   * redondeadas, peto y espaldar gruesos, mochila grande con cables, muslos y antebrazos acolchados. Solo estética.
+   */
+  private bulkUp(kind: Kind) {
+    // (armadura del color de cada enemigo, algo más oscura: así no se pierde lo que distingue a cada uno)
+    const tone = new THREE.Color(this.look?.suit ?? 0x5a6470);
+    const B = this.body, arm = new THREE.MeshStandardMaterial({ color: tone.clone().multiplyScalar(0.75), roughness: 0.55, metalness: 0.35 }), dark = new THREE.MeshStandardMaterial({ color: 0x16191d, roughness: 0.7 });
+    const add = (geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number, sx = 1, sy = 1, sz = 1, parent: THREE.Object3D = B) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.scale.set(sx, sy, sz); o.castShadow = true; parent.add(o); return o; };
+    // Casco grande que envuelve la cabeza (el visor del casco base queda delante)
+    add(new THREE.SphereGeometry(0.2, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.7), arm, 0, 2.12, -0.02, 1, 0.95, 1.1);
+    add(new THREE.BoxGeometry(0.34, 0.08, 0.3), dark, 0, 2.02, -0.02);
+    // Visor estrecho y luminoso delante del casco grande
+    { const v = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.205, 0.05, 20, 1, true, -0.8, 1.6), new THREE.MeshStandardMaterial({ color: 0x220806, emissive: VISOR[kind.key] ?? 0xff3a1e, emissiveIntensity: 2, side: THREE.DoubleSide })); v.position.set(0, 2.14, -0.02); v.scale.set(1, 1, 1.1); B.add(v); }
+    // Hombreras redondeadas
+    for (const x of [-0.34, 0.34]) add(new THREE.SphereGeometry(0.15, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), arm, x, 1.86, 0, 1.15, 0.9, 1.2);
+    // Peto y espaldar gruesos, con faja
+    add(new THREE.BoxGeometry(0.52, 0.42, 0.12), arm, 0, 1.7, 0.17); add(new THREE.BoxGeometry(0.5, 0.42, 0.1), arm, 0, 1.72, -0.18);
+    add(new THREE.CylinderGeometry(0.22, 0.24, 0.16, 12), dark, 0, 1.36, 0, 1.15, 1, 0.85);
+    // Mochila grande con cables que bajan a la cintura
+    add(new THREE.BoxGeometry(0.42, 0.5, 0.22), dark, 0, 1.74, -0.34);
+    for (const x of [-0.14, 0.14]) { const c = add(new THREE.CylinderGeometry(0.018, 0.018, 0.5, 6), dark, x, 1.44, -0.3); c.rotation.x = 0.25; }
+    // Muslos acolchados (cuelgan de la cadera de cada pierna)
+    for (const hip of this.legs) add(new THREE.BoxGeometry(0.17, 0.3, 0.19), arm, 0, -0.22, 0.01, 1, 1, 1, hip);
+    // Leve encorvamiento de combate
+    this.huntch = 0.08;
+  }
+  /** Inclinación base hacia delante (soldados acorazados). */ private huntch = 0;
   /** Rasgos propios de cada tipo de humanoide, para reconocerlo de lejos por su silueta (solo estética). */
   private dressKind(kind: Kind) {
     const k = kind.key, B = this.body;
