@@ -92,10 +92,10 @@ export class SuperFx {
     if (this.cast_ || this.busy) return false; this.cast_ = { id, t: 0, hit: false };
     this.hooks.sound("cast"); return true; }
   /** Corta la invocación (muerte, cambio de pantalla). */
-  cancel() { if (this.cast_?.id === "spirit" && this.orb && !this.orb.v) this.dropOrb(); this.cast_ = null; }
+  cancel() { this.beamTick(-1); if (this.cast_?.id === "spirit" && this.orb && !this.orb.v) this.dropOrb(); this.cast_ = null; }
   /** Quita todo lo que haya activo (torreta, señuelo, misiles…): al volver de una incursión o cargar partida. */
   reset() {
-    this.cast_ = null; this.active = null;
+    this.cast_ = null; this.active = null; this.beamTick(-1);
     for (const o of [this.sentry, this.holo]) if (o) this.scene.remove(o);
     this.sentry = this.holo = null;
     for (const m of this.missiles) this.scene.remove(m.mesh);
@@ -132,7 +132,8 @@ export class SuperFx {
       // Cañón de riel: la carga brilla entre las manos y crece hasta el disparo
       if (c.id === "railgun" && !c.hit && c.t > 0.35 && this.hooks.hand) { const k = (c.t - 0.35) / (tl.hit - 0.35); this.spawn(new THREE.Mesh(sphereGeo, add(Math.random() < 0.5 ? COLOR.railgun : 0xffffff)), this.hooks.hand().add(new THREE.Vector3((Math.random() - 0.5) * 0.04, (Math.random() - 0.5) * 0.04, (Math.random() - 0.5) * 0.04)), 0.12, 0.02 + 0.06 * k, "flash"); }
       if (!c.hit && c.t >= tl.hit) { c.hit = true; this.trigger(c.id, origin); }
-      if (c.t >= tl.duration) this.cast_ = null;
+      if (c.id === "torrent") this.beamTick(c.hit && c.t < tl.hit + (tl.active ?? 3) ? c.t - tl.hit : -1);
+      if (c.t >= tl.duration) { this.cast_ = null; this.beamTick(-1); }
     }
     const a = this.active;
     if (a) {
@@ -421,6 +422,27 @@ export class SuperFx {
 
   // ---------- Torrente de cristal ----------
   private torrentAcc = 0;
+  /** Rayo amarillo que envuelve el chorro: un cono abierto que se ensancha desde la palma, con núcleo blanco y bola en la mano. */
+  private beam: THREE.Group | null = null;
+  private beamTick(t: number) {
+    if (t < 0) { if (this.beam) { this.scene.remove(this.beam); this.beam.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { m.geometry.dispose(); (m.material as THREE.Material).dispose(); } }); this.beam = null; } return; }
+    const v = this.hooks.view?.(); if (!v) return; const tl = SUPERS.torrent, len = tl.range ?? 40, rad = (tl.radius ?? 1.6) * 0.9;
+    if (!this.beam) {
+      const g = new THREE.Group(), cone = (r0: number, r1: number) => new THREE.CylinderGeometry(r1, r0, len, 28, 1, true).rotateX(Math.PI / 2).translate(0, 0, len / 2);
+      const shell = new THREE.Mesh(cone(0.1, rad), add(0xffd23a, THREE.DoubleSide)); shell.name = "shell";
+      const rim = new THREE.Mesh(cone(0.13, rad * 1.12), add(0xffb000, THREE.BackSide)); rim.name = "rim";
+      const core = new THREE.Mesh(cone(0.03, rad * 0.35), add(0xfff6c0)); core.name = "core";
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12), add(0xfff0a0)); ball.name = "ball";
+      g.add(shell, rim, core, ball); g.renderOrder = 5; this.scene.add(g); this.beam = g;
+    }
+    const right = new THREE.Vector3().crossVectors(v.dir, new THREE.Vector3(0, 1, 0)).normalize(), up = new THREE.Vector3().crossVectors(right, v.dir);
+    const from = v.o.clone().addScaledVector(v.dir, 0.72).addScaledVector(right, 0.13).addScaledVector(up, -0.1);
+    this.beam.position.copy(from); this.beam.lookAt(from.clone().add(v.dir));
+    const grow = Math.min(1, t / 0.18), fade = Math.min(1, ((tl.active ?? 3) - t) / 0.3), k = grow * fade, pulse = 0.85 + 0.15 * Math.sin(t * 40);
+    this.beam.scale.set(k * pulse, k * pulse, grow);
+    const op = (n: string, o: number) => (((this.beam!.getObjectByName(n) as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = o * k);
+    op("shell", 0.22); op("rim", 0.35 * pulse); op("core", 0.55); op("ball", 0.6);
+  }
   private torrentShard(tl: (typeof SUPERS)["torrent"]) {
     const v = this.hooks.view?.(); if (!v) return; const range = tl.range ?? 40, rad = tl.radius ?? 1.6, sp = 46;
     const right = new THREE.Vector3().crossVectors(v.dir, new THREE.Vector3(0, 1, 0)).normalize(), up = new THREE.Vector3().crossVectors(right, v.dir);
