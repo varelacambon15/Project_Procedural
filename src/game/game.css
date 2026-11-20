@@ -196,3 +196,8 @@ body.chrono::after { content: ""; position: fixed; inset: 0; pointer-events: non
 .dmg.crit { color: #ffd84a; animation: dmgpop .28s ease-out; } @keyframes dmgpop { 0% { font-size: 44px; } 100% { font-size: 32px; } }
 .dmg.bump { animation: dmgbump .16s ease-out; } @keyframes dmgbump { 0% { filter: brightness(2); } 100% { filter: none; } }
 #prompt kbd.hold { background: linear-gradient(90deg, rgba(255,208,112,.55) var(--p), transparent var(--p)); }
+
+#gadgethud { position: fixed; right: calc(24px + env(safe-area-inset-right, 0px)); bottom: calc(178px + env(safe-area-inset-bottom, 0px)); font-family: var(--display); font-size: 18px; color: #fff; text-shadow: 0 1px 3px #000; display: flex; gap: 6px; align-items: center; pointer-events: none; }
+#gadgethud .pip { width: 12px; height: 12px; border: 1px solid currentColor; } #gadgethud .pip.on { background: currentColor; }
+#gadgethud .rc { width: 40px; height: 4px; background: rgba(255,255,255,0.2); } #gadgethud .rc i { display: block; height: 100%; background: currentColor; }
+body.in-menu #gadgethud { visibility: hidden; }

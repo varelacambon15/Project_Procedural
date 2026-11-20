@@ -4,6 +4,8 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import * as THREE from "three";
+import { GADGET_RARITY, makeGadget, setGadgetUid } from "./gadgets";
+import { GadgetFx } from "./gadgetfx";
 import { GRENADE_RARITY, GrenadePouch, makeGrenade, setGrenadeUid, type GrenadeRarity, type GrenadeSpec } from "./grenades";
 import { GrenadeFx } from "./grenadefx";
 import { SuperFx } from "./superfx";
@@ -302,7 +304,15 @@ async function boot() {
     const left = sfx.activeLeft, pct = left > 0 ? Math.round((left / sfx.activeTotal) * 100) : Math.round(meter.charge * 100);
     el.className = left > 0 ? "on" : meter.ready ? "ready" : "";
     document.body.classList.toggle("deadeye", state === "play" && sfx.activeId === "deadeye"); document.body.classList.toggle("aegis", state === "play" && sfx.activeId === "aegis");
-    el.innerHTML = `<span>${t(`sp.${inv.superId}`)}</span><span class="bar"><i style="width:${pct}%"></i></span><b>${left > 0 ? Math.ceil(left) + " s" : meter.ready ? `<kbd>${input.device === "pad" ? PAD_NAMES[input.padBinds.super] : input.binds.super.replace(/^Key/, "")}</kbd>` : pct + " %"}</b>`;
+    el.innerHTML = `<span>${t(`sp.${inv.superId}`)}</span><span class="bar"><i style="width:${pct}%"></i></span><b>${left > 0 ? Math.ceil(left) + " s" : meter.ready ? `<kbd>${input.device === "pad" ? "LB+RB" : input.binds.super.replace(/^Key/, "")}</kbd>` : pct + " %"}</b>`;
+  };
+  // ---------- Equipamiento (LB / X): cargas como las granadas y efecto en gadgetfx ----------
+  const gpouch = new GrenadePouch(); // (mismo contador de cargas: solo usa charges y recharge)
+  const syncGadget = () => { if (gpouch.g !== (inv.gadget as unknown)) { const fresh = gpouch.g == null; gpouch.equip(inv.gadget as never); if (fresh && inv.gadget) gpouch.charges = inv.gadget.charges; } };
+  const gadgetHud = () => {
+    const el = $("gadgethud"), g = inv.gadget; el.hidden = !g; if (!g) return;
+    el.style.color = GADGET_RARITY[g.rarity].color;
+    el.innerHTML = `<span>${t(`gd.${g.kind}`)}</span>${Array.from({ length: g.charges }, (_, i) => `<span class="pip${i < gpouch.charges ? " on" : ""}"></span>`).join("")}${gpouch.charges < g.charges ? `<span class="rc"><i style="width:${Math.round(gpouch.progress * 100)}%"></i></span>` : ""}`;
   };
   const syncNade = () => { if (pouch.g !== inv.grenade) { const fresh = pouch.g == null; pouch.equip(inv.grenade); if (fresh && inv.grenade) pouch.charges = inv.grenade.charges; } };
   const nadeHud = () => {
@@ -312,6 +322,20 @@ async function boot() {
   };
   gun.actionOf = (sp) => gen.byId.get(sp.parts[0].from)?.action;
   const pickups = new Pickups(scene, asm, world.colliders);
+  const gadgets = new GadgetFx(scene, {
+    enemies: () => [...mobs.list, ...waves.list, ...dummies.filter((d) => d.alive)],
+    onHit(d, point, dmg, element) { const alive = d.alive; notGun = true; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); notGun = false; },
+    colliders: world.colliders, shootables: world.shootables,
+    view: () => ({ eye: camera.getWorldPosition(new THREE.Vector3()), dir: camera.getWorldDirection(new THREE.Vector3()) }),
+    feet: () => player.pos.clone(),
+    lunge: (dir, dist, time) => player.lunge(dir, dist, time),
+    launch: (vy) => { player.vel.y = vy; player.onGround = false; },
+    refill: () => { const it = gun.item; if (it) { it.ammo = it.spec.stats.cargador; inv.changed(); } },
+    boost: (sec, k) => { injectT = sec; injectK = k; applyPerks(); },
+    moveDir: () => { const v = player.vel.clone().setY(0); return v.length() > 0.5 ? v.normalize() : null; },
+    teleport: (p) => { player.pos.set(p.x, 0, p.z); player.vel.set(0, 0, 0); },
+    sound: () => { /* (sonidos del equipamiento: pendiente) */ },
+  });
   // Compilación de shaders en segundo plano (KHR_parallel_shader_compile): armas nuevas sin congelar el juego
   const prewarm = (o: THREE.Object3D) => { o.updateMatrixWorld(true); return renderer.compileAsync(o, camera, scene); };
   gun.prewarm = prewarm; pickups.prewarm = prewarm;
@@ -415,6 +439,7 @@ async function boot() {
     if (raid.active) raid.end();
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
     // Se empieza sin nada: puños y 0 créditos. El primer dinero sale de golpear o disparar a los muñecos de práctica.
+    inv.gadgets = [makeGadget(Date.now() & 0xffff, "turret", "comun")]; inv.gadgetActive = 0; // (equipamiento inicial: una mini torreta)
     inv.credits = SHOP.newGameCredits; practice.acc = 0; practice.window = []; shopState = newShopState(); playSeconds = 0; inGame = true;
     applyPerks(); inv.changed(); php.reset();
     toast(t("ui.practiceTip"));
@@ -423,7 +448,7 @@ async function boot() {
     const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i })), ...inv.storage.map((it, i) => ({ it, area: "storage" as const, index: i }))]
       .filter((x) => x.it).map((x) => ({ spec: x.it!.spec, ammo: x.it!.ammo, area: x.area, index: x.index }));
     return { version: SAVE_VERSION, savedAt: "", name, playSeconds: Math.round(playSeconds), credits: inv.credits, weapons, active: inv.active, bank: inv.bank, shop: shopState,
-      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone, armors: inv.armors, worn: inv.worn };
+      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, gadgets: inv.gadgets, gadgetActive: inv.gadgetActive, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone, armors: inv.armors, worn: inv.worn };
   }
   function apply(d: SaveData) {
     if (raid.active) returnHub(false);
@@ -441,6 +466,7 @@ async function boot() {
     shopState = d.shop; playSeconds = d.playSeconds; contracts = refreshContracts(d.contracts, new Date());
     inv.armors = d.armors ?? []; inv.worn = { head: null, torso: null, legs: null, ...(d.worn ?? {}) }; setArmorUid(Math.max(0, ...inv.armors.map((a) => a.uid)) + 1);
     inv.grenades = d.grenades ?? []; inv.grenadeActive = inv.grenades[d.grenadeActive ?? -1] ? d.grenadeActive! : -1; setGrenadeUid(Math.max(0, ...inv.grenades.map((g) => g.uid)) + 1); pouch.equip(null);
+    inv.gadgets = d.gadgets?.length ? d.gadgets : [makeGadget(4242, "turret", "comun")]; inv.gadgetActive = inv.gadgets[d.gadgetActive ?? -1] ? d.gadgetActive! : 0; setGadgetUid(Math.max(0, ...inv.gadgets.map((g) => g.uid)) + 1); // (partidas anteriores: una mini torreta de regalo)
     inv.superId = (SUPER_IDS as string[]).includes(d.superId ?? "") ? (d.superId as SuperId) : "shockwave"; meter.charge = 0;
     // Súperes: las partidas de antes de los módulos conservan el que tenían elegido
     inv.supersOwned = (d.supersOwned ?? (d.superId ? [d.superId] : [])).filter((x): x is SuperId => (SUPER_IDS as string[]).includes(x)); inv.raidsDone = d.raidsDone ?? 0;
@@ -529,6 +555,7 @@ async function boot() {
   const hack = { active: false, seed: 0, depth: 0, data: 0, node: null as HackNode | null, extractable: false, path: [] as HackNode["kind"][], buffs: { damage: 0, rate: 0, health: 0, speed: 0, crit: 0 } as Record<HackBuff, number> };
   /** Defensa del núcleo en curso. */
   const dmode = { active: false, wave: 0, credits: 0, phase: "build" as "build" | "wave", t: 0, queue: [] as string[], spawnT: 0, rnd: Math.random };
+  let injectT = 0, injectK = 0;
   function applyPerks() {
     const p = curPerks = skillPerks(inv.progress); CARD.playerLevel = inv.progress.level;
     gun.perks.rate = p.rate; gun.perks.critMult = p.critMult; gun.perks.ammoSave = p.ammoSave; gun.perks.dmg = p.dmg;
@@ -540,6 +567,7 @@ async function boot() {
     player.speedMult *= Math.max(0.7, 1 + q.speed - A.slow); meter.gain *= 1 + q.superGain; gun.perks.critMult *= 1 + q.critDmg; gun.perks.reload = q.reload;
     armorNade = 1 + q.nadeRecharge;
     // Modo Hack: mejoras temporales de la partida
+    if (injectT > 0) { gun.perks.rate *= 1 + injectK; player.speedMult *= 1 + injectK * 0.6; } // (inyector)
     if (hack.active) { const b = hack.buffs; gun.perks.dmg *= 1 + b.damage; gun.perks.rate *= 1 + b.rate; gun.perks.critMult *= 1 + b.crit; php.setMax(php.max * (1 + b.health)); player.speedMult *= 1 + b.speed; }
     xpShown = "";
   }
@@ -663,7 +691,7 @@ async function boot() {
     // (mientras está el señuelo los enemigos le atacan a él: sus golpes no te llegan; dentro de la cúpula, tampoco los de fuera)
     if (sfx.decoyPos) return;
     if (sfx.shieldsPlayer(player.pos)) return;
-    dmg *= sfx.guard * curPerks.guard * damageTaken(armorT, kind); // (armadura: reducción y resistencias)
+    dmg *= sfx.guard * curPerks.guard * damageTaken(armorT, kind) * gadgets.guardAt(player.pos); // (la cúpula del equipamiento protege dentro) // (armadura: reducción y resistencias)
     if (curPerks.secondWind && !windUsed && php.value - dmg <= 0) { windUsed = true; php.value = php.max * 0.4; toast(t("pg.secondWind")); return; }
     if (php.hit(dmg)) {
       windUsed = false;
@@ -680,7 +708,7 @@ async function boot() {
     onPlayerHit: (dmg, kind) => { if (settings.screenShake) shake = Math.min(0.5, shake + 0.18); hurtPlayer(dmg, kind); $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on"); },
   });
   mobs.playerLevel = () => inv.progress.level;
-  waves.decoy = () => sfx.decoyPos; mobs.decoy = () => sfx.decoyPos ?? (dmode.active ? defense.decoyPos : null);
+  waves.decoy = () => sfx.decoyPos ?? gadgets.decoyPos; mobs.decoy = () => sfx.decoyPos ?? gadgets.decoyPos ?? (dmode.active ? defense.decoyPos : null);
   let raidOpt: { rooms: number; difficulty: 0 | 1 | 2 } = { rooms: 6, difficulty: 0 }, raidReturnT = -1;
   const RAID_DIFF = [{ rarity: "rara", cr: 1, xp: 0.3 }, { rarity: "epica", cr: 1.6, xp: 0.45 }, { rarity: "legendaria", cr: 2.4, xp: 0.6 }] as const;
   const raid = new Raid(scene, {
@@ -1083,6 +1111,12 @@ async function boot() {
       if (settings.dev) meter.charge = 1;
       if (f.super && !inv.hasSuper(inv.superId)) toast(t("sp.noModule"));
       else if (f.super && !sfx.casting && !sfx.busy) { if (meter.use()) sfx.cast(inv.superId); else toast(t("sp.notReady")); }
+      if (f.gadget) {
+        if (!inv.gadget) toast(t("gd.none"));
+        else if (inv.gadget.kind === "teleport" && gadgets.tryTeleport()) { /* (segunda pulsación: viaje sin gastar carga) */ }
+        else if (gpouch.charges <= 0) toast(t("gd.empty"));
+        else if (gadgets.use(inv.gadget)) gpouch.use(); else toast(t("gd.fail"));
+      }
       if (f.grenade) {
         if (!inv.grenade) toast(t("gr.none"));
         else if (pouch.use()) { const dir = camera.getWorldDirection(new THREE.Vector3()); nades.throw(inv.grenade, camera.getWorldPosition(new THREE.Vector3()).addScaledVector(dir, 0.5).add(new THREE.Vector3(0, -0.15, 0)), dir); }
@@ -1193,6 +1227,8 @@ async function boot() {
       lastMove.x = f.moveX; lastMove.z = f.moveZ;
       rewindHist.push({ t: performance.now(), p: player.pos.clone(), hp: php.value }); while (rewindHist.length > 2 && performance.now() - rewindHist[0].t > 6000) rewindHist.shift();
       if (!sfx.casting && !sfx.busy) meter.update(dt); sfx.update(dt, player.pos); superHud();
+      syncGadget(); gpouch.update(dt); gadgets.update(state === "play" ? dt : 0); gadgetHud();
+      if (injectT > 0 && (injectT -= dt) <= 0) applyPerks();
       pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
     healthHud(); xpHud(dt);
@@ -1248,7 +1284,7 @@ async function boot() {
   frame();
   (window as unknown as Record<string, unknown>).__game = {
     debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
-    loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, startDefense, defense, dmode, returnHub, mobs, openRaidMenu, arena, mutateArena,
+    makeGadget, gadgets, loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, startDefense, defense, dmode, returnHub, mobs, openRaidMenu, arena, mutateArena,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };
 }

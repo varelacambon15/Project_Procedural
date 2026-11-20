@@ -19,6 +19,10 @@ export class Inventory {
   /** Granadas que tienes (hasta 8) y la equipada (−1: ninguna; sin granada equipada no se lanza nada). */
   grenades: import("./grenades").GrenadeSpec[] = [];
   grenadeActive = -1;
+  /** Equipamiento que tienes (hasta 8) y el equipado en LB (−1: ninguno). */
+  gadgets: import("./gadgets").GadgetSpec[] = [];
+  gadgetActive = -1;
+  get gadget() { return this.gadgets[this.gadgetActive] ?? null; }
   /** Súper elegido en la pestaña Habilidades. */ superId: import("./supers").SuperId = "shockwave";
   /** Súperes desbloqueados con módulos (y modo desarrollador: todos). */ supersOwned: import("./supers").SuperId[] = []; devUnlock = false;
   /** Incursiones completadas (la primera da un módulo seguro). */ raidsDone = 0;
@@ -74,5 +78,5 @@ export class Inventory {
   /** Todas, también las del almacén. */
   get all(): Item[] { return [...this.equip, ...this.pack, ...this.storage].filter((x): x is Item => !!x); }
   /** Vacía todo (nueva partida o carga). */
-  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; this.grenades = []; this.grenadeActive = -1; this.progress = { level: 1, xp: 0, skills: {} }; this.supersOwned = []; this.raidsDone = 0; this.armors = []; this.worn = { head: null, torso: null, legs: null }; }
+  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; this.grenades = []; this.grenadeActive = -1; this.gadgets = []; this.gadgetActive = -1; this.progress = { level: 1, xp: 0, skills: {} }; this.supersOwned = []; this.raidsDone = 0; this.armors = []; this.worn = { head: null, torso: null, legs: null }; }
 }

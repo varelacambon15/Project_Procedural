@@ -1,3 +1,4 @@
+import { GADGET_RARITY } from "../gadgets";
 // Inventario: rejilla por rareza con filtros y orden, ficha del arma elegida comparada con la equipada y acciones
 // (equipar, a la mochila, renombrar, soltar, desguazar con confirmación suave). Teclado, ratón y mando.
 import { type GrenadeSpec } from "../grenades";
@@ -37,7 +38,7 @@ export class InventoryScreen {
   /** Granada elegida (uid), en lugar de un arma. */ private selNade: number | null = null;
   private filter = { rarity: "all", cls: "all", era: "all" };
   private sort: Sort = "rarity";
-  /** Pestaña: equipo (armas y granadas) o habilidades (súper). */ private tab: "gear" | "armor" | "skills" | "tree" = "gear";
+  /** Pestaña: equipo (armas y granadas) o habilidades (súper). */ private tab: "gear" | "armor" | "equipment" | "skills" | "tree" = "gear";
 
   constructor(private inv: Inventory, private thumbs: Thumbnails, private hooks: InventoryHooks) {
     this.el.addEventListener("click", (e) => this.click(e));
@@ -152,6 +153,22 @@ export class InventoryScreen {
   }
   /** Súper que se está mirando (puede estar bloqueado). */ private spView: SuperId | null = null;
   /** Pestaña Habilidades: los súperes; elegir uno desbloqueado lo equipa (los bloqueados se ven, pero hace falta su módulo). */
+  /** Pestaña Equipamiento (LB / X): lo que tienes, el equipado y su ficha. */
+  private selGadget: number | null = null;
+  private renderGadgets() {
+    const i = this.inv, list = i.gadgets, sel = list.find((g) => g.uid === this.selGadget) ?? i.gadget ?? list[0] ?? null;
+    const card = (g: import("../gadgets").GadgetSpec) => `<div class="card"><span class="lbl" style="color:${GADGET_RARITY[g.rarity].color}">${t(`rarity.${g.rarity}`)}</span><div class="nm">${t(`gd.${g.kind}`)}</div>
+      <p class="note">${t(`gd.d.${g.kind}`)}</p>
+      <p class="note">${t("gd.stats", { c: g.charges, s: g.recharge, d: g.duration || "—", r: g.radius })}</p>
+      <div class="actions">${i.gadget === g ? `<span class="note">${t("ui.equippedNow")}</span>` : `<button type="button" class="btn" data-gdeq="${g.uid}" data-nav>${t("gr.equip")}</button>`}</div></div>`;
+    $("inv-body").innerHTML = `
+      <section class="panel list"><h2>${t("gd.title")} <small>${list.length}/8</small></h2>
+        <div class="tiles">${list.map((g) => `<button type="button" class="tile ${sel === g ? "sel" : ""}" data-gd="${g.uid}" data-nav style="border-color:${GADGET_RARITY[g.rarity].color}"><b>${t(`gd.${g.kind}`)}</b>${i.gadget === g ? `<span class="slotno">LB</span>` : ""}</button>`).join("") || `<div class="tile empty wide">${t("gd.noneOwned")}</div>`}</div>
+        <p class="note">${t("gd.how")}</p></section>
+      <section class="panel detail">${sel ? card(sel) : `<div class="card empty">${t("gd.noneOwned")}</div>`}</section>`;
+    $("inv-credits").textContent = `${i.credits} ${t("unit.cr")}`;
+    $("inv-foot").innerHTML = keyHint("Enter", "Ⓐ", t("ui.select")) + keyHint("Q / E", "LB / RB", t("ui.tabs")) + keyHint("Esc", "Ⓑ", t("ui.back"));
+  }
   private renderSkills() {
     const eq = this.inv.superId, sel = this.spView ?? eq, have = this.inv.hasSuper(sel), n = SUPER_IDS.filter((id) => this.inv.hasSuper(id)).length;
     $("inv-body").innerHTML = `
@@ -174,6 +191,7 @@ export class InventoryScreen {
     if (this.tab === "skills" && !this.storageMode) return this.renderSkills();
     if (this.tab === "tree" && !this.storageMode) return this.renderTree();
     if (this.tab === "armor" && !this.storageMode) return this.renderArmor();
+    if (this.tab === "equipment" && !this.storageMode) return this.renderGadgets();
     const i = this.inv, it = this.selected, cur = i.current;
     const chips = ["all", ...ORDER].map((r) => `<button type="button" class="chip ${this.filter.rarity === r ? "on" : ""} ${r !== "all" ? `r-${r}` : ""}" data-rar="${r}" style="${r !== "all" ? `--c:${RARITIES.find((x) => x.id === r)!.color}` : ""}">${r === "all" ? t("ui.all") : t(`rarity.${r}`)}</button>`).join("");
     const packItems = this.visible(i.pack.filter((x): x is Item => !!x));
@@ -208,7 +226,7 @@ export class InventoryScreen {
     this.thumbs.fill(this.el, this.storageMode ? i.all : i.carried);
     fillNadeThumbs(this.el); fillArmorThumbs(this.el);
   }
-  static readonly TABS = ["gear", "armor", "skills", "tree"] as const;
+  static readonly TABS = ["gear", "armor", "equipment", "skills", "tree"] as const;
   /** Pestaña Armadura: silueta holográfica con las tres ranuras apiladas al lado; debajo, las piezas guardadas. */
   private renderArmor() {
     const i = this.inv, sel = this.armorSel, col = (sl: "head" | "torso" | "legs") => { const a = i.wornOf(sl); return a ? ARMOR_RARITY[a.rarity].color : "transparent"; };
@@ -320,6 +338,8 @@ export class InventoryScreen {
     if (target.closest("[data-close]")) return this.close();
     const tb = target.closest<HTMLElement>("[data-tab]");
     if (tb) { this.tab = tb.dataset.tab as InventoryScreen["tab"]; this.render(); return this.el.querySelector<HTMLElement>(`[data-tab="${this.tab}"]`)?.focus({ preventScroll: true }); }
+    const gd = target.closest<HTMLElement>("[data-gd]"); if (gd) { const u = Number(gd.dataset.gd); if (this.selGadget === u) { this.inv.gadgetActive = this.inv.gadgets.findIndex((g) => g.uid === u); } this.selGadget = u; this.render(); return; }
+    const ge = target.closest<HTMLElement>("[data-gdeq]"); if (ge) { this.inv.gadgetActive = this.inv.gadgets.findIndex((g) => g.uid === Number(ge.dataset.gdeq)); this.render(); return; }
     const sk = target.closest<HTMLElement>("[data-skill]");
     if (sk) { if (raise(this.inv.progress, sk.dataset.skill!)) this.hooks.perks?.(); this.render(); return this.el.querySelector<HTMLElement>(`[data-skill="${sk.dataset.skill}"]`)?.focus({ preventScroll: true }); }
     if (target.closest("[data-respec]")) { const c = respecCost(this.inv.progress); if (c && this.inv.credits >= c) { this.inv.credits -= c; respec(this.inv.progress); this.hooks.perks?.(); this.hooks.toast(t("pg.respecDone")); } return this.render(); }

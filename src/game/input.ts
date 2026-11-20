@@ -7,6 +7,7 @@ export interface Frame {
   moveX: number; moveZ: number;          // -1..1 (Z positivo = adelante)
   lookX: number; lookY: number;          // radianes a girar este fotograma
   fire: boolean; aim: boolean;           // mantenidos
+  /** Equipamiento (LB / X). */ gadget?: boolean;
   jump: boolean; reload: boolean; interact: boolean; swap: boolean; inventory: boolean; pause: boolean; // pulsados este fotograma
   sprint: boolean;
   /** Agacharse (mantenido); agacharse corriendo = deslizarse. */
@@ -27,16 +28,17 @@ const stick = (v: number, curve: number) => { const a = Math.abs(v); if (a < DZ)
 /** Acciones del teclado y su tecla por defecto (el ratón dispara y apunta). */
 export const DEFAULT_BINDS: Record<string, string> = {
   forward: "KeyW", back: "KeyS", left: "KeyA", right: "KeyD", jump: "Space", sprint: "ShiftLeft", crouch: "KeyC",
-  reload: "KeyR", use: "KeyE", kick: "KeyZ", swap: "KeyQ", slot1: "Digit1", slot2: "Digit2", inspect: "KeyF", grenade: "KeyG", super: "KeyV", light: "KeyT", inventory: "KeyI",
+  reload: "KeyR", use: "KeyE", kick: "KeyZ", swap: "KeyQ", slot1: "Digit1", slot2: "Digit2", inspect: "KeyF", grenade: "KeyG", gadget: "KeyX", super: "KeyV", light: "KeyT", inventory: "KeyI",
 };
 export const BIND_ORDER = Object.keys(DEFAULT_BINDS);
 /** Botones del mando por acción (índices del mando estándar). Por defecto, al estilo Call of Duty. */
-export const DEFAULT_PAD: Record<string, number> = { fire: 7, aim: 6, jump: 0, useReload: 2, crouch: 1, swap: 3, grenade: 5, super: 4, sprint: 10, kick: 11, light: 12, inspect: 13 };
+export const DEFAULT_PAD: Record<string, number> = { fire: 7, aim: 6, jump: 0, useReload: 2, crouch: 1, swap: 3, grenade: 5, gadget: 4, sprint: 10, kick: 11, light: 12, inspect: 13 };
 export const PAD_ORDER = Object.keys(DEFAULT_PAD);
 /** Nombre de un botón del mando estándar. */
 export const PAD_NAMES = ["Ⓐ", "Ⓑ", "Ⓧ", "Ⓨ", "LB", "RB", "LT", "RT", "View", "Start", "L3", "R3", "✚↑", "✚↓", "✚←", "✚→"];
 
 export class Input {
+  /** Ventana de LB/RB (para detectar los dos a la vez) y bloqueo hasta soltarlos tras un súper. */ private bumpT = -1; private bumpWhich: "gadget" | "grenade" = "grenade"; private bumpLock = false;
   private keys = new Set<string>();
   private pressed = new Set<string>();
   private mouse = { dx: 0, dy: 0, left: false, right: false, wheel: 0 };
@@ -110,7 +112,7 @@ export class Input {
       lookX: this.mouse.dx * this.sensitivity, lookY: this.mouse.dy * this.sensitivity,
       fire: this.mouse.left, aim: this.mouse.right, sprint: k("sprint"), crouch: k("crouch"),
       jump: kp("jump"), reload: kp("reload"), interact: kp("use"), swap: this.mouse.wheel !== 0 || kp("swap"),
-      inventory: kp("inventory") || this.pressed.has("Tab"), pause: this.pressed.has("Escape"), slot1: kp("slot1"), slot2: kp("slot2"), inspect: kp("inspect"), grenade: kp("grenade"), super: kp("super"), kick: kp("kick"), light: kp("light"), device: this.device,
+      inventory: kp("inventory") || this.pressed.has("Tab"), pause: this.pressed.has("Escape"), slot1: kp("slot1"), slot2: kp("slot2"), inspect: kp("inspect"), grenade: kp("grenade"), gadget: kp("gadget"), super: kp("super"), kick: kp("kick"), light: kp("light"), device: this.device,
     };
     this.mouse.dx = this.mouse.dy = 0; this.mouse.wheel = 0; this.pressed.clear();
     const p = this.pad();
@@ -123,7 +125,18 @@ export class Input {
       // Ⓑ agacharse, Ⓨ cambiar arma, RB granada, LB súper, L3 correr, ✚↓ inspeccionar, View inventario, Start pausa
       const P = this.padBinds, e = (a: string) => !!edges[P[a]];
       f.fire ||= b(P.fire); f.aim ||= b(P.aim); f.sprint ||= b(P.sprint); f.crouch ||= b(P.crouch);
-      f.kick ||= e("kick"); f.jump ||= e("jump"); f.swap ||= e("swap"); f.inspect ||= e("inspect"); f.grenade ||= e("grenade"); f.super ||= e("super"); f.light ||= e("light");
+      f.kick ||= e("kick"); f.jump ||= e("jump"); f.swap ||= e("swap"); f.inspect ||= e("inspect"); f.light ||= e("light");
+      // LB equipamiento, RB granada y LB+RB a la vez súper (como en Overwatch): al pulsar uno se espera un instante por
+      // si llega el otro; si llegan los dos, súper; si no, la acción del botón pulsado
+      const gb = P.gadget ?? 4, nb = P.grenade ?? 5;
+      if (edges[gb] || edges[nb]) { if (this.bumpT < 0) { this.bumpT = 0; this.bumpWhich = edges[gb] ? "gadget" : "grenade"; } }
+      if (this.bumpT >= 0) {
+        this.bumpT += dt;
+        if (b(gb) && b(nb)) { f.super = true; this.bumpT = -1; this.bumpLock = true; }
+        else if (this.bumpT >= 0.12) { if (this.bumpWhich === "gadget") f.gadget = true; else f.grenade = true; this.bumpT = -1; }
+      }
+      if (this.bumpLock && !b(gb) && !b(nb)) this.bumpLock = false;
+      if (this.bumpLock) this.bumpT = -1;
       const uh = b(P.useReload);
       if (uh) {
         if (this.useT < 0) { this.useT = 0; this.useDone = false; }

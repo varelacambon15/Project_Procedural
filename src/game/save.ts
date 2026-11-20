@@ -29,7 +29,7 @@ export interface SaveData {
   /** Contratos diarios y semanales (opcional: partidas antiguas no lo tienen). */
   contracts?: import("./contracts").ContractState;
   /** Granadas y la equipada (opcional). */
-  grenades?: import("./grenades").GrenadeSpec[]; grenadeActive?: number; superId?: string;
+  grenades?: import("./grenades").GrenadeSpec[]; grenadeActive?: number; gadgets?: import("./gadgets").GadgetSpec[]; gadgetActive?: number; superId?: string;
   /** Nivel, experiencia y habilidades (opcional: las partidas antiguas empiezan al nivel de su mejor arma). */
   progress?: import("./progress").ProgressState;
   /** Súperes desbloqueados con módulos e incursiones completadas (opcional). */ supersOwned?: string[]; raidsDone?: number;
@@ -103,6 +103,8 @@ export function parseSave(text: string | null): LoadResult {
     settings: isObj(raw.settings) ? raw.settings : {}, lang: typeof raw.lang === "string" ? raw.lang : "en", pixelLevel: num(raw.pixelLevel, 64),
     grenades: Array.isArray(raw.grenades) ? (raw.grenades as SaveData["grenades"])!.filter((g) => isObj(g) && typeof (g as Raw).kind === "string").slice(0, 8) : undefined,
     grenadeActive: typeof raw.grenadeActive === "number" ? raw.grenadeActive : -1,
+    gadgets: Array.isArray(raw.gadgets) ? (raw.gadgets as SaveData["gadgets"])!.filter((g) => isObj(g) && typeof (g as Raw).kind === "string").slice(0, 8) : undefined,
+    gadgetActive: typeof raw.gadgetActive === "number" ? raw.gadgetActive : -1,
     superId: typeof raw.superId === "string" ? raw.superId : undefined,
     contracts: isObj(raw.contracts) && Array.isArray((raw.contracts as Raw).list) ? (raw.contracts as unknown as SaveData["contracts"]) : undefined,
   };
