@@ -4,7 +4,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import * as THREE from "three";
-import { GADGET_RARITY, makeGadget, setGadgetUid } from "./gadgets";
+import { GADGET_RARITY, makeGadget, setGadgetUid, type GadgetRarity, type GadgetSpec } from "./gadgets";
 import { GadgetFx } from "./gadgetfx";
 import { GRENADE_RARITY, GrenadePouch, makeGrenade, setGrenadeUid, type GrenadeRarity, type GrenadeSpec } from "./grenades";
 import { GrenadeFx } from "./grenadefx";
@@ -45,7 +45,7 @@ import { Pickups, type Pickup } from "./pickups";
 import { LOOT, LootDirector, type LootSource } from "../weapons/loot";
 import { lootChime } from "./audio";
 import { installPixelFont } from "./pixelfont";
-import { CARD, armorCard, grenadeCard, $, MenuCursor, MenuNav, ModelView, Thumbnails, esc, weaponCard, type Dir } from "./ui/common";
+import { CARD, armorCard, gadgetCard, grenadeCard, $, MenuCursor, MenuNav, ModelView, Thumbnails, esc, weaponCard, type Dir } from "./ui/common";
 import { InventoryScreen } from "./ui/inventory";
 import { WorkshopScreen } from "./ui/workshop";
 import { ShopScreen, fillNadeThumbs } from "./ui/shop";
@@ -1061,12 +1061,38 @@ async function boot() {
     { const l = soundManifest?.efectos.recoger_granada; if (l?.length) playSample(sample(l[0]), 0.6); }
     scene.remove(n.mesh); nadeDrops.splice(nadeDrops.indexOf(n), 1);
   }
+  // Equipamiento en el suelo: un cristal girando del color de su rareza, con su haz; se recoge con usar
+  const gadgetDrops: { g: GadgetSpec; mesh: THREE.Group; t: number }[] = [];
+  function dropGadget(g: GadgetSpec, at: THREE.Vector3) {
+    const grp = new THREE.Group(), col = new THREE.Color(GADGET_RARITY[g.rarity].color), body = new THREE.Group(); grp.add(body);
+    body.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), new THREE.MeshStandardMaterial({ color: 0x20242c, metalness: 0.6, roughness: 0.35, emissive: col, emissiveIntensity: 0.6 })));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.015, 6, 24), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false })); ring.rotation.x = Math.PI / 2; body.add(ring);
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 8, 1, true), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })); beam.position.y = 1.1; grp.add(beam);
+    grp.position.copy(at).setY(0.35); scene.add(grp); gadgetDrops.push({ g, mesh: grp, t: LOOT.expireSeconds });
+    lootChime(LEVEL[g.rarity] ?? 0);
+  }
+  function updateGadgetDrops(dt: number) {
+    for (const n of [...gadgetDrops]) { n.t -= dt; n.mesh.rotation.y += dt * 2; n.mesh.children[0].position.y = Math.sin(gameTime * 3) * 0.05; if (n.t <= 0) { scene.remove(n.mesh); gadgetDrops.splice(gadgetDrops.indexOf(n), 1); } }
+  }
+  function gadgetTarget(look: THREE.Vector3) {
+    let best: (typeof gadgetDrops)[number] | null = null, bd = 1e9;
+    for (const n of gadgetDrops) { const to = n.mesh.position.clone().sub(camera.position), d = to.length(); if (d < 3 && to.normalize().dot(look) > 0.86 && d < bd) { bd = d; best = n; } }
+    return best;
+  }
+  function pickGadget(n: (typeof gadgetDrops)[number]) {
+    if (inv.gadgets.length >= 8) { toast(t("gd.full")); return; }
+    inv.gadgets.push(n.g); if (inv.gadgetActive < 0) inv.gadgetActive = inv.gadgets.length - 1;
+    toast(t("gd.found", { n: t(`gd.${n.g.kind}`), r: t(`rarity.${n.g.rarity}`) }));
+    { const l = soundManifest?.efectos.recoger_granada; if (l?.length) playSample(sample(l[0]), 0.6, 1.3); }
+    scene.remove(n.mesh); gadgetDrops.splice(gadgetDrops.indexOf(n), 1);
+  }
   function dropLoot(source: LootSource, at: THREE.Vector3) {
     const onGround = pickups.list.filter((p) => p.expires != null).length;
     const rarity = loot.kill(source, gameTime, onGround);
     if (!rarity) return;
     const a = Math.random() * Math.PI * 2;
     // De vez en cuando, en lugar del arma cae una granada de esa rareza (menos común que las armas)
+    if (Math.random() < 0.12) { dropGadget(makeGadget(Math.floor(Math.random() * 1e9), undefined, rarity as GadgetRarity), at); return; } // (a veces, equipamiento)
     if (Math.random() < 0.2) { dropNade(makeGrenade(Math.floor(Math.random() * 1e9), undefined, rarity as GrenadeRarity), at); return; }
     if (Math.random() < 0.15) { dropArmor(makeArmor(Math.floor(Math.random() * 1e9), undefined, rarity as ArmorRarity), at); return; } // (a veces, una pieza de armadura)
     const spec = rollWeapon(rarity);
@@ -1149,30 +1175,32 @@ async function boot() {
       const key = input.device === "pad" ? `<kbd class="hold" style="--p:${Math.round(input.useHold * 100)}%">${PAD_NAMES[input.padBinds.useReload]}</kbd>${t("ui.holdBtn")} ` : `<kbd>${input.binds.use.replace(/^Key/, "")}</kbd>`;
       const look = camera.getWorldDirection(new THREE.Vector3());
       const ground = pickups.target(camera.position, look);
-      const gnade = ground ? null : nadeTarget(look), garmor = ground || gnade ? null : armorTarget(look);
-      const near = ground || gnade || garmor ? null : nearInteractable();
-      $("prompt").hidden = !ground && !near && !gnade && !garmor;
+      const gnade = ground ? null : nadeTarget(look), garmor = ground || gnade ? null : armorTarget(look), ggad = ground || gnade || garmor ? null : gadgetTarget(look);
+      const near = ground || gnade || garmor || ggad ? null : nearInteractable();
+      $("prompt").hidden = !ground && !near && !gnade && !garmor && !ggad;
       if (ground) $("prompt").innerHTML = `${key}${t("ui.pickup")}`;
       else if (gnade) $("prompt").innerHTML = `${key}${t("ui.pickupNade")}`;
       else if (garmor) $("prompt").innerHTML = `${key}${t("ar.pickup")}`;
+      else if (ggad) $("prompt").innerHTML = `${key}${t("gd.pickup")}`;
       else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : near.id === "raid" ? "rd.use" : near.id === "survival" ? "sv.use" : near.id === "defense" ? "df.use" : near.id === "hack" ? "hk.use" : "ui.useBench")}`;
       // Plataforma de construcción cerca: qué hay y qué se puede hacer
       if (dmode.active && !near && !ground && !gnade && !garmor) { const pad = defense.padNear(player.pos); if (pad) { $("prompt").hidden = false; $("prompt").innerHTML = `${key}${pad.placed ? t("df.padUpgrade", { n: t(`df.b.${pad.placed.b.id}`), l: pad.placed.level }) : t("df.padBuild")}`; } }
       if (dmode.active && dmode.phase === "build" && waveTerm && player.pos.distanceTo(waveTerm.position) < 2) { $("prompt").hidden = false; $("prompt").innerHTML = `${key}${t("df.startNow")}`; }
       // Ficha del arma del suelo comparada con la que llevas
       const card = $("pickcard");
-      if ((ground ?? gnade ?? garmor) !== shownPickup) {
-        shownPickup = ground ?? gnade ?? garmor;
+      if ((ground ?? gnade ?? garmor ?? ggad) !== shownPickup) {
+        shownPickup = ground ?? gnade ?? garmor ?? ggad;
         const worn = garmor ? inv.wornOf(garmor.a.slot) : null;
-        card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : gnade ? grenadeCard(gnade.g, inv.grenade ? t("ui.compared") : "", inv.grenade) : garmor ? armorCard(garmor.a, worn ? t("ui.compared") : "", worn) : "";
-        card.hidden = !ground && !gnade && !garmor; if (gnade) fillNadeThumbs(card); if (garmor) fillArmorThumbs(card);
+        card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : gnade ? grenadeCard(gnade.g, inv.grenade ? t("ui.compared") : "", inv.grenade) : garmor ? armorCard(garmor.a, worn ? t("ui.compared") : "", worn) : ggad ? gadgetCard(ggad.g, inv.gadget ? t("gd.compared") : "", inv.gadget) : "";
+        card.hidden = !ground && !gnade && !garmor && !ggad; if (gnade) fillNadeThumbs(card); if (garmor) fillArmorThumbs(card);
       }
       // Ⓧ del mando: mantener = recoger o usar lo que hay cerca (pulsar y soltar recarga)
-      if (f.holdUse && (ground || near || gnade || garmor)) f.interact = true;
+      if (f.holdUse && (ground || near || gnade || garmor || ggad)) f.interact = true;
       if (f.interact) {
         if (ground) pickUp(ground);
         else if (gnade) pickNade(gnade);
         else if (garmor) pickArmor(garmor);
+        else if (ggad) pickGadget(ggad);
         else if (near) {
           if (near.id === "chest") openScreen("shop");
           else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); arena.set(generateArena((Math.random() * 2 ** 31) | 0, arena.bounds), true, player.pos); waves.start(); toast(t("ui.wavesGo")); } }
@@ -1255,7 +1283,7 @@ async function boot() {
       if (!sfx.casting && !sfx.busy) meter.update(dt); sfx.update(dt, player.pos); superHud();
       syncGadget(); gpouch.update(dt); gadgets.update(state === "play" ? dt : 0); gadgetHud();
       if (injectT > 0 && (injectT -= dt) <= 0) applyPerks();
-      pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
+      pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); updateGadgetDrops(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
     healthHud(); xpHud(dt);
     {

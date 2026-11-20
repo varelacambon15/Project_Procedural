@@ -19,7 +19,7 @@ describe("escaparate (05-D)", () => {
     for (let k = 0; k < 200; k++) {
       const sc = ensureShowcase(st, k * 15 * 60 + 1, 42);
       const rar = showcaseRarities(sc);
-      expect(rar.length).toBe(5);
+      expect(rar.length).toBe(6);
       rar.forEach((r, i) => { expect(SHOWCASE.slots[i]).toContain(r); expect(r).not.toBe("legendaria"); });
     }
   });

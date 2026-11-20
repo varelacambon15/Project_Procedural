@@ -3,6 +3,7 @@
 import { overPenalty } from "../progress";
 import { GRENADE_RARITY, type GrenadeSpec } from "../grenades";
 import { ARMOR_RARITY, type ArmorSpec } from "../armor";
+import { GADGET_RARITY, type GadgetSpec } from "../gadgets";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { TYPE_INFO } from "../../weapons/generator";
@@ -343,4 +344,18 @@ export function armorTile(a: ArmorSpec, o: { sel?: boolean; slot?: string; attrs
     ${o.slot ? `<span class="slotno">${o.slot}</span>` : ""}<img class="thumb" data-armorthumb="${a.slot}:${a.variant}:${a.rarity}" alt="">
     <span class="lbl">${t(`ar.slot.${a.slot}`)} · ${t(`rarity.${a.rarity}`)}</span><span class="nm">${t(`ar.name.${a.slot}.${a.variant}`)}</span>
     <span class="dm">${Math.round(a.reduction * 1000) / 10} % <span class="ty">${t("ar.short")}</span></span></button>`;
+}
+
+/** Ficha de una pieza de equipamiento (tienda y suelo), con la que llevas al lado para comparar. */
+export function gadgetCard(g: GadgetSpec, title = "", cmp: GadgetSpec | null = null) {
+  const col = GADGET_RARITY[g.rarity].color, c = cmp && cmp.kind === g.kind ? cmp : null;
+  const d = (v: number, w: number | undefined, lowerBetter = false) => { if (w == null || Math.abs(v - w) < 0.05) return ""; const up = lowerBetter ? v < w : v > w; return ` <span class="${up ? "up" : "down"}">${v > w ? "+" : ""}${+(v - w).toFixed(1)}</span>`; };
+  return `<div class="card gdcard" style="--c:${col}">${title ? `<span class="vs">${title}</span>` : ""}
+    <span class="rar">${t(`rarity.${g.rarity}`)} · ${t("gd.title1")}</span>
+    <span class="nm">${t(`gd.${g.kind}`)}</span><span class="meta">${t(`gd.d.${g.kind}`)}</span>
+    <div class="gdstats"><span class="k">${t("gr.k.charges")}</span><span class="v">${g.charges}${d(g.charges, c?.charges)}</span>
+      <span class="k">${t("gr.k.recharge")}</span><span class="v">${g.recharge} s${d(g.recharge, c?.recharge, true)}</span>
+      ${g.duration ? `<span class="k">${t("gd.k.duration")}</span><span class="v">${g.duration} s${d(g.duration, c?.duration)}</span>` : ""}
+      ${g.radius ? `<span class="k">${t("gr.k.radius")}</span><span class="v">${g.radius} m${d(g.radius, c?.radius)}</span>` : ""}</div>
+  </div>`;
 }

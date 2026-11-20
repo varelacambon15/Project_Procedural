@@ -42,28 +42,7 @@
   "revealSeconds": 1.4,
   "showcase": {
     "refreshMinutes": 15,
-    "slots": [
-      [
-        "comun",
-        "poco"
-      ],
-      [
-        "comun",
-        "poco"
-      ],
-      [
-        "poco",
-        "rara"
-      ],
-      [
-        "poco",
-        "rara"
-      ],
-      [
-        "rara",
-        "epica"
-      ]
-    ],
+    "slots": [["comun", "poco"], ["comun", "poco"], ["comun", "poco"], ["poco", "rara"], ["poco", "rara"], ["rara", "epica"]],
     "price": {
       "comun": 45,
       "poco": 120,

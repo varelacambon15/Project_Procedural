@@ -208,3 +208,7 @@ body.in-menu #gadgethud { visibility: hidden; }
 /* Arma cogida con el mando: resaltada y las ranuras de equipo invitan a soltarla */
 #inventory .tile.grab { outline: 2px dashed #f2c040; outline-offset: 2px; transform: scale(1.04); }
 #inventory.padgrab [data-eqslot] { outline: 2px solid rgba(242, 192, 64, .6); outline-offset: 2px; }
+.sc-tile .img.gd-img { display: grid; place-items: center; font-size: 46px; text-shadow: 0 0 14px currentColor; }
+.card .gdstats { display: grid; grid-template-columns: 1fr max-content; gap: 6px 12px; margin-top: 10px; width: 100%; box-sizing: border-box; padding-right: 22px; }
+.card .gdstats .v { text-align: right; }
+.card.gdcard { max-width: 290px; box-sizing: border-box; }
