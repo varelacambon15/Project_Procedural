@@ -3,7 +3,7 @@ import { SUPERS, SUPER_IDS, SuperMeter, sampleHand, track } from "../src/game/su
 
 describe("súperes: datos", () => {
   it("hay quince y cada línea de tiempo es coherente", () => {
-    expect(SUPER_IDS).toHaveLength(20);
+    expect(SUPER_IDS).toHaveLength(21);
     for (const id of SUPER_IDS) {
       const s = SUPERS[id];
       expect(s.hit).toBeGreaterThan(0); expect(s.hit).toBeLessThan(s.duration);
@@ -42,7 +42,7 @@ import { rollModule } from "../src/game/supers";
 describe("súperes: módulos", () => {
   it("dan un súper que aún no tienes, y nada cuando ya están todos", () => {
     expect(rollModule([], 0)).toBe(SUPER_IDS[0]);
-    const some = SUPER_IDS.slice(0, 19); expect(rollModule(some, 0.5)).toBe(SUPER_IDS[19]);
+    const some = SUPER_IDS.slice(0, 20); expect(rollModule(some, 0.5)).toBe(SUPER_IDS[20]);
     expect(rollModule(SUPER_IDS, 0.3)).toBeNull();
   });
 });
