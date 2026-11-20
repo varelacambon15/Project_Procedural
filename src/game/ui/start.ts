@@ -78,6 +78,7 @@ export class StartScreen {
       <div class="row"><span>${t("set.pixel")}</span><div class="seg">${PIXEL_LEVELS.map((p) => `<button type="button" class="chip ${p === pixelLevel() ? "on" : ""}" data-px="${p}">${p}</button>`).join("")}</div></div>
       ${range("volume", 0, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}
       ${range("music", 0, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}
+      <label class="row"><span>${t("set.playerName")}</span><input type="text" maxlength="18" data-name value="${esc(s.playerName ?? "")}" placeholder="${t("set.playerNameHint")}"></label>${toggle("botVoice")}
       ${toggle("damageNumbers")}${toggle("impactFx")}${toggle("screenShake")}${toggle("arms")}${toggle("night")}${toggle("bloom")}${range("renderScale", 0.5, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}${toggle("showFps")}
       <div class="row"><span>${t("ui.language")}</span><div class="seg">${LANGS.map((l) => `<button type="button" class="chip ${l.id === getLang() ? "on" : ""}" data-lang="${l.id}">${l.name}</button>`).join("")}</div></div>
       <h3>${t("set.devTitle")}</h3>${toggle("dev")}
@@ -85,7 +86,9 @@ export class StartScreen {
       <p class="note">${t("set.saved")}</p></div>`;
   }
   private input(e: Event) {
-    const el = e.target as HTMLInputElement; const k = el.dataset.set as keyof Settings | undefined; if (!k) return;
+    const el = e.target as HTMLInputElement;
+    if (el.dataset.name != null) { setSetting("playerName", el.value.trim().slice(0, 18)); return; }
+    const k = el.dataset.set as keyof Settings | undefined; if (!k) return;
     setSetting(k, Number(el.value) as never);
     const out = el.parentElement?.querySelector("output"); if (out) out.textContent = k === "volume" || k === "music" ? `${Math.round(Number(el.value) * 100)}%` : k === "fov" ? `${el.value}°` : `${Number(el.value).toFixed(2)}×`;
   }

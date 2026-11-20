@@ -20,11 +20,13 @@ export interface Settings {
   invertY: boolean;      // invertir el eje vertical de la cámara
   adsSens: number;       // sensibilidad al apuntar (multiplicador)
   padSens: number;       // sensibilidad del mando (multiplicador, sobre la general)
+  /** Nombre del jugador (el asistente del hall te saluda con él). */ playerName: string;
+  /** Voz del asistente del hall (síntesis de voz del navegador). */ botVoice: boolean;
   binds: Record<string, string>; // teclas del teclado por acción (código de tecla)
   padBinds: Record<string, number>; // botones del mando por acción
 }
 const KEY = "pp.settings";
-const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: false, bloom: true, renderScale: 1, showFps: false, mapV: 2, dev: false, sprintToggle: false, aimToggle: false, crouchToggle: false, invertY: false, adsSens: 1, padSens: 1, binds: {}, padBinds: {} };
+const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: false, bloom: true, renderScale: 1, showFps: false, mapV: 2, dev: false, sprintToggle: false, aimToggle: false, crouchToggle: false, invertY: false, adsSens: 1, padSens: 1, playerName: "", botVoice: true, binds: {}, padBinds: {} };
 const listeners = new Set<(s: Settings) => void>();
 
 function load(): Settings {

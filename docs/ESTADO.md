@@ -143,6 +143,85 @@ Léelo al empezar una conversación nueva: resume reglas, mapa del código y lo 
 4. Pulir las animaciones de recarga (no están mal, pero se pueden mejorar).
 5. Hecho (ronda 37): la pausa, el inventario y los demás menús paran el mundo.
 
+## Ronda 38 (rama `ccr-9154dbc6-lqpjb5`, después de la 0.18.0; aún sin publicar como versión)
+
+Todo esto está subido y con tests (141) y build en verde. **No se ha publicado versión nueva**: la última es la 0.18.0.
+
+### Hecho
+- **Visor en primera persona y agarres** (referencias del usuario de CoD y Destiny):
+  - las armas se ven desde atrás;
+  - pistolas más cerca, con la muñeca recta (`ARM_DATA.wristStraight`, `HandPose.straight` en `arms.ts`) y agarre en C a dos manos;
+  - armas voluminosas más lejos (`bulk` = `AssembledWeapon.height`; `rearMax` y `adsGrip` en `anim.json`).
+- **Sonidos:** cada arma tiene una muestra de disparo fija; los golpes y patadas que fallan hacen un silbido de aire.
+- **Hall reorganizado:**
+  - el hall es la zona de inicio y el campo de tiro está en la sala del fondo;
+  - la arena de supervivencia está cerrada y se entra desde su ordenador;
+  - un ordenador por modo de juego;
+  - puerta sellada que pide 4 piezas;
+  - botón «Volver al hall».
+- **Rendimiento:**
+  - AO de contacto asíncrono por franjas y precalentado de shaders;
+  - la geometría de la incursión se fusiona (`mergeStatic`);
+  - sombras cada 2 fotogramas y apagadas en incursiones;
+  - en Ajustes: escala de render y contador de FPS.
+- **Defensa:** ritmo más rápido, arena de 78–100 m, 3 anillos de plataformas, terminal junto al núcleo para adelantar la oleada y aviso al estar sobre una plataforma.
+- **Incursión y hack** (`raidgen.ts`, `hackgen.ts`):
+  - resumen al terminar;
+  - hack por sectores: mapas de 5 salas, guardián, mejora y decidir entre extraer o bajar más; reglas por sector desde el sector 2;
+  - temas: centro de datos, fundición, laberinto, arena y biolab;
+  - plantas en L, T, U y cruz;
+  - pasarelas con escalera que se suben (`Player.STEP` 0,42; `groundAt`);
+  - pasillos en zigzag y relieve en las paredes.
+- **Enemigos:** rodillas, codos, paso natural, silueta propia por tipo y volumen de soldado acorazado.
+- **Miras de hierro de serie** en armas largas: se apunta a través de ellas.
+- **Equipamiento** (sección nueva, separada de las granadas; `gadgets.ts` para los datos y `gadgetfx.ts` para los efectos):
+  - controles: **LB / tecla X** = equipamiento, **RB / G** = granada, **LB+RB / V** = súper. Hay una ventana de 0,12 s para pulsar los dos a la vez (`input.ts`: `bumpT`, `bumpLock`);
+  - **20 tipos:** torreta, escudo, cúpula, orbe, gancho, mina, gravedad, campo lento, salto, baliza, cuchillo, cargas en cadena, arpón, señuelo, fallo, munición, inyector, propulsor, teletransporte y **inyección temporal** (`chrono`: todo menos tú a cámara lenta);
+  - rareza de común a legendaria; las cargas se recargan con `GrenadePouch` (`gpouch` en main.ts);
+  - pestaña «Equipamiento» en el inventario y `#gadgethud`;
+  - se empieza con una torreta común;
+  - **cae como botín** (12 %, misma rareza que el arma: `dropGadget` y `pickGadget` en main.ts) y se vende en la tienda;
+  - máximo 8 piezas;
+  - ficha común: `gadgetCard` en `ui/common.ts`.
+  - El usuario **no quiere granadas como equipamiento**: con dos legendarias se podrían usar sin parar.
+- **Tienda:** 6 huecos de armas (`shop.json` `showcase.slots`) más **2 huecos extra** que ofrecen granada, equipamiento o armadura, nunca dos del mismo tipo en una ronda (`extraKind` en `ui/shop.ts`).
+- **Súperes** (`supers.ts`, `supers.json`, `superfx.ts`; ahora hay 22):
+  - nueva **Detonación de núcleo** (`core`), inspirada en la Super Ki Explosion: te blindas y recibes solo el 15 % del daño mientras cargas; luego estalla una esfera de 13 m;
+  - nuevo **Torrente de cristal** (`torrent`): chorro de 3 s desde la palma, unos 70 cristales/s, poco daño cada uno, atraviesan enemigos; va envuelto en un **rayo amarillo** cónico (`beamTick`);
+  - la **Dilatación temporal se sustituyó por Parada del tiempo** (`timestop`):
+    - 7 s fijos con el mundo congelado;
+    - imagen: negativo de 0,45 s y luego sepia (CSS `body.timestop` y `body.tsinv`);
+    - sonido sintetizado: zumbido, gong, tictac cada segundo y barrido al reanudarse (`timeSnd` en main.ts);
+    - las partidas guardadas con `chrono` pasan a `timestop`.
+- **Inventario con mando:** pulsar un arma ya no la equipa. Ⓐ la coge, y Ⓐ sobre la ranura 1 o 2 la deja ahí (`grab` en `ui/inventory.ts`). Siguen los botones «Equipar en 1/2».
+- **Asistente del hall** (`src/game/hallbot.ts`):
+  - pantalla con cara amigable sobre el cartel del campo de tiro, en la pared del fondo (z = 28);
+  - la cara se dibuja en un canvas: ojos que parpadean y siguen al jugador, y boca que se mueve al hablar;
+  - habla con la **síntesis de voz del navegador** (`speechSynthesis`, es-ES o en-US) y también pone subtítulo;
+  - al entrar en el hall te **saluda por tu nombre**, como mucho una vez cada 90 s; además suelta una frase cada 45–85 s (`bot.idle.*`, 14 frases);
+  - **Ajustes:** «Tu nombre» (`settings.playerName`) y «Voz del asistente» (`settings.botVoice`).
+
+### Tests cambiados (avisado al usuario)
+- `tests/supers.test.ts`: número de súperes 20 → 22, y el test de módulos (`slice` e índice) ajustado.
+- `tests/shop.test.ts`: huecos de armas del escaparate 5 → 6.
+
+### Pendiente o en curso (por orden)
+1. **Súperes y categoría legendaria.** El objetivo es **25 súperes: 20 normales y 5 legendarias.**
+   - **Legendarias:** la Nova espiritual (`spirit`) seguro. Las otras 4 que propuse: orbital, cañón de riel, parada del tiempo y vórtice. **El usuario aún no lo ha confirmado.**
+   - **Falta montar la categoría legendaria:** botín raro (cofre del guardián o piezas de la puerta sellada), marco dorado, más potencia y carga más lenta.
+   - **Propuestas sin elegir:**
+     - mías: golpe sísmico, espejo (dos copias holográficas) y cadenas de energía (el daño se reparte);
+     - inspiradas en las definitivas de Xenoverse 2: cañón final, esfera de la muerte, tormenta gigante, andanada total, ataque fantasma, impacto definitivo, disco destructor doble y explosión de planeta. Yo recomendé cañón final, esfera de la muerte (posible legendaria) e impacto definitivo.
+   - El usuario manda referencias concretas (enlaces a la wiki de DBXV2) y yo las adapto «a la realidad del juego»: energía y tecnología, sin copiar.
+2. **Equipamiento:** no tiene sonidos propios (el hook `sound` de `gadgetfx` no hace nada) y no hay desbloqueo por progreso. Se propusieron desguace y mejora de rareza con chatarra, que está sin hacer.
+3. **Asistente del hall:** sin probar con voz real (en Playwright no hay voces). Posibles mejoras: frases según el contexto (vuelta de una incursión, poco dinero, súper nueva) y elegir la voz.
+4. Ya anotado antes:
+   - los enemigos cuerpo a cuerpo no llegan al jugador cuando está sobre una pasarela;
+   - miras en LMG y escopetas generadas por código;
+   - diseños de armadura;
+   - crafteo con chatarra.
+5. Publicar versión (0.19.0) cuando el usuario lo pida o al cerrar un bloque grande.
+
 ## Ronda 36 (versión 0.16.0): pack 5, sonidos nuevos, animaciones por tipo y visor
 
 - Pack 5 del usuario (`raw/pack5`, ids `x-p5-*` en el pack kit39): MG338, RPD, MG4HK (lmg), LPM1, LPM4 (fusil), VSV,

@@ -1,4 +1,5 @@
 // Proving Grounds / Campo de Pruebas: demo jugable de la Fase 1.
+import { HallBot } from "./hallbot";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
@@ -73,6 +74,9 @@ scene.add(camera);
 // Luz de borde ligada a la cámara: perfila el arma en primera persona para que las oscuras no se pierdan en la sala
 const rim = new THREE.DirectionalLight(0xbfd8ff, 0.4); rim.position.set(0.8, 0.6, -1.2); camera.add(rim); camera.add(rim.target); rim.target.position.set(0, -0.2, 0.5);
 const world = buildRange(scene);
+// Asistente del hall: pantalla con cara sobre la puerta del campo de tiro (pared del fondo, z = 28), mirando al hall
+const hallBot = new HallBot({ pos: new THREE.Vector3(0, 5.85, 27.86), rotY: Math.PI, name: () => settings.playerName ?? "", volume: () => settings.volume, voice: () => settings.botVoice !== false });
+scene.add(hallBot.mesh);
 // Postproceso: resplandor (bloom) sobre lo que brilla de verdad (neón, fogonazos); fuerte de noche, suave de día
 // Cámara del arma (como en los shooters, «viewmodel FOV»): arma y brazos se dibujan encima con un campo de visión más
 // estrecho, retrasada para que el tamaño aparente no cambie; con el campo de visión del mundo (75°) las armas largas se
@@ -1290,6 +1294,7 @@ async function boot() {
       const now = performance.now() / 1000;
       while (sim.log.length && now - sim.log[0][0] > 3) sim.log.shift();
       const dps = sim.log.reduce((a, x) => a + x[1], 0) / 3;
+      { const p = player.pos, inHall = state === "play" && !raid.active && p.x > -24 && p.x < 24 && p.z > 0 && p.z < 28; hallBot.update(dt, inHall, p); }
       world.update(dt, { dps, ttk: sim.ttk, accuracy: sim.shots ? Math.min(1, sim.hits / sim.shots) : null, distance: sim.distance, message: t(now - sim.lastShot < 2 ? "sim.active" : "sim.calibrating") });
     }
     // Miras: visor a pantalla completa o retícula de punto rojo / holográfica

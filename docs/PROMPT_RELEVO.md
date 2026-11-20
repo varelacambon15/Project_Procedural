@@ -4,8 +4,6 @@
 
 ---
 
-Antes de empezar: los assets nuevos están en la rama assets-miras-hierro (solo cambia raw/). Fusiónala en tu rama con "git fetch origin assets-miras-hierro && git merge origin/assets-miras-hierro" y vuelve a convertir los assets. raw/pack2 es nuevo: contiene solo las 7 armas seleccionadas.
-
 Vas a continuar durante un tiempo el desarrollo de mi juego. Otro chat lo ha llevado hasta ahora y lo retomará
 después, así que deja todo documentado y subido. Háblame siempre en **español de España, con tuteo**.
 
@@ -18,6 +16,9 @@ después, así que deja todo documentado y subido. Háblame siempre en **españo
   Se distribuye para Windows y Linux con Electron, y para Android en APK con Capacitor 6.2.0.
 - **Repositorio:** `varelacambon15/Project_Procedural`, que es **privado**.
 - **Rama:** `ccr-9154dbc6-lqpjb5`. Trabaja y sube **solo** a esta rama. No abras pull requests salvo que te lo pida.
+- **Estado actual (noviembre 2026):** la última versión publicada es la **0.18.0**. Después hay mucho trabajo
+  subido y sin publicar: equipamiento, súperes nuevas, tienda ampliada y asistente del hall. Está todo en
+  **`docs/ESTADO.md`, sección «Ronda 38»**. Léela primero.
 - **Antes de empezar:** lee `docs/ESTADO.md`. Es el mapa del código y el historial por rondas. Si vas a tocar
   kits, lee también `docs/ENCARGO_KITS.md`.
 
@@ -26,15 +27,18 @@ después, así que deja todo documentado y subido. Háblame siempre en **españo
 1. **Commits pequeños**, con `npm test` y `npm run build` en verde antes de cada push.
    - Si los tests van justos de memoria, usa:
      `timeout 900 npx vitest run --minWorkers=1 --maxWorkers=2`.
-   - **No cambies los valores esperados de los tests existentes.** Si un test falla, arregla el código, no el test.
+   - **No cambies los valores esperados de los tests existentes sin decírmelo.** Si un test falla, arregla el
+     código. Si el cambio es inevitable (por ejemplo, el número de súperes), avísame en tu respuesta.
      Sí puedes añadir tests nuevos.
+   - Hay 141 tests. La batería completa tarda unos 8–10 minutos: lánzala en segundo plano.
 2. **Pie de los commits:**
    - Pon al final el pie de atribución que te indique tu propia sesión.
    - No pongas identificadores de modelo en commits ni en el código.
 3. **No toques `CREDITS.md`.** No hagas preguntas sobre licencias o procedencia de los assets.
 4. **No recrees juegos existentes.** Se pueden tomar ideas de estilo (por ejemplo, el apuntado "estilo Black"),
    pero el juego es propio.
-5. **Luces de color solo en las armas legendarias.**
+5. **Luces de color solo en las armas legendarias.** No añadas luces nuevas a la escena: para que algo brille, usa
+   materiales emisivos o aditivos (`MeshBasicMaterial` con `AdditiveBlending`).
 6. **Cuidado con el rendimiento:**
    - El número de luces de la escena debe ser **fijo**. Si cambia, Three.js recompila los shaders y el juego se
      congela unos segundos. Por eso se quitó la luz del arma tirada en el suelo.
@@ -49,11 +53,13 @@ después, así que deja todo documentado y subido. Háblame siempre en **españo
 
 ### Publicar una versión
 
-1. Sube `version` en `package.json` (la última publicada es la **0.8.2**).
+1. Sube `version` en `package.json` (la última publicada es la **0.18.0**).
 2. Haz commit y push.
-3. Lanza el workflow `.github/workflows/release.yml` con `workflow_dispatch` y ref igual a la rama. Genera los
-   instaladores de Windows y Linux y la APK de Android en GitHub Releases.
-4. Cuando termine, comprueba que la release salió bien y pásame el enlace.
+3. Lanza el workflow `.github/workflows/release.yml` con `workflow_dispatch` y ref igual a la rama
+   (herramienta MCP `actions_run_trigger`, método `run_workflow`). Genera los instaladores de Windows y Linux y la
+   APK de Android en GitHub Releases.
+4. Unos 25 minutos después (programa un aviso con `send_later`), comprueba que la release salió bien y pásame los
+   enlaces de descarga.
 
 ### Distribución
 
@@ -151,28 +157,34 @@ Es la **opción C**:
 
 ## 5. Tareas pendientes (por prioridad)
 
-1. **Integrar las piezas sueltas de la biblioteca** (`raw/kit39/piezas_sueltas`): culatas, guardamanos,
-   cargadores, empuñaduras y bocachas.
-   - De momento solo están integradas las **miras** (kind `libsight`, ids `k-att-<tipo>-l<id>`).
-   - Hay que convertirlas y montarlas en las anclas existentes usando su `seccion_union_m`, y que el generador las
-     use con criterio.
-   - Respeta el estilo de cada arma y la regla del bullpup.
-2. **Pulir manos y brazos:**
-   - mano de apoyo en pistolas;
-   - forma y estrechamiento del antebrazo;
-   - volumen de la palma;
-   - dedos bien cerrados sobre empuñadura y guardamanos.
-3. **Revisar la distancia y la naturalidad del arma en pantalla,** caso por caso y por categoría. Algunas armas
-   aún se ven lejanas o poco naturales.
-4. **Ampliar las piezas compartidas entre grupos:**
-   - frontales de subfusil en pistolas;
-   - culatas y empuñaduras en escopetas;
-   - piezas entre fusiles, francotiradores y ametralladoras ligeras.
-   Que se vea natural y sin perder variedad.
-5. **(Aplazado)** Campo de tiro con un estilo más "Coded Arms". Solo si te lo pido.
+La lista detallada y al día está en `docs/ESTADO.md`, sección «Ronda 38 → Pendiente». En resumen:
 
-Estoy pendiente de probar la 0.8.2 (agarres, dedos y apuntado estilo Black). Lo que te comente al respecto tiene
-prioridad.
+1. **Súperes:** llegar a 25 (20 normales y 5 legendarias) y montar la categoría legendaria.
+   - Legendarias: Nova espiritual seguro. Para las otras 4 propuse orbital, cañón de riel, parada del tiempo y
+     vórtice; **pregúntame si no lo he confirmado**.
+   - Para las normales que faltan te mandaré referencias, a menudo de las definitivas de Dragon Ball Xenoverse 2.
+     Adáptalas a mi juego: energía y tecnología, nunca copias.
+2. **Equipamiento:** sonidos propios, desbloqueo por progreso y desguace y mejora de rareza con chatarra.
+3. **Asistente del hall** (`hallbot.ts`): frases según el contexto y probarlo con voz real.
+4. Pendientes antiguos:
+   - enemigos cuerpo a cuerpo que no suben a las pasarelas;
+   - miras de las LMG y escopetas generadas por código;
+   - diseños de armadura;
+   - crafteo con chatarra;
+   - posturas de armas concretas que te marque.
+
+Cuando acabes un bloque grande, o cuando te lo pida, publica la **0.19.0**.
+
+### Mapa del código añadido en la ronda 38
+| Zona | Archivos |
+|---|---|
+| Equipamiento | `src/game/gadgets.ts` (tipos, rarezas, `makeGadget`), `src/game/gadgetfx.ts` (efectos y hooks), main.ts (`gpouch`, `gadgets`, `dropGadget`/`pickGadget`, `injectT`, `chronoT`), `ui/inventory.ts` (`renderGadgets`), `ui/common.ts` (`gadgetCard`) |
+| Súperes | `src/game/supers.ts` (`SuperId`, `SUPER_IDS`), `supers.json` (animación y números), `superfx.ts` (efectos por id; `torrentShard`, `beamTick`), main.ts (`SIG` sonidos, `timeSnd`, `superHud`), `ui/inventory.ts` (`GLYPH`) |
+| Controles | `src/game/input.ts` (LB = equipamiento, RB = granada, LB+RB = súper con ventana `bumpT`) |
+| Tienda | `src/data/shop.json` (`showcase.slots`: 6 armas), `ui/shop.ts` (`extraKind`, `nadeAt`, `gadgetAt`, `armorAt`: 2 huecos extra) |
+| Asistente del hall | `src/game/hallbot.ts`, `settings.ts` (`playerName`, `botVoice`), `ui/start.ts` (campo de nombre), textos `bot.*` en `src/i18n-menus.ts` |
+| Incursión / hack | `src/game/raidgen.ts` (`RAID_THEMES`, formas, pasarelas), `hackgen.ts`, `raid.ts`, `merge.ts` |
+| Textos | `src/i18n.ts` (súperes `sp.*`) y `src/i18n-menus.ts` (equipamiento `gd.*`, ajustes `set.*`, asistente `bot.*`). Siempre en inglés y en español |
 
 ## 6. Al terminar tu turno
 
