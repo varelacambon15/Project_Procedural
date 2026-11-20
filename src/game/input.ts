@@ -1,6 +1,8 @@
 // Capa de entrada abstracta: el juego pregunta por acciones, no por teclas. Teclado/ratón, mando y táctil a la vez.
 import { TouchControls } from "./touch";
 
+/** Ⓧ del mando: lo que hay que mantener para usar o recoger (pulsar y soltar antes, recarga). */
+const USE_HOLD = 0.18;
 export interface Frame {
   moveX: number; moveZ: number;          // -1..1 (Z positivo = adelante)
   lookX: number; lookY: number;          // radianes a girar este fotograma
@@ -125,8 +127,8 @@ export class Input {
       const uh = b(P.useReload);
       if (uh) {
         if (this.useT < 0) { this.useT = 0; this.useDone = false; }
-        this.useT += dt; this.useHold = Math.min(1, this.useT / 0.35);
-        if (!this.useDone && this.useT >= 0.35) { this.useDone = true; f.holdUse = true; }
+        this.useT += dt; this.useHold = Math.min(1, this.useT / USE_HOLD);
+        if (!this.useDone && this.useT >= USE_HOLD) { this.useDone = true; f.holdUse = true; }
       } else if (this.useT >= 0) { if (!this.useDone) f.reload = true; this.useT = -1; this.useHold = 0; }
       f.inventory ||= !!edges[8]; f.pause ||= !!edges[9];
     }
