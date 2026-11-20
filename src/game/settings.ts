@@ -9,7 +9,9 @@ export interface Settings {
   music: number;         // 0..1, sobre el volumen general
   arms: boolean;         // brazos low-poly en primera persona
   night: boolean;        // campo de tiro de noche con neón (si no, de día)
-  bloom: boolean;        // resplandor del neón y de los fogonazos (postproceso)
+  bloom: boolean;
+  /** Escala de resolución del render (1 = nativa; menos = más rápido en equipos flojos). */ renderScale: number;
+  /** Contador de fotogramas por segundo en pantalla. */ showFps: boolean;        // resplandor del neón y de los fogonazos (postproceso)
   mapV: number;          // versión del mapa (migración de ajustes)
   dev: boolean;          // modo desarrollador: todos los súperes y su carga, y atajos para probar
   sprintToggle: boolean; // correr: pulsar para activar/desactivar (si no, mantener)
@@ -22,7 +24,7 @@ export interface Settings {
   padBinds: Record<string, number>; // botones del mando por acción
 }
 const KEY = "pp.settings";
-const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: false, bloom: true, mapV: 2, dev: false, sprintToggle: false, aimToggle: false, crouchToggle: false, invertY: false, adsSens: 1, padSens: 1, binds: {}, padBinds: {} };
+const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: false, bloom: true, renderScale: 1, showFps: false, mapV: 2, dev: false, sprintToggle: false, aimToggle: false, crouchToggle: false, invertY: false, adsSens: 1, padSens: 1, binds: {}, padBinds: {} };
 const listeners = new Set<(s: Settings) => void>();
 
 function load(): Settings {

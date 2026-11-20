@@ -78,7 +78,7 @@ export class StartScreen {
       <div class="row"><span>${t("set.pixel")}</span><div class="seg">${PIXEL_LEVELS.map((p) => `<button type="button" class="chip ${p === pixelLevel() ? "on" : ""}" data-px="${p}">${p}</button>`).join("")}</div></div>
       ${range("volume", 0, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}
       ${range("music", 0, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}
-      ${toggle("damageNumbers")}${toggle("impactFx")}${toggle("screenShake")}${toggle("arms")}${toggle("night")}${toggle("bloom")}
+      ${toggle("damageNumbers")}${toggle("impactFx")}${toggle("screenShake")}${toggle("arms")}${toggle("night")}${toggle("bloom")}${range("renderScale", 0.5, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}${toggle("showFps")}
       <div class="row"><span>${t("ui.language")}</span><div class="seg">${LANGS.map((l) => `<button type="button" class="chip ${l.id === getLang() ? "on" : ""}" data-lang="${l.id}">${l.name}</button>`).join("")}</div></div>
       <h3>${t("set.devTitle")}</h3>${toggle("dev")}
       ${s.dev ? `<p class="note">${t("set.devNote")}</p><div class="row dev-actions">${["lvl1", "lvl10", "cr", "modules", "armor", "raid"].map((a) => `<button type="button" class="chip" data-dev="${a}">${t(`set.dev.${a}`)}</button>`).join("")}</div>` : ""}

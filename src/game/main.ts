@@ -102,6 +102,12 @@ const weaponDarkness = (spec: WeaponSpec | null | undefined) => {
 };
 const applyLook = () => { world.setNight(settings.night); rim.intensity = (settings.night ? 0.8 : 0.4) + darkBoost * 1.1; rim.color.set(settings.night ? 0xc8b0ff : 0xbfd8ff); fill.intensity = settings.night ? 0.5 : 0; bloom.enabled = settings.bloom; bloom.strength = settings.night ? 0.55 : 0.3; renderer.toneMappingExposure = settings.night ? 1.25 : 1.0; };
 applyLook(); onSettings(applyLook);
+// Resolución del render (ajuste) y contador de FPS
+const applyScale = () => { const pr = Math.min(devicePixelRatio, 1.5) * (settings.renderScale ?? 1); if (Math.abs(renderer.getPixelRatio() - pr) > 0.01) { renderer.setPixelRatio(pr); resize(); } };
+const fpsEl = (() => { const e = document.createElement("div"); e.id = "fps"; e.style.cssText = "position:fixed;top:6px;right:8px;z-index:50;font:12px monospace;color:#7affc8;background:rgba(0,0,0,0.5);padding:2px 6px;pointer-events:none"; e.hidden = true; document.body.appendChild(e); return e; })();
+let fpsN = 0, fpsT = performance.now();
+const fpsTick = () => { if (!settings.showFps) { fpsEl.hidden = true; return; } fpsN++; const n = performance.now(); if (n - fpsT >= 500) { fpsEl.hidden = false; fpsEl.textContent = `${Math.round((fpsN * 1000) / (n - fpsT))} FPS · ${renderer.info.render.calls} dc`; fpsN = 0; fpsT = n; } };
+applyScale(); onSettings(applyScale);
 startMusic("./music/ambient-03.ogg");
 // Pack de sonidos (assets/sonidos): manifest ahora; las muestras de cada arma se cargan al equiparla
 void initSounds("./sonidos/").then((m) => { if (m) void loadSamples(["melee_cuchillo_swing", "melee_cuchillo_golpe", "melee_culatazo", "recoger_arma", "explosion"].flatMap((k) => m.efectos[k] ?? [])); });
@@ -1203,7 +1209,7 @@ async function boot() {
     hud();
     // Detrás del inventario, el taller y la máquina la sala apenas se ve: se redibuja 1 de cada 4 fotogramas
     // (el inicio y la pausa la mantienen viva). Así abrir un menú no cuesta más que jugar.
-    frameNo++;
+    frameNo++; fpsTick();
     // Sombras: solo en el complejo (la luz que las proyecta no llega a la incursión) y cada 2 fotogramas
     renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = !raid.active && frameNo % 2 === 0;
     if (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0) draw();
