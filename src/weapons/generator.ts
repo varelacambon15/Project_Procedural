@@ -1343,6 +1343,9 @@ const WHOLE_OUT = new Set<string>([
   "x-pistol-3",
 ]);
 const RETIRED = new Set<string>([
+  // Muy poco detalle (una sola pieza y < 750 triángulos) o no encajan en primera persona (decisión del usuario)
+  "z-shotgun-01", "z-shotgun-02", "z-shotgun-03", "z-pistol-02", "w-sawedoff", "q-shotgun-2", "q-shotgun-4", "w-garand",
+  "w-sten", "q-assaultrifle2-1",
   "p-machine-gun-2", // como fusil quedaba un cajón de ametralladora tosco con culata de caja
   "u-fusil-a", "u-bullpup-b", // ARX y TAR-21 antiguos: sustituidos por las versiones limpias del kit (x-arx-160, x-tar-21)
   "x-subfusil-10", // subfusil del kit de bloques: con cualquier pieza quedaba deforme (decisión del usuario, "Hound")
