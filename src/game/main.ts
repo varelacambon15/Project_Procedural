@@ -740,12 +740,22 @@ async function boot() {
     onHit(d, point, dmg, element) { const alive = d.alive; notGun = true; gun.hooks.onHit(d, "body", point, dmg, element, false); if (alive && !d.alive) gun.hooks.onKill?.(d); notGun = false; },
     sound: (k) => { const e = soundManifest?.efectos; if (!e) return; if (k === "boom") { const x = e.explosion; if (x?.length) playSample(sample(x[Math.floor(Math.random() * x.length)]), 0.25, 1.2); } else if (k === "zap") { const l = e.flash_aturdidora; if (l?.length) playSample(sample(l[0]), 0.12, 1.8); } },
   });
+  let waveTerm: THREE.Group | null = null;
   function startDefense() {
     const seed = (Math.random() * 2 ** 31) | 0, at = raid.startNode(seed, "fight", [], 0, Math.floor(Math.random() * 5), true), room = raid.map!.rooms[1];
     Object.assign(dmode, { active: true, wave: 0, credits: START_CREDITS, phase: "build", t: BUILD_TIME, queue: [], spawnT: 0, rnd: seedRng(seed) });
     defense.setup(new THREE.Vector3(RAID_ORIGIN.x + room.cx, 0, RAID_ORIGIN.z + room.cz), Math.min(room.w, room.d) / 2 - 2, seedRng(seed ^ 77), room.covers.map((c) => ({ x: RAID_ORIGIN.x + c.x, z: RAID_ORIGIN.z + c.z, r: Math.max(c.w, c.d) / 2 })));
     mobs.core = { pos: defense.core.pos, targets: (k) => !HUNTERS.has(k), hit: (dmg) => { if (defense.hitCore(dmg)) defenseEnd(); } };
     player.pos.copy(defense.core.pos).add(new THREE.Vector3(0, 0, 4)); player.vel.set(0, 0, 0); player.yaw = 0; player.pitch = 0; void at;
+    // Terminal junto al núcleo: E para adelantar la oleada
+    if (waveTerm) scene.remove(waveTerm);
+    waveTerm = new THREE.Group(); waveTerm.position.copy(defense.core.pos).add(new THREE.Vector3(3.2, 0, 1.5)); waveTerm.rotation.y = -0.6;
+    { const st = new THREE.MeshStandardMaterial({ color: 0x3a4048, metalness: 0.5, roughness: 0.5 }), gl = new THREE.MeshStandardMaterial({ color: 0xff4a3a, emissive: 0xff4a3a, emissiveIntensity: 1.4 });
+      const ped = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.0, 0.45), st); ped.position.y = 0.5; waveTerm.add(ped);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.06, 0.55), st); top.position.y = 1.04; top.rotation.x = -0.35; waveTerm.add(top);
+      const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 16), gl); btn.position.set(0, 1.09, 0.02); btn.rotation.x = -0.35; waveTerm.add(btn);
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.03, 0.02), gl); strip.position.set(0, 0.95, 0.24); waveTerm.add(strip); }
+    scene.add(waveTerm);
     php.reset(); waves.stop(); toast(t("df.go", { s: BUILD_TIME }));
   }
   function defenseTick(dt: number, f: { interact: boolean; holdUse?: boolean; reload: boolean }) {
@@ -753,7 +763,7 @@ async function boot() {
     if (dmode.phase === "build") {
       dmode.t -= dt;
       // E lejos de las plataformas: lanzar ya la oleada (con premio por cada segundo adelantado)
-      if (f.interact && !defense.padNear(player.pos) && dmode.t < (dmode.wave ? BUILD_BETWEEN : BUILD_TIME) - 1.5) { const bonus = Math.round(dmode.t * EARLY_BONUS); if (bonus > 0) { dmode.credits += bonus; toast(t("df.early", { c: bonus })); } dmode.t = 0; }
+      if (f.interact && waveTerm && player.pos.distanceTo(waveTerm.position) < 2 && dmode.t < (dmode.wave ? BUILD_BETWEEN : BUILD_TIME) - 1.5) { const bonus = Math.round(dmode.t * EARLY_BONUS); if (bonus > 0) { dmode.credits += bonus; toast(t("df.early", { c: bonus })); } dmode.t = 0; }
       if (dmode.t <= 0) { dmode.wave++; dmode.phase = "wave"; dmode.queue = coreWave(dmode.wave, dmode.rnd); dmode.spawnT = 0.5; mobs.index = Math.floor(dmode.wave * 0.8); defense.waveStart(); toast(t("df.wave", { n: dmode.wave })); }
     } else {
       if (dmode.queue.length) { dmode.spawnT -= dt; if (dmode.spawnT <= 0) { dmode.spawnT = SPAWN_GAP; for (let k = 0; k < 2 && dmode.queue.length; k++) { const room = raid.map!.rooms[1], side = Math.floor(Math.random() * 3), u = (Math.random() - 0.5) * Math.min(room.w * 0.8, 46);
@@ -794,7 +804,7 @@ async function boot() {
     if (!dmode.active) return; dmode.active = false; mobs.core = null;
     const cr = Math.round(dmode.wave * (60 + inv.progress.level * 4) * curPerks.fortune); if (cr > 0) earn(cr);
     gainXp(xpToNext(inv.progress.level) * Math.min(2, dmode.wave * 0.1));
-    toast(t("df.end", { n: dmode.wave, c: cr })); defense.clear(); $("raidmenu").hidden = true; returnHub(false); resume();
+    toast(t("df.end", { n: dmode.wave, c: cr })); defense.clear(); if (waveTerm) { scene.remove(waveTerm); waveTerm = null; } $("raidmenu").hidden = true; returnHub(false); resume();
   }
 
   // ---------- Modo Hack: red de nodos por profundidad, extracción o seguir bajando ----------
@@ -1045,6 +1055,7 @@ async function boot() {
       else if (gnade) $("prompt").innerHTML = `${key}${t("ui.pickupNade")}`;
       else if (garmor) $("prompt").innerHTML = `${key}${t("ar.pickup")}`;
       else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : near.id === "raid" ? "rd.use" : near.id === "survival" ? "sv.use" : near.id === "defense" ? "df.use" : near.id === "hack" ? "hk.use" : "ui.useBench")}`;
+      if (dmode.active && dmode.phase === "build" && waveTerm && player.pos.distanceTo(waveTerm.position) < 2) { $("prompt").hidden = false; $("prompt").innerHTML = `${key}${t("df.startNow")}`; }
       // Ficha del arma del suelo comparada con la que llevas
       const card = $("pickcard");
       if ((ground ?? gnade ?? garmor) !== shownPickup) {
