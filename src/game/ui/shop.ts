@@ -71,7 +71,7 @@ export class ShopScreen {
     const { sc, specs } = this.showcase();
     $("shop-credits").textContent = `${cr} ${t("unit.cr")}`;
     $("shop-level").textContent = "";
-    const EX = specs.length, extra = this.nadeAt(EX) ? this.nadeTile(EX, !!sc.sold[EX]) : this.gadgetAt(EX) ? this.gadgetTile(EX, !!sc.sold[EX]) : this.armorTileShop(EX, !!sc.sold[EX]);
+    const extra = [specs.length, specs.length + 1].map((EX) => this.nadeAt(EX) ? this.nadeTile(EX, !!sc.sold[EX]) : this.gadgetAt(EX) ? this.gadgetTile(EX, !!sc.sold[EX]) : this.armorTileShop(EX, !!sc.sold[EX])).join("");
     const tiles = specs.map((s, i) => {
       const price = showcasePrice(s.rarity.id, s.level), sold = sc.sold[i];
       const btn = sold ? `<span class="soldtag">${t("shop.soldOut")}</span>`
@@ -112,20 +112,21 @@ export class ShopScreen {
   }
   /** Huecos del escaparate que esta ronda ofrecen una granada en lugar de un arma (≈ 1 de cada 6, deterministas). */
   private extraKind(i: number) {
-    if (i !== SHOWCASE.slots.length) return -1;
-    const { sc } = this.showcase(); return (Math.imul((sc.seed * 7 + sc.round * 131) | 0, 2654435761) >>> 0) % 3; // 0 granada · 1 equipamiento · 2 armadura
+    const k = i - SHOWCASE.slots.length; if (k !== 0 && k !== 1) return -1;
+    // (dos huecos extra de tipos distintos: 0 granada · 1 equipamiento · 2 armadura)
+    const { sc } = this.showcase(); return ((Math.imul((sc.seed * 7 + sc.round * 131) | 0, 2654435761) >>> 0) + k) % 3;
   }
   private nadeCache = new Map<string, ReturnType<typeof makeGrenade>>();
   private nadeAt(i: number) {
     if (this.extraKind(i) !== 0) return null;
-    const { sc } = this.showcase(), key = `${sc.seed}:${sc.round}`; let g = this.nadeCache.get(key);
+    const { sc } = this.showcase(), key = `${sc.seed}:${sc.round}:${i}`; let g = this.nadeCache.get(key);
     if (!g) { g = makeGrenade(sc.seed * 7 + sc.round * 131 + i * 17 + 5); this.nadeCache.set(key, g); }
     return g;
   }
   private gadgetCache = new Map<string, ReturnType<typeof makeGadget>>();
   private gadgetAt(i: number) {
     if (this.extraKind(i) !== 1) return null;
-    const { sc } = this.showcase(), key = `${sc.seed}:${sc.round}`; let g = this.gadgetCache.get(key);
+    const { sc } = this.showcase(), key = `${sc.seed}:${sc.round}:${i}`; let g = this.gadgetCache.get(key);
     if (!g) { g = makeGadget(sc.seed * 11 + sc.round * 173 + 9); this.gadgetCache.set(key, g); }
     return g;
   }
