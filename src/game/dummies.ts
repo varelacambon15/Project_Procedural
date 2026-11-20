@@ -299,7 +299,16 @@ export class Dummy {
     this.part(new THREE.BoxGeometry(0.36, 0.2, 0.2), skinDark, 0, 1.38, 0, "body");
     this.part(cap(0.19, 0.38), skin, 0, 1.68, 0, "body").scale.set(1.15, 1, 0.75);
     // Brazos colgando del hombro (giran desde ahí al andar y al golpear, no desde el centro)
-    const arm = (x: number) => { const sh = new THREE.Group(); sh.position.set(x, 1.86, 0); sh.rotation.z = x < 0 ? 0.18 : -0.18; this.body.add(sh); const m = new THREE.Mesh(cap(0.065, 0.5), skin); m.position.y = -0.3; m.castShadow = true; sh.add(m); m.userData = { dummy: this, zone: "limb" }; this.hitboxes.push(m); return sh; };
+    // (brazo con codo: brazo, antebrazo algo doblado hacia delante y guante; antes era un solo «palo»)
+    const arm = (x: number) => {
+      const sh = new THREE.Group(); sh.position.set(x, 1.86, 0); sh.rotation.z = x < 0 ? 0.18 : -0.18; this.body.add(sh);
+      const hit = (m: THREE.Mesh, parent: THREE.Object3D) => { m.castShadow = true; parent.add(m); m.userData = { dummy: this, zone: "limb" }; this.hitboxes.push(m); return m; };
+      hit(new THREE.Mesh(cap(0.075, 0.2), skin), sh).position.y = -0.15;
+      const el = new THREE.Group(); el.position.y = -0.31; el.rotation.x = -0.35; sh.add(el);
+      hit(new THREE.Mesh(cap(0.062, 0.2), skin), el).position.y = -0.14;
+      const hand = hit(new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.11, 0.07), skinDark), el); hand.position.y = -0.31;
+      return sh;
+    };
     const armL = arm(-0.3), armR = arm(0.3);
     if (L) this.armsH = [armL, armR];
     this.part(new THREE.CylinderGeometry(0.06, 0.07, 0.1, 10), skinDark, 0, 1.98, 0, "body");
