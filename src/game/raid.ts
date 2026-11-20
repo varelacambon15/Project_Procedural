@@ -245,20 +245,34 @@ export class Raid {
       this.states.push(st);
     }
     // Pasillos: suelo, paredes y techo entre los bordes de las dos salas
-    for (const c of map.corridors) {
+    for (const [ci, c] of map.corridors.entries()) {
       const a = map.rooms[c.a], b = map.rooms[c.b], alongZ = a.cell[0] === b.cell[0];
-      if (alongZ) {
-        const [lo, hi] = a.cz < b.cz ? [a, b] : [b, a], z0 = lo.cz + lo.d / 2 + 1, z1 = hi.cz - hi.d / 2 - 1, L = z1 - z0, zc = (z0 + z1) / 2;
-        plane(c.width, L + 2, a.cx, 0, zc, floorFor(c.width, L + 2));
-        plane(c.width + 2, L + 2, a.cx, CH, zc, ceilMat, false);
-        for (const sx of [-1, 1]) box(1, CH, L + 2, a.cx + sx * (c.width / 2 + 0.5), CH / 2, zc, wallMat);
-        for (let z = z0 + 2; z < z1; z += 6) box(1.2, 0.05, 2.5, a.cx, CH - 0.04, z, panel, false);
-      } else {
-        const [lo, hi] = a.cx < b.cx ? [a, b] : [b, a], x0 = lo.cx + lo.w / 2 + 1, x1 = hi.cx - hi.w / 2 - 1, L = x1 - x0, xc = (x0 + x1) / 2;
-        plane(L + 2, c.width, xc, 0, a.cz, floorFor(L + 2, c.width));
-        plane(L + 2, c.width + 2, xc, CH, a.cz, ceilMat, false);
-        for (const sz of [-1, 1]) box(L + 2, CH, 1, xc, CH / 2, a.cz + sz * (c.width / 2 + 0.5), wallMat);
-        for (let x = x0 + 2; x < x1; x += 6) box(2.5, 0.05, 1.2, x, CH - 0.04, a.cz, panel, false);
+      // Ejes del pasillo: u a lo largo, v de través (para escribirlo una vez para los dos sentidos)
+      const [lo, hi] = alongZ ? (a.cz < b.cz ? [a, b] : [b, a]) : (a.cx < b.cx ? [a, b] : [b, a]);
+      const u0 = alongZ ? lo.cz + lo.d / 2 + 1 : lo.cx + lo.w / 2 + 1, u1 = alongZ ? hi.cz - hi.d / 2 - 1 : hi.cx - hi.w / 2 - 1, L = u1 - u0, v0 = alongZ ? a.cx : a.cz;
+      const at = (u: number, v: number) => (alongZ ? [v, u] : [u, v]) as [number, number];
+      const B = (lu: number, lv: number, h: number, u: number, v: number, y: number, m: THREE.Material, col = true) => { const [x, z] = at(u, v); return alongZ ? box(lv, h, lu, x, y, z, m, col) : box(lu, h, lv, x, y, z, m, col); };
+      const PL = (lu: number, lv: number, u: number, y: number, m: THREE.Material, up = true) => { const [x, z] = at(u, v0); return alongZ ? plane(lv, lu, x, y, z, m, up) : plane(lu, lv, x, y, z, m, up); };
+      const W = c.width, rr = rng(map.seed * 31 + ci * 977);
+      // Chicane: algunos pasillos largos se ensanchan en el centro con un muro en medio que obliga a rodearlo en S
+      const chic = L >= 12 && rr() < 0.55, m = chic ? Math.min(10, L * 0.55) : 0, W2 = W + 6, mc = (u0 + u1) / 2;
+      const segs: [number, number][] = chic ? [[u0 - 1, mc - m / 2], [mc + m / 2, u1 + 1]] : [[u0 - 1, u1 + 1]];
+      for (const [s0, s1] of segs) {
+        const len = s1 - s0, uc = (s0 + s1) / 2;
+        PL(len, W, uc, 0, alongZ ? floorFor(W, len) : floorFor(len, W)); PL(len, W + 2, uc, CH, ceilMat, false);
+        for (const sv of [-1, 1]) B(len, 1, CH, uc, v0 + sv * (W / 2 + 0.5), CH / 2, wallMat);
+        for (let u = s0 + 2; u < s1 - 1; u += 6) B(2.5, 1.2, 0.05, u, v0, CH - 0.04, panel, false);
+      }
+      if (chic) {
+        PL(m, W2, mc, 0, alongZ ? floorFor(W2, m) : floorFor(m, W2)); PL(m, W2 + 2, mc, CH, ceilMat, false);
+        for (const sv of [-1, 1]) {
+          B(m, 1, CH, mc, v0 + sv * (W2 / 2 + 0.5), CH / 2, wallMat);                                  // paredes del tramo ancho
+          for (const su of [-1, 1]) B(1, (W2 - W) / 2, CH, mc + su * (m / 2 - 0.5), v0 + sv * (W / 2 + (W2 - W) / 4), CH / 2, wallMat); // escalones de la boca
+        }
+        // Muro central, desplazado a un lado (el paso queda en zigzag) con franja luminosa
+        const side = rr() < 0.5 ? -1 : 1, mw = W2 - 3.2;
+        B(1.2, mw, CH, mc, v0 + side * (W2 / 2 - mw / 2), CH / 2, wallMat); B(1.24, mw, 0.15, mc, v0 + side * (W2 / 2 - mw / 2), 1.1, trimMat, false);
+        for (let u = mc - m / 2 + 1.5; u < mc + m / 2 - 1; u += 4) B(1.2, 2.5, 0.05, u, v0, CH - 0.04, panel, false);
       }
     }
     // Rendimiento: lo estático se fusiona por material (más de mil piezas → unas decenas de llamadas de dibujo); los
@@ -283,6 +297,18 @@ export class Raid {
       for (let t = -len / 2 + 2; t <= len / 2 - 2; t += 6) { if (nearDoor(s, t)) continue; if (alongX) box(0.5, H, 0.3, cx + t, H / 2, cz + sg * off, k.beamMat, false); else box(0.3, H, 0.5, cx + sg * off, H / 2, cz + t, k.beamMat, false); }
       // zócalo
       if (alongX) box(len, 0.22, 0.12, cx, 0.11, cz + sg * (off + 0.05), k.rackMat, false); else box(0.12, 0.22, len, cx + sg * (off + 0.05), 0.11, cz, k.rackMat, false);
+    }
+    // Relieve en las paredes: paneles que sobresalen, conductos verticales y escotillas (entre pilastras, sin puertas)
+    for (const sd of ["n", "s", "e", "w"] as const) {
+      const alongX = sd === "n" || sd === "s", len = alongX ? w : d, sg = sd === "n" || sd === "e" ? 1 : -1, off = (alongX ? d : w) / 2 - 0.3;
+      for (let t = -len / 2 + 5; t <= len / 2 - 5; t += 6) {
+        if (nearDoor(sd, t) || room.covers.some((c) => (c.kind === "platform" || c.kind === "step" || c.kind === "notch") && Math.abs((alongX ? cx + t : cx + sg * off) - c.x) < c.w / 2 + 1.5 && Math.abs((alongX ? cz + sg * off : cz + t) - c.z) < c.d / 2 + 1.5)) continue;
+        const kind = r(), at = (along: number, out: number) => alongX ? [cx + t + along, cz + sg * (off - out)] as const : [cx + sg * (off - out), cz + t + along] as const;
+        const B = (la: number, h: number, lo: number, along: number, out: number, y: number, m: THREE.Material) => { const [x, z] = at(along, out); return alongX ? box(la, h, lo, x, y, z, m, false) : box(lo, h, la, x, y, z, m, false); };
+        if (kind < 0.4) { B(3.6, H * 0.55, 0.3, 0, 0, H * 0.45, k.rackMat); B(3.2, 0.06, 0.32, 0, H * 0.72, 0.01, k.accentMat); }        // panel saliente con franja
+        else if (kind < 0.7) { for (const o of [-0.5, 0, 0.5]) B(0.28, H, 0.28, o, 0.05, H / 2, k.beamMat); }                             // haz de conductos verticales
+        else { B(2.2, 2.4, 0.18, 0, 0, 1.25, k.rackMat); B(1.6, 0.08, 0.2, 0, 0.01, 2.2, k.accentMat); B(0.12, 1.9, 0.2, -0.75, 0.01, 1.15, k.beamMat); B(0.12, 1.9, 0.2, 0.75, 0.01, 1.15, k.beamMat); } // escotilla
+      }
     }
     // Línea de señalización en el suelo, a 1,6 m de las paredes
     const inset = 1.6;
