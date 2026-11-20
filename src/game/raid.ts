@@ -210,6 +210,7 @@ export class Raid {
       if (room.kind === "fight" || room.kind === "boss") {
         for (const [sx, sz] of [[-1, -1], [1, 1]] as const) {
           const x = cx + sx * (w / 2 - 1.3), z = cz + sz * (d / 2 - 1.3);
+          if (room.covers.some((c) => (c.kind === "platform" || c.kind === "step") && Math.abs(x - c.x) < c.w / 2 + 2 && Math.abs(z - c.z) < c.d / 2 + 2)) continue; // (no tapa la pasarela ni su escalera)
           const c1 = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, H - 1.6, 10), core); c1.position.set(O.x + x, H / 2, O.z + z); g.add(c1);
           const c2 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, H - 1.6, 6), shell); c2.position.copy(c1.position); g.add(c2);
           for (const y of [0.4, H - 0.4]) box(1.1, 0.8, 1.1, x, y, z, capMat, false);
@@ -226,6 +227,10 @@ export class Raid {
         } else if (c.kind === "rack") {
           box(c.w, c.h, c.d, c.x, c.h / 2, c.z, rackMat);
           for (let y = 0.45; y < c.h - 0.2; y += 0.42) for (const s of [-1, 1]) box(c.w * 0.86, 0.04, 0.02, c.x, y, c.z + s * (c.d / 2 + 0.005), y % 0.84 < 0.42 ? ledA : ledB, false);
+        } else if (c.kind === "platform" || c.kind === "step") {
+          // Pasarela elevada (con borde luminoso y barandilla hacia la sala) y sus escalones
+          box(c.w, c.h, c.d, c.x, c.h / 2, c.z, coverMat); box(c.w + 0.04, 0.06, c.d + 0.04, c.x, c.h - 0.02, c.z, trimMat, false);
+          if (c.kind === "platform") { const along = c.w > c.d, ez = c.z + Math.sign(cz - c.z) * c.d / 2, ex = c.x + Math.sign(cx - c.x) * c.w / 2; for (let t = -0.45; t <= 0.46; t += 0.15) box(0.06, 0.9, 0.06, along ? c.x + t * c.w : ex, c.h + 0.45, along ? ez : c.z + t * c.d, rackMat, false); if (along) box(c.w, 0.05, 0.05, c.x, c.h + 0.9, ez, trimMat, false); else box(0.05, 0.05, c.d, ex, c.h + 0.9, c.z, trimMat, false); }
         } else if (c.kind === "wall" || c.kind === "notch") {
           // Muro interior o bloque central, de suelo a techo, con zócalo y franja de color
           const wm = wallFor(Math.max(c.w, c.d), c.h); box(c.w, c.h, c.d, c.x, c.h / 2, c.z, wm);
@@ -292,6 +297,8 @@ export class Raid {
       const t = (r() - 0.5) * (len - 5); if (nearDoor(s, t) || Math.abs(t) > len / 2 - 2) continue;
       const depth = (alongX ? d : w) / 2 - 0.9;
       const P = (along: number, out: number) => alongX ? [cx + t + along, cz + sg * (depth - out)] as const : [cx + sg * (depth - out), cz + t + along] as const;
+      // (nada de atrezo sobre pasarelas, escaleras ni recortes de la planta)
+      { const [px, pz] = P(0, 0); if (room.covers.some((c) => (c.kind === "platform" || c.kind === "step" || c.kind === "notch") && Math.abs(px - c.x) < c.w / 2 + 1.6 && Math.abs(pz - c.z) < c.d / 2 + 1.6)) continue; }
       const kind = r();
       if (kind < 0.35) { // cajas apiladas
         const [x, z] = P(0, 0); const sz = 0.9 + r() * 0.3; box(sz, sz, sz, x, sz / 2, z, k.crateMat); box(sz + 0.02, 0.08, sz + 0.02, x, sz * 0.5, z, k.crateDark, false);

@@ -9,19 +9,19 @@ export type RoomStyle = "crates" | "pillars" | "racks" | "arena" | "halls" | "ri
 export type RoomGoal = "purge" | "waves" | "timed";
 export interface RaidRoom { i: number; kind: RoomKind; goal: RoomGoal; limit: number; cx: number; cz: number; w: number; d: number; cell: [number, number]; covers: RaidBox[]; enemies: string[]; style: RoomStyle; h: number; shape: RoomShape }
 /** Caja en el plano (centro, medidas) y altura. */
-export interface RaidBox { x: number; z: number; w: number; d: number; h: number; kind?: "crate" | "pillar" | "rack" | "barrier" | "wall" | "notch" }
+export interface RaidBox { x: number; z: number; w: number; d: number; h: number; kind?: "crate" | "pillar" | "rack" | "barrier" | "wall" | "notch" | "platform" | "step" }
 export interface RaidCorridor { a: number; b: number; x0: number; z0: number; x1: number; z1: number; width: number }
 /**
  * Tema de la incursión: decide el carácter de todo el mapa (formas de sala, estilos de cobertura, tamaños, paleta y
  * densidad de detalle), para que cada incursión se sienta distinta aunque compartan piezas.
  */
-export interface RaidTheme { id: string; styles: RoomStyle[]; shapes: number; size: [number, number]; palettes: number[]; columns: number; corridorW: [number, number] }
+export interface RaidTheme { id: string; /** Probabilidad de pasarela elevada con escalera en una sala grande. */ platforms?: number; styles: RoomStyle[]; shapes: number; size: [number, number]; palettes: number[]; columns: number; corridorW: [number, number] }
 export const RAID_THEMES: RaidTheme[] = [
-  { id: "datacore", styles: ["racks", "halls", "racks", "ring"], shapes: 0.5, size: [18, 34], palettes: [1, 0], columns: 1, corridorW: [5, 6] },     // centro de datos: filas de servidores, columnas de datos
-  { id: "foundry", styles: ["crates", "pillars", "arena", "crates"], shapes: 0.7, size: [22, 40], palettes: [2, 4], columns: 0.3, corridorW: [6, 9] }, // fundición: naves grandes y oxidadas
-  { id: "labyrinth", styles: ["halls", "halls", "ring", "pillars"], shapes: 0.9, size: [16, 28], palettes: [0, 3], columns: 0.5, corridorW: [5, 5] }, // laberinto: salas recortadas y estrechas
-  { id: "arena", styles: ["arena", "ring", "pillars", "arena"], shapes: 0.2, size: [28, 40], palettes: [4, 0], columns: 0.6, corridorW: [7, 9] },      // circuito de combate: ruedos amplios
-  { id: "biolab", styles: ["pillars", "crates", "halls", "ring"], shapes: 0.6, size: [18, 32], palettes: [3, 1], columns: 0.8, corridorW: [5, 7] },  // laboratorio: verde químico
+  { id: "datacore", platforms: 0.3, styles: ["racks", "halls", "racks", "ring"], shapes: 0.5, size: [18, 34], palettes: [1, 0], columns: 1, corridorW: [5, 6] },     // centro de datos: filas de servidores, columnas de datos
+  { id: "foundry", platforms: 0.7, styles: ["crates", "pillars", "arena", "crates"], shapes: 0.7, size: [22, 40], palettes: [2, 4], columns: 0.3, corridorW: [6, 9] }, // fundición: naves grandes y oxidadas
+  { id: "labyrinth", platforms: 0.2, styles: ["halls", "halls", "ring", "pillars"], shapes: 0.9, size: [16, 28], palettes: [0, 3], columns: 0.5, corridorW: [5, 5] }, // laberinto: salas recortadas y estrechas
+  { id: "arena", platforms: 0.6, styles: ["arena", "ring", "pillars", "arena"], shapes: 0.2, size: [28, 40], palettes: [4, 0], columns: 0.6, corridorW: [7, 9] },      // circuito de combate: ruedos amplios
+  { id: "biolab", platforms: 0.45, styles: ["pillars", "crates", "halls", "ring"], shapes: 0.6, size: [18, 32], palettes: [3, 1], columns: 0.8, corridorW: [5, 7] },  // laboratorio: verde químico
 ];
 /** Forma de la planta (recortes de suelo a techo en esquinas o lados). */
 export type RoomShape = "box" | "L" | "T" | "cross" | "U";
@@ -155,6 +155,23 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
       if (nearDoor || clash || (room.style !== "halls" && Math.hypot(x - room.cx, z - room.cz) < 3)) continue;
       room.covers.push({ x, z, w, d, h, kind: pillar ? "pillar" : "crate" }); k++;
     }
+  }
+  // Pasarelas elevadas: a lo largo de una pared sin puerta, con escalera de escalones de 0,4 m en un extremo
+  for (const room of rooms) {
+    if ((room.kind !== "fight" && room.kind !== "boss") || room.w < 24 || room.d < 24 || r() > (theme.platforms ?? 0)) continue;
+    const doors = doorsOf({ seed, rooms, corridors, palette: 0, theme: theme.id }, room);
+    const sides = (["n", "s", "e", "w"] as const).filter((sd) => !doors.includes(sd)); if (!sides.length) continue;
+    const sd = sides[Math.floor(r() * sides.length)], alongX = sd === "n" || sd === "s", sg = sd === "n" || sd === "e" ? 1 : -1;
+    const side = alongX ? room.w : room.d, depth = 3.4, H = 2.4, steps = Math.round(H / 0.4), sl = 0.9;
+    const len = Math.min(side * (0.5 + r() * 0.2), side - 2 * ((steps - 1) * sl + 2.5)); if (len < 6) continue; // (la escalera cabe entera dentro de la sala)
+    const off = (alongX ? room.d : room.w) / 2 - depth / 2, a0 = -len / 2;
+    const P = (along: number, out: number, w: number, d: number, h: number, kind: "platform" | "step"): RaidBox => alongX ? { x: room.cx + along, z: room.cz + sg * out, w, d, h, kind } : { x: room.cx + sg * out, z: room.cz + along, w: d, d: w, h, kind };
+    // (fuera lo que estorbe en esa franja: coberturas sueltas pegadas a la pared)
+    room.covers = room.covers.filter((c) => { const along = alongX ? c.x - room.cx : c.z - room.cz, out = alongX ? (c.z - room.cz) * sg : (c.x - room.cx) * sg; return !(out > off - depth / 2 - 2.5 && Math.abs(along) < len / 2 + steps * sl + 2); });
+    // (si un recorte de la planta quedaba en esa franja, la sala vuelve a ser una caja)
+    if (!room.covers.some((c) => c.kind === "notch")) room.shape = "box";
+    room.covers.push(P(0, off, len, depth, H, "platform"));
+    for (let k = 1; k <= steps - 1; k++) room.covers.push(P(a0 - k * sl + sl / 2, off + depth / 2 - 0.8, sl, 1.6, H - k * 0.4, "step"));
   }
   const nFights = fights.length;
   fights.forEach((f, k) => (f.enemies = roomEnemies(r, k, nFights, opt.difficulty)));

@@ -65,15 +65,28 @@ export class Player {
     this.move(this.vel.x * dt, 0); this.move(0, this.vel.z * dt);
     if (this.lungeT > 0) { const k = Math.min(dt, this.lungeT); this.lungeT -= dt; this.move(this.lungeV.x * k, 0); this.move(0, this.lungeV.z * k); }
     this.pos.y += this.vel.y * dt;
-    if (this.pos.y <= 0) { this.pos.y = 0; this.vel.y = 0; this.onGround = true; }
+    // Suelo: el piso o lo más alto que haya bajo los pies (plataformas, escalones); al bajar de un escalón se pega
+    const floor = this.groundAt(this.pos.x, this.pos.z, this.pos.y + Player.STEP);
+    if (this.pos.y <= floor) { this.pos.y = floor; this.vel.y = 0; this.onGround = true; }
+    else if (this.onGround && this.vel.y <= 0 && this.pos.y - floor < Player.STEP + 0.05) { this.pos.y = floor; this.vel.y = 0; }
+    else this.onGround = false;
     const hs = Math.hypot(this.vel.x, this.vel.z);
     if (this.onGround) this.bob += dt * hs * 1.9;
   }
 
+  /** Altura máxima que se sube andando (escalones). */
+  static readonly STEP = 0.42;
+  /** Lo más alto bajo el punto (x, z) que no pase de `maxY` (0 = el piso). */
+  groundAt(x: number, z: number, maxY: number) {
+    let g = 0; const r = this.radius * 0.6;
+    for (const b of this.colliders) if (b.max.y <= maxY && b.max.y > g && x + r > b.min.x && x - r < b.max.x && z + r > b.min.z && z - r < b.max.z) g = b.max.y;
+    return g;
+  }
   private move(dx: number, dz: number) {
     const nx = this.pos.x + dx, nz = this.pos.z + dz;
     for (const b of this.colliders) {
-      if (this.pos.y > b.max.y - 0.05 || this.pos.y + 1.8 < b.min.y) continue;
+      // (lo que asoma poco por encima de los pies se sube andando: escalones y bordes de plataforma)
+      if (this.pos.y > b.max.y - 0.05 || this.pos.y + 1.8 < b.min.y || (this.onGround && b.max.y - this.pos.y <= Player.STEP)) continue;
       if (nx + this.radius > b.min.x && nx - this.radius < b.max.x && nz + this.radius > b.min.z && nz - this.radius < b.max.z) return;
     }
     this.pos.x = nx; this.pos.z = nz;
