@@ -341,6 +341,7 @@ export class Dummy {
       const vein = veinMat(kind);
       if (vein) { for (const x of [-0.31, 0.31]) this.part(new THREE.BoxGeometry(0.012, 0.4, 0.012), vein, x, 1.55, 0.07, null); this.part(new THREE.BoxGeometry(0.014, 0.3, 0.012), vein, 0.06, 1.66, 0.205, null); }
     }
+    if (L) this.dressKind(kind);
     // Soldados: arma en las manos, apuntando al frente (fusil corto o fusil largo con mira)
     if (kind.gun) {
       const g = new THREE.Group(); g.position.set(0.12, 1.55, 0.26); this.body.add(g);
@@ -443,6 +444,7 @@ export class Dummy {
    */
   private animStyle(dt: number, moving: number) {
     const P = this.pose; P.lean = P.dip = P.roll = 0;
+    this.orbsK.forEach((o, i) => { o.position.y += Math.sin(this.walkT * 1.5 + i) * 0.002; o.rotation.y += dt * 2; });
     this.attackT = Math.max(0, this.attackT - dt);
     const k = this.attackT > 0 ? 1 - this.attackT / 0.4 : 0, a = this.attackT > 0 ? Math.sin(k * Math.PI) : 0, key = this.kind.key;
     if (!this.alive) return;
@@ -509,6 +511,72 @@ export class Dummy {
       }
     }
   }
+  /** Rasgos propios de cada tipo de humanoide, para reconocerlo de lejos por su silueta (solo estética). */
+  private dressKind(kind: Kind) {
+    const k = kind.key, B = this.body;
+    const M = (c: number, e = 0, ei = 1.4) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6, metalness: 0.3, emissive: e, emissiveIntensity: e ? ei : 0 });
+    const box = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material, rx = 0, rz = 0) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.rotation.set(rx, 0, rz); o.castShadow = true; B.add(o); return o; };
+    const cyl = (r0: number, r1: number, h: number, x: number, y: number, z: number, m: THREE.Material, seg = 12) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, h, seg), m); o.position.set(x, y, z); o.castShadow = true; B.add(o); return o; };
+    const glow = (c: number) => M(0x101010, c, 2);
+    switch (k) {
+      case "small": { // explorador: antenas y visor amarillo
+        for (const x of [-0.07, 0.07]) { cyl(0.008, 0.008, 0.28, x, 2.4, -0.04, M(0x30343a)); cyl(0.022, 0.022, 0.03, x, 2.55, -0.04, glow(0xffd040)); }
+        box(0.24, 0.05, 0.05, 0, 2.16, 0.15, glow(0xffd040));
+        break;
+      }
+      case "large": case "sturdy": { // pesado: hombreras enormes y peto grueso
+        const pm = M(0x4a4e56);
+        for (const x of [-0.36, 0.36]) { box(0.3, 0.16, 0.36, x, 1.98, 0, pm, 0, -Math.sign(x) * 0.3); box(0.26, 0.04, 0.32, x, 2.07, 0, glow(0xff7a2a), 0, -Math.sign(x) * 0.3); }
+        box(0.56, 0.44, 0.14, 0, 1.68, 0.2, pm); box(0.3, 0.05, 0.02, 0, 1.78, 0.275, glow(0xff7a2a));
+        break;
+      }
+      case "elite": { // élite: cresta y capa
+        box(0.03, 0.14, 0.26, 0, 2.33, -0.02, glow(0xff2a6a));
+        const cape = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.95), new THREE.MeshStandardMaterial({ color: 0x5a0f22, side: THREE.DoubleSide, roughness: 0.9 })); cape.position.set(0, 1.45, -0.31); cape.rotation.x = 0.12; B.add(cape);
+        break;
+      }
+      case "caster": { // lanzador: capucha, túnica y esferas flotando junto a las manos
+        const robe = M(0x23304a);
+        cyl(0.17, 0.11, 0.3, 0, 2.27, -0.03, robe, 10).rotation.x = -0.25;
+        cyl(0.22, 0.34, 0.55, 0, 1.08, 0, robe, 12);
+        for (const x of [-0.42, 0.42]) { const o = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), glow(0x8fd8ff)); o.position.set(x, 1.3, 0.2); B.add(o); this.orbsK.push(o); }
+        break;
+      }
+      case "medic": { // médico: cruces verdes y botiquín
+        const g = glow(0x4aff9a);
+        for (const z of [0.205, -0.3]) { box(0.16, 0.05, 0.02, 0, 1.7, z, g); box(0.05, 0.16, 0.02, 0, 1.7, z, g); }
+        box(0.18, 0.14, 0.12, 0.26, 1.34, 0.06, M(0xe8e8e8)); box(0.08, 0.025, 0.125, 0.26, 1.34, 0.06, M(0xd02a2a));
+        break;
+      }
+      case "commander": { // comandante: penacho, estandarte y banda roja
+        box(0.04, 0.22, 0.12, 0, 2.38, 0, glow(0xffb040));
+        cyl(0.012, 0.012, 1.0, 0.12, 2.2, -0.3, M(0x30343a), 6);
+        const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.24), new THREE.MeshStandardMaterial({ color: 0xc8402e, side: THREE.DoubleSide, emissive: 0x401008 })); flag.position.set(0.3, 2.55, -0.3); B.add(flag);
+        box(0.08, 0.6, 0.02, 0, 1.6, 0.215, M(0xc8402e), 0, 0.6);
+        break;
+      }
+      case "gunner": { // artillero: cinta de munición cruzada
+        box(0.07, 0.62, 0.025, 0, 1.64, 0.215, M(0xb08a3a, 0x201000, 0.5), 0, -0.65);
+        break;
+      }
+      case "sniper": { // francotirador: capa de camuflaje y antena larga
+        const cape = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.8), new THREE.MeshStandardMaterial({ color: 0x3a4a2a, side: THREE.DoubleSide, roughness: 1 })); cape.position.set(0, 1.62, -0.33); cape.rotation.x = 0.2; B.add(cape);
+        cyl(0.006, 0.006, 0.7, -0.12, 2.15, -0.3, M(0x202020), 5);
+        break;
+      }
+      case "glitch": { // fallo de código: fragmentos luminosos alrededor
+        const g = glow(0x3fd0ff);
+        for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; const o = box(0.06, 0.06, 0.06, Math.cos(a) * 0.45, 1.3 + (i % 3) * 0.35, Math.sin(a) * 0.45, g); this.orbsK.push(o); }
+        break;
+      }
+      case "boss": case "warden": { // jefes: corona de pinchos
+        const g = glow(0xff4a3a);
+        for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; const o = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.16, 6), g); o.position.set(Math.sin(a) * 0.14, 2.32, Math.cos(a) * 0.15); B.add(o); }
+        break;
+      }
+    }
+  }
+  /** Esferas y fragmentos que orbitan (lanzador y fallo de código). */ private orbsK: THREE.Object3D[] = [];
   /** Animación de los robots: rotores, pasos de la araña, bola que rueda, torreta que apunta, luz que parpadea. */
   private animRobot(dt: number, moving: number, toTarget: number) {
     for (const r of this.rotors) r.rotation.y += dt * 40;
