@@ -21,7 +21,7 @@ const loft = (p: LPoly, name: string, rTop: number, rBot: number, segs = 2, n = 
 const addRot = (g: THREE.Object3D, m: THREE.Object3D, x: number, y: number, z: number) => { m.rotation.set(x, y, z); g.add(m); return m; };
 const downAxis = (a: number) => Math.atan2(-Math.cos(a), -Math.sin(a));
 
-export interface BuiltLong { group: THREE.Group; parts: { object: THREE.Object3D; role: PartRole }[]; muzzle: THREE.Vector3; sightY: number; railAt: THREE.Vector3 | null; railLength: number; length: number }
+export interface BuiltLong { group: THREE.Group; parts: { object: THREE.Object3D; role: PartRole }[]; muzzle: THREE.Vector3; sightY: number; /** X del alza propia (para apuntar a través de ella), si la tiene. */ sightX: number | null; railAt: THREE.Vector3 | null; railLength: number; length: number }
 
 export function buildLong(d: LongDesign, look: { legendary?: boolean } = {}): BuiltLong {
   const group = new THREE.Group(), roles: Record<string, THREE.Group> = {};
@@ -34,7 +34,7 @@ export function buildLong(d: LongDesign, look: { legendary?: boolean } = {}): Bu
     grip: era === "classic" ? "proccheck" : era === "rustic" ? "proctape" : "procgrip",
   };
   const round = d.recv.style === "round" ? 0.75 : d.recv.style === "angular" ? 0.12 : 0.35;
-  let railAt: THREE.Vector3 | null = null, railLength = 0, sightY = f.top + 0.01;
+  let railAt: THREE.Vector3 | null = null, railLength = 0, sightY = f.top + 0.01, sightX: number | null = null;
   const polys = longPolys(d);
   for (const p of polys) {
     switch (p.role) {
@@ -186,7 +186,7 @@ export function buildLong(d: LongDesign, look: { legendary?: boolean } = {}): Bu
         if (d.top === "rail") {
           g.add(box(x1 - x0, 0.005, p.depth, (x0 + x1) / 2, y0 + 0.0025, 0, "procmetal"));
           for (let x = x0 + 0.004; x < x1 - 0.003; x += 0.01) g.add(box(0.0055, 0.005, p.depth * 1.15, x, y0 + 0.0075, 0, "procmetal"));
-          railAt = new THREE.Vector3((x0 + x1) / 2, y1, 0); railLength = x1 - x0; sightY = y1 + 0.008;
+          railAt = new THREE.Vector3((x0 + x1) / 2, y1, 0); railLength = x1 - x0; sightY = y1 + 0.008; sightX = x0 + 0.01;
           // Miras abatibles en los extremos
           g.add(box(0.008, 0.014, 0.012, x0 + 0.01, y1 + 0.007, 0, "procmetal")); g.add(box(0.008, 0.016, 0.012, x1 - 0.01, y1 + 0.008, 0, "procmetal"));
         } else if (d.top === "optic") {
@@ -198,11 +198,11 @@ export function buildLong(d: LongDesign, look: { legendary?: boolean } = {}): Bu
           g.add(box(x1 - x0, y1 - y0, p.depth, (x0 + x1) / 2, (y0 + y1) / 2, 0, "procmetal"));
           for (let x = x0 + 0.02; x < x1 - 0.02; x += 0.03) g.add(box(0.012, (y1 - y0) * 0.6, p.depth * 1.04, x, (y0 + y1) / 2, 0, "procpad"));
           { const bead = new THREE.Mesh(new THREE.SphereGeometry(0.0025, 8, 6), mat("procdisplay")); bead.position.set(x1 - 0.006, y1 + 0.002, 0); g.add(bead); }
-          sightY = y1 + 0.002;
+          sightY = y1 + 0.002; sightX = x0 + (x1 - x0) * 0.2;
         } else if (d.top === "iron") {
           g.add(box(x1 - x0, 0.006, p.depth, (x0 + x1) / 2, y0 + 0.003, 0, "procmetal"));
           for (const z of [-1, 1]) g.add(box(0.006, y1 - y0, 0.003, x0 + (x1 - x0) * 0.6, (y0 + y1) / 2, z * 0.006, "procmetal"));
-          sightY = y1;
+          sightY = y1; sightX = x0 + (x1 - x0) * 0.6;
         }
         break;
       }
@@ -227,5 +227,5 @@ export function buildLong(d: LongDesign, look: { legendary?: boolean } = {}): Bu
   if (look.legendary) for (const z of [-1, 1]) { G("receiver").add(box(f.x1 * 0.6, 0.0016, 0.0006, f.x1 * 0.5, f.top - 0.006, z * (w / 2 + 0.0004), "procdisplay")); G("receiver").add(box(f.x1 * 0.4, (f.top - f.bot) * 0.35, 0.0006, f.x1 * 0.42, -0.004, z * (w / 2 + 0.00035), "procengrave")); }
   const mz = new THREE.Vector3(f.muzzleX, 0, 0);
   const all = new THREE.Box3().setFromObject(group);
-  return { group, parts: Object.entries(roles).map(([role, object]) => ({ object, role: role as PartRole })), muzzle: mz, sightY, railAt, railLength, length: all.max.x - all.min.x };
+  return { group, parts: Object.entries(roles).map(([role, object]) => ({ object, role: role as PartRole })), muzzle: mz, sightY, sightX, railAt, railLength, length: all.max.x - all.min.x };
 }

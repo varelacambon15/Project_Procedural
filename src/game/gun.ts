@@ -384,7 +384,7 @@ export class Gun {
       else { this.sight = k === "punto_rojo" ? "dot" : "holo"; this.zoom = k === "punto_rojo" || k === "holografica" ? 1.3 : Math.max(1.3, z); }
     }
     // (miras de hierro de serie montadas por el ensamblador: se apunta a través de ellas)
-    if (!item.spec.optic && this.sight === "iron" && m.sightX !== undefined) { this.sight = "irons"; this.zoom = 1.1; }
+    if (!item.spec.optic && this.sight === "iron" && m.sightX !== undefined && item.spec.type !== "pistol" && item.spec.type !== "revolver") { this.sight = "irons"; this.zoom = 1.1; }
     if (this.item !== item || seq !== this.equipSeq) return;
     m.group.traverse((o) => {
       const mesh = o as THREE.Mesh; if (!mesh.isMesh) return;

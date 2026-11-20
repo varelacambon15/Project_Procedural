@@ -179,6 +179,7 @@ export class WeaponAssembler {
     let opticLength = 0;
 
     let sightKit: number | null = null;
+    /** X del alza propia del arma (kit o arma por código): se apunta a través de ella. */ let ownRearX: number | null = null;
     let bodyZoneUsed: Stretches = null;
     if (spec.layout === "kit") {
       // Kit modular: cada pieza en su socket, recorriendo el árbol desde la plataforma
@@ -200,6 +201,7 @@ export class WeaponAssembler {
           const lens = node.children.find((c) => /lens/i.test(c.name)) ?? node;
           const b = new THREE.Box3().setFromObject(lens); sightKit = (b.min.y + b.max.y) / 2;
         }
+        if (pl.role === "sight" && !/front/.test(pl.part.id)) { node.updateMatrixWorld(true); const bx = new THREE.Box3().setFromObject(node); ownRearX = (bx.min.x + bx.max.x) / 2; }
         if (pl.role === "sight" && /front/.test(pl.part.id)) { node.updateMatrixWorld(true); frontSightTop = new THREE.Box3().setFromObject(node).max.y; }
         // Guardamanos liso del kit, adaptado en vez de descartado: raíl superior, ranuras laterales y remate delantero
         if (pl.part.id === "k-handguard-556-01") dressHandguard(node);
@@ -224,7 +226,7 @@ export class WeaponAssembler {
       for (const p of built.parts) add(p.object, p.role, { id: `pl-${p.role}`, label: p.role, pack: "proc" } as AssetEntry, EXP[p.role] ?? [0, 0, 0]);
       muzzle = built.muzzle.clone(); muzzleDiameter = spec.tweaks.long.barrel.d;
       if (built.railAt) { opticTarget = built.railAt.clone(); opticLength = built.railLength; }
-      sightKit = built.sightY;
+      sightKit = built.sightY; // (sus miras propias quedan muy cerca del ojo: estas armas apuntan con zoom)
     } else if (spec.layout === "modular-pistol" && spec.tweaks?.pistol) {
       // Pistola modular generada por código: la malla sale del diseño (pistolmesh), pieza a pieza con su rol
       this.gen.ensureDesign(spec); // (partidas antiguas: diseño al formato actual)
@@ -412,11 +414,11 @@ export class WeaponAssembler {
 
     // Mira: la propia del arma o una de otra arma/accesorio, apoyada en el socket "optic" o en la parte superior.
     const optAcc = accessory(spec.optic);
-    let ironRearX: number | null = null;
+    let ironRearX: number | null = spec.optic ? null : ownRearX;
     // Miras de hierro de serie: un arma larga sin mira (ni accesorio ni la propia del modelo) monta las de su era en el
     // raíl, para apuntar a través de ellas en vez de con un simple zoom. No cuentan como accesorio (no cambian el arma).
     const handgunT = spec.type === "pistol" || spec.type === "revolver";
-    const defaultIron = !spec.optic && !handgunT && !this.gen.byId.get(spec.parts[0].from)?.ownSight
+    const defaultIron = !spec.optic && !handgunT && spec.layout !== "kit" && spec.layout !== "proc-long" && !this.gen.byId.get(spec.parts[0].from)?.ownSight
       ? (() => { const all = (this.gen.manifest.iron ?? []).filter((j) => !/pistola|revolver/.test(j.id)); const era = all.filter((j) => j.eras.includes(spec.era ?? "modern")); const l = era.length ? era : all; return l.length ? l[(spec.seed >>> 0) % l.length] : undefined; })()
       : undefined;
     const ironSet = isIron(spec.optic) ? this.gen.manifest.iron?.find((j) => `iron:${j.id}` === spec.optic) : defaultIron;
@@ -438,7 +440,7 @@ export class WeaponAssembler {
       // Si el cajón o la culata asoman por encima de la línea de mira justo detrás del alza (donde va el ojo), se suben
       // los dos alzadores lo mismo (la línea sigue paralela al cañón): si no, al apuntar el ojo quedaba dentro del arma
       {
-        const x1 = railTop.x + ironSet.rear.lens[0], x0 = x1 - 0.22; // (hasta 22 cm detrás: cajones altos en bullpups) let top = -Infinity; const v = new THREE.Vector3();
+        const x1 = railTop.x + ironSet.rear.lens[0], x0 = x1 - 0.22; let top = -Infinity; const v = new THREE.Vector3(); // (hasta 22 cm detrás: cajones altos en bullpups)
         group.updateMatrixWorld(true);
         for (const p of parts) if (p.role !== "scope" && p.role !== "muzzle") p.object.traverse((o) => {
           const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position;
