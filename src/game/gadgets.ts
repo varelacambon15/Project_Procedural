@@ -1,7 +1,7 @@
 // Equipamiento (botón LB / X): objetos de apoyo con tipo, rareza y cargas que se recargan solas, como las granadas
 // pero en su propia sección. Datos y generación puros (sin DOM ni three); el efecto en juego está en gadgetfx.ts.
 
-export type GadgetKind = "turret" | "shield" | "dome" | "orb" | "hook" | "mine" | "gravity" | "slowfield" | "jump" | "beacon" | "knife" | "chain" | "harpoon" | "decoy" | "glitch" | "ammo" | "inject" | "thrust" | "teleport";
+export type GadgetKind = "turret" | "shield" | "dome" | "orb" | "hook" | "mine" | "gravity" | "slowfield" | "jump" | "beacon" | "knife" | "chain" | "harpoon" | "decoy" | "glitch" | "ammo" | "inject" | "thrust" | "teleport" | "chrono";
 export type GadgetRarity = "comun" | "poco" | "rara" | "epica" | "legendaria";
 export interface GadgetSpec {
   uid: number; kind: GadgetKind; rarity: GadgetRarity; seed: number;
@@ -32,6 +32,7 @@ export const GADGET_KINDS: Record<GadgetKind, KindDef> = {
   inject: { power: 0.35, duration: 6, radius: 0, charges: 1, recharge: 22, color: 0x9aff5a },   // inyector: más velocidad y cadencia un rato
   thrust: { power: 9, duration: 0, radius: 0, charges: 2, recharge: 6, color: 0x9fe8ff },       // propulsor: impulso hacia donde te mueves
   teleport: { power: 0, duration: 10, radius: 0, charges: 1, recharge: 14, color: 0xa070ff },   // teleportador: lanza la baliza y vuelve a pulsar para ir
+  chrono: { power: 0.3, duration: 4, radius: 0, charges: 1, recharge: 34, color: 0x80c0ff },   // inyección temporal: todo menos tú a cámara lenta
 };
 export const GADGET_KIND_LIST = Object.keys(GADGET_KINDS) as GadgetKind[];
 
@@ -57,7 +58,7 @@ export function makeGadget(seed: number, kind?: GadgetKind, rarity?: GadgetRarit
   const d = GADGET_KINDS[k], q = GADGET_RARITY[ra], v = () => 0.94 + r() * 0.12;
   return {
     uid: uid++, kind: k, rarity: ra, seed,
-    power: k === "dome" || k === "slowfield" || k === "inject" || k === "ammo" ? d.power : Math.round(d.power * q.mult * v()),
+    power: k === "dome" || k === "slowfield" || k === "inject" || k === "ammo" || k === "chrono" ? d.power : Math.round(d.power * q.mult * v()),
     duration: +(d.duration * q.dur * v()).toFixed(1), radius: +(d.radius * q.radius).toFixed(1),
     charges: d.charges + q.charges, recharge: +(d.recharge * q.recharge * v()).toFixed(1),
   };

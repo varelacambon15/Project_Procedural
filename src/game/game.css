@@ -190,6 +190,9 @@ body.deadeye::after, body.aegis::after { content: ""; position: fixed; inset: 0;
 body.deadeye::after { box-shadow: inset 0 0 180px rgba(255, 40, 60, .45); }
 body.aegis::after { box-shadow: inset 0 0 160px rgba(80, 255, 190, .35); }
 #xphud .bar, #xphud small { opacity: 0; transition: opacity .4s; } #xphud.showbar .bar, #xphud.showbar small { opacity: 1; }
+body.timestop #game canvas { filter: grayscale(.85) sepia(.25) contrast(1.15); transition: filter .25s; }
+body.tsinv #game canvas { filter: invert(1) hue-rotate(180deg) saturate(2.2) contrast(1.2); }
+body.timestop::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 5; box-shadow: inset 0 0 240px rgba(255, 220, 120, .35); }
 body.chrono #game canvas { filter: saturate(.55) contrast(1.05); }
 body.chrono::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 5; box-shadow: inset 0 0 200px rgba(110, 170, 255, .4); }
 .hptrack .lag { background: #fff6e8; opacity: .85; transition: none; }
@@ -201,3 +204,7 @@ body.chrono::after { content: ""; position: fixed; inset: 0; pointer-events: non
 #gadgethud .pip { width: 12px; height: 12px; border: 1px solid currentColor; } #gadgethud .pip.on { background: currentColor; }
 #gadgethud .rc { width: 40px; height: 4px; background: rgba(255,255,255,0.2); } #gadgethud .rc i { display: block; height: 100%; background: currentColor; }
 body.in-menu #gadgethud { visibility: hidden; }
+
+/* Arma cogida con el mando: resaltada y las ranuras de equipo invitan a soltarla */
+#inventory .tile.grab { outline: 2px dashed #f2c040; outline-offset: 2px; transform: scale(1.04); }
+#inventory.padgrab [data-eqslot] { outline: 2px solid rgba(242, 192, 64, .6); outline-offset: 2px; }

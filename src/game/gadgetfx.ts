@@ -17,6 +17,7 @@ export interface GadgetHooks {
   launch(vy: number): void;
   /** Recarga el arma al momento (caja de munición). */ refill(): void;
   /** Mejora temporal de velocidad y cadencia (inyector). */ boost(sec: number, k: number): void;
+  /** Inyección temporal: todo menos tú va a `k` de velocidad durante `sec` s. */ slowTime(sec: number, k: number): void;
   /** Dirección en la que se mueve el jugador (propulsor); null si está quieto. */ moveDir(): THREE.Vector3 | null;
   teleport(p: THREE.Vector3): void;
   sound(kind: "boom" | "zap" | "shot"): void;
@@ -93,6 +94,7 @@ export class GadgetFx {
         this.hooks.sound("zap"); return true;
       }
       case "ammo": this.hooks.refill(); this.burst(this.hooks.feet().clone().setY(1), 1.2, c); return true;
+      case "chrono": this.hooks.slowTime(g.duration, g.power); this.burst(this.hooks.feet().clone().setY(1.2), 1, c); return true;
       case "inject": this.hooks.boost(g.duration, g.power); this.burst(this.hooks.feet().clone().setY(1.2), 1, c); return true;
       case "thrust": { const md = this.hooks.moveDir() ?? this.hooks.view().dir.clone().setY(0).normalize(); this.hooks.lunge(md, g.power, 0.22); this.burst(this.hooks.feet().clone().setY(0.8), 1, c); return true; }
       case "teleport": {

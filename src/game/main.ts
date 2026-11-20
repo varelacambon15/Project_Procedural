@@ -280,7 +280,7 @@ async function boot() {
     vortex: { f0: 300, f1: 60, wave: "sawtooth", len: 1.2, noise: 0.3, lp: 1200, vol: 0.12, chord: [0.75] },
     sentry: { f0: 500, f1: 900, wave: "square", len: 0.3, noise: 0.1, lp: 2500, vol: 0.06, chord: [1.5] },
     zerog: { f0: 200, f1: 800, wave: "sine", len: 1.4, noise: 0.1, lp: 3000, vol: 0.14, chord: [1.5, 2] },
-    chrono: { f0: 800, f1: 100, wave: "triangle", len: 1.5, noise: 0.05, lp: 2000, vol: 0.12, chord: [0.5] },
+    timestop: { f0: 55, f1: 900, wave: "sine", len: 0.9, noise: 0.15, lp: 3000, vol: 0.22, chord: [1.5, 2] },
     leech: { f0: 140, f1: 90, wave: "sawtooth", len: 0.9, noise: 0.2, lp: 900, vol: 0.12, chord: [1.06] },
     decoy: { f0: 700, f1: 1100, wave: "triangle", len: 0.6, noise: 0.05, lp: 4000, vol: 0.08, chord: [1.33] },
     spirit: { f0: 70, f1: 30, wave: "sawtooth", len: 2.2, noise: 0.6, lp: 1400, vol: 0.32, chord: [1.5, 2] },
@@ -291,6 +291,22 @@ async function boot() {
     torrent: { f0: 1800, f1: 2400, wave: "triangle", len: 0.6, noise: 0.3, lp: 7000, vol: 0.1 },
     shards: { f0: 2600, f1: 3600, wave: "triangle", len: 0.45, noise: 0.15, lp: 8000, vol: 0.08, chord: [1.26, 1.5] },
   };
+  let wasStopped = false, tsInvT = 0, tsTick = 0;
+  /** Parada del tiempo: zumbido grave que sube y se corta en seco, tictac de reloj y reanudación con un barrido que cae. */
+  function timeSnd(k: "stop" | "tick" | "resume") {
+    try {
+      const a = audio(), t0 = a.currentTime, g = a.createGain(); g.connect(out());
+      const osc = (type: OscillatorType, f0: number, f1: number, len: number, vol: number, at = 0) => {
+        const o = a.createOscillator(), gg = a.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t0 + at); o.frequency.exponentialRampToValueAtTime(f1, t0 + at + len);
+        gg.gain.setValueAtTime(0.0001, t0 + at); gg.gain.exponentialRampToValueAtTime(vol, t0 + at + 0.02); gg.gain.exponentialRampToValueAtTime(0.0005, t0 + at + len);
+        o.connect(gg); gg.connect(g); o.start(t0 + at); o.stop(t0 + at + len + 0.05);
+      };
+      g.gain.value = 1;
+      if (k === "stop") { osc("sawtooth", 60, 1400, 0.55, 0.12); osc("sine", 40, 1800, 0.6, 0.2); osc("triangle", 880, 110, 1.6, 0.18, 0.58); osc("sine", 55, 50, 2.2, 0.3, 0.58); osc("square", 1760, 1700, 0.05, 0.1, 0.58); }
+      else if (k === "tick") { osc("square", 2400, 1800, 0.035, 0.1); osc("sine", 900, 700, 0.06, 0.08); }
+      else { osc("sine", 1600, 60, 0.9, 0.2); osc("sawtooth", 900, 40, 0.7, 0.07); osc("sine", 50, 45, 0.6, 0.25, 0.05); }
+    } catch { /* sin audio */ }
+  }
   function superSig(id: SuperId) {
     try {
       const a = audio(), t0 = a.currentTime, s = SIG[id], g = a.createGain(), f = a.createBiquadFilter();
@@ -302,7 +318,12 @@ async function boot() {
   }
   const superHud = () => {
     const el = $("superhud"); el.hidden = state !== "play" || !inv.hasSuper(inv.superId);
-    document.body.classList.toggle("chrono", state === "play" && sfx.activeId === "chrono");
+    const stopped = state === "play" && sfx.activeId === "timestop";
+    if (stopped && !wasStopped) { tsInvT = 0.45; timeSnd("stop"); tsTick = Math.ceil(sfx.activeLeft); }
+    if (!stopped && wasStopped && state === "play") timeSnd("resume");
+    if (stopped && sfx.activeLeft < tsTick - 1 && tsTick > 1) { tsTick--; timeSnd("tick"); }
+    wasStopped = stopped; document.body.classList.toggle("timestop", stopped); document.body.classList.toggle("tsinv", stopped && tsInvT > 0);
+    document.body.classList.toggle("chrono", state === "play" && chronoT > 0);
     const left = sfx.activeLeft, pct = left > 0 ? Math.round((left / sfx.activeTotal) * 100) : Math.round(meter.charge * 100);
     el.className = left > 0 ? "on" : meter.ready ? "ready" : "";
     document.body.classList.toggle("deadeye", state === "play" && sfx.activeId === "deadeye"); document.body.classList.toggle("aegis", state === "play" && sfx.activeId === "aegis");
@@ -334,6 +355,7 @@ async function boot() {
     launch: (vy) => { player.vel.y = vy; player.onGround = false; },
     refill: () => { const it = gun.item; if (it) { it.ammo = it.spec.stats.cargador; inv.changed(); } },
     boost: (sec, k) => { injectT = sec; injectK = k; applyPerks(); },
+    slowTime: (sec, k) => { chronoT = sec; chronoK = k; },
     moveDir: () => { const v = player.vel.clone().setY(0); return v.length() > 0.5 ? v.normalize() : null; },
     teleport: (p) => { player.pos.set(p.x, 0, p.z); player.vel.set(0, 0, 0); },
     sound: () => { /* (sonidos del equipamiento: pendiente) */ },
@@ -469,9 +491,10 @@ async function boot() {
     inv.armors = d.armors ?? []; inv.worn = { head: null, torso: null, legs: null, ...(d.worn ?? {}) }; setArmorUid(Math.max(0, ...inv.armors.map((a) => a.uid)) + 1);
     inv.grenades = d.grenades ?? []; inv.grenadeActive = inv.grenades[d.grenadeActive ?? -1] ? d.grenadeActive! : -1; setGrenadeUid(Math.max(0, ...inv.grenades.map((g) => g.uid)) + 1); pouch.equip(null);
     inv.gadgets = d.gadgets?.length ? d.gadgets : [makeGadget(4242, "turret", "comun")]; inv.gadgetActive = inv.gadgets[d.gadgetActive ?? -1] ? d.gadgetActive! : 0; setGadgetUid(Math.max(0, ...inv.gadgets.map((g) => g.uid)) + 1); // (partidas anteriores: una mini torreta de regalo)
+    if (d.superId === "chrono") d.superId = "timestop";
     inv.superId = (SUPER_IDS as string[]).includes(d.superId ?? "") ? (d.superId as SuperId) : "shockwave"; meter.charge = 0;
     // Súperes: las partidas de antes de los módulos conservan el que tenían elegido
-    inv.supersOwned = (d.supersOwned ?? (d.superId ? [d.superId] : [])).filter((x): x is SuperId => (SUPER_IDS as string[]).includes(x)); inv.raidsDone = d.raidsDone ?? 0;
+    inv.supersOwned = (d.supersOwned ?? (d.superId ? [d.superId] : [])).map((x) => (x === "chrono" ? "timestop" : x)).filter((x): x is SuperId => (SUPER_IDS as string[]).includes(x)); inv.raidsDone = d.raidsDone ?? 0;
     inv.progress = migrateProgress(d.progress, inv.all.map((it) => it.spec.level)); applyPerks();
     replaceSettings(d.settings as Partial<Settings>); if (d.lang === "es" || d.lang === "en") setLang(d.lang as Lang); setPixelLevel(d.pixelLevel);
     inGame = true; php.reset(); inv.changed();
@@ -557,7 +580,7 @@ async function boot() {
   const hack = { active: false, seed: 0, depth: 0, data: 0, node: null as HackNode | null, extractable: false, path: [] as HackNode["kind"][], buffs: { damage: 0, rate: 0, health: 0, speed: 0, crit: 0 } as Record<HackBuff, number> };
   /** Defensa del núcleo en curso. */
   const dmode = { active: false, wave: 0, credits: 0, phase: "build" as "build" | "wave", t: 0, queue: [] as string[], spawnT: 0, rnd: Math.random };
-  let injectT = 0, injectK = 0;
+  let injectT = 0, injectK = 0, chronoT = 0, chronoK = 1;
   function applyPerks() {
     const p = curPerks = skillPerks(inv.progress); CARD.playerLevel = inv.progress.level;
     gun.perks.rate = p.rate; gun.perks.critMult = p.critMult; gun.perks.ammoSave = p.ammoSave; gun.perks.dmg = p.dmg;
@@ -1220,7 +1243,8 @@ async function boot() {
     if (state === "play") {
       // Las oleadas viven en su sala: salir por la puerta las detiene
       if (waves.active && (player.pos.z < world.wavesRoom.z0 || player.pos.z > world.wavesRoom.z1)) { waves.stop(); toast(t("ui.wavesLeft")); }
-      const ts = sfx.timeScale; // (Dilatación temporal: enemigos y esferas a cámara lenta)
+      if (tsInvT > 0) tsInvT -= dt; if (chronoT > 0) chronoT -= dt;
+      const ts = sfx.timeScale * (chronoT > 0 ? chronoK : 1); // (parada del tiempo / inyección temporal)
       const wdt = hitstop > 0 ? 0 : dt;
       waves.update(wdt * ts); arena.update(dt);
       if (raid.active) { mobs.update(wdt * ts); raid.update(dt, player.pos); if (dmode.active) defenseTick(dt, f); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
@@ -1247,7 +1271,7 @@ async function boot() {
     rd.style.opacity = state === "play" && (gun.sight === "dot" || gun.sight === "holo") ? String(Math.max(0, (gun.aimT - 0.6) / 0.4)) : "0";
     // (pausa, inventario y demás menús paran el mundo: los enemigos no se mueven ni atacan)
     const stop = (state === "play" && hitstop > 0) || state !== "play"; hitstop = Math.max(0, hitstop - dt);
-    for (const d of dummies) d.update(stop ? 0 : dt * sfx.timeScale, camera, innerWidth, innerHeight);
+    for (const d of dummies) d.update(stop ? 0 : dt * sfx.timeScale * (chronoT > 0 ? chronoK : 1), camera, innerWidth, innerHeight);
     numbers.update(state === "play" ? dt : 0, camera, innerWidth, innerHeight);
     if (state === "workbench" || state === "pause" || state === "title") view.update(dt);
     if (state === "shop") shop.update(dt);

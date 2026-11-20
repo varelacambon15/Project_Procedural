@@ -39,11 +39,11 @@ const COLOR: Record<SuperId, number> = {
   core: 0xffe070, torrent: 0xa8ecff,
   overload: 0xffd070, shockwave: 0xff9a50, storm: 0x8fd8ff, inferno: 0xff5a1e, stasis: 0x9fe8ff, orbital: 0xffe2a0,
   seekers: 0xff7ad0, aegis: 0x7affc8, deadeye: 0xff4050, vortex: 0xa070ff,
-  sentry: 0x6ad8ff, zerog: 0xc0a0ff, chrono: 0x80c0ff, leech: 0xd03060, decoy: 0x50f0ff,
+  sentry: 0x6ad8ff, zerog: 0xc0a0ff, timestop: 0xffe08a, leech: 0xd03060, decoy: 0x50f0ff,
   spirit: 0x8fe6ff, railgun: 0x7ab8ff, dash: 0x5affd8, dome: 0x7ad8ff, shards: 0xb8f4ff,
 };
 /** Súperes con efecto que dura (el medidor no carga y no se puede volver a invocar mientras). */
-const LASTING = new Set<SuperId>(["overload", "storm", "stasis", "orbital", "aegis", "deadeye", "vortex", "sentry", "zerog", "chrono", "leech", "decoy", "dash", "dome"]);
+const LASTING = new Set<SuperId>(["overload", "storm", "stasis", "orbital", "aegis", "deadeye", "vortex", "sentry", "zerog", "timestop", "leech", "decoy", "dash", "dome"]);
 
 export class SuperFx {
   private vfx: Vfx[] = [];
@@ -67,9 +67,9 @@ export class SuperFx {
   get castingId(): SuperId | null { return this.cast_?.id ?? null; }
   /** ¿Ya se ha desatado la invocación en curso? */
   get castHit() { return !!this.cast_?.hit; }
-  private dur(id: SuperId) { const a = SUPERS[id].active ?? 0; return id === "orbital" || id === "vortex" || id === "zerog" ? a : a * this.span; }
+  private dur(id: SuperId) { const a = SUPERS[id].active ?? 0; return id === "orbital" || id === "vortex" || id === "zerog" || id === "timestop" ? a : a * this.span; }
   /** Velocidad del resto del mundo (Dilatación temporal: todo va más lento menos tú). */
-  get timeScale() { return this.active?.id === "chrono" ? SUPERS.chrono.slow ?? 0.25 : 1; }
+  get timeScale() { return this.active?.id === "timestop" ? 0 : 1; }
   /** Dónde está el señuelo (los enemigos van a por él), o null. */
   get decoyPos(): THREE.Vector3 | null { return this.active?.id === "decoy" && this.holo ? this.holo.position : null; }
   /** Segundos que quedan de efecto activo (0 si no hay). */
@@ -282,9 +282,11 @@ export class SuperFx {
         }
         this.hooks.shake(0.25); this.hooks.sound("zap"); break;
       }
-      case "chrono":
-        this.spawn(new THREE.Mesh(ringGeo, add(col)), at, 0.8, 30, "ring");
-        this.hooks.sound("cast"); break;
+      case "timestop": { // esfera que se expande desde ti y se recoge: el mundo se detiene
+        const s = new THREE.Mesh(sphereGeo, add(col, THREE.BackSide)); this.spawn(s, o.clone().setY(1.2), 0.9, 60, "flash");
+        this.spawn(new THREE.Mesh(sphereGeo, add(0x6040ff, THREE.BackSide)), o.clone().setY(1.2), 0.6, 35, "flash");
+        this.spawn(new THREE.Mesh(ringGeo, add(col)), at, 0.9, 40, "ring"); this.hooks.shake(0.3); break;
+      }
       case "leech": this.spawn(new THREE.Mesh(ringGeo, add(col)), at, 0.5, 6, "ring"); this.hooks.sound("zap"); break;
       case "decoy": {
         const p = this.aimAt(tl.range ?? 12, o).setY(0); const g = new THREE.Group(); g.position.copy(p);
@@ -426,12 +428,12 @@ export class SuperFx {
   private beam: THREE.Group | null = null;
   private beamTick(t: number) {
     if (t < 0) { if (this.beam) { this.scene.remove(this.beam); this.beam.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { m.geometry.dispose(); (m.material as THREE.Material).dispose(); } }); this.beam = null; } return; }
-    const v = this.hooks.view?.(); if (!v) return; const tl = SUPERS.torrent, len = tl.range ?? 40, rad = (tl.radius ?? 1.6) * 0.9;
+    const v = this.hooks.view?.(); if (!v) return; const tl = SUPERS.torrent, len = tl.range ?? 40, rad = (tl.radius ?? 1.6) * 1.9;
     if (!this.beam) {
       const g = new THREE.Group(), cone = (r0: number, r1: number) => new THREE.CylinderGeometry(r1, r0, len, 28, 1, true).rotateX(Math.PI / 2).translate(0, 0, len / 2);
-      const shell = new THREE.Mesh(cone(0.1, rad), add(0xffd23a, THREE.DoubleSide)); shell.name = "shell";
-      const rim = new THREE.Mesh(cone(0.13, rad * 1.12), add(0xffb000, THREE.BackSide)); rim.name = "rim";
-      const core = new THREE.Mesh(cone(0.03, rad * 0.35), add(0xfff6c0)); core.name = "core";
+      const shell = new THREE.Mesh(cone(0.28, rad), add(0xffd23a, THREE.DoubleSide)); shell.name = "shell";
+      const rim = new THREE.Mesh(cone(0.34, rad * 1.12), add(0xffb000, THREE.BackSide)); rim.name = "rim";
+      const core = new THREE.Mesh(cone(0.1, rad * 0.35), add(0xfff6c0)); core.name = "core";
       const ball = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12), add(0xfff0a0)); ball.name = "ball";
       g.add(shell, rim, core, ball); g.renderOrder = 5; this.scene.add(g); this.beam = g;
     }

@@ -130,7 +130,7 @@ export class InventoryScreen {
     return list.filter(ok).sort((a, b) => { const x = key(a), y = key(b); return x < y ? -1 : x > y ? 1 : 0; });
   }
 
-  private static GLYPH: Record<SuperId, string> = { overload: "⟐", shockwave: "◎", storm: "ϟ", inferno: "♨", stasis: "❄", orbital: "⊕", seekers: "⁂", aegis: "⬡", deadeye: "◉", vortex: "@", sentry: "⊤", zerog: "⇡", chrono: "⧗", leech: "♥", decoy: "♙", spirit: "☀", railgun: "═", dash: "»", dome: "◠", shards: "✧", core: "✺", torrent: "⋙" };
+  private static GLYPH: Record<SuperId, string> = { overload: "⟐", shockwave: "◎", storm: "ϟ", inferno: "♨", stasis: "❄", orbital: "⊕", seekers: "⁂", aegis: "⬡", deadeye: "◉", vortex: "@", sentry: "⊤", zerog: "⇡", timestop: "⧗", leech: "♥", decoy: "♙", spirit: "☀", railgun: "═", dash: "»", dome: "◠", shards: "✧", core: "✺", torrent: "⋙" };
   /** Parámetros de la descripción de un súper. */
   private static spArgs(id: SuperId) { const s = SUPERS[id]; return { s: Math.round((s.slow ?? 1) * 100), h: Math.round((s.heal ?? 0) * 100), a: s.active ?? 0, d: s.damage ?? 0, r: s.radius ?? 0, n: s.count ?? 0, g: Math.round((1 - (s.guard ?? 1)) * 100), v: Math.round(((s.vuln ?? 1) - 1) * 100), c: Math.round(((s.crit ?? 1) - 1) * 100) }; }
   /** Pestaña Progreso: nivel, experiencia y árbol de habilidades (tres ramas). */
@@ -222,7 +222,8 @@ export class InventoryScreen {
     $("inv-credits").textContent = `${i.credits} ${t("unit.cr")}`;
     $("inv-foot").innerHTML = `<span>${t("ui.bankCount", { n: i.bank.length })}</span>` +
       keyHint("Enter", "Ⓐ Ⓐ", t("ui.selectEquip")) + keyHint("1 / 2", "LT / RT", t("ui.equipSlot")) + keyHint("Q / E", "LB / RB", t("ui.tabs")) + keyHint("R", "Ⓨ", t("ui.rename")) + keyHint("G", "RS", t("ui.drop")) + keyHint("X", "Ⓧ", t("ui.scrapAction")) + keyHint("Esc", "Ⓑ", t("ui.back"));
-    this.el.querySelectorAll<HTMLElement>(".tile[data-uid]").forEach((x) => { x.draggable = true; });
+    this.el.querySelectorAll<HTMLElement>(".tile[data-uid]").forEach((x) => { x.draggable = true; x.classList.toggle("grab", this.grab != null && Number(x.dataset.uid) === this.grab); });
+    this.el.classList.toggle("padgrab", this.grab != null);
     this.thumbs.fill(this.el, this.storageMode ? i.all : i.carried);
     fillNadeThumbs(this.el); fillArmorThumbs(this.el);
   }
@@ -359,9 +360,14 @@ export class InventoryScreen {
     const na = target.closest<HTMLElement>("[data-nact]");
     if (na) return this.nadeAction(na.dataset.nact!);
     const tile = target.closest<HTMLElement>(".tile[data-uid]");
-    // Con mando, Ⓐ sobre el arma ya elegida (el cursor o la cruceta la eligen al pasar): de la mochila a la mano
-    // (ranura activa); si ya está equipada, pasa a ser la de la mano. Un solo botón, sin arrastrar.
-    if (tile && document.body.classList.contains("pad") && Number(tile.dataset.uid) === this.sel) return this.padQuick();
+    // Con mando ya no se equipa al tocar: Ⓐ sobre el arma elegida la coge, y Ⓐ sobre la ranura 1 o 2 la deja ahí
+    // (como arrastrar con el cursor). Ⓐ en cualquier otro sitio la suelta. También valen los botones Equipar en 1/2.
+    if (this.grab != null) {
+      const slotEl = target.closest<HTMLElement>("[data-eqslot]"), it = this.inv.byUid(this.grab), from = it && this.inv.find(it.uid); this.grab = null;
+      if (slotEl && it && from) { const slot = Number(slotEl.dataset.eqslot); if (!(from.area === "equip" && from.index === slot)) { this.inv.move(from, { area: "equip", index: slot }); this.hooks.changed(it); } }
+      return this.render();
+    }
+    if (tile && document.body.classList.contains("pad") && Number(tile.dataset.uid) === this.sel) { this.grab = this.sel; this.hooks.toast(t("ui.padGrab")); return this.render(); }
     if (tile) return this.select(Number(tile.dataset.uid));
     const chip = target.closest<HTMLElement>("[data-rar]");
     if (chip) { this.filter.rarity = chip.dataset.rar!; return this.renderKeep(chip); }
@@ -403,11 +409,8 @@ export class InventoryScreen {
       this.reselect(); this.hooks.changed(null); this.render();
     }
   }
-  private padQuick() {
-    const it = this.selected; if (!it) return; const w = this.inv.find(it.uid)!;
-    if (w.area === "equip") { this.action("use"); this.hooks.toast(t("ui.nowInHand", { n: it.spec.customName || it.spec.name })); return; }
-    this.quickEquip();
-  }
+  /** Arma cogida con el mando (Ⓐ), pendiente de soltar en una ranura. */
+  private grab: number | null = null;
   /** Clic derecho / atajo: equipar en la ranura activa o guardar en la mochila. */
   quickEquip() {
     const it = this.selected; if (!it) return; const w = this.inv.find(it.uid)!;
