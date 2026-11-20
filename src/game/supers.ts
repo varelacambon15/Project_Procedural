@@ -3,8 +3,8 @@
 // invocación en primera persona. Los números de cada animación están en supers.json (ajustables sin tocar código).
 import data from "./supers.json";
 
-export type SuperId = "overload" | "shockwave" | "storm" | "inferno" | "stasis" | "orbital" | "seekers" | "aegis" | "deadeye" | "vortex" | "sentry" | "zerog" | "chrono" | "leech" | "decoy" | "spirit" | "railgun" | "dash" | "dome" | "shards" | "core";
-export const SUPER_IDS: SuperId[] = ["overload", "shockwave", "storm", "inferno", "stasis", "orbital", "seekers", "aegis", "deadeye", "vortex", "sentry", "zerog", "chrono", "leech", "decoy", "spirit", "railgun", "dash", "dome", "shards", "core"];
+export type SuperId = "overload" | "shockwave" | "storm" | "inferno" | "stasis" | "orbital" | "seekers" | "aegis" | "deadeye" | "vortex" | "sentry" | "zerog" | "chrono" | "leech" | "decoy" | "spirit" | "railgun" | "dash" | "dome" | "shards" | "core" | "torrent";
+export const SUPER_IDS: SuperId[] = ["overload", "shockwave", "storm", "inferno", "stasis", "orbital", "seekers", "aegis", "deadeye", "vortex", "sentry", "zerog", "chrono", "leech", "decoy", "spirit", "railgun", "dash", "dome", "shards", "core", "torrent"];
 
 /** Clave de mano. `index` = cierre del índice (si falta, el de los demás dedos; sirve para señalar). */
 export interface HandKey { t: number; pos: [number, number, number]; rot: [number, number, number]; curl: number; thumb: number; index?: number }

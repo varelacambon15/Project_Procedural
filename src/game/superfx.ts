@@ -34,8 +34,9 @@ interface Missile { mesh: THREE.Mesh; v: THREE.Vector3; target: Dummy | null; t:
 const add = (color: number, side: THREE.Side = THREE.FrontSide) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side });
 const ringGeo = new THREE.RingGeometry(0.86, 1, 48).rotateX(-Math.PI / 2), sphereGeo = new THREE.SphereGeometry(1, 20, 14), boltGeo = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true);
 const discGeo = new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2), missileGeo = new THREE.SphereGeometry(0.12, 8, 6);
+const shardGeo = new THREE.OctahedronGeometry(0.09, 0);
 const COLOR: Record<SuperId, number> = {
-  core: 0xffe070,
+  core: 0xffe070, torrent: 0xa8ecff,
   overload: 0xffd070, shockwave: 0xff9a50, storm: 0x8fd8ff, inferno: 0xff5a1e, stasis: 0x9fe8ff, orbital: 0xffe2a0,
   seekers: 0xff7ad0, aegis: 0x7affc8, deadeye: 0xff4050, vortex: 0xa070ff,
   sentry: 0x6ad8ff, zerog: 0xc0a0ff, chrono: 0x80c0ff, leech: 0xd03060, decoy: 0x50f0ff,
@@ -53,7 +54,7 @@ export class SuperFx {
   /** Rastro del Impulso (tramo que quema). */ private trail: { from: THREE.Vector3; to: THREE.Vector3 } | null = null;
 
   /** Esquirlas de cristal en vuelo (atraviesan: cada una golpea una vez a cada enemigo). */
-  private shardsFly: { m: THREE.Mesh; v: THREE.Vector3; left: number; hit: Set<Dummy> }[] = [];
+  private shardsFly: { m: THREE.Mesh; v: THREE.Vector3; left: number; hit: Set<Dummy>; dmg: number }[] = [];
   /** Invocación en curso (animación de manos) y efecto activo. */
   private cast_: { id: SuperId; t: number; hit: boolean } | null = null;
   private active: { id: SuperId; t: number; next: number; at: THREE.Vector3 } | null = null;
@@ -118,6 +119,8 @@ export class SuperFx {
     if (c) {
       c.t += dt; const tl = SUPERS[c.id];
       if (c.id === "spirit" && !c.hit) this.chargeOrb(c.t, tl, origin);
+      // Torrente de cristal: chorro continuo desde la palma; cristales finos que atraviesan, con dispersión del ancho de un rayo
+      if (c.id === "torrent" && c.hit && c.t < tl.hit + (tl.active ?? 3)) { this.torrentAcc += dt * (tl.rate ?? 70); while (this.torrentAcc >= 1) { this.torrentAcc--; this.torrentShard(tl); } this.hooks.shake(0.05); }
       // Detonación de núcleo: la energía del entorno converge en ti mientras el traje se sobrecarga
       if (c.id === "core" && !c.hit && c.t > 0.3) {
         const k = Math.min(1, (c.t - 0.3) / (tl.hit - 0.3)), a = Math.random() * Math.PI * 2, r = 2.5 + Math.random() * 4 * (1 - k * 0.6);
@@ -304,6 +307,7 @@ export class SuperFx {
         this.hooks.sound("zap"); break;
       }
       case "shards": this.fireShards(); break;
+      case "torrent": this.torrentAcc = 0; this.hooks.sound("zap"); break;
       case "core": { // la esfera crece desde el cuerpo y arrasa todo el radio
         const r = tl.radius ?? 13, c = o.clone().setY(1);
         this.spawn(new THREE.Mesh(sphereGeo, add(col, THREE.BackSide)), c, 0.7, r, "flash");
@@ -415,6 +419,20 @@ export class SuperFx {
     for (const d of this.alive()) { const dist = Math.hypot(d.group.position.x - a.at.x, d.group.position.z - a.at.z); if (Math.abs(dist - r) < 1.2) d.drag(d.group.position.clone().add(d.group.position.clone().sub(a.at).setY(0).normalize()), dt * (1 - slow) * 3); }
   }
 
+  // ---------- Torrente de cristal ----------
+  private torrentAcc = 0;
+  private torrentShard(tl: (typeof SUPERS)["torrent"]) {
+    const v = this.hooks.view?.(); if (!v) return; const range = tl.range ?? 40, rad = tl.radius ?? 1.6, sp = 46;
+    const right = new THREE.Vector3().crossVectors(v.dir, new THREE.Vector3(0, 1, 0)).normalize(), up = new THREE.Vector3().crossVectors(right, v.dir);
+    const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * rad; // punto al azar del disco de dispersión al final del alcance
+    const from = v.o.clone().addScaledVector(v.dir, 0.75).addScaledVector(right, 0.13).addScaledVector(up, -0.1);
+    const to = v.o.clone().addScaledVector(v.dir, range * 0.6).addScaledVector(right, Math.cos(a) * r).addScaledVector(up, Math.sin(a) * r);
+    const dir = to.sub(from).normalize();
+    const m = new THREE.Mesh(shardGeo, add(Math.random() < 0.7 ? COLOR.torrent : 0xffffff)); m.scale.set(0.5, 0.5, 2.6 + Math.random());
+    m.position.copy(from); m.lookAt(from.clone().add(dir));
+    this.scene.add(m); this.shardsFly.push({ m, v: dir.multiplyScalar(sp), left: range / sp, hit: new Set(), dmg: tl.damage ?? 24 });
+  }
+
   // ---------- Abanico de cristal ----------
   private fireShards() {
     const tl = SUPERS.shards, v = this.hooks.view?.(); if (!v) return; const n = tl.count ?? 26;
@@ -423,16 +441,15 @@ export class SuperFx {
       const spread = ((i / (n - 1)) - 0.5) * 0.9, dir = v.dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -spread).addScaledVector(new THREE.Vector3(0, 1, 0), (Math.random() - 0.5) * 0.12).normalize();
       const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.09, 0), add(i % 3 ? COLOR.shards : 0xffffff)); m.scale.set(0.6, 0.6, 2.6);
       m.position.copy(v.o).addScaledVector(v.dir, 0.7).addScaledVector(right, spread * 0.4).add(new THREE.Vector3(0, -0.15, 0)); m.lookAt(m.position.clone().add(dir));
-      this.scene.add(m); this.shardsFly.push({ m, v: dir.multiplyScalar(tl.rate ?? 50), left: (tl.range ?? 38) / (tl.rate ?? 50), hit: new Set() });
+      this.scene.add(m); this.shardsFly.push({ m, v: dir.multiplyScalar(tl.rate ?? 50), left: (tl.range ?? 38) / (tl.rate ?? 50), hit: new Set(), dmg: tl.damage ?? 130 });
     }
     this.hooks.shake(0.2); this.hooks.sound("zap");
   }
   private updateShards(dt: number) {
-    const tl = SUPERS.shards;
     for (const s of [...this.shardsFly]) {
       s.left -= dt; s.m.position.addScaledVector(s.v, dt); s.m.rotation.z += dt * 12;
       for (const d of this.alive()) if (!s.hit.has(d) && d.center.distanceTo(s.m.position) < 0.7 * (d.kind.scale ?? 1)) {
-        s.hit.add(d); this.hooks.onHit(d, s.m.position.clone(), (tl.damage ?? 130) * this.power, null); this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.shards)), s.m.position.clone(), 0.15, 0.35, "flash");
+        s.hit.add(d); this.hooks.onHit(d, s.m.position.clone(), s.dmg * this.power, null); this.spawn(new THREE.Mesh(sphereGeo, add(COLOR.shards)), s.m.position.clone(), 0.12, s.dmg < 60 ? 0.18 : 0.35, "flash");
       }
       if (s.left <= 0 || s.m.position.y < 0) { this.scene.remove(s.m); this.shardsFly.splice(this.shardsFly.indexOf(s), 1); }
     }
