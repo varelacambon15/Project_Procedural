@@ -287,6 +287,7 @@ async function boot() {
     railgun: { f0: 2400, f1: 180, wave: "sawtooth", len: 0.7, noise: 0.25, lp: 7000, vol: 0.12, chord: [1.01] },
     dash: { f0: 300, f1: 1400, wave: "sawtooth", len: 0.35, noise: 0.5, lp: 5000, vol: 0.12 },
     dome: { f0: 220, f1: 330, wave: "triangle", len: 1.2, noise: 0.05, lp: 2500, vol: 0.14, chord: [1.5, 2] },
+    core: { f0: 70, f1: 30, wave: "sawtooth", len: 1.1, noise: 0.6, lp: 1200, vol: 0.34 },
     shards: { f0: 2600, f1: 3600, wave: "triangle", len: 0.45, noise: 0.15, lp: 8000, vol: 0.08, chord: [1.26, 1.5] },
   };
   function superSig(id: SuperId) {

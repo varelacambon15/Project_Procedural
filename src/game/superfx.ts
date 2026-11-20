@@ -35,6 +35,7 @@ const add = (color: number, side: THREE.Side = THREE.FrontSide) => new THREE.Mes
 const ringGeo = new THREE.RingGeometry(0.86, 1, 48).rotateX(-Math.PI / 2), sphereGeo = new THREE.SphereGeometry(1, 20, 14), boltGeo = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true);
 const discGeo = new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2), missileGeo = new THREE.SphereGeometry(0.12, 8, 6);
 const COLOR: Record<SuperId, number> = {
+  core: 0xffe070,
   overload: 0xffd070, shockwave: 0xff9a50, storm: 0x8fd8ff, inferno: 0xff5a1e, stasis: 0x9fe8ff, orbital: 0xffe2a0,
   seekers: 0xff7ad0, aegis: 0x7affc8, deadeye: 0xff4050, vortex: 0xa070ff,
   sentry: 0x6ad8ff, zerog: 0xc0a0ff, chrono: 0x80c0ff, leech: 0xd03060, decoy: 0x50f0ff,
@@ -84,7 +85,7 @@ export class SuperFx {
     return { dmg: 1, rate: 1, freeAmmo: false, crit: false, critMult: 1 };
   }
   /** Fracción del daño que recibe el jugador (Égida). */
-  get guard() { return this.active?.id === "aegis" ? SUPERS.aegis.guard ?? 1 : 1; }
+  get guard() { if (this.cast_?.id === "core" && !this.cast_.hit) return SUPERS.core.guard ?? 1; return this.active?.id === "aegis" ? SUPERS.aegis.guard ?? 1 : 1; }
 
   cast(id: SuperId) {
     if (this.cast_ || this.busy) return false; this.cast_ = { id, t: 0, hit: false };
@@ -117,6 +118,14 @@ export class SuperFx {
     if (c) {
       c.t += dt; const tl = SUPERS[c.id];
       if (c.id === "spirit" && !c.hit) this.chargeOrb(c.t, tl, origin);
+      // Detonación de núcleo: la energía del entorno converge en ti mientras el traje se sobrecarga
+      if (c.id === "core" && !c.hit && c.t > 0.3) {
+        const k = Math.min(1, (c.t - 0.3) / (tl.hit - 0.3)), a = Math.random() * Math.PI * 2, r = 2.5 + Math.random() * 4 * (1 - k * 0.6);
+        const sp = new THREE.Vector3(origin.x + Math.cos(a) * r, 0.2 + Math.random() * 2.2, origin.z + Math.sin(a) * r);
+        this.spawn(new THREE.Mesh(sphereGeo, add(Math.random() < 0.6 ? COLOR.core : 0xffffff)), sp.lerp(origin.clone().setY(1.1), k * 0.7), 0.15, 0.05 + 0.08 * k, "flash");
+        if (Math.random() < dt * 4) this.spawn(new THREE.Mesh(ringGeo, add(COLOR.core)), origin.clone().setY(0.05), 0.35, 1.2 + 1.5 * k, "ring");
+        this.hooks.shake(0.04 + 0.1 * k);
+      }
       // Cañón de riel: la carga brilla entre las manos y crece hasta el disparo
       if (c.id === "railgun" && !c.hit && c.t > 0.35 && this.hooks.hand) { const k = (c.t - 0.35) / (tl.hit - 0.35); this.spawn(new THREE.Mesh(sphereGeo, add(Math.random() < 0.5 ? COLOR.railgun : 0xffffff)), this.hooks.hand().add(new THREE.Vector3((Math.random() - 0.5) * 0.04, (Math.random() - 0.5) * 0.04, (Math.random() - 0.5) * 0.04)), 0.12, 0.02 + 0.06 * k, "flash"); }
       if (!c.hit && c.t >= tl.hit) { c.hit = true; this.trigger(c.id, origin); }
@@ -295,6 +304,15 @@ export class SuperFx {
         this.hooks.sound("zap"); break;
       }
       case "shards": this.fireShards(); break;
+      case "core": { // la esfera crece desde el cuerpo y arrasa todo el radio
+        const r = tl.radius ?? 13, c = o.clone().setY(1);
+        this.spawn(new THREE.Mesh(sphereGeo, add(col, THREE.BackSide)), c, 0.7, r, "flash");
+        this.spawn(new THREE.Mesh(sphereGeo, add(0xffffff)), c, 0.3, r * 0.4, "flash");
+        this.spawn(new THREE.Mesh(ringGeo, add(col)), at, 0.8, r * 1.15, "ring");
+        this.spawn(new THREE.Mesh(ringGeo, add(0xffffff)), at, 0.5, r * 0.8, "ring");
+        this.blast(o, (tl.damage ?? 900) * this.power, r, "explosive", 1);
+        this.hooks.shake(0.8); this.hooks.sound("boom"); break;
+      }
       case "vortex": {
         const p = this.aimAt(tl.range ?? 24, o).setY(1.2); this.active!.at = p;
         this.spawn(new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: 0x080210, transparent: true, opacity: 0.9 })), p, this.dur(id), 1.1, "spin");
