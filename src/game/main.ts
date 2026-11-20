@@ -757,7 +757,7 @@ async function boot() {
       if (dmode.t <= 0) { dmode.wave++; dmode.phase = "wave"; dmode.queue = coreWave(dmode.wave, dmode.rnd); dmode.spawnT = 0.5; mobs.index = Math.floor(dmode.wave * 0.8); defense.waveStart(); toast(t("df.wave", { n: dmode.wave })); }
     } else {
       if (dmode.queue.length) { dmode.spawnT -= dt; if (dmode.spawnT <= 0) { dmode.spawnT = SPAWN_GAP; for (let k = 0; k < 2 && dmode.queue.length; k++) { const room = raid.map!.rooms[1], side = Math.floor(Math.random() * 3), u = (Math.random() - 0.5) * Math.min(room.w * 0.8, 46);
-        const ox = RAID_ORIGIN.x + room.cx, oz = RAID_ORIGIN.z + room.cz, hx = Math.min(room.w / 2 - 2, 26), hz = Math.min(room.d / 2 - 2, 26); // (en la arena grande aparecen a ~26 m del núcleo: llegan antes) const pos = side === 0 ? new THREE.Vector3(ox + u, 0, oz + hz) : side === 1 ? new THREE.Vector3(ox + hx, 0, oz + u) : new THREE.Vector3(ox - hx, 0, oz + u);
+        const ox = RAID_ORIGIN.x + room.cx, oz = RAID_ORIGIN.z + room.cz, hx = Math.min(room.w / 2 - 2, 26), hz = Math.min(room.d / 2 - 2, 26); /* (en la arena grande aparecen a ~26 m del núcleo: llegan antes) */ const pos = side === 0 ? new THREE.Vector3(ox + u, 0, oz + hz) : side === 1 ? new THREE.Vector3(ox + hx, 0, oz + u) : new THREE.Vector3(ox - hx, 0, oz + u);
         mobs.spawnAt(dmode.queue.shift() as never, pos); } } }
       else if (mobs.living === 0) { const gain = waveReward(dmode.wave) + defense.income(); dmode.credits += gain; dmode.phase = "build"; dmode.t = BUILD_BETWEEN; toast(t("df.cleared", { n: dmode.wave, c: gain, s: BUILD_BETWEEN })); lootChime(2); }
     }
