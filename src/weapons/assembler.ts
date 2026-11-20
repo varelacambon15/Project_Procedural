@@ -413,7 +413,24 @@ export class WeaponAssembler {
     // Mira: la propia del arma o una de otra arma/accesorio, apoyada en el socket "optic" o en la parte superior.
     const optAcc = accessory(spec.optic);
     let ironRearX: number | null = null;
-    const ironSet = isIron(spec.optic) ? this.gen.manifest.iron?.find((j) => `iron:${j.id}` === spec.optic) : undefined;
+    // Miras de hierro de serie: un arma larga sin mira (ni accesorio ni la propia del modelo) monta las de su era en el
+    // raíl, para apuntar a través de ellas en vez de con un simple zoom. No cuentan como accesorio (no cambian el arma).
+    const handgunT = spec.type === "pistol" || spec.type === "revolver";
+    const defaultIron = !spec.optic && !handgunT && !this.gen.byId.get(spec.parts[0].from)?.ownSight
+      ? (() => { const all = (this.gen.manifest.iron ?? []).filter((j) => !/pistola|revolver/.test(j.id)); const era = all.filter((j) => j.eras.includes(spec.era ?? "modern")); const l = era.length ? era : all; return l.length ? l[(spec.seed >>> 0) % l.length] : undefined; })()
+      : undefined;
+    const ironSet = isIron(spec.optic) ? this.gen.manifest.iron?.find((j) => `iron:${j.id}` === spec.optic) : defaultIron;
+    // (armas sin anclajes de raíl: se buscan en el lomo del arma, el alza sobre el cajón y el punto cerca de la boca)
+    if (ironSet && (!railTop || !railFront) && spec.layout !== "kit") {
+      group.updateMatrixWorld(true);
+      const bb = new THREE.Box3(); for (const p of parts) if (p.role !== "magazine" && p.role !== "muzzle") bb.union(new THREE.Box3().setFromObject(p.object));
+      if (!bb.isEmpty()) {
+        const L = bb.max.x - bb.min.x, v = new THREE.Vector3();
+        const topAt = (x: number) => { let top = -Infinity; for (const p of parts) if (p.role !== "magazine" && p.role !== "muzzle" && p.role !== "scope") p.object.traverse((o) => { const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position; for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (Math.abs(v.x - x) < 0.015 && Math.abs(v.z) < 0.025 && v.y > top) top = v.y; } }); return top; };
+        const xr = bb.min.x + L * 0.5, xf = bb.max.x - L * 0.06, yr = topAt(xr), yf = topAt(xf);
+        if (Number.isFinite(yr) && Number.isFinite(yf)) { railTop = railTop ?? new THREE.Vector3(xr, yr, 0); railFront = railFront ?? new THREE.Vector3(xf, yf, 0); }
+      }
+    }
     if (ironSet && railTop && railFront) {
       // Miras de hierro: alza en raíl_superior y punto en raíl_frontal, con los alzadores a la altura que deja la línea
       // centro_lente → punta paralela al cañón (si se sale del rango, al máximo)
@@ -421,18 +438,18 @@ export class WeaponAssembler {
       // Si el cajón o la culata asoman por encima de la línea de mira justo detrás del alza (donde va el ojo), se suben
       // los dos alzadores lo mismo (la línea sigue paralela al cañón): si no, al apuntar el ojo quedaba dentro del arma
       {
-        const x1 = railTop.x + ironSet.rear.lens[0], x0 = x1 - 0.09; let top = -Infinity; const v = new THREE.Vector3();
+        const x1 = railTop.x + ironSet.rear.lens[0], x0 = x1 - 0.22; // (hasta 22 cm detrás: cajones altos en bullpups) let top = -Infinity; const v = new THREE.Vector3();
         group.updateMatrixWorld(true);
         for (const p of parts) if (p.role !== "scope" && p.role !== "muzzle") p.object.traverse((o) => {
           const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position;
           for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (v.x > x0 && v.x < x1 && Math.abs(v.z) < 0.02 && v.y > top) top = v.y; }
         });
         const lift = Math.max(0, top + 0.004 - (railTop.y + ar + ironSet.rear.h));
-        if (lift > 0) { ar = Math.min(ironSet.riser.max + 0.02, ar + lift); af = Math.min(ironSet.riser.max + 0.02, af + lift); }
+        if (lift > 0) { ar = Math.min(ironSet.riser.max + 0.06, ar + lift); af = Math.min(ironSet.riser.max + 0.06, af + lift); }
       }
       const rear = await this.ironNode(ironSet.rear.file, ar, ironSet.riser.glb), front = await this.ironNode(ironSet.front.file, af, ironSet.riser.glb);
       rear.position.copy(railTop); front.position.copy(railFront); ironRearX = railTop.x + ironSet.rear.lens[0];
-      const from = { id: spec.optic!, label: ironSet.name, pack: "iron" } as AssetEntry;
+      const from = { id: spec.optic ?? `iron:${ironSet.id}`, label: ironSet.name, pack: "iron" } as AssetEntry;
       add(rear, "scope", from, [0, 1.4, 0]); add(front, "scope", from, [0.6, 1.2, 0]);
       sight = railTop.y + ar + ironSet.rear.h; // (centro_lente: a altura_linea_cabeza sobre la base de la cabeza) zoom = optAcc?.zoom ?? 1.1;
     } else if (optAcc && opticTarget && !isKit(spec.optic) && !isIron(spec.optic)) {
