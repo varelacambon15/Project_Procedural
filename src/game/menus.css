@@ -466,3 +466,7 @@ body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family
 /* Resumen de incursión / hack */
 .summary .sumrow { display: flex; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 1.05em; }
 .summary .sumrow b { font-variant-numeric: tabular-nums; }
+.hktrail { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0 6px; }
+.hktrail i { font-style: normal; width: 24px; height: 24px; display: grid; place-items: center; font-size: 11px; border: 2px solid #3fd0d8; background: rgba(63,208,216,0.12); }
+.hktrail i.elite { border-color: #ff4a8a; } .hktrail i.loot { border-color: #f2a541; } .hktrail i.cipher { border-color: #a35cf0; } .hktrail i.guardian { border-color: #ff5a3a; background: rgba(255,90,58,0.25); }
+.hktrail i.next { border-style: dashed; opacity: 0.7; } .hktrail em { font-style: normal; opacity: 0.5; font-size: 11px; }

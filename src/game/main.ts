@@ -22,7 +22,7 @@ import { setAccUid } from "../weapons/accbank";
 import { BUILD, BUILDS, BUILD_BETWEEN, BUILD_TIME, EARLY_BONUS, HUNTERS, SPAWN_GAP, START_CREDITS, coreWave, killReward, sellValue, waveReward } from "./defense";
 import { DefenseFx, type Pad } from "./defensefx";
 import { rng as seedRng } from "./raidgen";
-import { DEATH_LOSS, HACK_BUFFS, HACK_BUFF_VALUE, cipherLimit, hackChoices, hackEnemies, nodeData, type HackBuff, type HackNode } from "./hackgen";
+import { DEATH_LOSS, GUARDIAN_EVERY, HACK_BUFFS, HACK_BUFF_VALUE, cipherLimit, hackChoices, hackEnemies, nodeData, type HackBuff, type HackNode } from "./hackgen";
 import type { Manifest, RarityId, WeaponSpec } from "../weapons/types";
 import { getLang, onLang, setLang, t, type Lang } from "../i18n";
 import { DEFAULT_BINDS, DEFAULT_PAD, Input, PAD_NAMES } from "./input";
@@ -520,7 +520,7 @@ async function boot() {
   let curPerks = skillPerks(inv.progress), windUsed = false, xpShown = "", xpShowT = 0, armorT = armorTotals([]);
   /** Aplica el árbol y el nivel: arma, vida, regeneración, súper, granadas y velocidad. */
   /** Partida del modo Hack en curso. */
-  const hack = { active: false, seed: 0, depth: 0, data: 0, node: null as HackNode | null, extractable: false, buffs: { damage: 0, rate: 0, health: 0, speed: 0, crit: 0 } as Record<HackBuff, number> };
+  const hack = { active: false, seed: 0, depth: 0, data: 0, node: null as HackNode | null, extractable: false, path: [] as HackNode["kind"][], buffs: { damage: 0, rate: 0, health: 0, speed: 0, crit: 0 } as Record<HackBuff, number> };
   /** Defensa del núcleo en curso. */
   const dmode = { active: false, wave: 0, credits: 0, phase: "build" as "build" | "wave", t: 0, queue: [] as string[], spawnT: 0, rnd: Math.random };
   function applyPerks() {
@@ -833,7 +833,7 @@ async function boot() {
   // ---------- Modo Hack: red de nodos por profundidad, extracción o seguir bajando ----------
   function startHack() {
     beginRun("hack");
-    Object.assign(hack, { active: true, seed: (Math.random() * 2 ** 31) | 0, depth: 0, data: 0, node: null, extractable: false });
+    Object.assign(hack, { active: true, seed: (Math.random() * 2 ** 31) | 0, depth: 0, data: 0, node: null, extractable: false, path: [] });
     for (const k of HACK_BUFFS) hack.buffs[k] = 0;
     applyPerks(); php.reset(); waves.stop(); openHackMap();
   }
@@ -847,14 +847,18 @@ async function boot() {
   }
   function openHackMap() {
     const opts = hackChoices(hack.seed, hack.depth + 1);
-    hackPanel(`<h2>${t("hk.next", { n: hack.depth + 1 })}</h2><div class="hknodes">${opts.map((o, i) => `<button type="button" class="tile hknode ${o.kind}" data-hk="${i}" data-nav><b>${t(`hk.node.${o.kind}`)}</b><span>${t(`hk.nd.${o.kind}`)}</span><i>+${nodeData(o)} ${t("hk.dataU")}</i></button>`).join("")}</div>
+    // Camino recorrido (un punto de color por nodo) y distancia al próximo guardián
+    const toG = GUARDIAN_EVERY - (hack.depth % GUARDIAN_EVERY);
+    const trail = `<div class="hktrail">${hack.path.map((k, i) => `<i class="${k}" title="${i + 1}">${i + 1}</i>`).join("<em>▸</em>")}${hack.path.length ? "<em>▸</em>" : ""}<i class="next">?</i></div>
+      <p class="note">${toG === 1 ? t("hk.guardNext") : t("hk.guardIn", { n: toG })}</p>`;
+    hackPanel(`${trail}<h2>${t("hk.next", { n: hack.depth + 1 })}</h2><div class="hknodes">${opts.map((o, i) => `<button type="button" class="tile hknode ${o.kind}" data-hk="${i}" data-nav><b>${t(`hk.node.${o.kind}`)}</b><span>${t(`hk.nd.${o.kind}`)}</span><i>+${nodeData(o)} ${t("hk.dataU")}</i></button>`).join("")}</div>
       ${hack.extractable ? `<div class="actions"><button type="button" class="btn" data-hkx="1" data-nav>${t("hk.extract", { n: hack.data })}</button></div><p class="note">${t("hk.extractNote", { p: Math.round(DEATH_LOSS * 100) })}</p>` : `<p class="note">${t("hk.howto", { p: Math.round(DEATH_LOSS * 100) })}</p>`}`);
     (hackMapOpts = opts);
   }
   let hackMapOpts: HackNode[] = [], hackBuffOpts: HackBuff[] = [];
   function hackEnter(node: HackNode) {
     $("raidmenu").hidden = true; resume();
-    hack.node = node; hack.depth = node.depth; hack.extractable = false; mobs.index = Math.floor(node.depth * 1.5);
+    hack.node = node; hack.path.push(node.kind); hack.depth = node.depth; hack.extractable = false; mobs.index = Math.floor(node.depth * 1.5);
     const en = hackEnemies(node), at = raid.startNode(node.seed, node.kind === "loot" ? "loot" : "fight", en, node.kind === "cipher" ? cipherLimit(en.length) : 0, node.depth % 5);
     player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
     toast(t(`hk.go.${node.kind}`, { s: cipherLimit(en.length) }));
