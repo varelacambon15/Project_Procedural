@@ -195,7 +195,18 @@ Todo esto está subido y con tests (141) y build en verde. **No se ha publicado 
     - las partidas guardadas con `chrono` pasan a `timestop`.
 - **Inventario con mando:** pulsar un arma ya no la equipa. Ⓐ la coge, y Ⓐ sobre la ranura 1 o 2 la deja ahí (`grab` en `ui/inventory.ts`). Siguen los botones «Equipar en 1/2».
 - **Asistente del hall** (`src/game/hallbot.ts`):
-  - pantalla con cara amigable sobre el cartel del campo de tiro, en la pared del fondo (z = 28);
+  - pantalla con cara en la **pared derecha del hall** (x = 24, z = 9), mirando hacia dentro. El usuario no la quería sobre el campo de tiro;
+  - **11 estados de ánimo con cara propia** (tabla `FACES`): contento, neutro, eufórico, chulito, curioso, sorprendido, triste, dolido, enfadado, furioso y dormido. Las formas se interpolan;
+  - **si le disparas** (`userData.onShot`, que se llama desde `gun.ts` al impactar en algo del mundo):
+    - se pone roja, frunce el ceño, tiembla y aparecen interferencias;
+    - suelta **groserías** (`bot.shot.*`); a partir de 5 tiros, más fuertes (`bot.rage.*`), con dientes y una vena palpitante;
+    - el enfado baja solo y al final perdona con retintín (`bot.forgive.*`);
+  - otras reacciones:
+    - comenta al volver de una incursión ganada o perdida, y al subir de nivel (`event()`);
+    - curiosidad si te acercas (`bot.near.*`);
+    - si lo ignoras unos 70 s se aburre y se duerme, con zetas (`bot.bored.*`); al mirarle o acercarte se despierta sobresaltado (`bot.wake.*`);
+  - para que parezca vivo: respira, parpadea a ritmo irregular (a veces doble), mueve los ojos a saltitos, te sigue con la mirada y ladea la cara;
+  - **la voz cambia con el ánimo**: enfadado, más grave y rápida; triste o dormido, más lenta;
   - la cara se dibuja en un canvas: ojos que parpadean y siguen al jugador, y boca que se mueve al hablar;
   - habla con la **síntesis de voz del navegador** (`speechSynthesis`, es-ES o en-US) y también pone subtítulo;
   - al entrar en el hall te **saluda por tu nombre**, como mucho una vez cada 90 s; además suelta una frase cada 45–85 s (`bot.idle.*`, 14 frases);

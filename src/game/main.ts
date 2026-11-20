@@ -74,9 +74,9 @@ scene.add(camera);
 // Luz de borde ligada a la cámara: perfila el arma en primera persona para que las oscuras no se pierdan en la sala
 const rim = new THREE.DirectionalLight(0xbfd8ff, 0.4); rim.position.set(0.8, 0.6, -1.2); camera.add(rim); camera.add(rim.target); rim.target.position.set(0, -0.2, 0.5);
 const world = buildRange(scene);
-// Asistente del hall: pantalla con cara sobre la puerta del campo de tiro (pared del fondo, z = 28), mirando al hall
-const hallBot = new HallBot({ pos: new THREE.Vector3(0, 5.85, 27.86), rotY: Math.PI, name: () => settings.playerName ?? "", volume: () => settings.volume, voice: () => settings.botVoice !== false });
-scene.add(hallBot.mesh);
+// Asistente del hall: pantalla con cara en la pared derecha del hall (x = 24), mirando hacia dentro; se le puede disparar
+const hallBot = new HallBot({ pos: new THREE.Vector3(23.82, 3.7, 9), rotY: -Math.PI / 2, name: () => settings.playerName ?? "", volume: () => settings.volume, voice: () => settings.botVoice !== false });
+scene.add(hallBot.mesh); world.shootables.push(...hallBot.hitMeshes);
 // Postproceso: resplandor (bloom) sobre lo que brilla de verdad (neón, fogonazos); fuerte de noche, suave de día
 // Cámara del arma (como en los shooters, «viewmodel FOV»): arma y brazos se dibujan encima con un campo de visión más
 // estrecho, retrasada para que el tamaño aparente no cambie; con el campo de visión del mundo (75°) las armas largas se
@@ -611,7 +611,7 @@ async function boot() {
     const up = addXp(inv.progress, n * curPerks.fortune); xpShowT = 4; // (la barra se ve unos segundos al ganar experiencia)
     if (up) {
       applyPerks(); php.value = php.max; lootChime(3);
-      toast(t("pg.levelUp", { l: inv.progress.level, p: up }));
+      toast(t("pg.levelUp", { l: inv.progress.level, p: up })); hallBot.event("levelUp");
       if (invScreen.isOpen) invScreen.render();
     }
   }
@@ -783,7 +783,7 @@ async function boot() {
   function returnHub(won: boolean) {
     const loot = won ? pickups.list.filter((p) => raid.contains(p.root.position)) : [];
     const summary = !!run && !dmode.active; if (run && !run.result) run.result = won ? "won" : "lost"; if (run) { run.rooms = raid.cleared; run.fights = raid.fights; }
-    raid.end(); raidReturnT = -1; sfx.reset();
+    raid.end(); raidReturnT = -1; sfx.reset(); hallBot.event(won ? "raidWon" : "raidLost");
     const pc = world.interactables.find((i) => i.id === "raid")!.position;
     player.pos.set(pc.x - 2.5, 0, pc.z); player.vel.set(0, 0, 0); player.yaw = Math.PI / 2; player.pitch = 0;
     loot.forEach((p, i) => { p.root.position.set(pc.x - 4.5, 1.1, pc.z - 2 + i * 0.9); p.vel.set(0, 0, 0); p.resting = false; });
@@ -1294,7 +1294,7 @@ async function boot() {
       const now = performance.now() / 1000;
       while (sim.log.length && now - sim.log[0][0] > 3) sim.log.shift();
       const dps = sim.log.reduce((a, x) => a + x[1], 0) / 3;
-      { const p = player.pos, inHall = state === "play" && !raid.active && p.x > -24 && p.x < 24 && p.z > 0 && p.z < 28; hallBot.update(dt, inHall, p); }
+      { const p = player.pos, inHall = state === "play" && !raid.active && p.x > -24 && p.x < 24 && p.z > 0 && p.z < 28; hallBot.update(dt, inHall, p, camera.getWorldDirection(new THREE.Vector3())); }
       world.update(dt, { dps, ttk: sim.ttk, accuracy: sim.shots ? Math.min(1, sim.hits / sim.shots) : null, distance: sim.distance, message: t(now - sim.lastShot < 2 ? "sim.active" : "sim.calibrating") });
     }
     // Miras: visor a pantalla completa o retícula de punto rojo / holográfica
@@ -1341,7 +1341,7 @@ async function boot() {
     scene.remove(warm);
   }, 1500);
   frame();
-  (window as unknown as Record<string, unknown>).__game = {
+  (window as unknown as Record<string, unknown>).__game = { hallBot,
     debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
     makeGadget, gadgets, loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, startDefense, defense, dmode, returnHub, mobs, openRaidMenu, arena, mutateArena,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },

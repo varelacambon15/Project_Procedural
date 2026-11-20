@@ -1169,7 +1169,7 @@ export class Gun {
       for (const hit of hits) {
         const dummy = hit.object.userData.dummy as Dummy | undefined;
         end = hit.point; firstHit ??= hit.point.clone();
-        if (!dummy) { this.decal(hit, element === "fuego" || element === "explosive"); if (element === "explosive") this.explode(hit.point, s.stats.dano * 0.4 * dmgMult, element); break; }
+        if (!dummy) { (hit.object.userData.onShot as (() => void) | undefined)?.(); this.decal(hit, element === "fuego" || element === "explosive"); if (element === "explosive") this.explode(hit.point, s.stats.dano * 0.4 * dmgMult, element); break; }
         if (seen.has(dummy)) continue; seen.add(dummy); firstTarget ??= dummy;
         const zone = hit.object.userData.zone as Zone;
         const falloff = hit.distance <= s.stats.alcance ? 1 : Math.max(0.45, 1 - (hit.distance - s.stats.alcance) / (s.stats.alcance * 2));
