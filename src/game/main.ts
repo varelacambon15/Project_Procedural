@@ -1055,6 +1055,8 @@ async function boot() {
       else if (gnade) $("prompt").innerHTML = `${key}${t("ui.pickupNade")}`;
       else if (garmor) $("prompt").innerHTML = `${key}${t("ar.pickup")}`;
       else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : near.id === "raid" ? "rd.use" : near.id === "survival" ? "sv.use" : near.id === "defense" ? "df.use" : near.id === "hack" ? "hk.use" : "ui.useBench")}`;
+      // Plataforma de construcción cerca: qué hay y qué se puede hacer
+      if (dmode.active && !near && !ground && !gnade && !garmor) { const pad = defense.padNear(player.pos); if (pad) { $("prompt").hidden = false; $("prompt").innerHTML = `${key}${pad.placed ? t("df.padUpgrade", { n: t(`df.b.${pad.placed.b.id}`), l: pad.placed.level }) : t("df.padBuild")}`; } }
       if (dmode.active && dmode.phase === "build" && waveTerm && player.pos.distanceTo(waveTerm.position) < 2) { $("prompt").hidden = false; $("prompt").innerHTML = `${key}${t("df.startNow")}`; }
       // Ficha del arma del suelo comparada con la que llevas
       const card = $("pickcard");
