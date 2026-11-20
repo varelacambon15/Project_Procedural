@@ -215,7 +215,7 @@ export class Dummy {
 
   /** Aspecto: sin peana (camina con piernas completas) y variante de color y accesorios (enemigos de las oleadas). */
   private look: DummyLook | null = null;
-  private legs: THREE.Object3D[] = []; private walkT = Math.random() * 6;
+  private legs: THREE.Object3D[] = []; private knees: THREE.Object3D[] = []; private bobY = 0; private walkT = Math.random() * 6;
   constructor(readonly kind: Kind, readonly id: string, pos: THREE.Vector3, overlay: HTMLElement, onDamage: (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => void, look?: DummyLook) {
     this.look = look ? (kind.paint ? { ...look, ...kind.paint, extras: kind.key === "commander" ? ["helmet", "vest", "pads"] : kind.key === "medic" ? ["pack"] : look.extras } : look) : null;
     this.onDamage = onDamage;
@@ -283,7 +283,9 @@ export class Dummy {
       // Sin peana: piernas completas hasta el suelo, con pies; cada pierna gira desde la cadera al andar
       for (const x of [-0.11, 0.11]) {
         const hip = new THREE.Group(); hip.position.set(x, 1.27, 0); this.body.add(hip); this.legs.push(hip);
-        const add = (geo: THREE.BufferGeometry, mat: THREE.Material, y: number, z = 0, zone: Zone | null = "limb") => { const m = new THREE.Mesh(geo, mat); m.position.set(0, y, z); m.castShadow = true; hip.add(m); if (zone) { m.userData = { dummy: this, zone }; this.hitboxes.push(m); } return m; };
+        // Rodilla: la mitad baja de la pierna cuelga de ella y se dobla al dar el paso (antes la pierna era rígida)
+        const knee = new THREE.Group(); knee.position.y = -0.6; hip.add(knee); this.knees.push(knee);
+        const add = (geo: THREE.BufferGeometry, mat: THREE.Material, y: number, z = 0, zone: Zone | null = "limb") => { const m = new THREE.Mesh(geo, mat); const low = y < -0.6; m.position.set(0, low ? y + 0.6 : y, z); m.castShadow = true; (low ? knee : hip).add(m); if (zone) { m.userData = { dummy: this, zone }; this.hitboxes.push(m); } return m; };
         add(cap(0.09, 0.5), skin, -0.33); add(cap(0.075, 0.5), skin, -0.92);
         add(new THREE.BoxGeometry(0.13, 0.08, 0.24), skinDark, -1.23, 0.04);
         // Soldado de la simulación (referencias de Coded Arms): rodillera, espinillera y bota gruesa con suela
@@ -296,8 +298,9 @@ export class Dummy {
     }
     this.part(new THREE.BoxGeometry(0.36, 0.2, 0.2), skinDark, 0, 1.38, 0, "body");
     this.part(cap(0.19, 0.38), skin, 0, 1.68, 0, "body").scale.set(1.15, 1, 0.75);
-    const armL = this.part(cap(0.065, 0.5), skin, -0.3, 1.58, 0, "limb"); armL.rotation.z = 0.18;
-    const armR = this.part(cap(0.065, 0.5), skin, 0.3, 1.58, 0, "limb"); armR.rotation.z = -0.18;
+    // Brazos colgando del hombro (giran desde ahí al andar y al golpear, no desde el centro)
+    const arm = (x: number) => { const sh = new THREE.Group(); sh.position.set(x, 1.86, 0); sh.rotation.z = x < 0 ? 0.18 : -0.18; this.body.add(sh); const m = new THREE.Mesh(cap(0.065, 0.5), skin); m.position.y = -0.3; m.castShadow = true; sh.add(m); m.userData = { dummy: this, zone: "limb" }; this.hitboxes.push(m); return sh; };
+    const armL = arm(-0.3), armR = arm(0.3);
     if (L) this.armsH = [armL, armR];
     this.part(new THREE.CylinderGeometry(0.06, 0.07, 0.1, 10), skinDark, 0, 1.98, 0, "body");
     this.part(new THREE.SphereGeometry(0.13, 16, 12), skin, 0, 2.13, 0, "head").scale.set(1, 1.12, 1.02);
@@ -336,7 +339,7 @@ export class Dummy {
       const pieces: [number, number, number, number, number, number][] = [[0.07, 0.11, 0.42, 0, 0, 0], [0.035, 0.035, long ? 0.62 : 0.32, 0, 0.02, long ? 0.5 : 0.36], [0.06, 0.12, 0.2, 0, -0.01, -0.28], [0.05, 0.13, 0.06, 0, -0.1, 0.05]];
       if (long) pieces.push([0.05, 0.05, 0.24, 0, 0.09, 0.02]); else pieces.push([0.05, 0.16, 0.07, 0, -0.12, 0.14]);
       for (const [w, h, d, x, y, z] of pieces) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), robotDark); m.position.set(x, y, z); m.castShadow = true; g.add(m); }
-      for (const [x, rz] of [[-0.3, 0.18], [0.3, -0.18]] as const) { const arm = this.body.children.find((o) => o.position.x === x && o.position.y === 1.58); if (arm) { arm.rotation.set(-1.1, 0, rz * 0.4); arm.position.set(x * 0.75, 1.55, 0.18); } }
+      for (const [x, rz] of [[-0.3, 0.18], [0.3, -0.18]] as const) { const arm = this.body.children.find((o) => o.position.x === x && o.position.y === 1.86); if (arm) { arm.rotation.set(-1.25, 0, rz * 0.4); arm.position.set(x * 0.75, 1.84, 0.04); } }
     }
     // Guardián: placas de armadura y un escudo frontal grande (las balas rebotan; hay que rodearlo o darle en las piernas)
     if (kind.shield) {
@@ -357,7 +360,7 @@ export class Dummy {
   /** Aura del comandante: más velocidad y daño mientras dura. */ buffT = 0;
   /** Ralentizado (torreta criogénica, brea): fracción de su velocidad mientras dura. */ slowT = 0; slowF = 1;
   slow(sec: number, f: number) { this.slowT = Math.max(this.slowT, sec); this.slowF = Math.min(this.slowT > sec ? this.slowF : 1, f); }
-  /** Brazos de los humanoides (balanceo al andar y zarpazo al atacar). */ private armsH: THREE.Mesh[] = []; private attackT = 0;
+  /** Brazos de los humanoides (balanceo al andar y zarpazo al atacar). */ private armsH: THREE.Object3D[] = []; private attackT = 0;
   /** Fallo de código: tiempo hasta el siguiente salto y salto en curso (intocable). */ private glitchT = 2 + Math.random() * 2; private phaseT = 0;
   /** Cura (médico): no pasa de la vida máxima. Devuelve lo curado. */
   heal(n: number) { if (!this.alive) return 0; const l = this.layers[this.layers.length - 1], h = Math.min(n, l.max - l.value); l.value += h; return h; }
@@ -554,8 +557,13 @@ export class Dummy {
       }
       if (this.turretHead) this.turretHead.rotation.y = Math.atan2(to.x, to.z) - this.group.rotation.y; else this.group.rotation.y = Math.atan2(to.x, to.z);
       // Andar: las piernas se balancean (más rápido cuanto más rápido avanza)
-      if (this.legs.length && d > c.range) { this.walkT += dt * c.speed * 3.2; this.legs.forEach((l, i) => (l.rotation.x = Math.sin(this.walkT + i * Math.PI) * 0.5)); }
-      else this.legs.forEach((l) => (l.rotation.x *= 0.85));
+      if (this.legs.length && d > c.range) {
+        // Paso: la cadera adelanta y atrasa la pierna; la rodilla se dobla mientras la pierna va hacia delante (el pie
+        // no arrastra) y el cuerpo sube y baja dos veces por ciclo
+        this.walkT += dt * c.speed * 3.2;
+        this.legs.forEach((l, i) => { const ph = this.walkT + i * Math.PI; l.rotation.x = Math.sin(ph) * 0.55; if (this.knees[i]) this.knees[i].rotation.x = 0.08 + Math.max(0, Math.cos(ph)) * 0.95; });
+        this.bobY = Math.abs(Math.cos(this.walkT)) * 0.045;
+      } else { this.legs.forEach((l) => (l.rotation.x *= 0.85)); this.knees.forEach((k) => (k.rotation.x *= 0.85)); this.bobY *= 0.85; }
     }
     if (this.kind.shape && this.kind.shape !== "humanoid") { this.walkT += dt * (1 + moving * 4); this.animRobot(dt, moving, toTarget); }
     this.buffT = Math.max(0, this.buffT - dt); this.slowT = Math.max(0, this.slowT - dt);
@@ -618,7 +626,7 @@ export class Dummy {
     this.body.rotation.x = this.flinch.x + dt2 * this.deathDir.y + (this.alive ? this.pose.lean : 0); this.body.rotation.z = this.flinch.y + limp * 0.08 * this.limpSide - dt2 * this.deathDir.x + (this.alive ? this.pose.roll : 0);
     this.hitGlow = Math.max(0, this.hitGlow - dt * 9);
     for (let i = 0; i < this.mats.length; i++) { const m = this.mats[i]; if (this.glowSkip.has(m)) continue; m.emissive.copy(this.baseEm[i]).lerp(this.glowColor, this.hitGlow * 0.55); }
-    this.body.position.set((this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0) + this.pushOff.x + this.deathOff.x, -limp * 0.06 - (this.alive ? this.pose.dip : 0), this.pushOff.z + this.deathOff.z);
+    this.body.position.set((this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0) + this.pushOff.x + this.deathOff.x, -limp * 0.06 - (this.alive ? this.pose.dip : 0) + this.bobY, this.pushOff.z + this.deathOff.z);
     // Escaneo: al morir se desintegra de arriba abajo; al reaparecer se compila de abajo arriba
     const wy = this.group.getWorldPosition(new THREE.Vector3()).y;
     const sm = this.scan.material as THREE.MeshBasicMaterial;
