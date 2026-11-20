@@ -759,6 +759,7 @@ async function boot() {
   }
   function startRaid() {
     beginRun("raid");
+    mobs.mod = null; php.noRegen = false;
     const at = raid.start((Math.random() * 2 ** 31) | 0, raidOpt);
     mobs.index = raidOpt.difficulty * 5; // (nivel de los enemigos: +1 por cada 5)
     player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
@@ -841,7 +842,7 @@ async function boot() {
   // Cada sala despejada da datos; tras el guardián se elige una mejora y se decide: extraer (cobrar) o bajar al
   // siguiente sector, más duro. Si caes, pierdes buena parte de los datos.
   const HACK_ROOMS = 5;
-  const roomData = () => Math.round((40 + hack.depth * 18) * curPerks.fortune);
+  const roomData = () => Math.round((40 + hack.depth * 18) * curPerks.fortune * (mobs.mod ? 1.4 : 1));
   function startHack() {
     beginRun("hack");
     Object.assign(hack, { active: true, seed: (Math.random() * 2 ** 31) | 0, depth: 1, data: 0, node: null, extractable: false, path: [] });
@@ -853,8 +854,12 @@ async function boot() {
     hack.extractable = false;
     const at = raid.start((hack.seed + hack.depth * 7919) >>> 0, { rooms: HACK_ROOMS, difficulty: Math.min(2, Math.floor((hack.depth - 1) / 2)) as 0 | 1 | 2 });
     mobs.index = hack.depth * 3;
+    // Regla del sector (desde el 2): enemigos rápidos, duros, letales o sin regeneración; más datos a cambio
+    const mods = ["fast", "tough", "lethal", "noregen"] as const;
+    mobs.mod = hack.depth >= 2 ? mods[Math.floor(Math.random() * mods.length)] : null; php.noRegen = mobs.mod === "noregen";
     player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
     toast(t("hk.sector", { n: hack.depth }));
+    if (mobs.mod) setTimeout(() => { if (hack.active && mobs.mod) toast(t("wm.start", { m: t(`wm.${mobs.mod}`), d: t(`wm.d.${mobs.mod}`) })); }, 2600);
   }
   function hackRoom() { const n = roomData(); hack.data += n; lootChime(1); toast(t("hk.roomData", { n })); }
   function hackPanel(body: string) {
@@ -885,7 +890,7 @@ async function boot() {
   function hackEnd(extracted: boolean) {
     if (run) run.result = extracted ? "extracted" : "lost";
     const pay = Math.round(hack.data * (extracted ? 1 : 1 - DEATH_LOSS));
-    hack.active = false; applyPerks();
+    hack.active = false; mobs.mod = null; php.noRegen = false; applyPerks();
     if (pay > 0) earn(pay);
     gainXp(xpToNext(inv.progress.level) * Math.min(1.5, hack.depth * 0.25));
     toast(t(extracted ? "hk.extracted" : "hk.lost", { n: pay, d: hack.depth }));
@@ -938,7 +943,7 @@ async function boot() {
     const el = $("phealth"); const show = state === "play";
     el.hidden = !show; if (!show) return;
     el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
-    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active && dmode.active ? `  ·  ${t("df.hud", { w: dmode.wave, hp: Math.ceil(defense.core.hp), max: defense.core.max, c: dmode.credits })}${defense.core.shield > 0 ? ` · 🛡 ${Math.ceil(defense.core.shield)}` : ""}${dmode.phase === "build" ? ` · ${t("df.buildT", { s: Math.ceil(dmode.t) })}` : raid.enemiesLeft || mobs.living ? ` · ${t("rd.left", { n: mobs.living + dmode.queue.length })}` : ""}`: raid.active && hack.active ? `  ·  HACK · ${t("hk.sectorN", { n: hack.depth })} · ${t("rd.hud", { n: raid.cleared, of: raid.fights })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
+    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active && dmode.active ? `  ·  ${t("df.hud", { w: dmode.wave, hp: Math.ceil(defense.core.hp), max: defense.core.max, c: dmode.credits })}${defense.core.shield > 0 ? ` · 🛡 ${Math.ceil(defense.core.shield)}` : ""}${dmode.phase === "build" ? ` · ${t("df.buildT", { s: Math.ceil(dmode.t) })}` : raid.enemiesLeft || mobs.living ? ` · ${t("rd.left", { n: mobs.living + dmode.queue.length })}` : ""}`: raid.active && hack.active ? `  ·  HACK · ${t("hk.sectorN", { n: hack.depth })}${mobs.mod ? ` · ${t(`wm.${mobs.mod}`)}` : ""} · ${t("rd.hud", { n: raid.cleared, of: raid.fights })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
   }
 
   // ---------- Botín de enemigos ----------
