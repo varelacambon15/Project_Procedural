@@ -208,6 +208,10 @@ export class Raid {
         } else if (c.kind === "rack") {
           box(c.w, c.h, c.d, c.x, c.h / 2, c.z, rackMat);
           for (let y = 0.45; y < c.h - 0.2; y += 0.42) for (const s of [-1, 1]) box(c.w * 0.86, 0.04, 0.02, c.x, y, c.z + s * (c.d / 2 + 0.005), y % 0.84 < 0.42 ? ledA : ledB, false);
+        } else if (c.kind === "wall") {
+          // Muro interior o bloque central, de suelo a techo, con zócalo y franja de color
+          const wm = wallFor(Math.max(c.w, c.d), c.h); box(c.w, c.h, c.d, c.x, c.h / 2, c.z, wm);
+          box(c.w + 0.06, 0.2, c.d + 0.06, c.x, 1.1, c.z, trimMat, false); box(c.w + 0.1, 0.25, c.d + 0.1, c.x, 0.12, c.z, rackMat, false);
         } else if (c.kind === "barrier") {
           box(c.w, c.h, c.d, c.x, c.h / 2, c.z, wallMat); box(c.w + 0.04, 0.08, c.d + 0.04, c.x, c.h + 0.02, c.z, trimMat, false);
         } else { box(c.w, c.h, c.d, c.x, c.h / 2, c.z, coverMat); box(c.w + 0.02, 0.1, c.d + 0.02, c.x, c.h * 0.7, c.z, trimMat, false); }
@@ -326,6 +330,9 @@ export class Raid {
 
   private begin(st: RoomState, player: THREE.Vector3) {
     st.started = true; st.queue = [...st.room.enemies]; st.spawnT = 0.6; st.t = 0;
+    // (la mayoría ya está en la sala al entrar; el resto llega como refuerzos)
+    for (let k = Math.ceil(st.queue.length * 0.7); k > 0 && st.queue.length; k--) this.spawnIn(st, player, st.queue.shift()!);
+    st.spawnT = 2.5;
     const g = st.room.goal;
     if (g === "waves") { const k = Math.ceil(st.queue.length * 0.55); st.second = st.queue.slice(k); st.queue = st.queue.slice(0, k); }
     if (st.room.kind === "boss") this.hooks.announce("rd.goal.boss");

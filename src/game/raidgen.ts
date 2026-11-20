@@ -4,12 +4,12 @@
 
 export type RoomKind = "start" | "fight" | "loot" | "boss";
 /** Distribución de una sala: cajas sueltas, bosque de pilares, filas de servidores o un ruedo con barreras bajas. */
-export type RoomStyle = "crates" | "pillars" | "racks" | "arena";
+export type RoomStyle = "crates" | "pillars" | "racks" | "arena" | "halls" | "ring";
 /** Objetivo de una sala de combate: limpiarla, aguantar dos oleadas o limpiarla a contrarreloj (premio extra). */
 export type RoomGoal = "purge" | "waves" | "timed";
 export interface RaidRoom { i: number; kind: RoomKind; goal: RoomGoal; limit: number; cx: number; cz: number; w: number; d: number; cell: [number, number]; covers: RaidBox[]; enemies: string[]; style: RoomStyle; h: number }
 /** Caja en el plano (centro, medidas) y altura. */
-export interface RaidBox { x: number; z: number; w: number; d: number; h: number; kind?: "crate" | "pillar" | "rack" | "barrier" }
+export interface RaidBox { x: number; z: number; w: number; d: number; h: number; kind?: "crate" | "pillar" | "rack" | "barrier" | "wall" }
 export interface RaidCorridor { a: number; b: number; x0: number; z0: number; x1: number; z1: number; width: number }
 export interface RaidMap { seed: number; rooms: RaidRoom[]; corridors: RaidCorridor[]; palette: number }
 export interface RaidOptions { rooms: number; difficulty: 0 | 1 | 2 }
@@ -54,12 +54,13 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   const used = new Set(path.map(([x, z]) => `${x},${z}`));
   const rooms: RaidRoom[] = [], corridors: RaidCorridor[] = [];
   const mk = (cell: [number, number], kind: RoomKind): RaidRoom => {
-    const big = kind === "boss" ? 38 : kind === "start" ? 18 : kind === "loot" ? 14 : 22 + Math.floor(r() * 10);
-    const w = kind === "boss" ? big : Math.min(CELL - 10, big + Math.floor(r() * 6)), d = kind === "boss" ? big : Math.min(CELL - 10, big + Math.floor(r() * 6));
+    // (variedad: cada lado por separado, salas alargadas o anchas, de pasillo largo a nave grande)
+    const [lo, hi] = kind === "boss" ? [32, 40] : kind === "start" ? [16, 22] : kind === "loot" ? [12, 20] : [16, 40];
+    const w = lo + Math.floor(r() * (hi - lo + 1)), d = lo + Math.floor(r() * (hi - lo + 1));
     return { i: rooms.length, kind, goal: "purge", limit: 0, cx: cell[0] * CELL, cz: cell[1] * CELL, w, d, cell, covers: [], enemies: [], style: "crates", h: 6 };
   };
   path.forEach((c, i) => rooms.push(mk(c, i === 0 ? "start" : i === path.length - 1 ? "boss" : "fight")));
-  const link = (a: RaidRoom, b: RaidRoom) => corridors.push({ a: a.i, b: b.i, x0: a.cx, z0: a.cz, x1: b.cx, z1: b.cz, width: DOOR_W });
+  const link = (a: RaidRoom, b: RaidRoom) => corridors.push({ a: a.i, b: b.i, x0: a.cx, z0: a.cz, x1: b.cx, z1: b.cz, width: DOOR_W + Math.floor(r() * 4) });
   for (let i = 1; i < rooms.length; i++) link(rooms[i - 1], rooms[i]);
   // Salas laterales de botín (callejones sin salida) colgando de alguna sala de combate
   const fights = rooms.filter((x) => x.kind === "fight");
@@ -71,9 +72,9 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
     const lr = mk(c, "loot"); rooms.push(lr); link(f, lr);
   }
   // Coberturas según el estilo de cada sala, lejos de las puertas y del centro de paso
-  const STYLES: RoomStyle[] = ["crates", "pillars", "racks", "arena"];
+  const STYLES: RoomStyle[] = ["crates", "pillars", "racks", "arena", "halls", "ring"];
   for (const room of rooms) {
-    room.h = room.kind === "boss" ? 9 : room.kind === "loot" || room.kind === "start" ? 5 : 5.5 + Math.floor(r() * 4) * 0.8;
+    room.h = room.kind === "boss" ? 9 + Math.floor(r() * 3) : room.kind === "loot" || room.kind === "start" ? 5 : 5 + Math.floor(r() * 7) * 0.8;
     if (room.kind === "start" || room.kind === "loot") continue;
     room.style = room.kind === "boss" ? "pillars" : STYLES[Math.floor(r() * STYLES.length)];
     const doorFree = (x: number, z: number, m = 5) => !(Math.abs(x - room.cx) < DOOR_W && Math.abs(z - room.cz) > room.d / 2 - m || Math.abs(z - room.cz) < DOOR_W && Math.abs(x - room.cx) > room.w / 2 - m);
@@ -93,6 +94,23 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
       }
       continue;
     }
+    if (room.style === "halls") {
+      // Galerías: muros interiores de suelo a techo, con un hueco en medio para cruzar (el eje central queda libre)
+      const alongZ = room.d >= room.w, L = alongZ ? room.d : room.w, W = alongZ ? room.w : room.d;
+      for (const s of W > 22 ? [-1, 1] : [r() < 0.5 ? -1 : 1]) {
+        const off = s * W * (0.22 + r() * 0.06), gap = 2.6 + r() * 1.2, a0 = -L / 2 + 3, a1 = L / 2 - 3;
+        for (const [p0, p1] of [[a0, -gap], [gap, a1]] as const) {
+          const len = p1 - p0, c = (p0 + p1) / 2; if (len < 2) continue;
+          room.covers.push(alongZ ? { x: room.cx + off, z: room.cz + c, w: 0.6, d: len, h: room.h, kind: "wall" } : { x: room.cx + c, z: room.cz + off, w: len, d: 0.6, h: room.h, kind: "wall" });
+        }
+      }
+    } else if (room.style === "ring") {
+      // Anillo: un gran bloque en el centro (hay que rodearlo) y columnas en las esquinas
+      const bw = room.w * (0.22 + r() * 0.1), bd = room.d * (0.22 + r() * 0.1);
+      room.covers.push({ x: room.cx, z: room.cz, w: bw, d: bd, h: room.h, kind: "wall" });
+      for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) if (r() < 0.6) room.covers.push({ x: room.cx + sx * room.w * 0.32, z: room.cz + sz * room.d * 0.32, w: 1.2, d: 1.2, h: room.h, kind: "pillar" });
+      continue;
+    }
     if (room.style === "arena") {
       // Ruedo: un anillo de barreras bajas alrededor del centro con cuatro entradas, y alguna caja fuera
       const R = Math.min(room.w, room.d) * 0.3;
@@ -106,7 +124,7 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
       const x = room.cx + (r() - 0.5) * (room.w - 6), z = room.cz + (r() - 0.5) * (room.d - 6);
       const nearDoor = Math.abs(x - room.cx) < DOOR_W && Math.abs(z - room.cz) > room.d / 2 - 5 || Math.abs(z - room.cz) < DOOR_W && Math.abs(x - room.cx) > room.w / 2 - 5;
       const clash = room.covers.some((c) => Math.abs(c.x - x) < (c.w + w) / 2 + 1.5 && Math.abs(c.z - z) < (c.d + d) / 2 + 1.5);
-      if (nearDoor || clash || Math.hypot(x - room.cx, z - room.cz) < 3) continue;
+      if (nearDoor || clash || (room.style !== "halls" && Math.hypot(x - room.cx, z - room.cz) < 3)) continue;
       room.covers.push({ x, z, w, d, h, kind: pillar ? "pillar" : "crate" }); k++;
     }
   }
