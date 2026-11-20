@@ -463,9 +463,9 @@ export class Dummy {
     if (this.kind.shield) { P.lean = 0.05 + 0.2 * a; if (a > 0) this.pushOff.z += a * 0.01; P.roll = Math.sin(w) * 0.05 * moving; return; } // (carga con el escudo)
     switch (key) {
       case "small": {
-        P.lean = 0.28 * moving + 0.1;
+        P.lean = 0.12 * moving + 0.05;
         const jab = this.attackT > 0 ? Math.max(0, Math.sin(k * Math.PI * 2)) : 0, jab2 = this.attackT > 0 ? Math.max(0, -Math.sin(k * Math.PI * 2)) : 0;
-        ease(L, Math.sin(w * 1.6) * 0.8 * moving - 1.6 * jab2 - 0.5, null, 16); ease(R, -Math.sin(w * 1.6) * 0.8 * moving - 1.6 * jab - 0.5, null, 16);
+        ease(L, Math.sin(w) * 0.45 * moving - 1.6 * jab2 - 0.15, null, 16); ease(R, -Math.sin(w) * 0.45 * moving - 1.6 * jab - 0.15, null, 16);
         break;
       }
       case "large": case "sturdy": case "boss": case "warden": {
@@ -569,9 +569,13 @@ export class Dummy {
       if (this.legs.length && d > c.range) {
         // Paso: la cadera adelanta y atrasa la pierna; la rodilla se dobla mientras la pierna va hacia delante (el pie
         // no arrastra) y el cuerpo sube y baja dos veces por ciclo
-        this.walkT += dt * c.speed * 3.2;
-        this.legs.forEach((l, i) => { const ph = this.walkT + i * Math.PI; l.rotation.x = Math.sin(ph) * 0.55; if (this.knees[i]) this.knees[i].rotation.x = 0.08 + Math.max(0, Math.cos(ph)) * 0.95; });
-        this.bobY = Math.abs(Math.cos(this.walkT)) * 0.045;
+        // (zancada corta y cadencia ligada a la velocidad: los pies no resbalan; la cadera baja lo justo para que
+        // los pies sigan en el suelo con las piernas abiertas, en vez de quedarse flotando)
+        const A = 0.36, sc = this.kind.scale ?? 1;
+        this.walkT += dt * c.speed * 3.4 / sc;
+        let drop = 0;
+        this.legs.forEach((l, i) => { const ph = this.walkT + i * Math.PI, a = Math.sin(ph) * A; l.rotation.x = a; drop = Math.max(drop, 1.27 * (1 - Math.cos(a))); if (this.knees[i]) this.knees[i].rotation.x = 0.05 + Math.max(0, Math.cos(ph)) * Math.max(0, Math.sin(ph + 0.6)) * 0.75; });
+        this.bobY = -drop * 0.85;
       } else { this.legs.forEach((l) => (l.rotation.x *= 0.85)); this.knees.forEach((k) => (k.rotation.x *= 0.85)); this.bobY *= 0.85; }
     }
     if (this.kind.shape && this.kind.shape !== "humanoid") { this.walkT += dt * (1 + moving * 4); this.animRobot(dt, moving, toTarget); }
