@@ -3,6 +3,7 @@
 // Sin luces nuevas (el número de luces es fijo): paneles emisivos en el techo y barreras aditivas en las puertas.
 import * as THREE from "three";
 import { dataPanel, hexFloor } from "./simtex";
+import { mergeStatic } from "./merge";
 import { CELL, DOOR_W, doorsOf, generateRaid, rng, type RaidMap, type RaidOptions, type RaidRoom } from "./raidgen";
 import type { Waves } from "./waves";
 import type { KINDS } from "./dummies";
@@ -233,6 +234,9 @@ export class Raid {
         for (let x = x0 + 2; x < x1; x += 6) box(2.5, 0.05, 1.2, x, CH - 0.04, a.cz, panel, false);
       }
     }
+    // Rendimiento: lo estático se fusiona por material (más de mil piezas → unas decenas de llamadas de dibujo); los
+    // cofres se quedan aparte (se abren y se animan)
+    mergeStatic(g, new Set<THREE.Object3D>(this.states.map((st) => st.chest).filter((c): c is THREE.Group => !!c)));
     this.scene.add(g);
   }
 

@@ -1204,6 +1204,8 @@ async function boot() {
     // Detrás del inventario, el taller y la máquina la sala apenas se ve: se redibuja 1 de cada 4 fotogramas
     // (el inicio y la pausa la mantienen viva). Así abrir un menú no cuesta más que jugar.
     frameNo++;
+    // Sombras: solo en el complejo (la luz que las proyecta no llega a la incursión) y cada 2 fotogramas
+    renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = !raid.active && frameNo % 2 === 0;
     if (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0) draw();
     requestAnimationFrame(frame);
   }
