@@ -22,7 +22,7 @@ import { setAccUid } from "../weapons/accbank";
 import { BUILD, BUILDS, BUILD_BETWEEN, BUILD_TIME, EARLY_BONUS, HUNTERS, SPAWN_GAP, START_CREDITS, coreWave, killReward, sellValue, waveReward } from "./defense";
 import { DefenseFx, type Pad } from "./defensefx";
 import { rng as seedRng } from "./raidgen";
-import { DEATH_LOSS, GUARDIAN_EVERY, HACK_BUFFS, HACK_BUFF_VALUE, cipherLimit, hackChoices, hackEnemies, nodeData, type HackBuff, type HackNode } from "./hackgen";
+import { DEATH_LOSS, HACK_BUFFS, HACK_BUFF_VALUE, type HackBuff, type HackNode } from "./hackgen";
 import type { Manifest, RarityId, WeaponSpec } from "../weapons/types";
 import { getLang, onLang, setLang, t, type Lang } from "../i18n";
 import { DEFAULT_BINDS, DEFAULT_PAD, Input, PAD_NAMES } from "./input";
@@ -687,9 +687,10 @@ async function boot() {
     mobs, colliders: world.colliders, shootables: world.shootables, toast,
     announce: (k, p) => toast(t(k, p)),
     onBossPhase: () => { if (settings.screenShake) shake = Math.min(0.8, shake + 0.6); lootChime(2); },
-    onClear: (n, of) => hack.active ? hackCleared() : toast(t("rd.cleared", { n, of: of - 1 })),
-    onChest: (at) => { if (hack.active) setTimeout(() => { if (hack.active) hackCleared(); }, 2500); if (Math.random() < MODULE_CHANCE.raidChest) grantModule(); for (let i = 0; i < 2; i++) dropLoot("big", at.clone().add(new THREE.Vector3((i - 0.5) * 0.8, 0, 0))); toast(t("rd.chest")); },
+    onClear: (n, of) => hack.active ? hackRoom() : toast(t("rd.cleared", { n, of: of - 1 })),
+    onChest: (at) => { if (Math.random() < MODULE_CHANCE.raidChest) grantModule(); for (let i = 0; i < 2; i++) dropLoot("big", at.clone().add(new THREE.Vector3((i - 0.5) * 0.8, 0, 0))); toast(t("rd.chest")); },
     onWin: () => {
+      if (hack.active) { hackSectorDone(); return; }
       const D = RAID_DIFF[raidOpt.difficulty], k = raidOpt.rooms / 6;
       const rarity = (D.rarity === "legendaria" && Math.random() < 0.5 ? "epica" : D.rarity) as RarityId;
       const it = makeItem(rollWeapon(rarity));
@@ -836,63 +837,64 @@ async function boot() {
     toast(t("df.end", { n: dmode.wave, c: cr })); defense.clear(); if (waveTerm) { scene.remove(waveTerm); waveTerm = null; } $("raidmenu").hidden = true; returnHub(false); resume();
   }
 
-  // ---------- Modo Hack: red de nodos por profundidad, extracción o seguir bajando ----------
+  // ---------- Modo Hack: carrera continua por sectores (mapas de 5 salas con un guardián al final) ----------
+  // Cada sala despejada da datos; tras el guardián se elige una mejora y se decide: extraer (cobrar) o bajar al
+  // siguiente sector, más duro. Si caes, pierdes buena parte de los datos.
+  const HACK_ROOMS = 5;
+  const roomData = () => Math.round((40 + hack.depth * 18) * curPerks.fortune);
   function startHack() {
     beginRun("hack");
-    Object.assign(hack, { active: true, seed: (Math.random() * 2 ** 31) | 0, depth: 0, data: 0, node: null, extractable: false, path: [] });
+    Object.assign(hack, { active: true, seed: (Math.random() * 2 ** 31) | 0, depth: 1, data: 0, node: null, extractable: false, path: [] });
     for (const k of HACK_BUFFS) hack.buffs[k] = 0;
-    applyPerks(); php.reset(); waves.stop(); openHackMap();
+    applyPerks(); php.reset(); waves.stop(); hackSector();
   }
+  function hackSector() {
+    $("raidmenu").hidden = true; resume();
+    hack.extractable = false;
+    const at = raid.start((hack.seed + hack.depth * 7919) >>> 0, { rooms: HACK_ROOMS, difficulty: Math.min(2, Math.floor((hack.depth - 1) / 2)) as 0 | 1 | 2 });
+    mobs.index = hack.depth * 3;
+    player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
+    toast(t("hk.sector", { n: hack.depth }));
+  }
+  function hackRoom() { const n = roomData(); hack.data += n; lootChime(1); toast(t("hk.roomData", { n })); }
   function hackPanel(body: string) {
     state = "raidmenu"; input.unlock();
     const el = $("raidmenu"); el.hidden = false;
     const buffs = HACK_BUFFS.filter((b) => hack.buffs[b] > 0).map((b) => `${t(`hk.buff.${b}`)} +${Math.round(hack.buffs[b] * 100)} %`).join(" · ") || "—";
-    el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">HACK//</span><h1>${t("hk.title")}</h1><span class="credits">${t("hk.depth", { n: hack.depth })} · ${t("hk.data", { n: hack.data })}</span></header>
+    el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">HACK//</span><h1>${t("hk.title")}</h1><span class="credits">${t("hk.sectorN", { n: hack.depth })} · ${t("hk.data", { n: hack.data })}</span></header>
       <section class="panel ct-list"><p class="note">${t("hk.buffs")}: ${buffs}</p>${body}</section></div>`;
     nav.setRoot(el); setTimeout(() => el.querySelector<HTMLElement>("[data-nav]")?.focus(), 0);
   }
-  function openHackMap() {
-    const opts = hackChoices(hack.seed, hack.depth + 1);
-    // Camino recorrido (un punto de color por nodo) y distancia al próximo guardián
-    const toG = GUARDIAN_EVERY - (hack.depth % GUARDIAN_EVERY);
-    const trail = `<div class="hktrail">${hack.path.map((k, i) => `<i class="${k}" title="${i + 1}">${i + 1}</i>`).join("<em>▸</em>")}${hack.path.length ? "<em>▸</em>" : ""}<i class="next">?</i></div>
-      <p class="note">${toG === 1 ? t("hk.guardNext") : t("hk.guardIn", { n: toG })}</p>`;
-    hackPanel(`${trail}<h2>${t("hk.next", { n: hack.depth + 1 })}</h2><div class="hknodes">${opts.map((o, i) => `<button type="button" class="tile hknode ${o.kind}" data-hk="${i}" data-nav><b>${t(`hk.node.${o.kind}`)}</b><span>${t(`hk.nd.${o.kind}`)}</span><i>+${nodeData(o)} ${t("hk.dataU")}</i></button>`).join("")}</div>
-      ${hack.extractable ? `<div class="actions"><button type="button" class="btn" data-hkx="1" data-nav>${t("hk.extract", { n: hack.data })}</button></div><p class="note">${t("hk.extractNote", { p: Math.round(DEATH_LOSS * 100) })}</p>` : `<p class="note">${t("hk.howto", { p: Math.round(DEATH_LOSS * 100) })}</p>`}`);
-    (hackMapOpts = opts);
-  }
-  let hackMapOpts: HackNode[] = [], hackBuffOpts: HackBuff[] = [];
-  function hackEnter(node: HackNode) {
-    $("raidmenu").hidden = true; resume();
-    hack.node = node; hack.path.push(node.kind); hack.depth = node.depth; hack.extractable = false; mobs.index = Math.floor(node.depth * 1.5);
-    const en = hackEnemies(node), at = raid.startNode(node.seed, node.kind === "loot" ? "loot" : "fight", en, node.kind === "cipher" ? cipherLimit(en.length) : 0, node.depth % 5);
-    player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
-    toast(t(`hk.go.${node.kind}`, { s: cipherLimit(en.length) }));
-  }
-  function hackCleared() {
-    const node = hack.node; if (!node) return;
-    hack.data += Math.round(nodeData(node) * curPerks.fortune); lootChime(2);
-    if (node.kind === "guardian") hack.extractable = true;
+  let hackBuffOpts: HackBuff[] = [];
+  /** Guardián derrotado: premio grande, elegir mejora y luego extraer o bajar. */
+  function hackSectorDone() {
+    const bonus = Math.round(roomData() * 3.5); hack.data += bonus; hack.extractable = true; lootChime(4);
+    toast(t("hk.guardDown", { n: bonus }));
     setTimeout(() => {
       if (!hack.active) return;
-      if (node.kind === "cipher" && raid.lastTimedOk) { hackBuffOpts = [...HACK_BUFFS].sort(() => Math.random() - 0.5).slice(0, 3); hackPanel(`<h2>${t("hk.pickBuff")}</h2><div class="hknodes">${hackBuffOpts.map((b, i) => `<button type="button" class="tile hknode buff" data-hkb="${i}" data-nav><b>${t(`hk.buff.${b}`)}</b><i>+${Math.round(HACK_BUFF_VALUE[b] * 100)} %</i></button>`).join("")}</div>`); return; }
-      if (node.kind === "cipher") toast(t("hk.cipherFail"));
-      openHackMap();
-    }, 1800);
+      hackBuffOpts = [...HACK_BUFFS].sort(() => Math.random() - 0.5).slice(0, 3);
+      hackPanel(`<h2>${t("hk.pickBuff")}</h2><div class="hknodes">${hackBuffOpts.map((b, i) => `<button type="button" class="tile hknode buff" data-hkb="${i}" data-nav><b>${t(`hk.buff.${b}`)}</b><i>+${Math.round(HACK_BUFF_VALUE[b] * 100)} %</i></button>`).join("")}</div>`);
+    }, 2200);
+  }
+  function hackChoice() {
+    hackPanel(`<h2>${t("hk.sectorClear", { n: hack.depth })}</h2>
+      <div class="actions"><button type="button" class="btn" data-hkgo="1" data-nav>${t("hk.deeper", { n: hack.depth + 1 })}</button>
+      <button type="button" class="btn ghost" data-hkx="1" data-nav>${t("hk.extract", { n: hack.data })}</button></div>
+      <p class="note">${t("hk.extractNote", { p: Math.round(DEATH_LOSS * 100) })}</p>`);
   }
   function hackEnd(extracted: boolean) {
     if (run) run.result = extracted ? "extracted" : "lost";
     const pay = Math.round(hack.data * (extracted ? 1 : 1 - DEATH_LOSS));
     hack.active = false; applyPerks();
     if (pay > 0) earn(pay);
-    gainXp(xpToNext(inv.progress.level) * Math.min(1.5, hack.depth * 0.12));
+    gainXp(xpToNext(inv.progress.level) * Math.min(1.5, hack.depth * 0.25));
     toast(t(extracted ? "hk.extracted" : "hk.lost", { n: pay, d: hack.depth }));
     $("raidmenu").hidden = true; returnHub(extracted); resume();
   }
   $("raidmenu").addEventListener("click", (e) => {
     if (!hack.active) return; const tg = e.target as HTMLElement;
-    const n = tg.closest<HTMLElement>("[data-hk]"); if (n) { hackEnter(hackMapOpts[Number(n.dataset.hk)]); return; }
-    const b = tg.closest<HTMLElement>("[data-hkb]"); if (b) { const id = hackBuffOpts[Number(b.dataset.hkb)]; hack.buffs[id] += HACK_BUFF_VALUE[id]; applyPerks(); toast(t("hk.gotBuff", { b: t(`hk.buff.${id}`) })); openHackMap(); return; }
+    const b = tg.closest<HTMLElement>("[data-hkb]"); if (b) { const id = hackBuffOpts[Number(b.dataset.hkb)]; hack.buffs[id] += HACK_BUFF_VALUE[id]; applyPerks(); toast(t("hk.gotBuff", { b: t(`hk.buff.${id}`) })); hackChoice(); return; }
+    if (tg.closest("[data-hkgo]")) { hack.depth++; hackSector(); return; }
     if (tg.closest("[data-hkx]")) hackEnd(true);
   });
   let modeMenu: "raid" | "survival" | "defense" | "hack" = "raid";
@@ -936,7 +938,7 @@ async function boot() {
     const el = $("phealth"); const show = state === "play";
     el.hidden = !show; if (!show) return;
     el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
-    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active && dmode.active ? `  ·  ${t("df.hud", { w: dmode.wave, hp: Math.ceil(defense.core.hp), max: defense.core.max, c: dmode.credits })}${defense.core.shield > 0 ? ` · 🛡 ${Math.ceil(defense.core.shield)}` : ""}${dmode.phase === "build" ? ` · ${t("df.buildT", { s: Math.ceil(dmode.t) })}` : raid.enemiesLeft || mobs.living ? ` · ${t("rd.left", { n: mobs.living + dmode.queue.length })}` : ""}`: raid.active && hack.active ? `  ·  HACK · ${t("hk.depth", { n: hack.depth })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
+    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active && dmode.active ? `  ·  ${t("df.hud", { w: dmode.wave, hp: Math.ceil(defense.core.hp), max: defense.core.max, c: dmode.credits })}${defense.core.shield > 0 ? ` · 🛡 ${Math.ceil(defense.core.shield)}` : ""}${dmode.phase === "build" ? ` · ${t("df.buildT", { s: Math.ceil(dmode.t) })}` : raid.enemiesLeft || mobs.living ? ` · ${t("rd.left", { n: mobs.living + dmode.queue.length })}` : ""}`: raid.active && hack.active ? `  ·  HACK · ${t("hk.sectorN", { n: hack.depth })} · ${t("rd.hud", { n: raid.cleared, of: raid.fights })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
   }
 
   // ---------- Botín de enemigos ----------
