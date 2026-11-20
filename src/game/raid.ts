@@ -91,8 +91,11 @@ export class Raid {
     if (bare) {
       // Defensa: sala amplia y distinta cada vez (tamaño, proporción y obstáculos al azar), con el centro y los anillos
       // de plataformas libres
-      const r = rng(seed ^ 0x5bd1e995); room.w = 42 + Math.floor(r() * 13); room.d = 42 + Math.floor(r() * 13); room.h = 7 + r() * 3;
-      const R = Math.min(room.w, room.d) / 2 - 2, n = 6 + Math.floor(r() * 8);
+      const r = rng(seed ^ 0x5bd1e995); room.w = 78 + Math.floor(r() * 23); room.d = 78 + Math.floor(r() * 23); room.h = 9 + r() * 4;
+      // (mucho más grande: se aleja de la sala de entrada en la misma dirección para que no se solapen)
+      { const dx = room.cx - start.cx, dz = room.cz - start.cz, L = Math.hypot(dx, dz) || 1, along = Math.abs(dx) > Math.abs(dz) ? (start.w + room.w) / 2 : (start.d + room.d) / 2, need = along + 8;
+        if (L < need) { room.cx = start.cx + (dx / L) * need; room.cz = start.cz + (dz / L) * need; } }
+      const R = Math.min(room.w, room.d) / 2 - 2, n = 14 + Math.floor(r() * 12);
       for (let i = 0, tries = 0; i < n && tries < 80; tries++) {
         const a = r() * Math.PI * 2, rr = R * (r() < 0.5 ? 0.46 + r() * 0.06 : 0.76 + r() * 0.12), x = room.cx + Math.cos(a) * rr, z = room.cz + Math.sin(a) * rr;
         if (room.covers.some((c) => Math.hypot(c.x - x, c.z - z) < 5)) continue;

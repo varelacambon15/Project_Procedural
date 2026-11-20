@@ -36,7 +36,7 @@ export class DefenseFx {
     for (let i = 0; i < 4; i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.6, 0.18), metal(0x3a4048)); const a = (i / 4) * Math.PI * 2; p.position.set(Math.cos(a) * 1.15, 1, Math.sin(a) * 1.15); g.add(p); }
     this.group.add(g); this.core.mesh = g;
     // Anillos de plataformas con número y giro al azar (y sin pisar los obstáculos de la sala)
-    const rings: [number, number, number][] = [[radius * (0.28 + rnd() * 0.06), 5 + Math.floor(rnd() * 3), rnd() * Math.PI], [radius * (0.6 + rnd() * 0.06), 8 + Math.floor(rnd() * 4), rnd() * Math.PI]];
+    const rings: [number, number, number][] = [[radius * (0.28 + rnd() * 0.06), 5 + Math.floor(rnd() * 3), rnd() * Math.PI], [radius * (0.6 + rnd() * 0.06), 8 + Math.floor(rnd() * 4), rnd() * Math.PI], [radius * (0.86 + rnd() * 0.04), 10 + Math.floor(rnd() * 4), rnd() * Math.PI]]; // (tres anillos: la sala es grande)
     for (const [r, n, off] of rings) for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + off, pos = center.clone().add(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r));
       if (avoid.some((c) => Math.hypot(c.x - pos.x, c.z - pos.z) < c.r + 1.6)) continue;
