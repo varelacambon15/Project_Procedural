@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { dataPanel, hexFloor } from "./simtex";
 import { mergeStatic } from "./merge";
-import { CELL, DOOR_W, doorsOf, generateRaid, rng, type RaidMap, type RaidOptions, type RaidRoom } from "./raidgen";
+import { CELL, DOOR_W, RAID_THEMES, doorsOf, generateRaid, rng, type RaidMap, type RaidOptions, type RaidRoom } from "./raidgen";
 import type { Waves } from "./waves";
 import type { KINDS } from "./dummies";
 
@@ -103,7 +103,7 @@ export class Raid {
         const pillar = r() < 0.4; room.covers.push(pillar ? { x, z, w: 1.4, d: 1.4, h: room.h, kind: "pillar" } : { x, z, w: 1.6 + r() * 2.4, d: 1 + r() * 1.4, h: 1.1 + r() * 0.6, kind: "crate" }); i++;
       }
     }
-    this.map = { seed, rooms: [start, room], corridors: base.corridors.filter((c) => c.a < 2 && c.b < 2), palette };
+    this.map = { seed, rooms: [start, room], corridors: base.corridors.filter((c) => c.a < 2 && c.b < 2), palette, theme: base.theme };
     this.opt = { rooms: 2, difficulty: 0 }; this.active = true; this.won = false; this.fightsDone = 0; this.bossPhase = 1; this.lastTimedOk = false;
     this.build(this.map);
     if (bare) { this.states[1].cleared = true; this.states[1].started = true; }
@@ -146,7 +146,11 @@ export class Raid {
     const ceilMat = new THREE.MeshStandardMaterial({ color: 0x3c4046, roughness: 1 });
     const coverMat = new THREE.MeshStandardMaterial({ color: 0x5d636a, metalness: 0.4, roughness: 0.6 });
     const trimMat = new THREE.MeshStandardMaterial({ color: pal.trim, emissive: pal.trim, emissiveIntensity: 0.5 });
-    const panel = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xf4f6ff, emissiveIntensity: 1.1 });
+    // Luz del techo teñida según el tema (sin luces nuevas: los paneles son emisivos)
+    const TINT: Record<string, number> = { datacore: 0xbfe8ff, foundry: 0xffc890, labyrinth: 0xf4f6ff, arena: 0xffb8e0, biolab: 0xc8ffc8 };
+    const panel = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: TINT[map.theme] ?? 0xf4f6ff, emissiveIntensity: map.theme === "labyrinth" ? 0.8 : 1.1 });
+    const theme = RAID_THEMES.find((x) => x.id === map.theme) ?? RAID_THEMES[0];
+    const holoMat = new THREE.MeshBasicMaterial({ map: dataPanel(`#${new THREE.Color(pal.accent).getHexString()}`, map.seed % 53), transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
     const pipeMat = new THREE.MeshStandardMaterial({ color: 0x5a6068, metalness: 0.6, roughness: 0.5 });
     const accentMat = new THREE.MeshStandardMaterial({ color: pal.accent, emissive: pal.accent, emissiveIntensity: 0.9 });
     const rackMat = new THREE.MeshStandardMaterial({ color: 0x1e2228, metalness: 0.5, roughness: 0.5 });
@@ -187,6 +191,20 @@ export class Raid {
         if (alongX) box(len, 0.2, 0.05, cx, 1.1, pos + (s === "n" ? -0.53 : 0.53), trimMat, false); else box(0.05, 0.2, len, pos + (s === "e" ? -0.53 : 0.53), 1.1, cz, trimMat, false);
       };
       (["n", "s", "e", "w"] as const).forEach(side);
+      // Columnas de datos holográficas (más en los temas de datos) y marcos luminosos en las puertas
+      if ((room.kind === "fight" || room.kind === "boss") && rng(room.i * 131 + map.seed)() < theme.columns) {
+        for (const [sx, sz] of [[1, -1], [-1, 1]] as const) {
+          const x = cx + sx * (w / 2 - 3.2), z = cz + sz * (d / 2 - 3.2);
+          if (room.covers.some((c) => Math.abs(c.x - x) < c.w / 2 + 1.5 && Math.abs(c.z - z) < c.d / 2 + 1.5)) continue;
+          const col = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, H - 0.4, 16, 1, true), holoMat); col.position.set(O.x + x, H / 2, O.z + z); g.add(col);
+          box(2.2, 0.25, 2.2, x, 0.12, z, accentMat, false); box(2.2, 0.25, 2.2, x, H - 0.12, z, accentMat, false);
+        }
+      }
+      for (const sd of doors) {
+        const alongX = sd === "n" || sd === "s", pos = sd === "n" ? cz + d / 2 : sd === "s" ? cz - d / 2 : sd === "e" ? cx + w / 2 : cx - w / 2;
+        for (const t of [-1, 1]) { if (alongX) box(0.25, CH, 0.3, cx + t * (DOOR_W / 2 + 0.12), CH / 2, pos, accentMat, false); else box(0.3, CH, 0.25, pos, CH / 2, cz + t * (DOOR_W / 2 + 0.12), accentMat, false); }
+        if (alongX) box(DOOR_W + 0.5, 0.25, 0.3, cx, CH + 0.12, pos, accentMat, false); else box(0.3, 0.25, DOOR_W + 0.5, pos, CH + 0.12, cz, accentMat, false);
+      }
       this.dress(room, doors, H, { box, plane, crateMat, crateDark, barrelMat, screenMat, beamMat, lineMat, rackMat, trimMat, accentMat, g, O });
       // Columnas de luz en dos esquinas y un panel holográfico de datos en una pared (salas de combate y jefe)
       if (room.kind === "fight" || room.kind === "boss") {
@@ -208,7 +226,7 @@ export class Raid {
         } else if (c.kind === "rack") {
           box(c.w, c.h, c.d, c.x, c.h / 2, c.z, rackMat);
           for (let y = 0.45; y < c.h - 0.2; y += 0.42) for (const s of [-1, 1]) box(c.w * 0.86, 0.04, 0.02, c.x, y, c.z + s * (c.d / 2 + 0.005), y % 0.84 < 0.42 ? ledA : ledB, false);
-        } else if (c.kind === "wall") {
+        } else if (c.kind === "wall" || c.kind === "notch") {
           // Muro interior o bloque central, de suelo a techo, con zócalo y franja de color
           const wm = wallFor(Math.max(c.w, c.d), c.h); box(c.w, c.h, c.d, c.x, c.h / 2, c.z, wm);
           box(c.w + 0.06, 0.2, c.d + 0.06, c.x, 1.1, c.z, trimMat, false); box(c.w + 0.1, 0.25, c.d + 0.1, c.x, 0.12, c.z, rackMat, false);

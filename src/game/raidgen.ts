@@ -7,11 +7,25 @@ export type RoomKind = "start" | "fight" | "loot" | "boss";
 export type RoomStyle = "crates" | "pillars" | "racks" | "arena" | "halls" | "ring";
 /** Objetivo de una sala de combate: limpiarla, aguantar dos oleadas o limpiarla a contrarreloj (premio extra). */
 export type RoomGoal = "purge" | "waves" | "timed";
-export interface RaidRoom { i: number; kind: RoomKind; goal: RoomGoal; limit: number; cx: number; cz: number; w: number; d: number; cell: [number, number]; covers: RaidBox[]; enemies: string[]; style: RoomStyle; h: number }
+export interface RaidRoom { i: number; kind: RoomKind; goal: RoomGoal; limit: number; cx: number; cz: number; w: number; d: number; cell: [number, number]; covers: RaidBox[]; enemies: string[]; style: RoomStyle; h: number; shape: RoomShape }
 /** Caja en el plano (centro, medidas) y altura. */
-export interface RaidBox { x: number; z: number; w: number; d: number; h: number; kind?: "crate" | "pillar" | "rack" | "barrier" | "wall" }
+export interface RaidBox { x: number; z: number; w: number; d: number; h: number; kind?: "crate" | "pillar" | "rack" | "barrier" | "wall" | "notch" }
 export interface RaidCorridor { a: number; b: number; x0: number; z0: number; x1: number; z1: number; width: number }
-export interface RaidMap { seed: number; rooms: RaidRoom[]; corridors: RaidCorridor[]; palette: number }
+/**
+ * Tema de la incursión: decide el carácter de todo el mapa (formas de sala, estilos de cobertura, tamaños, paleta y
+ * densidad de detalle), para que cada incursión se sienta distinta aunque compartan piezas.
+ */
+export interface RaidTheme { id: string; styles: RoomStyle[]; shapes: number; size: [number, number]; palettes: number[]; columns: number; corridorW: [number, number] }
+export const RAID_THEMES: RaidTheme[] = [
+  { id: "datacore", styles: ["racks", "halls", "racks", "ring"], shapes: 0.5, size: [18, 34], palettes: [1, 0], columns: 1, corridorW: [5, 6] },     // centro de datos: filas de servidores, columnas de datos
+  { id: "foundry", styles: ["crates", "pillars", "arena", "crates"], shapes: 0.7, size: [22, 40], palettes: [2, 4], columns: 0.3, corridorW: [6, 9] }, // fundición: naves grandes y oxidadas
+  { id: "labyrinth", styles: ["halls", "halls", "ring", "pillars"], shapes: 0.9, size: [16, 28], palettes: [0, 3], columns: 0.5, corridorW: [5, 5] }, // laberinto: salas recortadas y estrechas
+  { id: "arena", styles: ["arena", "ring", "pillars", "arena"], shapes: 0.2, size: [28, 40], palettes: [4, 0], columns: 0.6, corridorW: [7, 9] },      // circuito de combate: ruedos amplios
+  { id: "biolab", styles: ["pillars", "crates", "halls", "ring"], shapes: 0.6, size: [18, 32], palettes: [3, 1], columns: 0.8, corridorW: [5, 7] },  // laboratorio: verde químico
+];
+/** Forma de la planta (recortes de suelo a techo en esquinas o lados). */
+export type RoomShape = "box" | "L" | "T" | "cross" | "U";
+export interface RaidMap { seed: number; rooms: RaidRoom[]; corridors: RaidCorridor[]; palette: number; theme: string }
 export interface RaidOptions { rooms: number; difficulty: 0 | 1 | 2 }
 
 export const CELL = 46;
@@ -38,6 +52,7 @@ export function roomEnemies(r: () => number, step: number, total: number, diffic
 
 export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   const r = rng(seed), total = Math.max(3, Math.min(10, opt.rooms));
+  const theme = RAID_THEMES[Math.floor(r() * RAID_THEMES.length)];
   // Camino principal: paseo aleatorio por la cuadrícula sin repetir celdas (preferencia por avanzar en +Z)
   let path: [number, number][] = [];
   for (let tries = 0; tries < 200 && path.length < total; tries++) {
@@ -55,12 +70,12 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   const rooms: RaidRoom[] = [], corridors: RaidCorridor[] = [];
   const mk = (cell: [number, number], kind: RoomKind): RaidRoom => {
     // (variedad: cada lado por separado, salas alargadas o anchas, de pasillo largo a nave grande)
-    const [lo, hi] = kind === "boss" ? [32, 40] : kind === "start" ? [16, 22] : kind === "loot" ? [12, 20] : [16, 40];
+    const [lo, hi] = kind === "boss" ? [32, 40] : kind === "start" ? [16, 22] : kind === "loot" ? [12, 20] : theme.size;
     const w = lo + Math.floor(r() * (hi - lo + 1)), d = lo + Math.floor(r() * (hi - lo + 1));
-    return { i: rooms.length, kind, goal: "purge", limit: 0, cx: cell[0] * CELL, cz: cell[1] * CELL, w, d, cell, covers: [], enemies: [], style: "crates", h: 6 };
+    return { i: rooms.length, kind, goal: "purge", limit: 0, cx: cell[0] * CELL, cz: cell[1] * CELL, w, d, cell, covers: [], enemies: [], style: "crates", h: 6, shape: "box" };
   };
   path.forEach((c, i) => rooms.push(mk(c, i === 0 ? "start" : i === path.length - 1 ? "boss" : "fight")));
-  const link = (a: RaidRoom, b: RaidRoom) => corridors.push({ a: a.i, b: b.i, x0: a.cx, z0: a.cz, x1: b.cx, z1: b.cz, width: DOOR_W + Math.floor(r() * 4) });
+  const link = (a: RaidRoom, b: RaidRoom) => corridors.push({ a: a.i, b: b.i, x0: a.cx, z0: a.cz, x1: b.cx, z1: b.cz, width: theme.corridorW[0] + Math.floor(r() * (theme.corridorW[1] - theme.corridorW[0] + 1)) });
   for (let i = 1; i < rooms.length; i++) link(rooms[i - 1], rooms[i]);
   // Salas laterales de botín (callejones sin salida) colgando de alguna sala de combate
   const fights = rooms.filter((x) => x.kind === "fight");
@@ -76,7 +91,20 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   for (const room of rooms) {
     room.h = room.kind === "boss" ? 9 + Math.floor(r() * 3) : room.kind === "loot" || room.kind === "start" ? 5 : 5 + Math.floor(r() * 7) * 0.8;
     if (room.kind === "start" || room.kind === "loot") continue;
-    room.style = room.kind === "boss" ? "pillars" : STYLES[Math.floor(r() * STYLES.length)];
+    room.style = room.kind === "boss" ? "pillars" : theme.styles[Math.floor(r() * theme.styles.length)]; void STYLES;
+    // Planta recortada (L, T, U o cruz): bloques de suelo a techo en las esquinas o lados, sin tapar las puertas
+    if (room.kind === "fight" && room.w >= 20 && room.d >= 20 && r() < theme.shapes) {
+      const shapes: RoomShape[] = ["L", "T", "cross", "U"]; room.shape = shapes[Math.floor(r() * shapes.length)];
+      const nw = room.w * (0.26 + r() * 0.08), nd = room.d * (0.26 + r() * 0.08), H = room.h;
+      const corner = (sx: number, sz: number) => room.covers.push({ x: room.cx + sx * (room.w - nw) / 2, z: room.cz + sz * (room.d - nd) / 2, w: nw, d: nd, h: H, kind: "notch" });
+      const pick = Math.floor(r() * 4), C: [number, number][] = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+      if (room.shape === "L") corner(...C[pick]);
+      else if (room.shape === "T") { corner(...C[pick]); corner(...C[(pick + 1) % 4]); }
+      else if (room.shape === "cross") for (const c of C) corner(...c);
+      else if ((() => { const dz = pick < 2 ? (pick % 2 ? 1 : -1) : 0, dx = pick < 2 ? 0 : (pick % 2 ? 1 : -1); const s2 = pick < 2 ? (dz > 0 ? "n" : "s") : (dx > 0 ? "e" : "w"); return doorsOf({ seed, rooms, corridors, palette: 0, theme: theme.id }, room).includes(s2 as never); })()) room.shape = "box";
+      else { const side = pick % 2 ? [1, -1] : [-1, 1]; room.covers.push(pick < 2 ? { x: room.cx, z: room.cz + side[0] * (room.d / 2 - nd / 2), w: room.w * 0.34, d: nd, h: H, kind: "notch" } : { x: room.cx + side[0] * (room.w / 2 - nw / 2), z: room.cz, w: nw, d: room.d * 0.34, h: H, kind: "notch" }); }
+      // (las esquinas recortadas nunca tapan una puerta: las puertas van en el centro de cada lado; la U deja libre su lado)
+    }
     const doorFree = (x: number, z: number, m = 5) => !(Math.abs(x - room.cx) < DOOR_W && Math.abs(z - room.cz) > room.d / 2 - m || Math.abs(z - room.cz) < DOOR_W && Math.abs(x - room.cx) > room.w / 2 - m);
     if (room.style === "pillars") {
       const step = 6 + Math.floor(r() * 2);
@@ -138,7 +166,7 @@ export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   const boss = rooms.find((x) => x.kind === "boss")!;
   for (const f of fights) if (f.enemies.length >= 9 && r() < 0.4) f.enemies[0] = "commander";
   boss.enemies = ["warden", ...roomEnemies(r, nFights, nFights, opt.difficulty).slice(0, 3 + opt.difficulty * 2)];
-  return { seed, rooms, corridors, palette: Math.floor(r() * 5) };
+  return { seed, rooms, corridors, palette: theme.palettes[Math.floor(r() * theme.palettes.length)], theme: theme.id };
 }
 
 /** Lados de una sala por los que entra un pasillo ("n" = +Z, "s" = −Z, "e" = +X, "w" = −X). */
