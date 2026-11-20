@@ -462,3 +462,7 @@ body.touch.in-menu #toast { top: auto; bottom: 8px; max-width: 70vw; font-family
 .hknode { display: flex; flex-direction: column; gap: 4px; padding: 14px; text-align: left; border-left: 3px solid #3fd0d8; }
 .hknode b { font-size: 1.05em; } .hknode span { opacity: .8; font-size: .85em; } .hknode i { color: #7affc8; font-style: normal; font-size: .85em; }
 .hknode.elite { border-color: #ff4a8a; } .hknode.loot { border-color: #f2a541; } .hknode.cipher { border-color: #a35cf0; } .hknode.guardian { border-color: #ff5a3a; } .hknode.buff { border-color: #7affc8; }
+
+/* Resumen de incursión / hack */
+.summary .sumrow { display: flex; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 1.05em; }
+.summary .sumrow b { font-variant-numeric: tabular-nums; }

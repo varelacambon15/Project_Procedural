@@ -197,6 +197,7 @@ async function boot() {
       return dealt;
     },
     onKill(d) {
+      if (run && raid.active && !d.respawn) { run.kills++; if (lastHit.get(d)?.head) run.heads++; }
       // Contador de bajas del arma (accesorio): solo las bajas hechas con ella, no con granadas ni súperes
       if (dmode.active && !d.respawn) dmode.credits += killReward(d.kind.key ?? "", !!d.kind.boss);
       if (!notGun && gun.item && !d.respawn) { gun.item.spec.kills = (gun.item.spec.kills ?? 0) + 1; gun.refreshCounter(); }
@@ -689,20 +690,41 @@ async function boot() {
       if (!inv.add(it)) { const i = inv.storage.indexOf(null); if (i >= 0) { inv.storage[i] = it; inv.changed(); } }
       const cr = Math.round((120 + 12 * inv.progress.level) * D.cr * k * curPerks.fortune); earn(cr);
       gainXp(xpToNext(inv.progress.level) * D.xp * k);
-      lootChime(4); toast(t("rd.won", { n: it.spec.name, c: cr }));
+      lootChime(4); toast(t("rd.won", { n: it.spec.name, c: cr })); if (run) { run.loot = it.spec.name; run.lootColor = it.spec.rarity.color; run.result = "won"; }
       inv.raidsDone++;
       if (inv.raidsDone === 1 || Math.random() < MODULE_CHANCE.raidBoss + MODULE_CHANCE.raidBossPerDifficulty * raidOpt.difficulty) setTimeout(grantModule, 1800); // (la primera incursión, seguro)
       raidReturnT = 6;
     },
   });
   /** Vuelve al vestíbulo (sala B, junto al ordenador) al ganar o morir. Al ganar, el botín del suelo viene contigo. */
+  // ---------- Resumen al acabar una incursión o un hack ----------
+  type Run = { mode: "raid" | "hack"; t0: number; kills: number; heads: number; cr0: number; lv0: number; loot?: string; lootColor?: string; result?: "won" | "lost" | "extracted" | "left"; rooms?: number; fights?: number };
+  let run: Run | null = null;
+  const beginRun = (mode: Run["mode"]) => { run = { mode, t0: playSeconds, kills: 0, heads: 0, cr0: inv.credits, lv0: inv.progress.level }; };
+  function showRunSummary() {
+    const r = run; run = null; if (!r) return;
+    const res = r.result ?? "lost", secs = Math.max(0, Math.round(playSeconds - r.t0)), mm = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+    const color = res === "won" || res === "extracted" ? "#7affc8" : res === "left" ? "#e8a040" : "#ff5a5a";
+    const row = (k: string, v: string) => `<div class="sumrow"><span>${k}</span><b>${v}</b></div>`;
+    const prog = r.mode === "raid" ? row(t("sum.rooms"), `${r.rooms ?? 0} / ${r.fights || "—"}`) : row(t("sum.depth"), String(hack.depth));
+    state = "raidmenu"; input.unlock(); const el = $("raidmenu"); el.hidden = false;
+    el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">${r.mode === "raid" ? "RAID//" : "HACK//"}</span><h1 style="color:${color}">${t(`sum.${res}`)}</h1></header>
+      <section class="panel ct-list summary">${prog}${row(t("sum.time"), mm)}${row(t("sum.kills"), String(r.kills))}${row(t("sum.heads"), String(r.heads))}
+      ${row(t("sum.credits"), `+${Math.max(0, inv.credits - r.cr0)}`)}${inv.progress.level > r.lv0 ? row(t("sum.level"), `${r.lv0} → ${inv.progress.level}`) : ""}
+      ${r.loot ? `<div class="sumrow"><span>${t("sum.loot")}</span><b style="color:${r.lootColor}">${r.loot}</b></div>` : ""}
+      <div class="actions"><button type="button" class="btn" data-sumok="1" data-nav>${t("sum.ok")}</button></div></section></div>`;
+    nav.setRoot(el); setTimeout(() => el.querySelector<HTMLElement>("[data-sumok]")?.focus(), 0);
+  }
+  $("raidmenu").addEventListener("click", (e) => { if ((e.target as HTMLElement).closest("[data-sumok]")) { $("raidmenu").hidden = true; resume(); } });
   function returnHub(won: boolean) {
     const loot = won ? pickups.list.filter((p) => raid.contains(p.root.position)) : [];
+    const summary = !!run && !dmode.active; if (run && !run.result) run.result = won ? "won" : "lost"; if (run) { run.rooms = raid.cleared; run.fights = raid.fights; }
     raid.end(); raidReturnT = -1; sfx.reset();
     const pc = world.interactables.find((i) => i.id === "raid")!.position;
     player.pos.set(pc.x - 2.5, 0, pc.z); player.vel.set(0, 0, 0); player.yaw = Math.PI / 2; player.pitch = 0;
     loot.forEach((p, i) => { p.root.position.set(pc.x - 4.5, 1.1, pc.z - 2 + i * 0.9); p.vel.set(0, 0, 0); p.resting = false; });
     php.reset(); autosave();
+    if (summary) setTimeout(showRunSummary, 400);
   }
   /** Al hall, junto al ordenador de modos (sin tocar la incursión). */
   function toHall() {
@@ -724,11 +746,12 @@ async function boot() {
   function toHub() {
     if (hack.active) hackEnd(hack.extractable);
     else if (dmode.active) defenseEnd();
-    else if (raid.active) { toast(t("rd.left2")); returnHub(false); }
+    else if (raid.active) { toast(t("rd.left2")); if (run) run.result = "left"; returnHub(false); }
     else if (waves.active) leaveSurvival();
     resume();
   }
   function startRaid() {
+    beginRun("raid");
     const at = raid.start((Math.random() * 2 ** 31) | 0, raidOpt);
     mobs.index = raidOpt.difficulty * 5; // (nivel de los enemigos: +1 por cada 5)
     player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
@@ -809,6 +832,7 @@ async function boot() {
 
   // ---------- Modo Hack: red de nodos por profundidad, extracción o seguir bajando ----------
   function startHack() {
+    beginRun("hack");
     Object.assign(hack, { active: true, seed: (Math.random() * 2 ** 31) | 0, depth: 0, data: 0, node: null, extractable: false });
     for (const k of HACK_BUFFS) hack.buffs[k] = 0;
     applyPerks(); php.reset(); waves.stop(); openHackMap();
@@ -847,6 +871,7 @@ async function boot() {
     }, 1800);
   }
   function hackEnd(extracted: boolean) {
+    if (run) run.result = extracted ? "extracted" : "lost";
     const pay = Math.round(hack.data * (extracted ? 1 : 1 - DEATH_LOSS));
     hack.active = false; applyPerks();
     if (pay > 0) earn(pay);
