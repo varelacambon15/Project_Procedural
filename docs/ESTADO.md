@@ -230,6 +230,26 @@ Todo esto está subido y con tests (141) y build en verde. **No se ha publicado 
   - **mantener** lo equipa en lugar de lo que llevas: el objeto vuela girando hasta la mano (`flyToHand`) y el arma anterior pasa a la mochila, o se tira al suelo si no cabe;
   - en el mando, tocar Ⓧ sobre un objeto del suelo ya no recarga.
 
+- **Tienda de mobiliario** (terminal «MOBILIARIO» en la pared derecha del hall, cerca de la entrada; `openFurniture` en main.ts):
+  - catálogo `FURNITURE` en `hallprops.ts`, con 18 objetos, precio, nivel mínimo y categoría (ocio, utilidad, vida y decoración);
+  - lo comprado se guarda (`inv.furniture`, `SaveData.furniture`) y aparece en el hall al momento (`hallProps.apply`, que pone y quita colisiones, blancos y puntos de uso);
+  - **gratis:** el asistente, el armero y el propio terminal. **Se vende** todo lo demás, incluido lo añadido antes: drones, radio, bebidas, fuente, tablón, saco, bancos, macetas, cajas y carteles;
+  - **objetos nuevos:**
+    - acuario holográfico con peces animados;
+    - televisor con noticias y rótulo que se desplaza;
+    - diana de dardos (si le disparas o golpeas te da la puntuación; `onShot` recibe ahora el punto de impacto);
+    - rótulo de neón que parpadea;
+    - alfombra;
+    - cafetera (10 CR: recarga el equipamiento);
+    - máquina recreativa con demo animada;
+    - **mascota robot** que te sigue, se sienta y se asusta si le disparas;
+  - al comprar, el asistente lo celebra (`bot.furn`).
+- **Animación de muerte** (`src/game/deathfx.ts`):
+  - al morir, una mano enguantada sube delante de la cara y se desintegra en píxeles desde los dedos (un plano de recorte que baja y cubitos aditivos que se sueltan);
+  - la cámara cae y se inclina, y la imagen pierde el color (CSS `body.dying`);
+  - dura 2,6 s y luego se aplica lo de siempre según dónde estés (`hurtPlayer`);
+  - mientras dura no hay control.
+
 ### Tests cambiados (avisado al usuario)
 - `tests/supers.test.ts`: número de súperes 20 → 22, y el test de módulos (`slice` e índice) ajustado.
 - `tests/shop.test.ts`: huecos de armas del escaparate 5 → 6.

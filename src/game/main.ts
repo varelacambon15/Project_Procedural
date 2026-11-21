@@ -1,6 +1,6 @@
 // Proving Grounds / Campo de Pruebas: demo jugable de la Fase 1.
 import { DeathFx } from "./deathfx";
-import { HallProps, type HallPropId } from "./hallprops";
+import { FURNITURE, HallProps, type FurnCat, type HallPropId } from "./hallprops";
 import { HallBot } from "./hallbot";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
@@ -131,7 +131,7 @@ function resize() { renderer.setSize(innerWidth, innerHeight); composer.setPixel
 addEventListener("resize", resize); resize();
 
 // ---------- Estado ----------
-type State = "title" | "play" | "pause" | "inventory" | "workbench" | "shop" | "contracts" | "raidmenu";
+type State = "title" | "play" | "pause" | "inventory" | "workbench" | "shop" | "contracts" | "raidmenu" | "furniture";
 let state: State = "title";
 let inGame = false; // hay una partida empezada (nueva o cargada)
 const input = new Input(renderer.domElement);
@@ -172,10 +172,10 @@ async function boot() {
     spend: (n) => { if (inv.credits < n) return false; inv.credits -= n; return true; },
     drink: (sec) => { injectT = sec; injectK = 0.15; applyPerks(); },
     droneShot: () => hallBot.defendDrone(),
+    coffee: () => { if (inv.gadget) gpouch.charges = inv.gadget.charges; },
     beep: (f, len) => { try { const a = audio(), o = a.createOscillator(), g = a.createGain(); o.type = "square"; o.frequency.value = f; g.gain.setValueAtTime(0.06, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + len); o.connect(g); g.connect(out()); o.start(); o.stop(a.currentTime + len + 0.02); } catch { /* sin audio */ } },
   });
-  world.interactables.push(...hallProps.props);
-  const HALL_PROP = new Set(["rack", "radio", "vending", "cooler", "board"]);
+  const HALL_PROP = new Set(["rack", "radio", "vending", "cooler", "board", "coffee", "arcade", "furniture"]);
   asm.preloadKit(); asm.asyncAO = true;
 
   // Números de daño (tecla N) y nivel de pixelado (tecla P): atajos en la sala; también en Ajustes. Se guardan.
@@ -457,6 +457,37 @@ async function boot() {
       <div class="actions"><button type="button" class="btn" data-claim="1" ${ready ? "" : "disabled"}>${t("ct.claim", { n: ready })}</button></div></section></div>`;
     nav.setRoot(el); setTimeout(() => nav.first(), 0);
   }
+  // ---------- Tienda de mobiliario (terminal del hall): se compra lo que aparece en el hall ----------
+  let furnCat: FurnCat | "all" = "all";
+  function openFurniture() {
+    state = "furniture"; input.unlock();
+    const el = $("furniture"); el.hidden = false; const lvl = inv.progress.level, own = new Set(inv.furniture);
+    const cats: (FurnCat | "all")[] = ["all", "fun", "util", "life", "decor"];
+    const row = (f: (typeof FURNITURE)[number]) => {
+      const have = own.has(f.id), locked = lvl < f.level, poor = inv.credits < f.price;
+      const btn = have ? `<span class="fs-own">${t("fs.owned")}</span>` : locked ? `<span class="fs-lock">${t("fs.level", { n: f.level })}</span>`
+        : `<button type="button" class="btn sm" data-buyfurn="${f.id}" ${poor ? "disabled" : ""}>${t("shop.buy", { c: f.price })}</button>`;
+      return `<div class="fs-row${have ? " own" : ""}${locked ? " locked" : ""}"><span class="fs-ico">${FURN_ICON[f.cat]}</span><span class="fs-what"><b>${t(`fs.n.${f.id}`)}</b><small>${t(`fs.d.${f.id}`)}</small></span><span class="fs-cat">${t(`fs.cat.${f.cat}`)}</span>${btn}</div>`;
+    };
+    el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">SIM//</span><h1>${t("fs.title")}</h1><span class="credits">${inv.credits} CR</span><button type="button" class="btn ghost sm" data-close>${t("ui.back")}</button></header>
+      <section class="panel fs-list"><div class="seg">${cats.map((c) => `<button type="button" class="chip ${c === furnCat ? "on" : ""}" data-fcat="${c}">${t(`fs.cat.${c}`)}</button>`).join("")}</div>
+      <p class="note">${t("fs.note", { n: own.size, of: FURNITURE.length })}</p>
+      ${FURNITURE.filter((f) => furnCat === "all" || f.cat === furnCat).map(row).join("")}</section></div>`;
+    nav.setRoot(el); setTimeout(() => nav.first(), 0);
+  }
+  function closeFurniture() { $("furniture").hidden = true; resume(); }
+  $("furniture").addEventListener("click", (e) => {
+    const tg = e.target as HTMLElement;
+    if (tg.closest("[data-close]")) return closeFurniture();
+    const c = tg.closest<HTMLElement>("[data-fcat]"); if (c) { furnCat = c.dataset.fcat as FurnCat | "all"; return openFurniture(); }
+    const b = tg.closest<HTMLElement>("[data-buyfurn]");
+    if (b) {
+      const f = FURNITURE.find((x) => x.id === b.dataset.buyfurn); if (!f || inv.furniture.includes(f.id) || inv.credits < f.price || inv.progress.level < f.level) return;
+      inv.credits -= f.price; inv.furniture.push(f.id); hallProps.apply(new Set(inv.furniture)); creditsHud(); autosave();
+      toast(t("fs.bought", { n: t(`fs.n.${f.id}`) })); hallBot.say(t("bot.furn", { n: t(`fs.n.${f.id}`) }), "excited"); openFurniture();
+    }
+  });
+  const FURN_ICON: Record<FurnCat, string> = { fun: "♫", util: "⚙", life: "❀", decor: "◆" };
   function closeContracts() { $("contracts").hidden = true; resume(); }
   $("contracts").addEventListener("click", (e) => {
     const tg = e.target as HTMLElement;
@@ -484,7 +515,7 @@ async function boot() {
     if (raid.active) raid.end();
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
     // Se empieza sin nada: puños y 0 créditos. El primer dinero sale de golpear o disparar a los muñecos de práctica.
-    inv.gadgets = [makeGadget(Date.now() & 0xffff, "turret", "comun")]; inv.gadgetActive = 0; // (equipamiento inicial: una mini torreta)
+    inv.gadgets = [makeGadget(Date.now() & 0xffff, "turret", "comun")]; inv.gadgetActive = 0; hallProps.apply(new Set(inv.furniture)); // (equipamiento inicial: una mini torreta)
     inv.credits = SHOP.newGameCredits; practice.acc = 0; practice.window = []; shopState = newShopState(); playSeconds = 0; inGame = true;
     applyPerks(); inv.changed(); php.reset();
     toast(t("ui.practiceTip"));
@@ -493,7 +524,7 @@ async function boot() {
     const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i })), ...inv.storage.map((it, i) => ({ it, area: "storage" as const, index: i }))]
       .filter((x) => x.it).map((x) => ({ spec: x.it!.spec, ammo: x.it!.ammo, area: x.area, index: x.index }));
     return { version: SAVE_VERSION, savedAt: "", name, playSeconds: Math.round(playSeconds), credits: inv.credits, weapons, active: inv.active, bank: inv.bank, shop: shopState,
-      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, gadgets: inv.gadgets, gadgetActive: inv.gadgetActive, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone, armors: inv.armors, worn: inv.worn };
+      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, gadgets: inv.gadgets, gadgetActive: inv.gadgetActive, furniture: inv.furniture, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone, armors: inv.armors, worn: inv.worn };
   }
   function apply(d: SaveData) {
     if (raid.active) returnHub(false);
@@ -511,6 +542,7 @@ async function boot() {
     shopState = d.shop; playSeconds = d.playSeconds; contracts = refreshContracts(d.contracts, new Date());
     inv.armors = d.armors ?? []; inv.worn = { head: null, torso: null, legs: null, ...(d.worn ?? {}) }; setArmorUid(Math.max(0, ...inv.armors.map((a) => a.uid)) + 1);
     inv.grenades = d.grenades ?? []; inv.grenadeActive = inv.grenades[d.grenadeActive ?? -1] ? d.grenadeActive! : -1; setGrenadeUid(Math.max(0, ...inv.grenades.map((g) => g.uid)) + 1); pouch.equip(null);
+    inv.furniture = d.furniture ?? []; hallProps.apply(new Set(inv.furniture));
     inv.gadgets = d.gadgets?.length ? d.gadgets : [makeGadget(4242, "turret", "comun")]; inv.gadgetActive = inv.gadgets[d.gadgetActive ?? -1] ? d.gadgetActive! : 0; setGadgetUid(Math.max(0, ...inv.gadgets.map((g) => g.uid)) + 1); // (partidas anteriores: una mini torreta de regalo)
     if (d.superId === "chrono") d.superId = "timestop";
     inv.superId = (SUPER_IDS as string[]).includes(d.superId ?? "") ? (d.superId as SuperId) : "shockwave"; meter.charge = 0;
@@ -1167,7 +1199,7 @@ async function boot() {
 
   function nearInteractable(): Interactable | null {
     const fwd = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
-    for (const i of world.interactables) {
+    for (const i of [...world.interactables, ...hallProps.activeProps()] as Interactable[]) {
       const to = i.position.clone().sub(player.pos); to.y = 0;
       if (to.length() < i.radius && (to.length() < 1 || to.normalize().dot(fwd) > 0.3)) return i;
     }
@@ -1178,6 +1210,7 @@ async function boot() {
   const back = () => {
     if (dialog.isOpen) return dialog.cancel();
     if (state === "contracts") closeContracts();
+    if (state === "furniture") closeFurniture();
     else if (state === "raidmenu") closeRaidMenu();
     else if (state === "inventory") invScreen.close();
     else if (state === "workbench") bench.back();
@@ -1248,6 +1281,7 @@ async function boot() {
       else if (gnade) $("prompt").innerHTML = `${key}${t("ui.pickupNade")}`;
       else if (garmor) $("prompt").innerHTML = `${key}${t("ar.pickup")}`;
       else if (ggad) $("prompt").innerHTML = `${key}${t("gd.pickup")}`;
+      else if (near && near.id === "furniture") $("prompt").innerHTML = `${key}${t("fs.use")}`;
       else if (near && HALL_PROP.has(near.id)) $("prompt").innerHTML = `${key}${hallProps.prompt(near.id as HallPropId)}`;
       else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : near.id === "raid" ? "rd.use" : near.id === "survival" ? "sv.use" : near.id === "defense" ? "df.use" : near.id === "hack" ? "hk.use" : "ui.useBench")}`;
       // Plataforma de construcción cerca: qué hay y qué se puede hacer
@@ -1276,6 +1310,7 @@ async function boot() {
       if (f.holdUse && !target && near) f.interact = true;
       if (f.interact) {
         if (target) { /* (recoger y equipar del suelo: arriba, al soltar o al mantener) */ }
+        else if (near && near.id === "furniture") openFurniture();
         else if (near && HALL_PROP.has(near.id)) hallProps.interact(near.id as HallPropId);
         else if (near) {
           if (near.id === "chest") openScreen("shop");

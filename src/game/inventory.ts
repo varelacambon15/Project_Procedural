@@ -22,6 +22,7 @@ export class Inventory {
   /** Equipamiento que tienes (hasta 8) y el equipado en LB (−1: ninguno). */
   gadgets: import("./gadgets").GadgetSpec[] = [];
   gadgetActive = -1;
+  /** Mobiliario del hall comprado en la tienda de mobiliario (ids de `FURNITURE`). */ furniture: string[] = [];
   get gadget() { return this.gadgets[this.gadgetActive] ?? null; }
   /** Súper elegido en la pestaña Habilidades. */ superId: import("./supers").SuperId = "shockwave";
   /** Súperes desbloqueados con módulos (y modo desarrollador: todos). */ supersOwned: import("./supers").SuperId[] = []; devUnlock = false;
@@ -78,5 +79,5 @@ export class Inventory {
   /** Todas, también las del almacén. */
   get all(): Item[] { return [...this.equip, ...this.pack, ...this.storage].filter((x): x is Item => !!x); }
   /** Vacía todo (nueva partida o carga). */
-  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; this.grenades = []; this.grenadeActive = -1; this.gadgets = []; this.gadgetActive = -1; this.progress = { level: 1, xp: 0, skills: {} }; this.supersOwned = []; this.raidsDone = 0; this.armors = []; this.worn = { head: null, torso: null, legs: null }; }
+  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; this.grenades = []; this.grenadeActive = -1; this.gadgets = []; this.gadgetActive = -1; this.furniture = []; this.progress = { level: 1, xp: 0, skills: {} }; this.supersOwned = []; this.raidsDone = 0; this.armors = []; this.worn = { head: null, torso: null, legs: null }; }
 }

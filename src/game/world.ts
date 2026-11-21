@@ -19,7 +19,7 @@ export function decal<T extends THREE.Mesh>(m: T): T {
 }
 
 
-export interface Interactable { id: "chest" | "workbench" | "waves" | "storage" | "contracts" | "raid" | "survival" | "defense" | "hack" | "rack" | "radio" | "vending" | "cooler" | "board"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
+export interface Interactable { id: "chest" | "workbench" | "waves" | "storage" | "contracts" | "raid" | "survival" | "defense" | "hack" | "rack" | "radio" | "vending" | "cooler" | "board" | "coffee" | "arcade" | "furniture"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
 export interface RangeData { dps: number; ttk: number | null; accuracy: number | null; distance: number | null; message: string }
 export interface World {
   colliders: THREE.Box3[]; interactables: Interactable[]; chestLid: THREE.Object3D; chestGlow: THREE.PointLight; wavesRoom: { z0: number; z1: number; x0: number; x1: number }; shootables: THREE.Object3D[]; lanes: number[];

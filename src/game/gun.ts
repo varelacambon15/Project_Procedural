@@ -822,7 +822,7 @@ export class Gun {
   private meleeProp(eye: THREE.Vector3, q: THREE.Quaternion, reach: number) {
     this.ray.set(eye, new THREE.Vector3(0, 0, -1).applyQuaternion(q)); this.ray.far = reach;
     const hit = this.ray.intersectObjects(this.world, true)[0];
-    (hit?.object.userData.onShot as (() => void) | undefined)?.();
+    if (hit) (hit.object.userData.onShot as ((p: THREE.Vector3) => void) | undefined)?.(hit.point);
   }
   private punchResolve() {
     const eye = this.camera.getWorldPosition(new THREE.Vector3()), q = this.camera.getWorldQuaternion(new THREE.Quaternion());
@@ -1177,7 +1177,7 @@ export class Gun {
       for (const hit of hits) {
         const dummy = hit.object.userData.dummy as Dummy | undefined;
         end = hit.point; firstHit ??= hit.point.clone();
-        if (!dummy) { (hit.object.userData.onShot as (() => void) | undefined)?.(); this.decal(hit, element === "fuego" || element === "explosive"); if (element === "explosive") this.explode(hit.point, s.stats.dano * 0.4 * dmgMult, element); break; }
+        if (!dummy) { (hit.object.userData.onShot as ((p: THREE.Vector3) => void) | undefined)?.(hit.point); this.decal(hit, element === "fuego" || element === "explosive"); if (element === "explosive") this.explode(hit.point, s.stats.dano * 0.4 * dmgMult, element); break; }
         if (seen.has(dummy)) continue; seen.add(dummy); firstTarget ??= dummy;
         const zone = hit.object.userData.zone as Zone;
         const falloff = hit.distance <= s.stats.alcance ? 1 : Math.max(0.45, 1 - (hit.distance - s.stats.alcance) / (s.stats.alcance * 2));
