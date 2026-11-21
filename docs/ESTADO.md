@@ -256,6 +256,18 @@ Todo esto está subido y con tests (141) y build en verde. **No se ha publicado 
   - todo se corta en los huecos de las puertas.
   - El usuario pide en general que el **mapeado y los escenarios** se parezcan más a un juego real; queda mucho por hacer (ver pendientes).
 
+- **Más detalle en el hall:** techo con casetones, conductos laterales y bandeja de cables; pasarela de rejilla de la entrada a la puerta del campo de tiro; tuberías con válvulas en la pared frontal; rejillas de ventilación; extintores; 4 cámaras de seguridad que giran (`cams`); reloj de pared con la hora real (`drawClock`).
+- **Sala B convertida en sala de mando** (rótulo «SALA DE MANDO»):
+  - estrado circular con mesa holográfica: planeta de malla y anillos que giran (`holo`);
+  - pantalla de misión gigante en la pared del fondo;
+  - 4 bancos de consolas con pantallas de datos;
+  - columnas con tiras de luz, techo con casetones y pasarela de rejilla desde la puerta.
+- **Pendiente del repaso de escenario:**
+  - campo de tiro: mamparas, raíles de blancos, focos y paredes acústicas;
+  - incursiones: mobiliario que cuente algo, escombros y desgaste;
+  - iluminación por zonas;
+  - un mostrador de recepción en el hall.
+
 ### Tests cambiados (avisado al usuario)
 - `tests/supers.test.ts`: número de súperes 20 → 22, y el test de módulos (`slice` e índice) ajustado.
 - `tests/shop.test.ts`: huecos de armas del escaparate 5 → 6.

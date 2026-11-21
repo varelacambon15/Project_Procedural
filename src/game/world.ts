@@ -464,6 +464,56 @@ export function buildRange(scene: THREE.Scene): World {
     const nc = new THREE.Mesh(new THREE.PlaneGeometry(NW + 2, NZ1 - NZ0 + 2), dark); nc.rotation.x = Math.PI / 2; nc.position.set(NX0 + NW / 2, NH, (NZ0 + NZ1) / 2); scene.add(nc);
     for (let z = NZ0 + 5; z < NZ1; z += 9) for (let x = NX0 + 6; x < NX0 + NW; x += 12) box(5, 0.06, 1.4, x, NH - 0.05, z, panelLight, false, false);
     const m = sign(t("sign.newroom"), "#7a8a9a", 3.2, 0.8); m.position.set(W / 2 - 0.04, 4.2, (SD0 + SD1) / 2); m.rotation.y = -Math.PI / 2; scene.add(m); }
+  // ---------- Sala de mando (sala B): mesa holográfica, consolas, pantalla de misión, columnas y techo ----------
+  const holo: THREE.Object3D[] = [];
+  {
+    const HX = NX0 + 32, HZ = 18; // centro de la mesa holográfica
+    const plate = new THREE.MeshStandardMaterial({ color: 0x3a424c, roughness: 0.6, metalness: 0.4 });
+    const glowB = new THREE.MeshBasicMaterial({ color: 0x7fe6ff });
+    // Estrado circular con escalón y mesa
+    const dais = new THREE.Mesh(new THREE.CylinderGeometry(6, 6.2, 0.3, 48), plate); dais.position.set(HX, 0.15, HZ); dais.receiveShadow = true; scene.add(dais);
+    colliders.push(new THREE.Box3(new THREE.Vector3(HX - 4.2, 0, HZ - 4.2), new THREE.Vector3(HX + 4.2, 0.3, HZ + 4.2)));
+    const edge = new THREE.Mesh(new THREE.TorusGeometry(6.05, 0.03, 6, 64), glowB); edge.rotation.x = Math.PI / 2; edge.position.set(HX, 0.31, HZ); scene.add(edge);
+    const table = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.0, 1.0, 40), new THREE.MeshStandardMaterial({ color: 0x23282e, roughness: 0.4, metalness: 0.6 })); table.position.set(HX, 0.8, HZ); table.castShadow = true; scene.add(table);
+    colliders.push(new THREE.Box3(new THREE.Vector3(HX - 2.4, 0, HZ - 2.4), new THREE.Vector3(HX + 2.4, 1.3, HZ + 2.4)));
+    const top = new THREE.Mesh(new THREE.CircleGeometry(2.3, 48), new THREE.MeshBasicMaterial({ color: 0x0e3a4a })); top.rotation.x = -Math.PI / 2; top.position.set(HX, 1.31, HZ); scene.add(top);
+    // Holograma: planeta de malla con anillos y puntos de misión que giran
+    const add = (o: THREE.Object3D) => { scene.add(o); holo.push(o); return o; };
+    const hmat = (c: number, op: number) => new THREE.MeshBasicMaterial({ color: c, wireframe: true, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false });
+    add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 2), hmat(0x7fe6ff, 0.55))).position.set(HX, 2.9, HZ);
+    for (const [r, tilt, c] of [[1.8, 0.4, 0xf2c040], [2.1, -0.6, 0xa070ff]] as const) { const ring = add(new THREE.Mesh(new THREE.TorusGeometry(r, 0.012, 6, 64), hmat(c, 0.8))); ring.position.set(HX, 2.9, HZ); ring.rotation.set(Math.PI / 2 + tilt, 0, 0); }
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2.2, 1.6, 32, 1, true), new THREE.MeshBasicMaterial({ color: 0x7fe6ff, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); beam.position.set(HX, 2.1, HZ); scene.add(beam);
+    // Pantalla de misión gigante en la pared del fondo (x = NX0 + NW)
+    const mc = document.createElement("canvas"); mc.width = 512; mc.height = 256; const g = mc.getContext("2d")!;
+    g.fillStyle = "#04121a"; g.fillRect(0, 0, 512, 256); g.strokeStyle = "rgba(127,230,255,.25)"; for (let x = 0; x < 512; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 256); g.stroke(); } for (let y = 0; y < 256; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(512, y); g.stroke(); }
+    g.fillStyle = "#7fe6ff"; g.font = "bold 20px monospace"; g.fillText(t("sign.control"), 20, 36, 472);
+    const pts = [[110, 160, "#ff4a6a"], [220, 90, "#3fd0d8"], [330, 180, "#f2c040"], [420, 110, "#a070ff"]] as const;
+    g.strokeStyle = "rgba(255,255,255,.4)"; g.setLineDash([6, 6]); g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); g.setLineDash([]);
+    for (const [x, y, c] of pts) { g.fillStyle = c; g.beginPath(); g.arc(x, y, 9, 0, Math.PI * 2); g.fill(); g.strokeStyle = c; g.beginPath(); g.arc(x, y, 18, 0, Math.PI * 2); g.stroke(); }
+    const mtx = new THREE.CanvasTexture(mc); mtx.colorSpace = THREE.SRGBColorSpace;
+    const big = new THREE.Mesh(new THREE.PlaneGeometry(16, 8), new THREE.MeshBasicMaterial({ map: mtx, toneMapped: false })); big.position.set(NX0 + NW - 0.4, 5, HZ); big.rotation.y = -Math.PI / 2; scene.add(big);
+    box(0.3, 8.6, 16.6, NX0 + NW - 0.2, 5, HZ, dark, false, false);
+    // Bancos de consolas a lo largo de la pared del fondo, con pantallas de datos
+    for (const z of [-6, 0, 36, 42]) {
+      const cv = document.createElement("canvas"); cv.width = 128; cv.height = 64; const cg = cv.getContext("2d")!;
+      cg.fillStyle = "#06100c"; cg.fillRect(0, 0, 128, 64); cg.fillStyle = "#7aff9a"; cg.font = "9px monospace"; for (let i = 0; i < 6; i++) cg.fillText(Array.from({ length: 18 }, () => "0123456789ABCDEF"[Math.floor(Math.random() * 16)]).join(""), 4, 12 + i * 9);
+      const tx = new THREE.CanvasTexture(cv); tx.magFilter = THREE.NearestFilter;
+      box(1.0, 0.95, 4.4, NX0 + NW - 0.8, 0.475, z, steel);
+      box(0.1, 1.1, 4.2, NX0 + NW - 1.2, 1.75, z, dark, false, false);
+      for (const dz of [-1.4, 0, 1.4]) { const sc = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.9), new THREE.MeshBasicMaterial({ map: tx, toneMapped: false })); sc.position.set(NX0 + NW - 1.26, 1.75, z + dz); sc.rotation.y = -Math.PI / 2; scene.add(sc); }
+      box(0.5, 0.03, 4.2, NX0 + NW - 1.3, 0.97, z, glowB, false, false);
+    }
+    // Columnas y techo con casetones
+    for (const x of [NX0 + 16, NX0 + 48]) for (const z of [NZ0 + 6, NZ0 + 21, NZ0 + 39, NZ0 + 54]) {
+      box(1.1, NH, 1.1, x, NH / 2, z, new THREE.MeshStandardMaterial({ color: 0x8f98a2, roughness: 0.55, metalness: 0.25 }));
+      for (const [dx, dz] of [[0.56, 0], [-0.56, 0], [0, 0.56], [0, -0.56]]) box(dx ? 0.02 : 0.06, NH - 2, dx ? 0.06 : 0.02, x + dx, NH / 2, z + dz, glowB, false, false);
+    }
+    for (let x = NX0 + 8; x < NX0 + NW; x += 12) box(0.3, 0.35, NZ1 - NZ0, x, NH - 0.17, (NZ0 + NZ1) / 2, steel, false, false);
+    for (let z = NZ0 + 9; z < NZ1; z += 9) box(NW, 0.35, 0.3, NX0 + NW / 2, NH - 0.17, z, steel, false, false);
+    // Pasarela de rejilla desde la puerta hasta el estrado
+    const grate = pixelTexture(64, 64, (gg) => { gg.fillStyle = "#4a5058"; gg.fillRect(0, 0, 64, 64); gg.fillStyle = "#2a2e34"; for (let i = 0; i < 64; i += 8) { gg.fillRect(i, 0, 3, 64); gg.fillRect(0, i, 64, 3); } }, [26, 4]);
+    const walk = new THREE.Mesh(new THREE.PlaneGeometry(HX - 6 - NX0, 4), new THREE.MeshStandardMaterial({ map: grate, roughness: 0.5, metalness: 0.6 })); walk.rotation.x = -Math.PI / 2; walk.position.set(NX0 + (HX - 6 - NX0) / 2, 0.007, HZ); walk.receiveShadow = true; scene.add(walk);
+  }
   // Ordenadores de modos (sala B, frente a la puerta): uno por modo, cada uno con su pantalla y su rótulo
   const modePcs: { id: Interactable["id"]; z: number; label: string; color: string; icon: (g: CanvasRenderingContext2D, c: string) => void }[] = [
     { id: "raid", z: 8, label: t("sign.raid"), color: "#3fd0d8", icon: (g, c) => { g.strokeStyle = c; for (let i = 0; i < 6; i++) { const x = 10 + i * 19; g.strokeRect(x, 36 + (i % 2) * 14, 14, 10); if (i) { g.beginPath(); g.moveTo(x - 5, 41 + ((i - 1) % 2) * 14); g.lineTo(x, 41 + (i % 2) * 14); g.stroke(); } } g.fillStyle = "#e8a040"; g.fillRect(105, 50, 14, 10); } },
@@ -648,6 +698,7 @@ export function buildRange(scene: THREE.Scene): World {
       ...modePcs.map((pc) => ({ id: pc.id, position: new THREE.Vector3(NX0 + 8, 0, pc.z), radius: 2.0, label: pc.label, object: modeObjs.get(pc.id)! })),
     ],
     update(dt: number, data: RangeData) {
+      holo.forEach((o, i) => { o.rotation.y += dt * (i === 0 ? 0.25 : 0.12 * (i % 2 ? 1 : -1)); });
       for (const cm of cams) { cm.phase += dt * 0.35; cm.head.rotation.y = cm.base + Math.sin(cm.phase) * 0.6; cm.rec.visible = Math.sin(cm.phase * 6) > -0.2; }
       if (new Date().getMinutes() !== clockMin) drawClock();
       { const p = motes.geometry.attributes.position as THREE.BufferAttribute; for (let i = 0; i < p.count; i++) { let y = p.getY(i) + dt * (0.15 + (i % 7) * 0.03); if (y > 7) y = 0; p.setY(i, y); } p.needsUpdate = true; }
