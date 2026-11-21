@@ -670,6 +670,45 @@ async function boot() {
     pickups.spawn(it, player.pos.clone().add(new THREE.Vector3(0, 1.2, 0)).addScaledVector(fwd, 0.6), fwd.multiplyScalar(2.5).setY(1.5));
     toast(t("ui.dropped", { n: displayName(it.spec) }));
   }
+  // ---------- Equipar desde el suelo (mantener usar): el objeto vuela a la mano y sustituye al que llevas ----------
+  const PICK_HOLD = 0.45;
+  let pickT = -1, pickDone = false;
+  const flyers: { obj: THREE.Object3D; from: THREE.Vector3; t: number; done: () => void }[] = [];
+  function flyToHand(obj: THREE.Object3D, done: () => void) { flyers.push({ obj, from: obj.position.clone(), t: 0, done }); }
+  function updateFlyers(dt: number) {
+    for (const fl of [...flyers]) {
+      fl.t += dt / 0.28; const k = Math.min(1, fl.t), e = k * k * (3 - 2 * k);
+      const hand = camera.getWorldPosition(new THREE.Vector3()).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(0.45)).add(new THREE.Vector3(0, -0.25, 0));
+      fl.obj.position.lerpVectors(fl.from, hand, e); fl.obj.position.y += Math.sin(k * Math.PI) * 0.35; fl.obj.rotation.y += dt * 14; fl.obj.scale.setScalar(1 - 0.6 * e);
+      if (k >= 1) { flyers.splice(flyers.indexOf(fl), 1); scene.remove(fl.obj); fl.done(); }
+    }
+  }
+  function equipFromGround(ground: Pickup | null, gnade: (typeof nadeDrops)[number] | null, garmor: (typeof armorDrops)[number] | null, ggad: (typeof gadgetDrops)[number] | null) {
+    { const l = soundManifest?.efectos.recoger_arma; if (l?.length) playSample(sample(l[0]), 0.55, 1.15); }
+    if (ground) {
+      // (fuera de la lista para que no se pueda volver a apuntar; al llegar a la mano se libera como siempre)
+      const it = ground.item, root = ground.root; pickups.list.splice(pickups.list.indexOf(ground), 1);
+      flyToHand(root, () => {
+        pickups.list.push(ground); pickups.remove(ground);
+        const slot = inv.active, old = inv.equip[slot];
+        if (old) { const free = inv.pack.indexOf(null); inv.set({ area: "equip", index: slot }, null); if (free >= 0) inv.set({ area: "pack", index: free }, old); else dropItem(old); }
+        inv.set({ area: "equip", index: slot }, it); inv.changed();
+        toast(`${displayName(it.spec)} · ${t("ui.equippedTo")}`); autosave();
+      });
+    } else if (gnade) {
+      if (inv.grenades.length >= 8) { toast(t("gr.full")); return; }
+      nadeDrops.splice(nadeDrops.indexOf(gnade), 1);
+      flyToHand(gnade.mesh, () => { inv.grenades.push(gnade.g); inv.grenadeActive = inv.grenades.length - 1; toast(t("ui.equippedNade", { n: t(`gr.${gnade.g.kind}`) })); });
+    } else if (garmor) {
+      if (inv.armors.length >= 12) { toast(t("ar.full")); return; }
+      armorDrops.splice(armorDrops.indexOf(garmor), 1);
+      flyToHand(garmor.mesh, () => { inv.armors.push(garmor.a); inv.worn[garmor.a.slot] = garmor.a.uid; applyPerks(); toast(t("ui.equippedNade", { n: t(`ar.name.${garmor.a.slot}.${garmor.a.variant}`) })); });
+    } else if (ggad) {
+      if (inv.gadgets.length >= 8) { toast(t("gd.full")); return; }
+      gadgetDrops.splice(gadgetDrops.indexOf(ggad), 1);
+      flyToHand(ggad.mesh, () => { inv.gadgets.push(ggad.g); inv.gadgetActive = inv.gadgets.length - 1; toast(t("ui.equippedNade", { n: t(`gd.${ggad.g.kind}`) })); });
+    }
+  }
   /** Recoge el arma del suelo a la que apunta el jugador. */
   function pickUp(p: Pickup) {
     if (!inv.add(p.item)) { toast(t("ui.packFull")); return; }
@@ -1214,13 +1253,21 @@ async function boot() {
         card.innerHTML = ground ? weaponCard(ground.item.spec, inv.current && inv.current !== ground.item ? inv.current.spec : null, inv.current ? t("ui.compared") : "") : gnade ? grenadeCard(gnade.g, inv.grenade ? t("ui.compared") : "", inv.grenade) : garmor ? armorCard(garmor.a, worn ? t("ui.compared") : "", worn) : ggad ? gadgetCard(ggad.g, inv.gadget ? t("gd.compared") : "", inv.gadget) : "";
         card.hidden = !ground && !gnade && !garmor && !ggad; if (gnade) fillNadeThumbs(card); if (garmor) fillArmorThumbs(card);
       }
-      // Ⓧ del mando: mantener = recoger o usar lo que hay cerca (pulsar y soltar recarga)
-      if (f.holdUse && (ground || near || gnade || garmor || ggad)) f.interact = true;
+      // Objetos del suelo: pulsar usar (X / E) los guarda; mantenerlo (PICK_HOLD) los equipa en lugar del que llevas,
+      // con el objeto volando a la mano. Mientras se decide no se recarga (en el mando, Ⓧ también es recargar).
+      const target = (ground ?? gnade ?? garmor ?? ggad) as object | null;
+      if (f.useHeld && target && (pickT >= 0 || f.interact || input.device === "pad")) {
+        if (pickT < 0) { pickT = 0; pickDone = false; } pickT += dt; f.reload = false;
+        if (!pickDone && pickT >= PICK_HOLD) { pickDone = true; equipFromGround(ground, gnade, garmor, ggad); }
+      } else if (!f.useHeld && pickT >= 0) {
+        if (!pickDone && target) { if (ground) pickUp(ground); else if (gnade) pickNade(gnade); else if (garmor) pickArmor(garmor); else if (ggad) pickGadget(ggad); }
+        pickT = -1; f.reload = false;
+      }
+      if (target) $("prompt").innerHTML = `${input.device === "pad" ? `<kbd class="hold" style="--p:${Math.round(Math.max(0, pickT) / PICK_HOLD * 100)}%">${PAD_NAMES[input.padBinds.useReload]}</kbd>` : `<kbd>${input.binds.use.replace(/^Key/, "")}</kbd>`} ${t("ui.pickTap")} · ${t("ui.pickHold")}`;
+      // Ⓧ del mando: mantener = usar lo que hay cerca (pulsar y soltar recarga)
+      if (f.holdUse && !target && near) f.interact = true;
       if (f.interact) {
-        if (ground) pickUp(ground);
-        else if (gnade) pickNade(gnade);
-        else if (garmor) pickArmor(garmor);
-        else if (ggad) pickGadget(ggad);
+        if (target) { /* (recoger y equipar del suelo: arriba, al soltar o al mantener) */ }
         else if (near && HALL_PROP.has(near.id)) hallProps.interact(near.id as HallPropId);
         else if (near) {
           if (near.id === "chest") openScreen("shop");
@@ -1308,7 +1355,7 @@ async function boot() {
         if (inZone && !wasInZone) toast(t("ui.testZone")); wasInZone = inZone; }
       syncGadget(); gpouch.update(dt); gadgets.update(state === "play" ? dt : 0); gadgetHud();
       if (injectT > 0 && (injectT -= dt) <= 0) applyPerks();
-      pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); updateGadgetDrops(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
+      pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); updateGadgetDrops(dt); updateFlyers(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
     healthHud(); xpHud(dt);
     {

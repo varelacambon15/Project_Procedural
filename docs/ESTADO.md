@@ -225,6 +225,11 @@ Todo esto está subido y con tests (141) y build en verde. **No se ha publicado 
   - delante hay un **círculo de pruebas** (`world.testZone`): dentro, la súper está siempre cargada y el equipamiento no gasta cargas;
   - carteles colgados del techo.
 
+- **Recoger del suelo** (armas, granadas, armaduras y equipamiento; `pickT`, `PICK_HOLD` = 0,45 s y `equipFromGround` en main.ts; `Frame.useHeld` en input.ts):
+  - **pulsar** usar (Ⓧ / E) lo guarda, como antes;
+  - **mantener** lo equipa en lugar de lo que llevas: el objeto vuela girando hasta la mano (`flyToHand`) y el arma anterior pasa a la mochila, o se tira al suelo si no cabe;
+  - en el mando, tocar Ⓧ sobre un objeto del suelo ya no recarga.
+
 ### Tests cambiados (avisado al usuario)
 - `tests/supers.test.ts`: número de súperes 20 → 22, y el test de módulos (`slice` e índice) ajustado.
 - `tests/shop.test.ts`: huecos de armas del escaparate 5 → 6.

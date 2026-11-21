@@ -20,6 +20,7 @@ export interface Frame {
   device: "kbm" | "pad";
   /** Botón Ⓧ del mando, como en Call of Duty: mantenido = recoger/usar lo que hay cerca. */
   holdUse?: boolean;
+  /** El botón de usar está pulsado ahora mismo (teclado o mando): recoger (pulsar) o equipar (mantener) del suelo. */ useHeld?: boolean;
 }
 
 const DZ = 0.16;
@@ -111,7 +112,7 @@ export class Input {
       moveX: (k("right") ? 1 : 0) - (k("left") ? 1 : 0), moveZ: (k("forward") ? 1 : 0) - (k("back") ? 1 : 0),
       lookX: this.mouse.dx * this.sensitivity, lookY: this.mouse.dy * this.sensitivity,
       fire: this.mouse.left, aim: this.mouse.right, sprint: k("sprint"), crouch: k("crouch"),
-      jump: kp("jump"), reload: kp("reload"), interact: kp("use"), swap: this.mouse.wheel !== 0 || kp("swap"),
+      useHeld: k("use"), jump: kp("jump"), reload: kp("reload"), interact: kp("use"), swap: this.mouse.wheel !== 0 || kp("swap"),
       inventory: kp("inventory") || this.pressed.has("Tab"), pause: this.pressed.has("Escape"), slot1: kp("slot1"), slot2: kp("slot2"), inspect: kp("inspect"), grenade: kp("grenade"), gadget: kp("gadget"), super: kp("super"), kick: kp("kick"), light: kp("light"), device: this.device,
     };
     this.mouse.dx = this.mouse.dy = 0; this.mouse.wheel = 0; this.pressed.clear();
@@ -137,7 +138,7 @@ export class Input {
       }
       if (this.bumpLock && !b(gb) && !b(nb)) this.bumpLock = false;
       if (this.bumpLock) this.bumpT = -1;
-      const uh = b(P.useReload);
+      const uh = b(P.useReload); f.useHeld ||= uh;
       if (uh) {
         if (this.useT < 0) { this.useT = 0; this.useDone = false; }
         this.useT += dt; this.useHold = Math.min(1, this.useT / USE_HOLD);
