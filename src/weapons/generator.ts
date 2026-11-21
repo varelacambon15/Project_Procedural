@@ -1342,7 +1342,7 @@ const WHOLE_OUT = new Set<string>([
   "p-machine-gun-4", "p-submachine-gun-2", "p-submachine-gun-5",
   "x-pistol-3",
 ]);
-const RETIRED = new Set<string>([
+const RETIRED = new Set<string>(["w-m60", /* (modelo descentrado: todo el arma fuera del eje, apuntaba de lado) */
   // Muy poco detalle (una sola pieza y < 750 triángulos) o no encajan en primera persona (decisión del usuario)
   "z-shotgun-01", "z-shotgun-02", "z-shotgun-03", "z-pistol-02", "w-sawedoff", "q-shotgun-2", "q-shotgun-4", "w-garand",
   "w-sten", "q-assaultrifle2-1",

@@ -436,7 +436,12 @@ export class WeaponAssembler {
     if (ironSet && railTop && railFront) {
       // Miras de hierro: alza en raíl_superior y punto en raíl_frontal, con los alzadores a la altura que deja la línea
       // centro_lente → punta paralela al cañón (si se sale del rango, al máximo)
-      let [ar, af] = ironRisers(ironSet, railTop.y, railFront.y) ?? [ironSet.riser.max, ironSet.riser.max];
+      // (si no cabe en el rango de los alzadores, el punto de mira sube lo que haga falta —hasta 10 cm— para quedar en la
+      // línea del alza; antes se ponían los dos al máximo y el punto quedaba centímetros por debajo de la línea de mira)
+      let [ar, af] = ironRisers(ironSet, railTop.y, railFront.y) ?? (() => {
+        const d = (railTop.y + ironSet.riser.min + ironSet.rear.h) - (railFront.y + ironSet.riser.min + ironSet.front.h);
+        return d > 0 ? [ironSet.riser.min, Math.min(0.1, ironSet.riser.min + d)] : [Math.min(0.1, ironSet.riser.min - d), ironSet.riser.min];
+      })();
       // Si el cajón o la culata asoman por encima de la línea de mira justo detrás del alza (donde va el ojo), se suben
       // los dos alzadores lo mismo (la línea sigue paralela al cañón): si no, al apuntar el ojo quedaba dentro del arma
       {
@@ -666,6 +671,44 @@ export class WeaponAssembler {
     if (sight === null) {
       const own = parts.filter((p) => p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser" && p.from.pack !== "kit39");
       if (own.length) { const ob = new THREE.Box3(); for (const p of own) ob.expandByObject(p.object); if (!ob.isEmpty()) { sight = ob.min.y + (ob.max.y - ob.min.y) * 0.62; zoom = Math.max(zoom, 1.6); } }
+    }
+    // Sin ninguna mira (pistolas, revólveres y armas cuyo modelo no trae alza): se apunta por el lomo, como con las
+    // miras integradas de una pistola: alza en la parte trasera de la corredera/cajón y punto cerca de la boca; la línea
+    // de mira pasa por lo más alto del lomo delantero. Antes se apuntaba «estilo Black» (arma a un lado, sin alinear).
+    if (!spec.optic && ironRearX === null && sight !== null && !ownSight) {
+      // (miras propias del modelo como piezas —pistolas procedurales—: se apunta por ellas, el ojo detrás de la trasera)
+      group.updateMatrixWorld(true);
+      const own = parts.filter((p) => p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser");
+      if (own.length) { const ob = new THREE.Box3(); for (const p of own) ob.expandByObject(p.object); if (!ob.isEmpty() && ob.max.x - ob.min.x > 0.04) { ironRearX = ob.min.x; sight = ob.max.y - 0.0015; } }
+      // (pistolas modulares: traen la altura de sus miras pero no la posición del alza: va en la parte trasera)
+      // (y armas largas generadas por código con su altura de mira pero sin alza: el alza a un tercio del cajón)
+      if (ironRearX === null) { const hg = spec.type === "pistol" || spec.type === "revolver"; const bb = new THREE.Box3(); for (const p of parts) if (p.role !== "magazine" && p.role !== "muzzle" && p.role !== "stock") bb.union(new THREE.Box3().setFromObject(p.object)); if (!bb.isEmpty()) ironRearX = bb.min.x + (bb.max.x - bb.min.x) * (hg ? 0.12 : 0.35); }
+    }
+    if (!spec.optic && ironRearX === null && sight === null) {
+      group.updateMatrixWorld(true);
+      const bb = new THREE.Box3(); for (const p of parts) if (p.role !== "magazine" && p.role !== "muzzle" && p.role !== "stock") bb.union(new THREE.Box3().setFromObject(p.object));
+      if (!bb.isEmpty()) {
+        const L = bb.max.x - bb.min.x, v = new THREE.Vector3();
+        const topAt = (x0: number, x1: number) => { let top = -Infinity; for (const p of parts) if (p.role !== "magazine" && p.role !== "muzzle" && p.role !== "stock") p.object.traverse((o) => { const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position; for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (v.x >= x0 && v.x <= x1 && Math.abs(v.z) < 0.015 && v.y > top) top = v.y; } }); return top; };
+        const handgun = spec.type === "pistol" || spec.type === "revolver";
+        const xr = bb.min.x + L * (handgun ? 0.12 : 0.35), yf = topAt(bb.max.x - L * 0.2, bb.max.x - L * 0.02), yr = topAt(xr - L * 0.06, xr + L * 0.06);
+        if (Number.isFinite(yf) && Number.isFinite(yr)) { sight = Math.max(yf, Math.min(yr, yf + 0.012)) + 0.001; ironRearX = xr; }
+      }
+    }
+    // (líneas de mira deducidas: si el cajón asoma por encima justo detrás del alza, donde va el ojo, la línea sube; si
+    // no, al apuntar el ojo quedaba dentro del arma —p. ej. la M60—)
+    if (!spec.optic && ironRearX !== null && sight !== null && !ownSight) {
+      group.updateMatrixWorld(true); const v = new THREE.Vector3(); let top = -Infinity; const x1 = ironRearX, x0 = x1 - 0.2;
+      for (const p of parts) if (p.role !== "scope" && p.role !== "muzzle" && p.role !== "magazine") p.object.traverse((o) => { const m = o as THREE.Mesh; if (!m.isMesh) return; const pos = m.geometry.attributes.position; for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (v.x > x0 && v.x < x1 && Math.abs(v.z) < 0.02 && v.y > top) top = v.y; } });
+      if (Number.isFinite(top) && top + 0.004 > sight) sight = top + 0.004;
+    }
+    // Miras de hierro: la línea de mira pasa por la punta del punto de mira (la pieza de mira más adelantada), que es la
+    // que marca el blanco; si el alza y el punto no están a la misma altura, manda el punto (hasta 2,5 cm de diferencia)
+    if (ironRearX !== null && sight !== null) {
+      group.updateMatrixWorld(true);
+      let best: THREE.Box3 | null = null, bx = -Infinity;
+      for (const p of parts) if (p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser") { const bb = new THREE.Box3().setFromObject(p.object); if (!bb.isEmpty() && bb.min.x > ironRearX + 0.08 && bb.max.x > bx) { bx = bb.max.x; best = bb; } }
+      if (best && Math.abs(best.max.y - 0.0015 - sight) < 0.006) sight = best.max.y - 0.0015;
     }
     const center = box.getCenter(new THREE.Vector3());
     center.z = 0; // el eje del arma (cañón, mira) está en z = 0: así al apuntar la mira queda centrada

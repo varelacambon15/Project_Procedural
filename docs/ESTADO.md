@@ -268,6 +268,20 @@ Todo esto está subido y con tests (141) y build en verde. **No se ha publicado 
   - iluminación por zonas;
   - un mostrador de recepción en el hall.
 
+- **Repaso de miras y apuntado** (auditoría con `scratchpad/adsaudit.cjs`: equipa 6 armas por tipo, apunta y proyecta el punto de mira en pantalla):
+  - **antes:** pistolas, revólveres y muchas armas sin mira apuntaban «estilo Black» (arma a un lado, sin alinear), con desvíos de 30 a 400 px; varias armas largas con miras de hierro quedaban muy por debajo del centro;
+  - **ahora:** todas las armas auditadas quedan a 0–2 px del centro;
+  - **cambios en `assembler.ts`:**
+    - si los alzadores no dan para nivelar alza y punto, el punto de mira sube lo necesario, hasta 10 cm (antes iban los dos al máximo y el punto quedaba bajo);
+    - la línea de mira pasa por la punta del punto de mira cuando difiere poco del alza;
+    - las pistolas y armas sin miras usan una línea de mira por el lomo, o por sus miras propias si las traen;
+    - las pistolas modulares tienen alza en la parte trasera;
+    - si el cajón asoma detrás del alza, la línea sube;
+  - **cambios en `gun.ts`:** las pistolas y los revólveres también apuntan a través de esa línea (`irons`);
+  - **cambio en `anim.ts`:** el ojo queda a 6,5 cm detrás del alza (antes a 2,5 cm, y cualquier desajuste se veía enorme);
+  - **retirada la M60** (`w-m60`): el modelo está descentrado (todo fuera del eje) y apuntaba de lado.
+  - Pendiente: la mira trasera «rústica» de algún subfusil se ve como un bloque grande delante; revisar su modelo.
+
 ### Tests cambiados (avisado al usuario)
 - `tests/supers.test.ts`: número de súperes 20 → 22, y el test de módulos (`slice` e índice) ajustado.
 - `tests/shop.test.ts`: huecos de armas del escaparate 5 → 6.

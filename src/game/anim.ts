@@ -147,7 +147,8 @@ export class ViewAnimator {
     // (con miras de hierro, el ojo justo detrás del alza: si no, la culata quedaba delante de una línea de mira tan baja)
     // (si con eso la mano de la empuñadura quedaba casi en el plano de la cámara, tapaba toda la vista: el ojo se
     // retrasa hasta 6 cm por detrás de la empuñadura)
-    const eyeX = i.sightX === undefined ? 0 : i.gripX !== undefined && i.sightX - 0.025 < i.gripX + (p.adsGrip ?? 0.06) - 0.015 ? Math.min(i.sightX - 0.025, i.gripX - (p.adsGrip ?? 0.06)) : i.sightX - 0.025;
+    const EYE = 0.065; // (ojo a 6,5 cm detrás del alza: a 2,5 cm cualquier milímetro de desajuste se veía enorme)
+    const eyeX = i.sightX === undefined ? 0 : i.gripX !== undefined && i.sightX - EYE < i.gripX + (p.adsGrip ?? 0.06) - 0.015 ? Math.min(i.sightX - EYE, i.gripX - (p.adsGrip ?? 0.06)) : i.sightX - EYE;
     const adsZ = i.sightX !== undefined ? eyeX : -(i.length * 0.5 + p.aimZ);
     // (las muy altas —miras grandes, tambores, cuerpos voluminosos— un poco más lejos: no tapan la vista)
     const hipZ = (i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, (p.rearMax ?? 0.34) - i.length * 0.5) : -(i.length * 0.5 + p.hip[2])) - (p.gripAnchor ? 0 : Math.min(0.12, Math.max(0, (i.bulk ?? 0) - 0.28) * 1.6));
