@@ -1,4 +1,5 @@
 // Proving Grounds / Campo de Pruebas: demo jugable de la Fase 1.
+import { DeathFx } from "./deathfx";
 import { HallProps, type HallPropId } from "./hallprops";
 import { HallBot } from "./hallbot";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -83,6 +84,7 @@ scene.add(hallBot.mesh); world.shootables.push(...hallBot.hitMeshes);
 // estrecho, retrasada para que el tamaño aparente no cambie; con el campo de visión del mundo (75°) las armas largas se
 // deformaban (culata enorme, boca diminuta y el cañón «subiendo» hacia el centro). Mismo eje: al apuntar sigue centrada.
 const VM_FOV = 62, VM_BACK = 0.03;
+const deathFx = new DeathFx(camera);
 const vmCam = new THREE.PerspectiveCamera(VM_FOV, 1, 0.02, 30); vmCam.position.z = VM_BACK; vmCam.layers.set(1); camera.add(vmCam);
 class ViewmodelPass extends RenderPass {
   override render(r: THREE.WebGLRenderer, w: THREE.WebGLRenderTarget, rd: THREE.WebGLRenderTarget, dt: number, mask: boolean) { const bg = scene.background; scene.background = null; super.render(r, w, rd, dt, mask); scene.background = bg; }
@@ -772,17 +774,21 @@ async function boot() {
   /** Daño al jugador: Égida y resistencia del árbol; Segundo aliento salva una vez por oleada. */
   function hurtPlayer(dmg: number, kind: "melee" | "orb" | "explosive" = "melee") {
     // (mientras está el señuelo los enemigos le atacan a él: sus golpes no te llegan; dentro de la cúpula, tampoco los de fuera)
+    if (deathFx.active) return;
     if (sfx.decoyPos) return;
     if (sfx.shieldsPlayer(player.pos)) return;
     dmg *= sfx.guard * curPerks.guard * damageTaken(armorT, kind) * gadgets.guardAt(player.pos); // (la cúpula del equipamiento protege dentro) // (armadura: reducción y resistencias)
     if (curPerks.secondWind && !windUsed && php.value - dmg <= 0) { windUsed = true; php.value = php.max * 0.4; toast(t("pg.secondWind")); return; }
     if (php.hit(dmg)) {
       windUsed = false;
-      if (raid.active && hack.active) { hackEnd(false); return; }
-      if (raid.active && dmode.active) { defenseEnd(); return; }
-      if (raid.active) { toast(t("rd.lost")); returnHub(false); return; }
-      if (waves.active) { leaveSurvival(); return; }
-      waves.stop(); php.reset(); toast(t("ui.simReset"));
+      // Animación de muerte (la mano se desintegra) y, al acabar, lo que toque según dónde estés
+      deathFx.start(() => {
+        if (raid.active && hack.active) { hackEnd(false); return; }
+        if (raid.active && dmode.active) { defenseEnd(); return; }
+        if (raid.active) { toast(t("rd.lost")); returnHub(false); return; }
+        if (waves.active) { leaveSurvival(); return; }
+        waves.stop(); php.reset(); toast(t("ui.simReset"));
+      });
     }
   }
   // ---------- Incursiones (ordenador de la sala B) ----------
@@ -1206,11 +1212,13 @@ async function boot() {
     const dt = Math.min(clock.getDelta(), 0.05);
     const edges = input.padEdges();
     const f = input.read(dt, edges);
+    // Muriendo: sin control (la animación de muerte manda)
+    if (deathFx.active) { f.moveX = f.moveZ = f.lookX = f.lookY = 0; f.fire = f.aim = f.jump = f.reload = f.interact = f.swap = f.sprint = f.crouch = false; f.grenade = f.gadget = f.super = f.kick = f.inspect = f.holdUse = f.useHeld = false; f.inventory = false; }
     if (debug.fire) f.fire = true;
     if (debug.aim) f.aim = true;
     const pad = input.pad();
     const menu = state !== "play";
-    cursor.show(menu); gun.hidden = menu;
+    cursor.show(menu); gun.hidden = menu || deathFx.active;
 
     if (state === "play") {
       if (f.pause) { input.unlock(); openStart(); }
@@ -1321,6 +1329,7 @@ async function boot() {
       if (!dialog.isOpen && nav.current === null && document.activeElement?.closest("#dialog") === null) nav.setRoot($(state === "pause" || state === "title" ? "start" : state === "workbench" ? "workbench" : state));
     }
     player.applyCamera(camera, gun.recoil);
+    { const d = deathFx.update(state === "play" ? dt : 0); if (d.drop) { camera.rotation.x += d.pitch; camera.rotation.z += d.roll; camera.position.y -= d.drop; } }
     camera.rotation.y += gun.recoilYaw;
     { const sp = sfx.pose(); if (sp) camera.rotation.z += THREE.MathUtils.degToRad(sp.roll); }
     if (shake > 0) { shake = Math.max(0, shake - dt * 1.6); camera.rotation.x += (Math.random() - 0.5) * shake * 0.04; camera.rotation.z += (Math.random() - 0.5) * shake * 0.03; }
@@ -1409,7 +1418,7 @@ async function boot() {
     scene.remove(warm);
   }, 1500);
   frame();
-  (window as unknown as Record<string, unknown>).__game = { hallBot,
+  (window as unknown as Record<string, unknown>).__game = { hallBot, deathFx, hallProps,
     debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
     makeGadget, gadgets, loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, startDefense, defense, dmode, returnHub, mobs, openRaidMenu, arena, mutateArena,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },

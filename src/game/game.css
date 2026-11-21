@@ -212,3 +212,6 @@ body.in-menu #gadgethud { visibility: hidden; }
 .card .gdstats { display: grid; grid-template-columns: 1fr max-content; gap: 6px 12px; margin-top: 10px; width: 100%; box-sizing: border-box; padding-right: 22px; }
 .card .gdstats .v { text-align: right; }
 .card.gdcard { max-width: 290px; box-sizing: border-box; }
+/* Muerte: la imagen pierde el color y se oscurece por los bordes mientras la mano se desintegra */
+body.dying #game canvas { filter: grayscale(.85) contrast(1.1) brightness(.85); transition: filter 1.2s; }
+body.dying::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 5; box-shadow: inset 0 0 260px rgba(160, 20, 20, .55); }
