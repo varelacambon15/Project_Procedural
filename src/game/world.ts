@@ -136,8 +136,65 @@ export function buildRange(scene: THREE.Scene): World {
     box(W, 0.3, 0.3, 0, H - 0.15, z, steel, false, false);
     for (const x of [-18, -9, 0, 9, 18]) box(5, 0.06, 1.4, x, H - 0.05, z - 4, panelLight, false, false);
   }
-  box(0.04, 0.25, BACK, -W / 2 + 0.03, 1.1, BACK / 2, safety, false, false);
-  box(0.04, 0.25, BACK, W / 2 - 0.03, 1.1, BACK / 2, safety, false, false);
+  // ---------- Acabado arquitectónico del hall (sustituye a la franja naranja que cruzaba las puertas) ----------
+  // Zócalo, friso inferior con remate metálico, pilastras con tira de luz, moldura en el techo, marcos de puerta y una
+  // banda oscura en el suelo junto a las paredes. Todo se corta en los huecos de las puertas. Sin luces nuevas.
+  {
+    const skirt = new THREE.MeshStandardMaterial({ color: 0x2a2f36, roughness: 0.6, metalness: 0.2 });
+    const wains = new THREE.MeshStandardMaterial({ color: 0x5d6671, roughness: 0.75, metalness: 0.1 });
+    const cap = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.35, metalness: 0.7 });
+    const pil = new THREE.MeshStandardMaterial({ color: 0x8f98a2, roughness: 0.55, metalness: 0.25 });
+    const cornice = new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.6, metalness: 0.3 });
+    const strip = new THREE.MeshBasicMaterial({ color: 0x9fe8ff });
+    const bandMat = new THREE.MeshStandardMaterial({ color: 0x4a525c, roughness: 0.85 });
+    // Tramos de una pared, sin los huecos `gaps` ([a, b] a lo largo de la pared)
+    const spans = (a0: number, a1: number, gaps: [number, number][]) => { const out: [number, number][] = []; let s0 = a0; for (const [g0, g1] of [...gaps].sort((x, y) => x[0] - y[0])) { if (g0 > s0) out.push([s0, g0]); s0 = Math.max(s0, g1); } if (a1 > s0) out.push([s0, a1]); return out; };
+    // Pared a lo largo de z (x fija; `n` = hacia dónde mira el interior) o a lo largo de x (z fija)
+    const alongZ = (x: number, n: number, gaps: [number, number][]) => {
+      for (const [z0, z1] of spans(0, BACK, gaps)) {
+        const L = z1 - z0, zc = (z0 + z1) / 2;
+        box(0.06, 0.16, L, x + n * 0.03, 0.08, zc, skirt, false, false);
+        box(0.05, 1.1, L, x + n * 0.025, 0.55 + 0.16, zc, wains, false, false);
+        box(0.09, 0.05, L, x + n * 0.045, 1.28, zc, cap, false, false);
+      }
+      box(0.25, 0.3, BACK, x + n * 0.125, H - 0.35, BACK / 2, cornice, false, false);
+      const band = new THREE.Mesh(new THREE.PlaneGeometry(0.9, BACK), bandMat); band.rotation.x = -Math.PI / 2; band.position.set(x + n * 0.45, 0.006, BACK / 2); band.receiveShadow = true; scene.add(band);
+    };
+    const alongX = (z: number, n: number, gaps: [number, number][]) => {
+      for (const [x0, x1] of spans(-W / 2, W / 2, gaps)) {
+        const L = x1 - x0, xc = (x0 + x1) / 2;
+        box(L, 0.16, 0.06, xc, 0.08, z + n * 0.03, skirt, false, false);
+        box(L, 1.1, 0.05, xc, 0.55 + 0.16, z + n * 0.025, wains, false, false);
+        box(L, 0.05, 0.09, xc, 1.28, z + n * 0.045, cap, false, false);
+      }
+      box(W, 0.3, 0.25, 0, H - 0.35, z + n * 0.125, cornice, false, false);
+      const band = new THREE.Mesh(new THREE.PlaneGeometry(W, 0.9), bandMat); band.rotation.x = -Math.PI / 2; band.position.set(0, 0.006, z + n * 0.45); band.receiveShadow = true; scene.add(band);
+    };
+    alongZ(-W / 2, 1, [[LD0 - 0.3, LD1 + 0.3]]); alongZ(W / 2, -1, [[SD0, SD1]]);
+    alongX(0, 1, []); alongX(BACK, -1, [[-DOOR, DOOR]]);
+    // Pilastras con una tira de luz vertical (huecos elegidos para no tapar lo que va colgado en las paredes)
+    const pilaster = (x: number, z: number, alongWallX: boolean, n: number) => {
+      const w = 0.55, d = 0.32;
+      if (alongWallX) { box(w, H - 0.5, d, x, (H - 0.5) / 2, z + n * d / 2, pil, false, false); box(0.05, H - 1.6, 0.02, x, 0.9 + (H - 1.6) / 2, z + n * (d + 0.01), strip, false, false); }
+      else { box(d, H - 0.5, w, x + n * d / 2, (H - 0.5) / 2, z, pil, false, false); box(0.02, H - 1.6, 0.05, x + n * (d + 0.01), 0.9 + (H - 1.6) / 2, z, strip, false, false); }
+    };
+    for (const z of [2.6, 12.0, 26.2]) pilaster(-W / 2, z, false, 1);
+    for (const z of [6.0, 13.0, 26.2]) pilaster(W / 2, z, false, -1);
+    for (const x of [-16, -7, 7, 16]) pilaster(x, BACK, true, -1);
+    for (const x of [-19.5, -4, 4, 19.5]) pilaster(x, 0, true, 1);
+    // Marcos de las puertas: jambas y dintel gruesos con una franja luminosa
+    const frame = (cx: number, cz: number, width: number, alongX: boolean, n: number) => {
+      const jw = 0.35, jd = 0.45, hh = DOOR_H;
+      for (const s of [-1, 1]) {
+        if (alongX) box(jw, hh + 0.35, jd, cx + s * (width / 2 + jw / 2), (hh + 0.35) / 2, cz + n * 0.05, pil, false, false);
+        else box(jd, hh + 0.35, jw, cx + n * 0.05, (hh + 0.35) / 2, cz + s * (width / 2 + jw / 2), pil, false, false);
+      }
+      if (alongX) { box(width + jw * 2, 0.35, jd, cx, hh + 0.175, cz + n * 0.05, pil, false, false); box(width, 0.04, 0.02, cx, hh + 0.02, cz + n * 0.28, strip, false, false); }
+      else { box(jd, 0.35, width + jw * 2, cx + n * 0.05, hh + 0.175, cz, pil, false, false); box(0.02, 0.04, width, cx + n * 0.28, hh + 0.02, cz, strip, false, false); }
+    };
+    frame(0, BACK, DOOR * 2, true, -1);
+    frame(W / 2, (SD0 + SD1) / 2, SD1 - SD0, false, -1);
+  }
   // Puerta sellada: hoja de acero con 4 huecos para las piezas (vacíos por ahora) y su rótulo
   const sealed = new THREE.Group(); sealed.position.set(-W / 2 - 0.5, 0, (LD0 + LD1) / 2); scene.add(sealed);
   { const add = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; sealed.add(o); return o; };
@@ -161,8 +218,6 @@ export function buildRange(scene: THREE.Scene): World {
     dayOnly.push(box(W, 0.3, 0.3, 0, H - 0.15, z, steel, false, false));
     for (const x of [-18, -9, 0, 9, 18]) dayOnly.push(box(5, 0.06, 1.4, x, H - 0.05, z - 4, panelLight, false, false));
   }
-  dayOnly.push(box(0.04, 0.25, 4.5 - FRONT, -W / 2 + 0.03, 1.1, (4.5 + FRONT) / 2, safety, false, false));
-  dayOnly.push(box(0.04, 0.25, 4.5 - FRONT, W / 2 - 0.03, 1.1, (4.5 + FRONT) / 2, safety, false, false));
 
   // Líneas de distancia en el suelo (finas y claras) con su rótulo de terminal en las paredes
   const lineMat = new THREE.MeshBasicMaterial({ color: 0xf4f4f0, transparent: true, opacity: 0.85 });
@@ -340,7 +395,6 @@ export function buildRange(scene: THREE.Scene): World {
     if (NZ1 > BACK + 1) box(1, NH, NZ1 - BACK - 1, NX0 - 0.5, NH / 2, (NZ1 + BACK + 1) / 2, wall);
     const nc = new THREE.Mesh(new THREE.PlaneGeometry(NW + 2, NZ1 - NZ0 + 2), dark); nc.rotation.x = Math.PI / 2; nc.position.set(NX0 + NW / 2, NH, (NZ0 + NZ1) / 2); scene.add(nc);
     for (let z = NZ0 + 5; z < NZ1; z += 9) for (let x = NX0 + 6; x < NX0 + NW; x += 12) box(5, 0.06, 1.4, x, NH - 0.05, z, panelLight, false, false);
-    box(0.04, 0.25, NZ1 - NZ0, NX0 + NW - 0.03, 1.1, (NZ0 + NZ1) / 2, safety, false, false);
     const m = sign(t("sign.newroom"), "#7a8a9a", 3.2, 0.8); m.position.set(W / 2 - 0.04, 4.2, (SD0 + SD1) / 2); m.rotation.y = -Math.PI / 2; scene.add(m); }
   // Ordenadores de modos (sala B, frente a la puerta): uno por modo, cada uno con su pantalla y su rótulo
   const modePcs: { id: Interactable["id"]; z: number; label: string; color: string; icon: (g: CanvasRenderingContext2D, c: string) => void }[] = [

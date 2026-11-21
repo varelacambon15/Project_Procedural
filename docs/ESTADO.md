@@ -250,6 +250,12 @@ Todo esto está subido y con tests (141) y build en verde. **No se ha publicado 
   - dura 2,6 s y luego se aplica lo de siempre según dónde estés (`hurtPlayer`);
   - mientras dura no hay control.
 
+- **Acabado del hall** (`world.ts`, bloque «Acabado arquitectónico»):
+  - fuera las franjas naranjas que recorrían las paredes y cruzaban las puertas (hall, campo de tiro y sala B). Al usuario no le gustaban;
+  - añadidos: zócalo, friso inferior con remate metálico, pilastras con tira de luz vertical, moldura en el techo, marcos gruesos en las puertas (campo de tiro y sala B) con franja luminosa, y banda oscura en el suelo junto a las paredes;
+  - todo se corta en los huecos de las puertas.
+  - El usuario pide en general que el **mapeado y los escenarios** se parezcan más a un juego real; queda mucho por hacer (ver pendientes).
+
 ### Tests cambiados (avisado al usuario)
 - `tests/supers.test.ts`: número de súperes 20 → 22, y el test de módulos (`slice` e índice) ajustado.
 - `tests/shop.test.ts`: huecos de armas del escaparate 5 → 6.
