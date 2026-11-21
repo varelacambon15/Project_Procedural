@@ -172,6 +172,7 @@ async function boot() {
     spend: (n) => { if (inv.credits < n) return false; inv.credits -= n; return true; },
     drink: (sec) => { injectT = sec; injectK = 0.15; applyPerks(); },
     droneShot: () => hallBot.defendDrone(),
+    say: (text) => { toast(text); try { const ss = window.speechSynthesis; if (ss && settings.botVoice !== false) { const u = new SpeechSynthesisUtterance(text.includes(": ") ? text.slice(text.indexOf(": ") + 2) : text); u.lang = getLang() === "es" ? "es-ES" : "en-US"; u.pitch = 1.9; u.rate = 1.3; u.volume = settings.volume; ss.speak(u); } } catch { /* sin voz */ } },
     coffee: () => { if (inv.gadget) gpouch.charges = inv.gadget.charges; },
     beep: (f, len) => { try { const a = audio(), o = a.createOscillator(), g = a.createGain(); o.type = "square"; o.frequency.value = f; g.gain.setValueAtTime(0.06, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + len); o.connect(g); g.connect(out()); o.start(); o.stop(a.currentTime + len + 0.02); } catch { /* sin audio */ } },
   });
@@ -542,7 +543,7 @@ async function boot() {
     shopState = d.shop; playSeconds = d.playSeconds; contracts = refreshContracts(d.contracts, new Date());
     inv.armors = d.armors ?? []; inv.worn = { head: null, torso: null, legs: null, ...(d.worn ?? {}) }; setArmorUid(Math.max(0, ...inv.armors.map((a) => a.uid)) + 1);
     inv.grenades = d.grenades ?? []; inv.grenadeActive = inv.grenades[d.grenadeActive ?? -1] ? d.grenadeActive! : -1; setGrenadeUid(Math.max(0, ...inv.grenades.map((g) => g.uid)) + 1); pouch.equip(null);
-    inv.furniture = d.furniture ?? []; hallProps.apply(new Set(inv.furniture));
+    inv.furniture = (d.furniture ?? []).map((x) => (x === "pet" ? "roomba" : x)); hallProps.apply(new Set(inv.furniture));
     inv.gadgets = d.gadgets?.length ? d.gadgets : [makeGadget(4242, "turret", "comun")]; inv.gadgetActive = inv.gadgets[d.gadgetActive ?? -1] ? d.gadgetActive! : 0; setGadgetUid(Math.max(0, ...inv.gadgets.map((g) => g.uid)) + 1); // (partidas anteriores: una mini torreta de regalo)
     if (d.superId === "chrono") d.superId = "timestop";
     inv.superId = (SUPER_IDS as string[]).includes(d.superId ?? "") ? (d.superId as SuperId) : "shockwave"; meter.charge = 0;

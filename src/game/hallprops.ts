@@ -16,7 +16,7 @@ import type { WeaponSpec } from "../weapons/types";
 export type HallPropId = "rack" | "radio" | "vending" | "cooler" | "board" | "coffee" | "arcade" | "furniture";
 /** Objetos de la tienda de mobiliario (el armero es gratis y no se vende). */
 export type FurnId = "rack" | "shop" | "vending" | "cooler" | "board" | "radio" | "bag" | "benches" | "plants" | "crates" | "posters" | "drones"
-  | "aquarium" | "tv" | "dartboard" | "neon" | "rug" | "coffee" | "pet" | "arcade";
+  | "aquarium" | "tv" | "dartboard" | "neon" | "rug" | "coffee" | "roomba" | "arcade";
 export type FurnCat = "fun" | "util" | "life" | "decor";
 /** Catálogo: precio, nivel mínimo y categoría (ocio, utilidad, vida, decoración). */
 export const FURNITURE: { id: Exclude<FurnId, "rack" | "shop">; price: number; level: number; cat: FurnCat }[] = [
@@ -26,7 +26,7 @@ export const FURNITURE: { id: Exclude<FurnId, "rack" | "shop">; price: number; l
   { id: "coffee", price: 450, level: 2, cat: "util" },
   { id: "radio", price: 400, level: 1, cat: "fun" }, { id: "bag", price: 350, level: 1, cat: "fun" }, { id: "dartboard", price: 300, level: 2, cat: "fun" },
   { id: "tv", price: 700, level: 3, cat: "fun" }, { id: "arcade", price: 900, level: 5, cat: "fun" },
-  { id: "drones", price: 900, level: 3, cat: "life" }, { id: "aquarium", price: 1200, level: 4, cat: "life" }, { id: "pet", price: 1500, level: 6, cat: "life" },
+  { id: "drones", price: 900, level: 3, cat: "life" }, { id: "aquarium", price: 1200, level: 4, cat: "life" }, { id: "roomba", price: 1100, level: 4, cat: "life" },
 ];
 interface FItem { group: THREE.Group; boxes: THREE.Box3[]; shoot: THREE.Object3D[]; props: HallProp[]; on: boolean }
 export interface HallProp { id: HallPropId; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
@@ -39,6 +39,7 @@ export interface HallHooks {
   /** Efecto de la bebida energética (segundos). */ drink(sec: number): void;
   /** Un dron ha recibido un tiro (el asistente protesta). */ droneShot(): void;
   /** Café: recarga las cargas del equipamiento. */ coffee(): void;
+  /** Frase corta con voz (el robot aspirador). */ say(text: string): void;
   /** Sonido corto sintetizado. */ beep?(f: number, len: number): void;
 }
 
@@ -54,7 +55,7 @@ export class HallProps {
   private tvCv = document.createElement("canvas"); private tvTex: THREE.CanvasTexture | null = null; private tvT = 0;
   private neonMats: THREE.MeshBasicMaterial[] = [];
   private arcadeCv = document.createElement("canvas"); private arcadeTex: THREE.CanvasTexture | null = null;
-  private pet: { g: THREE.Group; tail: THREE.Object3D; head: THREE.Object3D; vel: THREE.Vector3; scared: number; sit: number } | null = null;
+  private roomba: { g: THREE.Group; brushes: THREE.Object3D[]; led: THREE.MeshBasicMaterial; dir: number; turn: number; hurt: number; dust: { m: THREE.Mesh; t: number }[] } | null = null;
   private dartCenter = new THREE.Vector3();
   private rackSlots: { at: THREE.Vector3; uid: number | null; obj: THREE.Object3D | null }[] = [];
   private drones: { g: THREE.Group; eye: THREE.Mesh; target: THREE.Vector3; flee: number; vel: THREE.Vector3; phase: number }[] = [];
@@ -328,18 +329,19 @@ export class HallProps {
       addBox(new THREE.Box3(new THREE.Vector3(23, 0, 21), new THREE.Vector3(23.9, 2.1, 22)));
       addProp({ id: "arcade", position: new THREE.Vector3(22.3, 0, 21.5), radius: 1.8, label: "arcade", object: g });
     }
-    // Mascota robot: un perrito mecánico que te sigue por el hall, se sienta cuando paras y se asusta si le disparas
-    begin("pet");
+    // Robot aspirador: un disco que recorre el hall aspirando (rebota al tocar algo y cambia de rumbo); si le
+    // disparas dice «¡Ay!», da vueltas sobre sí mismo y su luz se pone roja un momento
+    begin("roomba");
     {
-      const g = new THREE.Group(); g.position.set(2, 0, 10); into().add(g);
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.2, 0.5), new THREE.MeshStandardMaterial({ color: 0xe8e2d4, metalness: 0.3, roughness: 0.45 })); body.position.y = 0.38; g.add(body);
-      const head = new THREE.Group(); head.position.set(0, 0.55, 0.28); g.add(head);
-      head.add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.2), body.material));
-      for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.01), new THREE.MeshBasicMaterial({ color: 0x7fe6ff })); e.position.set(s * 0.05, 0.02, 0.105); head.add(e); const ear = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.03), dark); ear.position.set(s * 0.08, 0.12, -0.02); ear.rotation.z = -s * 0.3; head.add(ear); }
-      for (const [x, z] of [[-0.1, 0.17], [0.1, 0.17], [-0.1, -0.17], [0.1, -0.17]]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.06), dark); leg.position.set(x, 0.15, z); g.add(leg); }
-      const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.2), steel); tail.position.set(0, 0.5, -0.27); tail.rotation.x = -0.8; g.add(tail);
-      this.pet = { g, tail, head, vel: new THREE.Vector3(), scared: 0, sit: 0 };
-      body.userData.onShot = () => { if (this.pet) { this.pet.scared = 3; this.hooks.droneShot(); this.hooks.beep?.(1800, 0.1); } }; addShoot(body);
+      const g = new THREE.Group(); g.position.set(-3, 0, 16); into().add(g);
+      const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.23, 0.09, 28), new THREE.MeshStandardMaterial({ color: 0x2a2d33, metalness: 0.4, roughness: 0.35 })); shell.position.y = 0.06; g.add(shell);
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.01, 28), new THREE.MeshStandardMaterial({ color: 0x4a5058, metalness: 0.5, roughness: 0.3 })); top.position.y = 0.11; g.add(top);
+      const bumper = new THREE.Mesh(new THREE.TorusGeometry(0.225, 0.015, 6, 28, Math.PI), new THREE.MeshStandardMaterial({ color: 0x15171a })); bumper.rotation.x = Math.PI / 2; bumper.position.y = 0.06; g.add(bumper);
+      const led = new THREE.MeshBasicMaterial({ color: 0x7aff9a }); const l = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.012, 12), led); l.position.set(0, 0.118, 0.1); g.add(l);
+      const brushes: THREE.Object3D[] = [];
+      for (const s2 of [-1, 1]) { const br = new THREE.Group(); br.position.set(s2 * 0.15, 0.015, 0.15); for (let k2 = 0; k2 < 3; k2++) { const bristle = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.005, 0.01), steel); bristle.rotation.y = (k2 * Math.PI) / 3; br.add(bristle); } g.add(br); brushes.push(br); }
+      this.roomba = { g, brushes, led, dir: Math.random() * Math.PI * 2, turn: 0, hurt: 0, dust: [] };
+      shell.userData.onShot = () => this.roombaHit(); addShoot(shell); top.userData.onShot = () => this.roombaHit(); addShoot(top);
     }
   }
   private dart(pt?: THREE.Vector3) {
@@ -381,7 +383,7 @@ export class HallProps {
     if (this.owned("neon")) { const flick = Math.random() < 0.01 ? 0.25 : 1; for (const m of this.neonMats) m.opacity = flick * (0.85 + Math.sin(this.time * 3) * 0.05); }
     if (this.owned("tv")) this.drawTv(dt);
     if (this.owned("arcade")) this.drawArcade();
-    if (this.owned("pet") && this.pet) this.petTick(dt, player, inHall);
+    if (this.owned("roomba") && this.roomba) this.roombaTick(dt);
     this.radioTick(dt);
   }
   /** ¿El jugador está junto al saco? (para que los puñetazos lo muevan). */
@@ -409,22 +411,29 @@ export class HallProps {
     c.font = "8px monospace"; c.fillStyle = "#f2c040"; c.fillText("INSERT CR", W / 2 - 22, H - 2);
     this.arcadeTex.needsUpdate = true;
   }
-  private petTick(dt: number, player: THREE.Vector3, inHall: boolean) {
-    const p = this.pet!, pos = p.g.position; p.scared = Math.max(0, p.scared - dt);
-    const to = new THREE.Vector3(player.x - pos.x, 0, player.z - pos.z), d = to.length();
-    let want = new THREE.Vector3();
-    if (p.scared > 0 && d > 0.01) want = to.clone().normalize().multiplyScalar(-4);
-    else if (inHall && d > 2.2) want = to.clone().normalize().multiplyScalar(Math.min(4.5, (d - 1.8) * 1.6));
-    p.vel.lerp(want, Math.min(1, dt * 4));
-    const next = pos.clone().addScaledVector(p.vel, dt); next.x = THREE.MathUtils.clamp(next.x, -22.5, 22.5); next.z = THREE.MathUtils.clamp(next.z, 1, 27);
-    if (!this.colliders.some((b) => next.x > b.min.x - 0.3 && next.x < b.max.x + 0.3 && next.z > b.min.z - 0.3 && next.z < b.max.z + 0.3 && b.max.y > 0.2 && b.min.y < 0.6)) pos.copy(next); else p.vel.multiplyScalar(-0.2);
-    const sp = p.vel.length();
-    if (sp > 0.2) p.g.rotation.y = Math.atan2(p.vel.x, p.vel.z); else if (d > 0.1) p.g.rotation.y += (Math.atan2(to.x, to.z) - p.g.rotation.y) * Math.min(1, dt * 3);
-    p.sit = THREE.MathUtils.lerp(p.sit, sp < 0.2 && p.scared <= 0 ? 1 : 0, Math.min(1, dt * 3));
-    p.g.children[0].rotation.x = -0.35 * p.sit; p.g.position.y = Math.abs(Math.sin(this.time * 14)) * 0.03 * Math.min(1, sp);
-    p.tail.rotation.z = Math.sin(this.time * (p.scared > 0 ? 2 : 14)) * (p.scared > 0 ? 0.1 : 0.6);
-    p.head.rotation.x = p.sit * -0.2 + Math.sin(this.time * 1.3) * 0.05;
+  private roombaHit() {
+    const r = this.roomba; if (!r) return;
+    const first = r.hurt <= 0; r.hurt = 1.6; r.turn = 1.6; r.led.color.set(0xff3030); this.hooks.beep?.(1600, 0.06);
+    if (first) this.hooks.say(t(`hb.ouch.${Math.floor(Math.random() * 4)}`));
   }
+  private roombaTick(dt: number) {
+    const r = this.roomba!, pos = r.g.position;
+    r.hurt = Math.max(0, r.hurt - dt); if (r.hurt <= 0) r.led.color.set(0x7aff9a);
+    for (const b of r.brushes) b.rotation.y += dt * 18;
+    if (r.turn > 0) { r.turn -= dt; r.g.rotation.y += dt * (r.hurt > 0 ? 9 : 2.4); r.dir = r.g.rotation.y; }
+    else {
+      // Avanza recto; al chocar (mueble, pared) gira un ángulo al azar, como los de verdad
+      const sp = 0.55, nx = pos.x + Math.sin(r.dir) * sp * dt, nz = pos.z + Math.cos(r.dir) * sp * dt;
+      const blocked = nx < -23.2 || nx > 23.2 || nz < 0.8 || nz > 27.2 || this.colliders.some((b) => nx > b.min.x - 0.25 && nx < b.max.x + 0.25 && nz > b.min.z - 0.25 && nz < b.max.z + 0.25 && b.min.y < 0.15);
+      if (blocked) { r.turn = 0.5 + Math.random() * 1.2; r.dir += Math.PI * (0.5 + Math.random()); } else { pos.x = nx; pos.z = nz; r.g.rotation.y = r.dir; }
+    }
+    // Rastro: marcas limpias en el suelo que se desvanecen (se ve por dónde ha aspirado)
+    if (Math.random() < dt * 6) {
+      const m = new THREE.Mesh(this.dustGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(pos.x, 0.013, pos.z); this.scene.add(m); r.dust.push({ m, t: 6 });
+    }
+    for (const d of [...r.dust]) { d.t -= dt; (d.m.material as THREE.MeshBasicMaterial).opacity = 0.12 * Math.max(0, d.t / 6); if (d.t <= 0) { this.scene.remove(d.m); (d.m.material as THREE.Material).dispose(); r.dust.splice(r.dust.indexOf(d), 1); } }
+  }
+  private dustGeo = new THREE.CircleGeometry(0.2, 16);
 
   // ---------- Armero ----------
   private syncRack() {

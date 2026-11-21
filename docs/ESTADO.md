@@ -242,7 +242,7 @@ Todo esto está subido y con tests (141) y build en verde. **No se ha publicado 
     - alfombra;
     - cafetera (10 CR: recarga el equipamiento);
     - máquina recreativa con demo animada;
-    - **mascota robot** que te sigue, se sienta y se asusta si le disparas;
+    - **robot aspirador** (`roomba`; sustituye a la mascota robot, y las partidas con `pet` pasan a `roomba`): recorre el hall rebotando contra los muebles y deja un rastro de suelo limpio que se desvanece; si le disparas dice «¡Ay!» con voz y subtítulo (`bot.ouch`/`hb.ouch.*`), gira sobre sí mismo y su luz se pone roja;
   - al comprar, el asistente lo celebra (`bot.furn`).
 - **Animación de muerte** (`src/game/deathfx.ts`):
   - al morir, una mano enguantada sube delante de la cara y se desintegra en píxeles desde los dedos (un plano de recorte que baja y cubitos aditivos que se sueltan);
