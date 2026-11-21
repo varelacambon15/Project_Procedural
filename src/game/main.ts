@@ -1,4 +1,5 @@
 // Proving Grounds / Campo de Pruebas: demo jugable de la Fase 1.
+import { HallProps, type HallPropId } from "./hallprops";
 import { HallBot } from "./hallbot";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
@@ -160,6 +161,19 @@ async function boot() {
   const manifest: Manifest = await (await fetch(ASSETS + "manifest.json")).json();
   const gen = new WeaponGenerator(manifest);
   const asm = new WeaponAssembler(gen, ASSETS);
+  // Objetos del hall (armero, drones, radio, máquina de bebidas, fuente, tablón, saco de boxeo y decoración)
+  const hallProps = new HallProps(scene, world.colliders, world.shootables, {
+    assemble: (spec) => asm.assemble(spec),
+    rackItems: () => inv.storage.slice(0, 6),
+    openStorage: () => openScreen("inventory", true),
+    toast: (s) => toast(s),
+    spend: (n) => { if (inv.credits < n) return false; inv.credits -= n; return true; },
+    drink: (sec) => { injectT = sec; injectK = 0.15; applyPerks(); },
+    droneShot: () => hallBot.defendDrone(),
+    beep: (f, len) => { try { const a = audio(), o = a.createOscillator(), g = a.createGain(); o.type = "square"; o.frequency.value = f; g.gain.setValueAtTime(0.06, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + len); o.connect(g); g.connect(out()); o.start(); o.stop(a.currentTime + len + 0.02); } catch { /* sin audio */ } },
+  });
+  world.interactables.push(...hallProps.props);
+  const HALL_PROP = new Set(["rack", "radio", "vending", "cooler", "board"]);
   asm.preloadKit(); asm.asyncAO = true;
 
   // Números de daño (tecla N) y nivel de pixelado (tecla P): atajos en la sala; también en Ajustes. Se guardan.
@@ -295,6 +309,7 @@ async function boot() {
     torrent: { f0: 1800, f1: 2400, wave: "triangle", len: 0.6, noise: 0.3, lp: 7000, vol: 0.1 },
     shards: { f0: 2600, f1: 3600, wave: "triangle", len: 0.45, noise: 0.15, lp: 8000, vol: 0.08, chord: [1.26, 1.5] },
   };
+  let wasInZone = false;
   let wasStopped = false, tsInvT = 0, tsTick = 0;
   /** Parada del tiempo: zumbido grave que sube y se corta en seco, tictac de reloj y reanudación con un barrido que cae. */
   function timeSnd(k: "stop" | "tick" | "resume") {
@@ -1186,6 +1201,7 @@ async function boot() {
       else if (gnade) $("prompt").innerHTML = `${key}${t("ui.pickupNade")}`;
       else if (garmor) $("prompt").innerHTML = `${key}${t("ar.pickup")}`;
       else if (ggad) $("prompt").innerHTML = `${key}${t("gd.pickup")}`;
+      else if (near && HALL_PROP.has(near.id)) $("prompt").innerHTML = `${key}${hallProps.prompt(near.id as HallPropId)}`;
       else if (near) $("prompt").innerHTML = `${key}${t(near.id === "chest" ? "ui.useShop" : near.id === "waves" ? (waves.active ? "ui.wavesStop" : "ui.wavesStart") : near.id === "storage" ? "ui.useStorage" : near.id === "contracts" ? "ct.use" : near.id === "raid" ? "rd.use" : near.id === "survival" ? "sv.use" : near.id === "defense" ? "df.use" : near.id === "hack" ? "hk.use" : "ui.useBench")}`;
       // Plataforma de construcción cerca: qué hay y qué se puede hacer
       if (dmode.active && !near && !ground && !gnade && !garmor) { const pad = defense.padNear(player.pos); if (pad) { $("prompt").hidden = false; $("prompt").innerHTML = `${key}${pad.placed ? t("df.padUpgrade", { n: t(`df.b.${pad.placed.b.id}`), l: pad.placed.level }) : t("df.padBuild")}`; } }
@@ -1205,6 +1221,7 @@ async function boot() {
         else if (gnade) pickNade(gnade);
         else if (garmor) pickArmor(garmor);
         else if (ggad) pickGadget(ggad);
+        else if (near && HALL_PROP.has(near.id)) hallProps.interact(near.id as HallPropId);
         else if (near) {
           if (near.id === "chest") openScreen("shop");
           else if (near.id === "waves") { if (waves.active) waves.stop(); else { php.reset(); arena.set(generateArena((Math.random() * 2 ** 31) | 0, arena.bounds), true, player.pos); waves.start(); toast(t("ui.wavesGo")); } }
@@ -1285,6 +1302,10 @@ async function boot() {
       lastMove.x = f.moveX; lastMove.z = f.moveZ;
       rewindHist.push({ t: performance.now(), p: player.pos.clone(), hp: php.value }); while (rewindHist.length > 2 && performance.now() - rewindHist[0].t > 6000) rewindHist.shift();
       if (!sfx.casting && !sfx.busy) meter.update(dt); sfx.update(dt, player.pos); superHud();
+      // Círculo de pruebas del campo de tiro: súper siempre cargada y equipamiento sin gastar cargas mientras estás dentro
+      { const inZone = !raid.active && Math.hypot(player.pos.x - world.testZone.x, player.pos.z - world.testZone.z) < 1.5;
+        if (inZone) { meter.charge = 1; if (inv.gadget) gpouch.charges = inv.gadget.charges; }
+        if (inZone && !wasInZone) toast(t("ui.testZone")); wasInZone = inZone; }
       syncGadget(); gpouch.update(dt); gadgets.update(state === "play" ? dt : 0); gadgetHud();
       if (injectT > 0 && (injectT -= dt) <= 0) applyPerks();
       pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); updateGadgetDrops(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
@@ -1294,7 +1315,7 @@ async function boot() {
       const now = performance.now() / 1000;
       while (sim.log.length && now - sim.log[0][0] > 3) sim.log.shift();
       const dps = sim.log.reduce((a, x) => a + x[1], 0) / 3;
-      { const p = player.pos, inHall = state === "play" && !raid.active && p.x > -24 && p.x < 24 && p.z > 0 && p.z < 28; hallBot.update(dt, inHall, p, camera.getWorldDirection(new THREE.Vector3())); }
+      { const p = player.pos, inHall = state === "play" && !raid.active && p.x > -24 && p.x < 24 && p.z > 0 && p.z < 28; hallBot.update(dt, inHall, p, camera.getWorldDirection(new THREE.Vector3())); hallProps.update(dt, p, inHall); }
       world.update(dt, { dps, ttk: sim.ttk, accuracy: sim.shots ? Math.min(1, sim.hits / sim.shots) : null, distance: sim.distance, message: t(now - sim.lastShot < 2 ? "sim.active" : "sim.calibrating") });
     }
     // Miras: visor a pantalla completa o retícula de punto rojo / holográfica

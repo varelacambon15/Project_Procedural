@@ -21,7 +21,7 @@ export type BotEvent = "raidWon" | "raidLost" | "levelUp";
 
 const W = 512, H = 300;
 /** Cuántas frases hay de cada tipo (claves bot.<tipo>.0 … N-1 en i18n). */
-export const BOT_LINES = { idle: 14, shot: 8, rage: 6, forgive: 4, near: 5, bored: 4, wake: 3, raidWon: 3, raidLost: 3, levelUp: 3 } as const;
+export const BOT_LINES = { idle: 14, shot: 8, rage: 6, forgive: 4, near: 5, bored: 4, wake: 3, raidWon: 3, raidLost: 3, levelUp: 3, drone: 5 } as const;
 
 /** Forma de la cara por ánimo: apertura de ojos, cejas (+ fruncidas, − de pena), sonrisa (−1..1), boca abierta, ojos felices (^ ^), color. */
 interface Face { eye: number; brow: number; browY: number; smile: number; open: number; happyEyes: number; color: [number, number, number]; cheeks: number }
@@ -83,6 +83,11 @@ export class HallBot {
     const furious = this.anger >= 5;
     if (this.time - this.lastInsult > 1.3) { this.lastInsult = this.time; this.line(furious ? "rage" : "shot", furious ? "furious" : "angry", true); }
     else this.setMood(furious ? "furious" : this.anger >= 2 ? "angry" : "hurt", 2);
+  }
+  /** Han disparado a un dron de mantenimiento: sale en su defensa (enfado leve). */
+  defendDrone() {
+    this.anger = Math.min(10, this.anger + 0.6);
+    if (this.time - this.lastInsult > 2.5) { this.lastInsult = this.time; this.line("drone", "angry", true); }
   }
   /** Algo ha pasado fuera del hall: lo comenta la próxima vez que entres. */
   event(e: BotEvent) { this.pending = { text: this.pick(e), mood: e === "raidLost" ? "sad" : "excited" }; }

@@ -803,6 +803,7 @@ export class Gun {
   /** Golpe cuerpo a cuerpo genérico (patada): rayos en abanico delante de la cámara. */
   private meleeHit(reach: number, dmg: number, push: number, kick: boolean) {
     const eye = this.camera.getWorldPosition(new THREE.Vector3()), q = this.camera.getWorldQuaternion(new THREE.Quaternion());
+    this.meleeProp(eye, q, reach);
     const targets = this.hooks.dummies().filter((d) => d.alive).flatMap((d) => d.hitboxes);
     for (const [ox, oy] of [[0, 0], [0.1, 0], [-0.1, 0], [0, -0.12], [0, 0.08]]) {
       const dir = new THREE.Vector3(ox, oy, -1).normalize().applyQuaternion(q);
@@ -817,8 +818,15 @@ export class Gun {
       this.recoil += 0.03; return;
     }
   }
+  /** Golpes a objetos del escenario que reaccionan (saco de boxeo, asistente, drones): llevan `userData.onShot`. */
+  private meleeProp(eye: THREE.Vector3, q: THREE.Quaternion, reach: number) {
+    this.ray.set(eye, new THREE.Vector3(0, 0, -1).applyQuaternion(q)); this.ray.far = reach;
+    const hit = this.ray.intersectObjects(this.world, true)[0];
+    (hit?.object.userData.onShot as (() => void) | undefined)?.();
+  }
   private punchResolve() {
     const eye = this.camera.getWorldPosition(new THREE.Vector3()), q = this.camera.getWorldQuaternion(new THREE.Quaternion());
+    this.meleeProp(eye, q, this.punchHeavy ? 2.6 : 2.2);
     const targets = this.hooks.dummies().filter((d) => d.alive).flatMap((d) => d.hitboxes);
     const reach = this.punchHeavy ? 2.6 : 2.2;
     for (const [ox, oy] of [[0, 0], [0.08, 0], [-0.08, 0], [0, 0.08], [0, -0.08]]) {

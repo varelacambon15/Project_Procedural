@@ -46,10 +46,13 @@ export function startMusic(url: string) {
   music = new Audio(url); music.loop = true; music.preload = "auto";
   const vol = () => { if (music) music.volume = Math.max(0, Math.min(1, settings.volume * settings.music)); };
   vol(); onSettings(vol);
-  const go = () => { void music?.play().catch(() => { /* aún sin permiso: se reintenta en el siguiente gesto */ }); };
+  const go = () => { if (!musicOff) void music?.play().catch(() => { /* aún sin permiso: se reintenta en el siguiente gesto */ }); };
   for (const ev of ["pointerdown", "keydown", "gamepadconnected"]) addEventListener(ev, go);
   go();
 }
+/** Música de ambiente encendida o apagada (la radio del hall la sustituye por sus emisoras). */
+let musicOff = false;
+export function setMusicOn(on: boolean) { musicOff = !on; if (!music) return; if (on) void music.play().catch(() => undefined); else music.pause(); }
 
 // ---------------------------------------------------------------------------------------------------------------
 // Muestras del pack de sonidos (assets/sonidos): AudioBuffer cargados bajo demanda (por tipo de arma al equiparla).

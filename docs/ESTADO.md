@@ -212,6 +212,19 @@ Todo esto está subido y con tests (141) y build en verde. **No se ha publicado 
   - al entrar en el hall te **saluda por tu nombre**, como mucho una vez cada 90 s; además suelta una frase cada 45–85 s (`bot.idle.*`, 14 frases);
   - **Ajustes:** «Tu nombre» (`settings.playerName`) y «Voz del asistente» (`settings.botVoice`).
 
+- **Objetos del hall** (`src/game/hallprops.ts`; se crean en main.ts como `hallProps` y sus puntos de uso se añaden a `world.interactables`):
+  - **Armero** (pared izquierda, z = 7,5): enseña en 3D las 6 primeras armas del almacén (`inv.storage[0..5]`); al usarlo se abre el almacén;
+  - **3 drones de mantenimiento** que patrullan, se apartan del jugador y huyen si les disparas; el asistente los defiende (`bot.drone.*`, `defendDrone`);
+  - **Radio** (mesita en la pared frontal): emisoras Ambiente (la pista de siempre), Neón FM y Pulso 118, generadas con Web Audio, y Apagada (`setMusicOn` en audio.ts);
+  - **Máquina de bebidas:** 15 CR, +15 % de cadencia y velocidad durante 60 s (usa `injectT`);
+  - **Fuente de agua** y **tablón de anuncios** (consejos `hb.tip.*`);
+  - **Saco de boxeo** que se balancea con tiros y golpes (`meleeProp` en gun.ts: los golpes también avisan a los objetos con `userData.onShot`);
+  - **decoración:** bancos, macetas, cajas y 4 carteles.
+- **Zona de entrenamiento y de pruebas en el campo de tiro:**
+  - los 3 muñecos pasan del hall al pasillo lateral, pasada la línea de tiro;
+  - delante hay un **círculo de pruebas** (`world.testZone`): dentro, la súper está siempre cargada y el equipamiento no gasta cargas;
+  - carteles colgados del techo.
+
 ### Tests cambiados (avisado al usuario)
 - `tests/supers.test.ts`: número de súperes 20 → 22, y el test de módulos (`slice` e índice) ajustado.
 - `tests/shop.test.ts`: huecos de armas del escaparate 5 → 6.

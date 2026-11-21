@@ -19,7 +19,7 @@ export function decal<T extends THREE.Mesh>(m: T): T {
 }
 
 
-export interface Interactable { id: "chest" | "workbench" | "waves" | "storage" | "contracts" | "raid" | "survival" | "defense" | "hack"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
+export interface Interactable { id: "chest" | "workbench" | "waves" | "storage" | "contracts" | "raid" | "survival" | "defense" | "hack" | "rack" | "radio" | "vending" | "cooler" | "board"; position: THREE.Vector3; radius: number; label: string; object: THREE.Object3D }
 export interface RangeData { dps: number; ttk: number | null; accuracy: number | null; distance: number | null; message: string }
 export interface World {
   colliders: THREE.Box3[]; interactables: Interactable[]; chestLid: THREE.Object3D; chestGlow: THREE.PointLight; wavesRoom: { z0: number; z1: number; x0: number; x1: number }; shootables: THREE.Object3D[]; lanes: number[];
@@ -30,6 +30,7 @@ export interface World {
   readonly night: boolean;
   /** Del sistema local del campo de tiro (línea de tiro en z = 0, blancos hacia -z) al mundo (sala de detrás del hall). */
   rangePt(x: number, z: number): THREE.Vector3;
+  /** Centro del círculo de pruebas (súper cargada y equipamiento sin coste mientras estás dentro). */ testZone: THREE.Vector3;
   /** Llegada a la arena de supervivencia (se entra desde el ordenador de modos). */
   survivalAt: { pos: THREE.Vector3; yaw: number };
 }
@@ -309,10 +310,25 @@ export function buildRange(scene: THREE.Scene): World {
   };
   hang(t("sign.shop"), "#e0a030", -12, 12.2); hang(t("sign.workshop"), "#3a9ad8", 12, 12.2); hang(t("sign.storage"), "#4f9a6c", 4, 12.6, 2.8);
 
-  // ---------- Zona de entrenamiento cuerpo a cuerpo (muñecos en dummies.ts, junto a la pared izquierda) ----------
-  const mat = new THREE.Mesh(new THREE.PlaneGeometry(4, 9), new THREE.MeshStandardMaterial({ color: 0x3f5a46, roughness: 0.95 }));
-  mat.rotation.x = -Math.PI / 2; mat.position.set(-W / 2 + 2.6, 0.008, 7.5); scene.add(decal(mat));
-  { const m = sign(t("sign.training"), "#e07a2a", 4, 1); m.position.set(-W / 2 + 0.04, 3.2, 7.5); m.rotation.y = Math.PI / 2; scene.add(m); }
+  // ---------- Zona de entrenamiento y de pruebas (en el campo de tiro, pasillo lateral pasada la línea de tiro) ----------
+  // Tres muñecos (dummies.ts) junto a la pared; delante, un círculo donde la súper se carga sola y el equipamiento no
+  // gasta cargas (main.ts: `world.testZone`), para probarlos sin salir a una misión.
+  const testZone = rangePt(-18.6, -8.5).setY(0);
+  {
+    const mat = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), new THREE.MeshStandardMaterial({ color: 0x3f5a46, roughness: 0.95 }));
+    mat.rotation.x = -Math.PI / 2; mat.position.copy(rangePt(-19.6, -8.5)).setY(0.008); scene.add(decal(mat));
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.35, 1.55, 48), new THREE.MeshBasicMaterial({ color: 0x7fe6ff, transparent: true, opacity: 0.85 }));
+    ring.rotation.x = -Math.PI / 2; ring.position.copy(testZone).setY(0.014); scene.add(decal(ring));
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(1.35, 48), new THREE.MeshBasicMaterial({ color: 0x7fe6ff, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false }));
+    disc.rotation.x = -Math.PI / 2; disc.position.copy(testZone).setY(0.012); scene.add(disc);
+    // Carteles colgados del techo sobre la entrada de la zona (de cara a quien llega desde la línea de tiro)
+    const hp = rangePt(-19.6, -3.4);
+    for (const back of [false, true]) {
+      const m = sign(t("sign.training"), "#e07a2a", 3.6, 0.9); m.position.set(hp.x, 4.3, hp.z + (back ? 0.02 : -0.02)); m.rotation.y = back ? 0 : Math.PI; scene.add(m);
+      const n = sign(t("sign.testzone"), "#3fb8d8", 4.4, 0.6); n.position.set(hp.x, 3.55, hp.z + (back ? 0.02 : -0.02)); n.rotation.y = back ? 0 : Math.PI; scene.add(n);
+    }
+    for (const dx of [-1.6, 1.6]) { const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, H - 4.75), new THREE.MeshStandardMaterial({ color: 0x8a939c, metalness: 0.6, roughness: 0.4 })); rod.position.set(hp.x + dx, (H + 4.75) / 2, hp.z); scene.add(rod); }
+  }
 
   // ---------- Sala nueva (amplia y vacía, a la derecha del vestíbulo; se llenará más adelante) ----------
   const NX0 = W / 2 + 1, NW = 60, NZ0 = -12, NZ1 = 48, NH = 9;
@@ -500,7 +516,7 @@ export function buildRange(scene: THREE.Scene): World {
   let lastMsg = "";
   return {
     setNight, get night() { return night; },
-    colliders, shootables, lanes, chestLid: lidPivot, chestGlow, wavesRoom: { z0: R0 - 0.5, z1: R1, x0: -RW / 2, x1: RW / 2 }, rangePt,
+    colliders, shootables, lanes, chestLid: lidPivot, chestGlow, wavesRoom: { z0: R0 - 0.5, z1: R1, x0: -RW / 2, x1: RW / 2 }, rangePt, testZone,
     survivalAt: { pos: new THREE.Vector3(0, 0, R0 + 3), yaw: Math.PI },
     interactables: [
       { id: "chest", position: new THREE.Vector3(-12, 0, 13), radius: 2.2, label: "Terminal", object: chest },

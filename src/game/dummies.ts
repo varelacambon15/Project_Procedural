@@ -826,7 +826,8 @@ export function spawnDummies(scene: THREE.Scene, lanes: number[], overlay: HTMLE
   add("basic", 0, -20).setPath(pt(-14, -20), pt(14, -20), 3);
   add("elite", 0, -42).setPath(pt(12, -42), pt(-12, -42), 2.2);
   add("boss", 0, -64);
-  // Zona de entrenamiento (puños): tres muñecos junto a la pared izquierda del vestíbulo, mirando hacia el centro
-  for (const z of [4.5, 7.5, 10.5]) at(z === 7.5 ? "basic" : "small", new THREE.Vector3(-22, 0, z)).group.rotation.y = Math.PI / 2;
+  // Zona de entrenamiento (puños y pruebas): tres muñecos en el pasillo lateral del campo de tiro, junto a la pared,
+  // mirando hacia el círculo de pruebas (en coordenadas del campo: x = -21,5; el campo va girado, así que miran a -x)
+  for (const z of [-6, -8.5, -11]) at(z === -8.5 ? "basic" : "small", pt(-21.5, z)).group.rotation.y = -Math.PI / 2;
   return list;
 }
