@@ -136,6 +136,17 @@ export function buildRange(scene: THREE.Scene): World {
     box(W, 0.3, 0.3, 0, H - 0.15, z, steel, false, false);
     for (const x of [-18, -9, 0, 9, 18]) box(5, 0.06, 1.4, x, H - 0.05, z - 4, panelLight, false, false);
   }
+  const cams: { head: THREE.Object3D; base: number; phase: number; rec: THREE.Mesh }[] = [];
+  const clockCv = document.createElement("canvas"), clockTex = new THREE.CanvasTexture(clockCv);
+  let clockMin = -1;
+  const drawClock = () => {
+    const d = new Date(), c = clockCv.getContext("2d")!, R = 64; clockMin = d.getMinutes();
+    c.fillStyle = "#f2f2ee"; c.fillRect(0, 0, 128, 128); c.strokeStyle = "#222"; c.lineCap = "round";
+    for (let i = 0; i < 12; i++) { const a = (i * Math.PI) / 6; c.lineWidth = i % 3 ? 2 : 4; c.beginPath(); c.moveTo(R + Math.sin(a) * 50, R - Math.cos(a) * 50); c.lineTo(R + Math.sin(a) * 58, R - Math.cos(a) * 58); c.stroke(); }
+    const hand = (a: number, l: number, w: number) => { c.lineWidth = w; c.beginPath(); c.moveTo(R, R); c.lineTo(R + Math.sin(a) * l, R - Math.cos(a) * l); c.stroke(); };
+    hand(((d.getHours() % 12) + d.getMinutes() / 60) * (Math.PI / 6), 30, 5); hand(d.getMinutes() * (Math.PI / 30), 46, 3);
+    clockTex.needsUpdate = true;
+  };
   // ---------- Acabado arquitectónico del hall (sustituye a la franja naranja que cruzaba las puertas) ----------
   // Zócalo, friso inferior con remate metálico, pilastras con tira de luz, moldura en el techo, marcos de puerta y una
   // banda oscura en el suelo junto a las paredes. Todo se corta en los huecos de las puertas. Sin luces nuevas.
@@ -194,6 +205,63 @@ export function buildRange(scene: THREE.Scene): World {
     };
     frame(0, BACK, DOOR * 2, true, -1);
     frame(W / 2, (SD0 + SD1) / 2, SD1 - SD0, false, -1);
+
+    // ---------- Techo: casetones (vigas longitudinales que cruzan las transversales), conductos y bandejas de cables ----------
+    const duct = new THREE.MeshStandardMaterial({ color: 0xa8b0b8, roughness: 0.45, metalness: 0.6 });
+    for (const x of [-16, -8, 8, 16]) box(0.25, 0.32, BACK, x, H - 0.16, BACK / 2, steel, false, false);
+    for (const x of [-20.5, 20.5]) {
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, BACK - 0.6, 18), duct); c.rotation.x = Math.PI / 2; c.position.set(x, H - 0.75, BACK / 2); scene.add(c);
+      for (let z = 2; z < BACK; z += 4) { box(0.05, 0.4, 0.05, x, H - 0.2, z, steel, false, false); const ring = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.03, 6, 18), steel); ring.position.set(x, H - 0.75, z); scene.add(ring); }
+    }
+    { const tray = box(0.5, 0.05, BACK - 1, 12, H - 0.55, BACK / 2, dark, false, false); void tray;
+      const cabCols = [0x2a2a2a, 0xc8402e, 0x2a6ad8, 0xe0a030];
+      cabCols.forEach((col, i) => { const cb = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, BACK - 1.2, 6), new THREE.MeshStandardMaterial({ color: col, roughness: 0.6 })); cb.rotation.x = Math.PI / 2; cb.position.set(11.82 + i * 0.12, H - 0.5, BACK / 2); scene.add(cb); });
+      for (let z = 3; z < BACK; z += 5) box(0.04, 0.5, 0.04, 12, H - 0.28, z, steel, false, false); }
+
+    // ---------- Suelo: pasarela de rejilla metálica desde la entrada hasta la puerta del campo de tiro ----------
+    {
+      const grate = pixelTexture(64, 64, (g) => { g.fillStyle = "#4a5058"; g.fillRect(0, 0, 64, 64); g.fillStyle = "#2a2e34"; for (let i = 0; i < 64; i += 8) { g.fillRect(i, 0, 3, 64); g.fillRect(0, i, 64, 3); } g.fillStyle = "#6a727c"; for (let i = 0; i < 64; i += 8) g.fillRect(i + 3, 0, 1, 64); }, [4, 28]);
+      const walk = new THREE.Mesh(new THREE.PlaneGeometry(3.6, BACK - 4), new THREE.MeshStandardMaterial({ map: grate, roughness: 0.5, metalness: 0.6 }));
+      walk.rotation.x = -Math.PI / 2; walk.position.set(0, 0.007, 4 + (BACK - 4) / 2); walk.receiveShadow = true; scene.add(walk);
+      for (const sx of [-1.85, 1.85]) box(0.1, 0.02, BACK - 4, sx, 0.01, 4 + (BACK - 4) / 2, strip, false, false);
+    }
+
+    // ---------- Paredes: tuberías con abrazaderas y válvulas, rejillas de ventilación y extintores ----------
+    const pipeMats = [new THREE.MeshStandardMaterial({ color: 0x8a939c, metalness: 0.7, roughness: 0.35 }), new THREE.MeshStandardMaterial({ color: 0x3a6a8a, metalness: 0.5, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0xa8402e, metalness: 0.4, roughness: 0.5 })];
+    pipeMats.forEach((m, i) => {
+      const r = 0.07 + i * 0.015, y = H - 1.35 - i * 0.24;
+      const pp = new THREE.Mesh(new THREE.CylinderGeometry(r, r, W - 1, 12), m); pp.rotation.z = Math.PI / 2; pp.position.set(0, y, 0.46 + i * 0.03); scene.add(pp);
+      for (let x = -21; x <= 21; x += 6) box(0.06, 0.06, 0.5, x + i, y, 0.25, steel, false, false);
+    });
+    for (const x of [-12.5, 9.5]) { const v = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.025, 6, 16), new THREE.MeshStandardMaterial({ color: 0xc8302a })); v.position.set(x, H - 1.35, 0.62); scene.add(v); }
+    const vent = pixelTexture(32, 20, (g) => { g.fillStyle = "#3a4048"; g.fillRect(0, 0, 32, 20); g.fillStyle = "#14171a"; for (let y = 3; y < 18; y += 3) g.fillRect(2, y, 28, 2); });
+    const ventMat = new THREE.MeshStandardMaterial({ map: vent, roughness: 0.6, metalness: 0.4 });
+    for (const [x, z, ry] of [[-W / 2 + 0.03, 5, Math.PI / 2], [-W / 2 + 0.03, 15.5, Math.PI / 2], [W / 2 - 0.03, 11, -Math.PI / 2], [W / 2 - 0.03, 23, -Math.PI / 2], [-12, BACK - 0.03, Math.PI], [13, BACK - 0.03, Math.PI]] as const) {
+      const vm = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.85), ventMat); vm.position.set(x, 5.4, z); vm.rotation.y = ry; scene.add(vm);
+    }
+    const ext = new THREE.MeshStandardMaterial({ color: 0xc8241e, roughness: 0.4, metalness: 0.2 });
+    for (const [x, z] of [[-W / 2 + 0.42, 12.0], [W / 2 - 0.42, 13.0], [16, 0.45], [-7, BACK - 0.45]] as const) {
+      const e = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.5, 12), ext); e.position.set(x, 0.55, z); e.castShadow = true; scene.add(e);
+      const head = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.1, 8), dark); head.position.set(x, 0.85, z); scene.add(head);
+      box(0.3, 0.3, 0.02, x, 1.35, z + (z < 1 ? -0.4 : z > BACK - 1 ? 0.4 : 0), new THREE.MeshBasicMaterial({ color: 0xc8241e }), false, false);
+    }
+
+    // ---------- Cámaras de seguridad en las esquinas (giran despacio) y reloj de pared ----------
+    for (const [x, z, base] of [[-W / 2 + 0.4, 0.4, Math.PI * 0.75], [W / 2 - 0.4, 0.4, -Math.PI * 0.75], [-W / 2 + 0.4, BACK - 0.4, Math.PI * 0.25], [W / 2 - 0.4, BACK - 0.4, -Math.PI * 0.25]] as const) {
+      const g = new THREE.Group(); g.position.set(x, H - 0.9, z); scene.add(g);
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, 0.06), dark); arm.position.y = 0.2; g.add(arm);
+      const head = new THREE.Group(); g.add(head);
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.38), new THREE.MeshStandardMaterial({ color: 0xe8e8e4, roughness: 0.4 })); body.position.z = 0.12; head.add(body);
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 12), dark); lens.rotation.x = Math.PI / 2; lens.position.z = 0.32; head.add(lens);
+      const rec = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 6), new THREE.MeshBasicMaterial({ color: 0xff2020 })); rec.position.set(0.06, 0.06, 0.3); head.add(rec);
+      head.rotation.set(0.35, base, 0); cams.push({ head, base, phase: Math.random() * 6, rec });
+    }
+    {
+      clockCv.width = 128; clockCv.height = 128; clockTex.colorSpace = THREE.SRGBColorSpace;
+      const ck = new THREE.Mesh(new THREE.CircleGeometry(0.42, 32), new THREE.MeshBasicMaterial({ map: clockTex, toneMapped: false })); ck.position.set(0, 4.15, 0.04); scene.add(ck);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.43, 0.035, 8, 32), steel); rim.position.set(0, 4.15, 0.05); scene.add(rim);
+      drawClock();
+    }
   }
   // Puerta sellada: hoja de acero con 4 huecos para las piezas (vacíos por ahora) y su rótulo
   const sealed = new THREE.Group(); sealed.position.set(-W / 2 - 0.5, 0, (LD0 + LD1) / 2); scene.add(sealed);
@@ -580,6 +648,8 @@ export function buildRange(scene: THREE.Scene): World {
       ...modePcs.map((pc) => ({ id: pc.id, position: new THREE.Vector3(NX0 + 8, 0, pc.z), radius: 2.0, label: pc.label, object: modeObjs.get(pc.id)! })),
     ],
     update(dt: number, data: RangeData) {
+      for (const cm of cams) { cm.phase += dt * 0.35; cm.head.rotation.y = cm.base + Math.sin(cm.phase) * 0.6; cm.rec.visible = Math.sin(cm.phase * 6) > -0.2; }
+      if (new Date().getMinutes() !== clockMin) drawClock();
       { const p = motes.geometry.attributes.position as THREE.BufferAttribute; for (let i = 0; i < p.count; i++) { let y = p.getY(i) + dt * (0.15 + (i % 7) * 0.03); if (y > 7) y = 0; p.setY(i, y); } p.needsUpdate = true; }
       // Parpadeo: la mayoría estables; de vez en cuando una lámpara titila un instante
       for (const l of lamps) {
