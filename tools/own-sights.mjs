@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 const read = (f) => JSON.parse(readFileSync(new URL(`../${f}`, import.meta.url), "utf8"));
 export function ownSights(man) {
-  const packs = [["raw/kit39", "x-"], ["raw/pack2", "x-p2-"], ["raw/pack3", "x-p3-"], ["raw/pack4", "x-p4-"], ["raw/pack5", "x-p5-"]];
+  const packs = [["raw/kit39", "x-"], ["raw/pack2", "x-p2-"], ["raw/pack3", "x-p3-"], ["raw/pack4", "x-p4-"], ["raw/pack5", "x-p5-"], ["raw/pack6", "x-p6-"]];
   let n = 0;
   for (const [dir, pre] of packs) for (const w of read(`${dir}/catalogo.json`)) {
     const id = pre + w.nombre.toLowerCase().replace(/[^a-z0-9]+/g, "-"), e = man.weapons.find((x) => x.id === id);

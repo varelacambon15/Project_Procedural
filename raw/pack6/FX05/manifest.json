@@ -1,0 +1,236 @@
+{
+  "nombre": "FX05",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "moderna",
+  "base_real": "FX-05 Xiuhcoatl (fusil de asalto 5.56x45 mm, Mexico)",
+  "largo_m": 0.78,
+  "alto_m": 0.2466,
+  "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+  "unidades": "metros",
+  "origen_arma": "centro en X y Z, base en Y = 0",
+  "normales": "aristas vivas por encima de 32°",
+  "piezas": {
+    "cuerpo": {
+      "triangulos": 1658,
+      "origen_local": "origen del arma",
+      "posicion_en_arma": [
+        0,
+        0,
+        0
+      ],
+      "bbox_local_min": [
+        -0.2277,
+        0.0917,
+        -0.0217
+      ],
+      "bbox_local_max": [
+        0.1465,
+        0.2466,
+        0.0249
+      ],
+      "material": "mat_cuerpo",
+      "color": [
+        0.0278,
+        0.0278,
+        0.0278
+      ]
+    },
+    "culata": {
+      "triangulos": 272,
+      "origen_local": "cara_culata",
+      "posicion_en_arma": [
+        -0.2277,
+        0.1779,
+        0
+      ],
+      "bbox_local_min": [
+        -0.1623,
+        -0.1076,
+        -0.0199
+      ],
+      "bbox_local_max": [
+        0,
+        0.019,
+        0.0138
+      ],
+      "material": "mat_culata",
+      "color": [
+        0.0135,
+        0.0135,
+        0.0135
+      ]
+    },
+    "guardamanos_canon": {
+      "triangulos": 748,
+      "origen_local": "cara_guardamanos",
+      "posicion_en_arma": [
+        0.1465,
+        0.1779,
+        0
+      ],
+      "bbox_local_min": [
+        0,
+        -0.026,
+        -0.0249
+      ],
+      "bbox_local_max": [
+        0.2015,
+        0.0439,
+        0.0202
+      ],
+      "material": "mat_guardamanos_canon",
+      "color": [
+        0.0303,
+        0.0303,
+        0.0303
+      ]
+    },
+    "empunadura": {
+      "triangulos": 151,
+      "origen_local": "cara_empunadura",
+      "posicion_en_arma": [
+        -0.1457,
+        0.1159,
+        0
+      ],
+      "bbox_local_min": [
+        -0.0413,
+        -0.0863,
+        -0.0152
+      ],
+      "bbox_local_max": [
+        0.0227,
+        0,
+        0.0111
+      ],
+      "material": "mat_empunadura",
+      "color": [
+        0.01,
+        0.01,
+        0.01
+      ]
+    },
+    "cargador": {
+      "triangulos": 118,
+      "origen_local": "pozo_cargador",
+      "posicion_en_arma": [
+        -0.0108,
+        0.1658,
+        0
+      ],
+      "bbox_local_min": [
+        -0.0451,
+        -0.1658,
+        -0.015
+      ],
+      "bbox_local_max": [
+        0.0428,
+        0,
+        0.0091
+      ],
+      "material": "mat_cargador",
+      "color": [
+        0.07,
+        0.0525,
+        0.0366
+      ]
+    }
+  },
+  "anclas": {
+    "boca": [
+      0.348,
+      0.1779,
+      0
+    ],
+    "cara_guardamanos": [
+      0.1465,
+      0.1779,
+      0
+    ],
+    "cara_culata": [
+      -0.2277,
+      0.1779,
+      0
+    ],
+    "cara_empunadura": [
+      -0.1457,
+      0.1159,
+      0
+    ],
+    "pozo_cargador": [
+      -0.0108,
+      0.1658,
+      0
+    ],
+    "raíl_superior": [
+      -0.122,
+      0.2307,
+      0
+    ],
+    "raíl_frontal": [
+      0.0923,
+      0.2392,
+      0
+    ],
+    "linea_mira": [
+      -0.122,
+      0.2392,
+      0
+    ]
+  },
+  "triangulos_total": 2977,
+  "piezas_ausentes": [
+    "mira"
+  ],
+  "boca_diametro_m": 0.0699,
+  "mira_integrada": "alza",
+  "accesorios_de_serie": [
+    "bo_freno_fx05"
+  ],
+  "accesorios": [
+    {
+      "id": "bo_freno_fx05",
+      "categoria": "bocachas",
+      "pieza": "bocacha",
+      "ancla": "boca",
+      "tipo_bocacha": "freno",
+      "diametro_encaje_m": 0.0699,
+      "archivo": "accesorios/bo_freno_fx05.glb",
+      "triangulos": 156,
+      "largo_m": 0.042,
+      "alto_m": 0.0253,
+      "bbox_local_min": [
+        0,
+        -0.0131,
+        -0.0141
+      ],
+      "bbox_local_max": [
+        0.042,
+        0.0122,
+        0.0112
+      ],
+      "material": "mat_bo_freno_fx05",
+      "color": [
+        0.0607,
+        0.0607,
+        0.0607
+      ],
+      "origen": "FX-05",
+      "anclas_locales": {
+        "boca": [
+          0.042,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "funcionamiento": "Fusil de asalto 5.56x45 mm de gas y cerrojo rotativo con fuego selectivo (accion='automatica'): culata esqueletica plegable, cargador extraible curvado de 30 y miras de hierro tipo tambor integradas en el rail superior (mira_integrada='alza', alza y punto en la misma linea de mira). Bocacha de freno de boca montada de serie sobre el ancla 'boca'.",
+  "accion_detalle": {
+    "ciclo": "automatica: fuego continuo mientras se mantiene el gatillo (el selector tambien permite semiautomatica)",
+    "anim": "retroceso corto del conjunto cierre/cuerpo ~0,018-0,025 m en -X y vuelta en ~0,06 s, repetido; expulsa casquillo hacia +Z; el cargador no se mueve",
+    "nota": "gatillo, martillo y selector van dentro del cuerpo (no son piezas); recarga: soltar pozo_cargador, bajar el cargador y subir el nuevo hasta pozo_cargador"
+  }
+}

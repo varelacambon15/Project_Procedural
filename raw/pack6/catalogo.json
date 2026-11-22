@@ -1,0 +1,88 @@
+[
+ {
+  "nombre": "AUTOMAG44",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "Pistola semiautomatica .44 de acero inoxidable de canon largo (anios 70)",
+  "largo_m": 0.292,
+  "triangulos_total": 1695,
+  "boca_diametro_m": 0.0188,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata",
+   "mira"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "MAUSER",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "Mauser C96 de chasis tactico con railes y compensador (moderna)",
+  "largo_m": 0.288,
+  "triangulos_total": 2499,
+  "boca_diametro_m": 0.0347,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata",
+   "mira"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "MP412REX",
+  "tipo_juego": "revolver",
+  "chasis": "revolver",
+  "accion": "revolver_doble",
+  "era_sugerida": "moderna",
+  "base_real": "Revolver .357 Magnum basculante de doble accion, 6 tiros, con expulsor automatico (anios 90)",
+  "largo_m": 0.282,
+  "triangulos_total": 2534,
+  "boca_diametro_m": 0.0432,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "culata",
+   "mira",
+   "cargador"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "GSERIES",
+  "tipo_juego": "smg",
+  "chasis": "convencional",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "Kit carabina para pistola G-series (pistola 9x19mm tipo Glock montada en chasis con culata plegable, guardamanos con railes y canon largo)",
+  "largo_m": 0.6346,
+  "triangulos_total": 2988,
+  "boca_diametro_m": 0.0769,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": []
+ },
+ {
+  "nombre": "FX05",
+  "tipo_juego": "rifle",
+  "chasis": "convencional",
+  "accion": "automatica",
+  "era_sugerida": "moderna",
+  "base_real": "FX-05 Xiuhcoatl (fusil de asalto 5.56x45 mm, Mexico)",
+  "largo_m": 0.78,
+  "triangulos_total": 2977,
+  "boca_diametro_m": 0.0699,
+  "mira_integrada": "alza",
+  "piezas_ausentes": [
+   "mira"
+  ],
+  "accesorios_de_serie": [
+   "bo_freno_fx05"
+  ]
+ }
+]

@@ -1,0 +1,7 @@
+# Integradas en raw/pack6 (una línea por arma: id de juego + carpeta de origen). Versiones simplificadas (Armas simplificadas/).
+x-p6-automag44 AUTOMAG44
+x-p6-mauser MAUSER
+x-p6-mp412rex MP412REX
+x-p6-gseries GSERIES
+x-p6-fx05 FX05
+# Excluidas por duplicado: MK23MOD0, SMGSUPP, M4LVOAC (NO_INTEGRAR.txt)

@@ -1,0 +1,173 @@
+{
+  "nombre": "MP412REX",
+  "tipo_juego": "revolver",
+  "chasis": "revolver",
+  "accion": "revolver_doble",
+  "era_sugerida": "moderna",
+  "base_real": "Revolver .357 Magnum basculante de doble accion, 6 tiros, con expulsor automatico (anios 90)",
+  "largo_m": 0.282,
+  "alto_m": 0.1497,
+  "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+  "unidades": "metros",
+  "origen_arma": "centro en X y Z, base en Y = 0",
+  "normales": "aristas vivas por encima de 32°",
+  "piezas": {
+    "cuerpo": {
+      "triangulos": 957,
+      "origen_local": "origen del arma",
+      "posicion_en_arma": [
+        0,
+        0,
+        0
+      ],
+      "bbox_local_min": [
+        -0.141,
+        0,
+        -0.0228
+      ],
+      "bbox_local_max": [
+        0.0004,
+        0.1497,
+        0.0228
+      ],
+      "material": "mat_cuerpo",
+      "color": [
+        0.579,
+        0.579,
+        0.579
+      ]
+    },
+    "guardamanos_canon": {
+      "triangulos": 679,
+      "origen_local": "cara_guardamanos",
+      "posicion_en_arma": [
+        -0.0094,
+        0.1145,
+        0
+      ],
+      "bbox_local_min": [
+        0,
+        -0.0433,
+        -0.0129
+      ],
+      "bbox_local_max": [
+        0.1504,
+        0.0352,
+        0.0129
+      ],
+      "material": "mat_guardamanos_canon",
+      "color": [
+        0.67,
+        0.67,
+        0.67
+      ]
+    },
+    "tambor": {
+      "triangulos": 718,
+      "origen_local": "eje_tambor",
+      "posicion_en_arma": [
+        -0.0271,
+        0.1191,
+        0
+      ],
+      "bbox_local_min": [
+        -0.0235,
+        -0.0269,
+        -0.0228
+      ],
+      "bbox_local_max": [
+        0.0235,
+        0.0236,
+        0.0228
+      ],
+      "material": "mat_tambor",
+      "color": [
+        0.765,
+        0.765,
+        0.765
+      ]
+    },
+    "empunadura": {
+      "triangulos": 252,
+      "origen_local": "cara_empunadura",
+      "posicion_en_arma": [
+        -0.0932,
+        0.0936,
+        0
+      ],
+      "bbox_local_min": [
+        -0.0435,
+        -0.0872,
+        -0.0104
+      ],
+      "bbox_local_max": [
+        0.0315,
+        0,
+        0.0104
+      ],
+      "material": "mat_empunadura",
+      "color": [
+        0.007,
+        0.007,
+        0.007
+      ]
+    }
+  },
+  "anclas": {
+    "boca": [
+      0.141,
+      0.1283,
+      0
+    ],
+    "cara_guardamanos": [
+      -0.0094,
+      0.1145,
+      0
+    ],
+    "cara_empunadura": [
+      -0.0932,
+      0.0936,
+      0
+    ],
+    "eje_tambor": [
+      -0.0271,
+      0.1191,
+      0
+    ],
+    "raíl_frontal": [
+      0.1326,
+      0.1497,
+      0
+    ],
+    "linea_mira": [
+      -0.0589,
+      0.1497,
+      0
+    ],
+    "raíl_superior": [
+      -0.0589,
+      0.1497,
+      0
+    ],
+    "cara_culata": [
+      -0.141,
+      0.037,
+      0
+    ]
+  },
+  "triangulos_total": 2534,
+  "piezas_ausentes": [
+    "culata",
+    "mira",
+    "cargador"
+  ],
+  "boca_diametro_m": 0.0432,
+  "mira_integrada": "alza",
+  "accesorios_de_serie": [],
+  "funcionamiento": "Revolver .357 Magnum de 6 tiros, doble accion (revolver_doble), basculante: se abre por la bisagra inferior para recargar y el expulsor automatico saca los 6 casquillos. La pieza tambor (ancla eje_tambor) hace de cargador. Miras de hierro integradas (alza en el armazon, punto de mira en el canon).",
+  "accion_detalle": {
+    "ciclo": "revolver_doble: cada pulsacion amartilla y dispara; tambien puede amartillarse a mano (disparo simple)",
+    "anim": "al disparar el tambor gira 1/6 de vuelta sobre eje_tambor; recarga basculante: guardamanos_canon + tambor giran ~25 grados hacia abajo sobre la bisagra bajo el cuerpo (0,4 s), el expulsor lanza los casquillos y se cierra",
+    "nota": "el martillo no es pieza aparte: animar con retroceso del cuerpo o efecto; ver raw/pack5/acciones.json (revolver_doble)"
+  }
+}

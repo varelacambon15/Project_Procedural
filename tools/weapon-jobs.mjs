@@ -199,7 +199,7 @@ const attJobs = Object.entries(ATT).flatMap(([name, slot]) => ["East", "West"].m
   // Packs con las mismas convenciones (raw/pack3 y raw/pack4) entran en el mismo pack del juego: comparten piezas.
   // (Su catálogo puede no traer las piezas: se leen del manifest de cada arma.)
   const KIT = "raw/kit39", read = (f) => JSON.parse(readFileSync(new URL(`../${f}`, import.meta.url), "utf8"));
-  const cat = [["raw/kit39", "x-"], ["raw/pack2", "x-p2-"], ["raw/pack3", "x-p3-"], ["raw/pack4", "x-p4-"], ["raw/pack5", "x-p5-"]].flatMap(([dir, pre]) =>
+  const cat = [["raw/kit39", "x-"], ["raw/pack2", "x-p2-"], ["raw/pack3", "x-p3-"], ["raw/pack4", "x-p4-"], ["raw/pack5", "x-p5-"], ["raw/pack6", "x-p6-"]].flatMap(([dir, pre]) =>
     read(`${dir}/catalogo.json`).map((w) => { const m = read(`${dir}/${w.nombre}/manifest.json`); return { ...w, dir, pre, piezas: w.piezas ?? m.piezas, era_sugerida: m.era_sugerida ?? w.era_sugerida }; }));
   const ERA = { "clásica": "classic", moderna: "modern", "rústica": "rustic", "sci-fi": "scifi", "sci-fi realista": "scifi" };
   const typeOf = (w) => (w.chasis === "bullpup" && w.tipo_juego === "rifle" ? "bullpup" : w.tipo_juego);

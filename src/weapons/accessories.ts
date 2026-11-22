@@ -38,7 +38,9 @@ export const isAccessory = (id: string | null) => !!id && id.startsWith("acc:");
 
 const black = () => new THREE.MeshStandardMaterial({ name: "Steel", color: 0x1c1d1f, metalness: 0.75, roughness: 0.42 });
 const polymer = () => new THREE.MeshStandardMaterial({ name: "Polymer", color: 0x232426, metalness: 0.15, roughness: 0.65 });
-const glass = () => new THREE.MeshStandardMaterial({ name: "Glass", color: 0x2a4f6e, metalness: 0.9, roughness: 0.05, transparent: true, opacity: 0.55 });
+// Óptica: único uso de MeshPhysicalMaterial (clearcoat sobre el mapa de entorno: el visor devuelve un reflejo nítido
+// de vidrio real). El resto del mundo y del arma sigue en estándar para no encarecer los shaders.
+const glass = () => new THREE.MeshPhysicalMaterial({ name: "Glass", color: 0x2a4f6e, metalness: 0.9, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.06, transparent: true, opacity: 0.55 });
 const redDot = () => new THREE.MeshBasicMaterial({ color: 0xff3020 });
 
 /** Cilindro tumbado a lo largo de +X, empezando en x=0. */

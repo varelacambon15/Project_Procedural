@@ -144,7 +144,7 @@ export const PISTOL_MUTATIONS: Mutation[] = [
   { id: "compact", structural: true, run: (d, _r, a) => { const k = Math.max(0.62, 1 - 0.2 * a); d.slide.len = Math.max(0.12, d.slide.len * k); d.grip.len = Math.max(0.064, d.grip.len * k); d.barrel.ext *= 0.5; } },
   { id: "frame-full", structural: true, run: (d) => { d.frame.full = !d.frame.full; if (d.frame.full) d.frame.dust = 1; } },
   { id: "vgrip", structural: true, run: (d, r) => { d.frame.rail = true; d.frame.vgrip = d.frame.vgrip && d.frame.vgrip !== "none" ? "none" : r() < 0.6 ? "vertical" : "angled"; } },
-  { id: "barrel-guard", structural: true, run: (d, r, a) => { d.barrel.guard = !d.barrel.guard; if (d.barrel.guard) d.barrel.ext = Math.max(d.barrel.ext, (0.07 + r() * 0.06) * Math.min(1.6, a)); } },
+  { id: "barrel-guard", structural: true, run: (d, r, a) => { d.barrel.guard = !d.barrel.guard; if (d.barrel.guard) d.barrel.ext = Math.min(d.slide.len * 1.15, Math.max(d.barrel.ext, (0.07 + r() * 0.06) * Math.min(1.6, a))); } },
   { id: "nose", structural: true, run: (d, r) => (d.slide.nose = other(r, ["flat", "bevel", "step", "taper"] as const, d.slide.nose)) },
   { id: "lug", structural: true, run: (d, r) => { if (d.cyl) d.cyl.lug = other(r, ["none", "half", "full"] as const, d.cyl.lug); } },
   // Revólver: cañón con camisa gruesa (tetón completo y banda) o fino de origen
@@ -297,7 +297,8 @@ export function designPolys(d: PistolDesign): PartPoly[] {
     if (d.barrel.ext > 0) {
       const r = d.barrel.d / 2 * (d.barrel.shroud ? 1.9 : d.barrel.profile === "bull" ? 1.3 : 1);
       out.push({ role: "barrel", depth: r * 2, poly: [[L - 0.002, by - r], [L + d.barrel.ext, by - r], [L + d.barrel.ext, by + r], [L - 0.002, by + r]] });
-      if (d.barrel.guard) { const gl = d.barrel.ext * 0.78; out.push({ role: "handguard", depth: w * 0.95, poly: [[L - 0.004, -fh * 0.9], [L + gl, -fh * 0.7], [L + gl, h * 0.85], [L - 0.004, h * 0.9]] }); }
+      // (guardamanos centrado en el eje del cañón: colgaba por debajo de él —auditoría 22a—)
+      if (d.barrel.guard) { const gl = d.barrel.ext * 0.78, gh = h * 0.78 + fh * 0.45; out.push({ role: "handguard", depth: w * 0.95, poly: [[L - 0.004, by - gh * 0.52], [L + gl, by - gh * 0.42], [L + gl, by + gh * 0.48], [L - 0.004, by + gh * 0.58]] }); }
       mz = L + d.barrel.ext;
     }
     if (d.barrel.comp !== "none") { const cl = d.barrel.comp === "ported" ? 0.032 : 0.024; out.push({ role: "comp", depth: w * 0.9, poly: [[mz - 0.002, by - h * 0.38], [mz + cl, by - h * 0.38], [mz + cl, by + h * 0.42], [mz - 0.002, by + h * 0.5]] }); }

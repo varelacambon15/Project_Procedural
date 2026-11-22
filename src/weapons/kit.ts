@@ -201,6 +201,10 @@ export function kitLengths(r: Rng, type: WeaponType, parts: PartPick[]): { barre
   } else if (type === "shotgun") {
     const long = parts.some((p) => p.from === "k-magazine-12ga-8shell");
     barrelLength = long ? 1.05 + r() * 0.08 : r() < 0.5 ? 0.72 + r() * 0.12 : 0.92 + r() * 0.08;
+  } else if (type === "pistol") {
+    // El kit de 9 mm antes no variaba el cañón: con 2-3 cambios el parecido con su base era 0,96-0,97 y la banda
+    // lo rechazaba (auditoría 22a). Cañón corto o alargado = silueta distinta sin cambiar estadísticas ni piezas.
+    barrelLength = r() < 0.5 ? 0.76 + r() * 0.14 : 1.14 + r() * 0.2;
   }
   return { barrelLength, front };
 }

@@ -1,0 +1,184 @@
+{
+  "nombre": "AUTOMAG44",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "Pistola semiautomatica .44 de acero inoxidable de canon largo (anios 70)",
+  "largo_m": 0.292,
+  "alto_m": 0.1613,
+  "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+  "unidades": "metros",
+  "origen_arma": "centro en X y Z, base en Y = 0",
+  "normales": "aristas vivas por encima de 32°",
+  "piezas": {
+    "cuerpo": {
+      "triangulos": 604,
+      "origen_local": "origen del arma",
+      "posicion_en_arma": [
+        0,
+        0,
+        0
+      ],
+      "bbox_local_min": [
+        -0.144,
+        0.0061,
+        -0.012
+      ],
+      "bbox_local_max": [
+        0.0195,
+        0.1442,
+        0.012
+      ],
+      "material": "mat_cuerpo",
+      "color": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "guardamanos_canon": {
+      "triangulos": 844,
+      "origen_local": "cara_guardamanos",
+      "posicion_en_arma": [
+        -0.1373,
+        0.1343,
+        0
+      ],
+      "bbox_local_min": [
+        0.0004,
+        -0.0158,
+        -0.0184
+      ],
+      "bbox_local_max": [
+        0.2833,
+        0.0269,
+        0.0184
+      ],
+      "material": "mat_guardamanos_canon",
+      "color": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "seccion_union_m": [
+        0.0383,
+        0.0368
+      ]
+    },
+    "empunadura": {
+      "triangulos": 154,
+      "origen_local": "cara_empunadura",
+      "posicion_en_arma": [
+        -0.0694,
+        0.1148,
+        0
+      ],
+      "bbox_local_min": [
+        -0.0558,
+        -0.1022,
+        -0.0128
+      ],
+      "bbox_local_max": [
+        0.0339,
+        0,
+        0.0128
+      ],
+      "material": "mat_empunadura",
+      "color": [
+        0.314583,
+        0.162942,
+        0.08714
+      ],
+      "seccion_union_m": [
+        0.0642,
+        0.0251
+      ]
+    },
+    "cargador": {
+      "triangulos": 93,
+      "origen_local": "pozo_cargador",
+      "posicion_en_arma": [
+        -0.0587,
+        0.1144,
+        0
+      ],
+      "bbox_local_min": [
+        -0.0873,
+        -0.1144,
+        -0.012
+      ],
+      "bbox_local_max": [
+        0.0202,
+        0,
+        0.012
+      ],
+      "material": "mat_cargador",
+      "color": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "seccion_union_m": [
+        0.0421,
+        0.012
+      ]
+    }
+  },
+  "anclas": {
+    "boca": [
+      0.146,
+      0.1343,
+      0
+    ],
+    "cara_guardamanos": [
+      -0.1373,
+      0.1343,
+      0
+    ],
+    "cara_empunadura": [
+      -0.0694,
+      0.1148,
+      0
+    ],
+    "pozo_cargador": [
+      -0.0587,
+      0.1144,
+      0
+    ],
+    "raíl_frontal": [
+      0.1325,
+      0.1613,
+      0
+    ],
+    "linea_mira": [
+      -0.1206,
+      0.1613,
+      0
+    ],
+    "raíl_superior": [
+      -0.1206,
+      0.1499,
+      0
+    ],
+    "cara_culata": [
+      -0.1443,
+      0.0603,
+      0
+    ]
+  },
+  "triangulos_total": 1695,
+  "piezas_ausentes": [
+    "culata",
+    "mira"
+  ],
+  "boca_diametro_m": 0.0188,
+  "mira_integrada": "alza",
+  "accesorios_de_serie": [],
+  "funcionamiento": "Pistola semiautomatica .44 con alza y punto de mira integrados en la corredera (mira_integrada='alza') y cargador extraible en la empuñadura. Sin riel inferior ni accesorios de serie.",
+  "accion_detalle": {
+    "ciclo": "semiautomatica: un disparo por pulsacion; la corredera retrocede y vuelve sola",
+    "anim": "la pieza guardamanos_canon ES la corredera: retrocede ~0,025 m en -X y vuelve en ~0,06 s; con cargador vacio se queda atras hasta recargar",
+    "nota": "chasis 'pistola' + accion 'semiautomatica' = corredera (ver raw/pack5/acciones.json); martillo, gatillo y gatillera van dentro del cuerpo, no son piezas"
+  }
+}

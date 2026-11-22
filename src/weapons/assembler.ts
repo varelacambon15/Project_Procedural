@@ -1,14 +1,16 @@
 // Monta en 3D un arma generada: carga los .glb de cada pieza y las coloca en sus puntos de anclaje.
 import * as THREE from "three";
 import { buildLight } from "./lights";
-import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { mergeGeometries, toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { NO_TWEAKS, type AssetEntry, type PartRole, type WeaponSpec } from "./types";
-import { BASE_SIZE, TYPE_LENGTH, bodyZones, drumOf, ironRisers, pieceScale, type WeaponGenerator } from "./generator";
+import { BASE_SIZE, TYPE_LENGTH, bodyZones, drumOf, ironRisers, magScaleCap, pieceScale, type WeaponGenerator } from "./generator";
 import { midZone, stretchAll, stretchX, type Stretches } from "./variation";
 import { KIT_FLIP, isKit, kitLabel, kitPlacements, type KitPart } from "./kit";
 import { accessory, buildFrontSight, buildMuzzle, buildOptic, isIron } from "./accessories";
-import { applyFinish } from "./finish";
+import { applyFinish, currentFinishQuality } from "./finish";
+import { brassDetail, qualityProfile, rarityTicks } from "./finish-data";
+import { roughnessTexture } from "./textures";
 import { contactAO, contactAOAsync } from "./ao";
 import { ADDON_ROLE, buildAddon } from "./addons";
 import { buildPistol } from "./pistolmesh";
@@ -16,6 +18,22 @@ import { buildLong } from "./longmesh";
 import type { Support } from "./grip";
 /** Despiece de las pistolas generadas por código. */
 const PP_EXPLODE: Record<string, [number, number, number]> = { slide: [0, 1.2, 0], barrel: [1.4, 0.6, 0], frame: [0, 0, 0], grip: [-0.3, -0.8, 0], magazine: [0, -1.6, 0], trigger: [-0.8, 0.4, 0] };
+
+interface Stamp { w: number; h: number; d: number; x: number; y: number; z: number; rz?: number }
+/** Marcas y vetas diminutas: todas las cajitas se funden en UNA malla, luego una sola llamada de dibujo por grupo. */
+function markMesh(stamps: Stamp[], name: string): THREE.Mesh {
+  const geos = stamps.map((s) => {
+    const g = new THREE.BoxGeometry(s.w, s.h, s.d);
+    if (s.rz) g.rotateZ(s.rz);
+    g.translate(s.x, s.y, s.z);
+    return g;
+  });
+  const geo = mergeGeometries(geos, false) ?? geos[0];
+  for (const g of geos) if (g !== geo) g.dispose();
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ name }));
+  m.name = name; // applyFinish necesita el nombre para escoger el material del acabado común
+  return m;
+}
 import { buildAdapter, buildCell, buildCover, buildDisplay, buildFront, buildPatch, buildStock, buildTape, clipX } from "./procparts";
 
 /** Detalla el guardamanos liso del kit (se leía como una cuña sin terminar). Trabaja en coordenadas de la pieza. */
@@ -192,7 +210,11 @@ export class WeaponAssembler {
         const node = nodes[i];
         node.position.set(...pl.pos); node.scale.x = pl.stretch;
         if (KIT_FLIP.has(pl.part.id)) node.rotation.y = Math.PI;
-        if (pl.role === "magazine" && (spec.tweaks?.magLen ?? 1) !== 1) node.scale.y = spec.tweaks!.magLen!;
+        if (pl.role === "magazine") {
+          // (tope de alto del cargador: un cargador de 200 mm en una pistola desentona —auditoría 22a—; igual que la silueta)
+          const ky = magScaleCap(spec.type, pl.part.bounds.max[1] - pl.part.bounds.min[1], spec.tweaks?.magLen ?? 1);
+          node.scale.y = ky;
+        }
         const role: PartRole = pl.role === "sight" ? "scope" : pl.role;
         add(node, role, { id: pl.part.id, label: kitLabel(pl.part.id), pack: "kit" } as AssetEntry, KIT_EXPLODE[pl.role] ?? [0, 0.6, 0]);
         if (pl.role === "scope") {
@@ -382,7 +404,9 @@ export class WeaponAssembler {
         const mag = await this.nodes(magE, "magazine");
         const want = bodyE.sockets.magazine, have = magE.sockets.magazine!;
         const k = THREE.MathUtils.clamp((want.size?.[0] ?? 1) / (have.size?.[0] ?? 1), 0.6, 1.6);
-        const ky = k * (tw2.magLen ?? 1); // cargador alargado: crece hacia abajo desde el pozo
+        // cargador alargado: crece hacia abajo desde el pozo (con el tope de alto del tipo, igual que la silueta)
+        const mb = magE.partBounds?.magazine, magH = mb ? mb.max[1] - mb.min[1] : magE.bounds.max[1] - magE.bounds.min[1];
+        const ky = magScaleCap(spec.type, magH, k * (tw2.magLen ?? 1));
         mag.scale.set(k, ky, k);
         mag.position.copy(v3(want.pos).sub(v3(have.pos).multiply(new THREE.Vector3(k, ky, k))));
         add(mag, "magazine", magE, [0, -1.2, 0]);
@@ -569,32 +593,66 @@ export class WeaponAssembler {
       const thick = rb ? Math.min(0.05, (rb.max.z - rb.min.z) * 0.8) : 0.03;
       for (const a of spec.tweaks.adds) add(buildAddon(a, thick), ADDON_ROLE[a.kind], proc(`add-${a.kind}`), [0, a.y < 0 ? -0.8 : 0.8, 0]);
     }
-    // Marca de la simulación: línea fina grabada en el costado del cajón (en todas las armas; con color, solo legendarias)
+    // Marca de fabricación grabada y rareza discreta: una sola malla para todos los rasgos del cajón.
+    // En Bajo solo queda la línea de marca (sin números de rareza ni grabado en el cañón).
+    const fq = currentFinishQuality(), fqp = qualityProfile(fq);
     {
       const rp = parts.find((p) => p.role === "receiver" || p.role === "body" || p.role === "frame");
       if (rp) {
         const b = new THREE.Box3().setFromObject(rp.object), c = b.getCenter(new THREE.Vector3());
         const L = Math.min(0.05, (b.max.x - b.min.x) * 0.22);
-        const mk = new THREE.Group();
+        const y = c.y + (b.max.y - c.y) * 0.35;
+        const stamps: Stamp[] = [];
         for (const z of [b.max.z + 0.0006, b.min.z - 0.0006]) {
-          const line = new THREE.Mesh(new THREE.BoxGeometry(L, 0.0022, 0.001), new THREE.MeshStandardMaterial({ name: "simmark" }));
-          line.position.set(c.x - L * 0.2, c.y + (b.max.y - c.y) * 0.35, z); mk.add(line);
-          const tick = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.0022, 0.001), new THREE.MeshStandardMaterial({ name: "simmark" }));
-          tick.position.set(c.x - L * 0.2 + L * 0.6, c.y + (b.max.y - c.y) * 0.35 - 0.004, z); mk.add(tick);
-        }
-        add(mk, "charging", proc("sim-mark"), [0, 0, 0]);
-        // Legendarias: vetas de energía finas y luminosas en los costados del cajón y a lo largo del cañón
-        // (el único color propio del arma; discreto, sin luces)
-        if (spec.rarity.id === "legendaria") {
-          const vein = new THREE.MeshStandardMaterial({ name: "legendvein", color: spec.rarity.color, emissive: spec.rarity.color, emissiveIntensity: 1.6, roughness: 0.4 });
-          const vg = new THREE.Group(), Lr = (b.max.x - b.min.x) * 0.62, y0 = c.y - (c.y - b.min.y) * 0.15;
-          for (const z of [b.max.z + 0.0008, b.min.z - 0.0008]) {
-            const v = new THREE.Mesh(new THREE.BoxGeometry(Lr, 0.0016, 0.0012), vein); v.position.set(c.x, y0, z); vg.add(v);
-            for (const k of [-0.35, 0.05, 0.4]) { const br = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.0016, 0.0012), vein); br.position.set(c.x + Lr * k, y0 + 0.004, z); br.rotation.z = 0.6; vg.add(br); }
+          stamps.push({ w: L, h: 0.0022, d: 0.001, x: c.x - L * 0.2, y, z });
+          if (fqp.details) {
+            stamps.push({ w: 0.004, h: 0.0022, d: 0.001, x: c.x + L * 0.4, y: y - 0.004, z });
+            const ticks = rarityTicks(spec.rarity.id);
+            for (let i = 0; i < ticks; i++) stamps.push({ w: 0.0014, h: 0.0026, d: 0.001, x: c.x - L * 0.2 + L * (0.08 + i * 0.14), y: y - 0.007, z });
           }
-          const bp = spec.type === "pistol" || spec.type === "revolver" ? undefined : parts.find((p) => p.role === "barrel"); // (en pistolas el cañón va dentro de la corredera)
-          if (bp) { const bb = new THREE.Box3().setFromObject(bp.object), bc = bb.getCenter(new THREE.Vector3()); const v = new THREE.Mesh(new THREE.BoxGeometry((bb.max.x - bb.min.x) * 0.7, 0.0014, 0.0014), vein); v.position.set(bc.x, bb.max.y + 0.0006, bc.z); vg.add(v); }
-          add(vg, "charging", proc("legend-vein"), [0, 0, 0]);
+        }
+        add(markMesh(stamps, "simmark"), "charging", proc("sim-mark"), [0, 0, 0]);
+        // Legendarias: veta de energía segmentada y más fina (antes era una barra continua demasiado gruesa),
+        // un único detalle de latón en gatillo/palanca y ninguna luz real ni boquilla de color.
+        if (spec.rarity.id === "legendaria") {
+          const col = new THREE.Color(spec.rarity.color).multiplyScalar(0.72);
+          const veinStamps: Stamp[] = [];
+          const Lr = (b.max.x - b.min.x) * 0.56, y0 = c.y - (c.y - b.min.y) * 0.15;
+          for (const z of [b.max.z + 0.0008, b.min.z - 0.0008]) {
+            const seg = Lr / fqp.veinSegments;
+            for (let i = 0; i < fqp.veinSegments; i++) veinStamps.push({ w: seg * 0.78, h: 0.0009, d: 0.0008, x: c.x - Lr / 2 + (i + 0.5) * seg, y: y0, z });
+            if (fqp.details) for (const k of [-0.26, 0.28]) veinStamps.push({ w: 0.008, h: 0.0009, d: 0.0008, x: c.x + Lr * k, y: y0 + 0.0034, z, rz: 0.6 });
+          }
+          const bp = spec.type === "pistol" || spec.type === "revolver" ? undefined : parts.find((p) => p.role === "barrel");
+          if (bp) {
+            const bb = new THREE.Box3().setFromObject(bp.object), bc = bb.getCenter(new THREE.Vector3());
+            const seg = (bb.max.x - bb.min.x) * 0.62 / fqp.veinSegments;
+            for (let i = 0; i < fqp.veinSegments; i++) veinStamps.push({ w: seg * 0.8, h: 0.0008, d: 0.0008, x: bb.min.x + (i + 0.5) * seg, y: bb.max.y + 0.0005, z: bc.z });
+          }
+          const vm = markMesh(veinStamps, "legendvein");
+          const vein = vm.material as THREE.MeshStandardMaterial;
+          vein.color.copy(col); vein.emissive.copy(col); vein.emissiveIntensity = 0.95; vein.roughness = 0.4;
+          add(vm, "charging", proc("legend-vein"), [0, 0, 0]);
+        }
+      }
+    }
+    // Numeración grabada en el cañón (o en la corredera de las pistolas), alineada con la del cajón.
+    if (fqp.details) {
+      const ep = parts.find((p) => p.role === "barrel") ?? parts.find((p) => p.role === "slide");
+      if (ep) {
+        ep.object.updateMatrixWorld(true);
+        const eb = new THREE.Box3().setFromObject(ep.object);
+        if (!eb.isEmpty()) {
+          const ec = eb.getCenter(new THREE.Vector3());
+          const toLocal = (v: THREE.Vector3) => ep.object.worldToLocal(v.clone());
+          const lc = toLocal(ec), s = Math.max(0.2, ep.object.scale.x);
+          const len = Math.min(0.045, (eb.max.x - eb.min.x) * 0.24) / s;
+          const zPos = toLocal(new THREE.Vector3(ec.x, eb.max.y, eb.max.z)), zNeg = toLocal(new THREE.Vector3(ec.x, eb.max.y, eb.min.z));
+          const y = Math.max(zPos.y, zNeg.y) - 0.001 / s;
+          ep.object.add(markMesh([
+            { w: len, h: 0.0007, d: 0.0006, x: lc.x, y, z: zPos.z + 0.0005 / s },
+            { w: len * 0.72, h: 0.0007, d: 0.0006, x: lc.x, y, z: zNeg.z - 0.0005 / s },
+          ], "procengrave"));
         }
       }
     }
@@ -603,10 +661,10 @@ export class WeaponAssembler {
     const aoKey = JSON.stringify(spec);
     const ao = this.asyncAO ? contactAOAsync(group, parts.map((p) => p.object), undefined, undefined, undefined, aoKey) : (contactAO(group, parts.map((p) => p.object), undefined, undefined, undefined, aoKey), Promise.resolve());
     // Las legendarias: un único detalle pequeño en latón (gatillo o palanca), nunca el cargador ni la boca
-    const legendary = spec.rarity.id === "legendaria";
+    const legendary = brassDetail(spec.rarity.id);
     // (nunca una pieza grande como el accesorio de boca: parecería un juguete; solo gatillo o palanca)
     const hl = legendary ? parts.find((p) => p.role === "trigger") ?? parts.find((p) => p.role === "charging") : undefined;
-    for (const p of parts) applyFinish(p.object, p.role, spec.paint, legendary, p === hl);
+    for (const p of parts) applyFinish(p.object, p.role, spec.paint, legendary, p === hl, spec.era, spec.rarity.id);
 
     // Variación leve del largo de las armas enteras
     // (el largo de las armas enteras ya se varió por zonas)
@@ -635,7 +693,27 @@ export class WeaponAssembler {
         }
         const y = Number.isFinite(yLo) ? THREE.MathUtils.clamp(lt.at[1], yLo + 0.008, yHi - 0.008) : lt.at[1];
         node.rotation.x = Math.PI / 2; node.position.set(lt.at[0], y, zMin * 0.92); // (costado izquierdo: el que se ve en primera persona)
-      } else node.position.set(lt.at[0], lt.at[1] + 0.002, 0);
+      } else {
+        // Bajo el armazón, pegado a su cara inferior (al raíl o al guardamonte): antes colgaba con un hueco visible
+        // entre la luz y el arma (auditoría 22a). Se sube hasta tocar la pieza que hay justo encima
+        node.position.set(lt.at[0], lt.at[1] + 0.002, 0);
+        node.updateMatrixWorld(true);
+        const lb = new THREE.Box3().setFromObject(node);
+        const v = new THREE.Vector3();
+        let bottom = Infinity;
+        for (const p of parts) {
+          if (!["frame", "receiver", "body", "slide", "front", "barrel"].includes(p.role)) continue;
+          p.object.traverse((o) => {
+            const m = o as THREE.Mesh; if (!m.isMesh) return;
+            const pos = m.geometry.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+              v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+              if (Math.abs(v.x - lt.at[0]) < 0.014 && Math.abs(v.z) < 0.02 && v.y < bottom) bottom = v.y;
+            }
+          });
+        }
+        if (Number.isFinite(bottom) && bottom - lb.max.y > 0.0005) node.position.y += Math.min(0.045, bottom - lb.max.y + 0.0015);
+      }
       add(node, "accessory", { id: lt.id, label: lt.id, pack: kp ? "kit" : "proc" } as AssetEntry, [0.5, 0, 1]);
     }
     const size = BASE_SIZE[spec.parts[0]?.from ?? ""] ?? 1;
@@ -879,14 +957,19 @@ function finish(src: THREE.Material): THREE.Material {
   const m = src.clone() as THREE.MeshStandardMaterial;
   if (!m.isMeshStandardMaterial || /Lens|Glass/i.test(m.name)) return m;
   const wood = /Wood|Handle/i.test(m.name);
+  const polymer = /Polymer|Plastic|Black2/i.test(m.name);
   if (!m.map) {
     const hsl = { h: 0, s: 0, l: 0 }; m.color.getHSL(hsl);
     m.color.setHSL(hsl.h, hsl.s * (wood ? 0.6 : 0.3), THREE.MathUtils.clamp(hsl.l, 0.02, wood ? 0.3 : 0.24));
   }
-  if (/Wood|Handle/i.test(m.name)) { m.metalness = 0.0; m.roughness = 0.75; }
-  else if (/Polymer|Plastic|Black2/i.test(m.name)) { m.metalness = 0.15; m.roughness = 0.6; }
-  else { m.metalness = Math.max(m.metalness, 0.6); m.roughness = Math.min(m.roughness, 0.45); }
+  if (wood) { m.metalness = 0.0; m.roughness = 0.72; }
+  else if (polymer) { m.metalness = 0.12; m.roughness = 0.72; } // polímero mate
+  else { m.metalness = Math.max(m.metalness, 0.75); m.roughness = Math.min(m.roughness, 0.4); } // acero
+  // Variación de rugosidad compartida (mapa pequeño de lienzo, cacheado por clase): acero, polímero y madera
+  // devuelven la luz con matices en vez de un acabado plano
+  if (!m.roughnessMap) m.roughnessMap = roughnessTexture(wood ? "wood" : polymer ? "polymer" : "steel");
   m.envMapIntensity = 0.9;
+  m.userData.envBoost = 1.5; // las armas mantienen su brillo aunque baje la intensidad del entorno
   return m;
 }
 

@@ -102,7 +102,9 @@ type Mut = { id: string; structural: boolean; run: (d: LongDesign, r: Rng, a: nu
 const pickOther = <T,>(r: Rng, list: readonly T[], cur: T) => { const l = list.filter((x) => x !== cur); return l.length ? l[Math.floor(r() * l.length)] : cur; };
 const scale = (r: Rng, a: number, lo = 0.75, hi = 1.3) => { const k = lo + r() * (hi - lo); return 1 + (k - 1) * a; };
 export const LONG_MUTATIONS: Mut[] = [
-  { id: "stock", structural: true, run: (d, r) => { if (d.family === "bullpup") return; d.stock.kind = pickOther(r, ERA_RULES[d.era].stocks.filter((k) => k !== "integral"), d.stock.kind); } },
+  // (sin "none": una escopeta o ametralladora sin culata quedaba como un cajón a la intemperie; los arquetipos que no
+  // llevan culata ya la traen puesta desde su diseño)
+  { id: "stock", structural: true, run: (d, r) => { if (d.family === "bullpup") return; d.stock.kind = pickOther(r, ERA_RULES[d.era].stocks.filter((k) => k !== "integral" && k !== "none"), d.stock.kind); } },
   { id: "fore", structural: true, run: (d, r) => { const l = ERA_RULES[d.era].fores.filter((k) => (d.family === "shotgun" ? true : k !== "pump") && (d.feed.kind === "tube" ? k !== "jacket" && k !== "none" : true) && (k !== "none" || (d.family === "bullpup" && d.barrel.len < 0.16))); d.fore.kind = pickOther(r, l, d.fore.kind); if (d.fore.kind === "pump" && d.feed.kind !== "tube") d.fore.kind = "wood"; } },
   { id: "top", structural: true, run: (d, r) => { d.top = pickOther(r, ERA_RULES[d.era].tops, d.top); } },
   { id: "recv-style", structural: true, run: (d, r) => { d.recv.style = pickOther(r, ERA_RULES[d.era].styles, d.recv.style); d.recv.rearSlope = 0.1 + r() * 0.45; } },
@@ -203,15 +205,23 @@ export function longPolys(d: LongDesign): LPoly[] {
       else poly = [[0, yT0], [sx0 * 0.5, yT0 - S.drop * 0.5], [sx0, yHeel], [sx0 - 0.003, (yHeel + yToe) / 2], [sx0, yToe], ...belly, [0, bot]];
       out.push({ role: "stock", depth: w * (S.kind === "wood" ? 0.9 : 0.85), poly });
     } else if (S.kind === "frame") {
-      // Marco de pletina con su hueco (una sola pieza, con volumen)
-      out.push({ role: "stock", depth: w * 0.55, poly: [[0, top - 0.006], [sx0, top - S.drop - 0.004], [sx0, by - sh * 0.45], [0, bot + 0.004], [-0.025, bot + 0.012], [sx0 + 0.04, by - sh * 0.3], [sx0 + 0.035, top - S.drop - 0.02], [-0.02, top - 0.02]] });
+      // Marco rígido de culata: dos brazos gruesos con cantonera (antes un contorno que se cruzaba y se leía como una
+      // pletina doblada, auditoría 22a). Cada brazo es una pieza cerrada con volumen.
+      const t = Math.max(0.03, sh * 0.32), yT = top - 0.006, yB = by - sh * 0.6;
+      out.push({ role: "stock", depth: w * 0.72, poly: [[0, yT], [sx0, yT - S.drop], [sx0, yT - S.drop - t], [0, yT - t]] });
+      out.push({ role: "stock", depth: w * 0.62, poly: [[0, bot + 0.006], [sx0, yB], [sx0, yB + t], [0, bot + 0.006 + t]] });
+      out.push({ role: "stock", depth: w * 0.8, poly: [[sx0 - 0.012, yT - S.drop], [sx0 + 0.014, yT - S.drop], [sx0 + 0.014, yB + t], [sx0 - 0.012, yB + t]] });
     } else if (S.kind === "folding") {
-      // Plegable: brazo de pletina gruesa (barra superior + cantonera) con su bisagra; una sola pieza con volumen
-      const t = 0.022, yT = top - 0.006, yB = by - sh * 0.4;
-      out.push({ role: "stock", depth: w * 0.62, poly: [[0, yT], [sx0, yT - S.drop], [sx0, yB], [sx0 + 0.022, yB], [sx0 + 0.022, yT - S.drop - t], [0, yT - t]] });
+      // Plegable con cuerpo: barra superior gruesa, cantonera alta y travesaño inferior (triángulo cerrado). Antes era
+      // una pletina de 22 mm con un travesaño fino: se leía como una placa doblada (auditoría 22a)
+      const t = 0.034, yT = top - 0.006, yB = by - sh * 0.78;
+      out.push({ role: "stock", depth: w * 0.66, poly: [[0, yT], [sx0, yT - S.drop], [sx0, yB], [sx0 + 0.03, yB], [sx0 + 0.03, yT - S.drop - t], [0, yT - t]] });
+      out.push({ role: "stock", depth: w * 0.5, poly: [[sx0 + 0.028, yB + 0.002], [0, bot + 0.002], [0, bot + 0.002 + t * 0.85], [sx0 + 0.028, yB + 0.002 + t * 0.85]] });
     } else if (S.kind === "tube") {
-      out.push({ role: "stock", depth: 0.026, poly: rect(sx0 + 0.02, BORE - 0.012, 0, BORE + 0.012) });
-      out.push({ role: "stock", depth: w * 0.7, poly: rect(sx0, by - sh * 0.45, sx0 + 0.02, top - S.drop * 0.8) });
+      // Tubo con cuerpo (culata telescópica): tubo grueso, carrillera y cantonera ancha (antes una varilla de 26 mm)
+      out.push({ role: "stock", depth: 0.038, poly: rect(sx0 + 0.026, BORE - 0.024, 0, BORE + 0.024) });
+      out.push({ role: "stock", depth: w * 0.72, poly: rect(sx0, by - sh * 0.55, sx0 + 0.03, top - S.drop * 0.8) });
+      out.push({ role: "stock", depth: w * 0.55, poly: rect(sx0 + 0.05, BORE + 0.018, -0.01, BORE + 0.036) });
     }
   }
   if (d.extras.cheek && (S.kind !== "none" && S.kind !== "tube")) {

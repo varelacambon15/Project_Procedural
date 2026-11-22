@@ -26,12 +26,12 @@ export function stockProfile(s: ProcStock): Profile {
     const t = (ax - x) / s.len; // 0 en la junta, 1 en la cantonera
     const yc = ay - s.drop * t;
     if (t > 0.94) return [yc - s.h * 0.65, yc + s.h * 0.45]; // cantonera
-    if (s.kind === "tube") return [yc - s.h * 0.12, yc + s.h * 0.12];
+    if (s.kind === "tube") return [yc - s.h * 0.3, yc + s.h * 0.32]; // (culata telescópica con cuerpo, no una varilla)
     if (s.kind === "skeleton") return [yc - s.h * (0.4 + 0.2 * t), yc + s.h * 0.35];
     if (s.kind === "folding") return [yc - s.h * (0.15 + 0.45 * t), yc + s.h * 0.3];
     if (s.kind === "polymer") return [yc - s.h * (0.35 + 0.2 * t), yc + s.h * 0.3];
     if (s.kind === "carbine") return [yc - s.h * (0.5 + 0.35 * t), yc + s.h * (0.42 + 0.12 * Math.min(1, t * 2))];
-    if (s.kind === "wood") return [yc - s.h * (0.4 + 0.4 * t), yc + s.h * 0.4];
+    if (s.kind === "wood") return [yc - s.h * (0.42 + 0.38 * t), yc + s.h * (0.4 + 0.08 * Math.sin(Math.min(1, t * 1.4) * Math.PI))];
     return [yc - s.h * (0.45 + 0.25 * t), yc + s.h * 0.42];
   });
 }
@@ -57,8 +57,12 @@ export function buildStock(s: ProcStock): THREE.Group {
   const g = new THREE.Group(); const [ax, ay] = s.at; const bx = ax - s.len, by = ay - s.drop;
   const pad = box(0.014, s.h * 1.1, s.w * 1.05, bx + 0.007, by - s.h * 0.1, "procpad"); g.add(pad);
   if (s.kind === "tube") {
-    g.add(rod(new THREE.Vector3(ax, ay + s.h * 0.05, 0), new THREE.Vector3(bx + 0.01, by + s.h * 0.05, 0), Math.max(0.006, s.h * 0.12)));
-    g.add(box(0.03, s.h * 0.7, s.w * 0.9, ax - 0.015, ay, "procmetal"));
+    // Culata telescópica con cuerpo: tubo grueso, carrillera, tope de ajuste y cantonera ancha (antes una varilla fina)
+    const rr = Math.max(0.011, s.h * 0.3);
+    g.add(rod(new THREE.Vector3(ax, ay + s.h * 0.08, 0), new THREE.Vector3(bx + 0.012, by + s.h * 0.08, 0), rr, 12));
+    g.add(box(0.034, s.h * 0.72, s.w * 0.92, ax - 0.017, ay, "procmetal"));
+    g.add(box(s.len * 0.42, s.h * 0.22, s.w * 0.72, ax - s.len * 0.26, ay + s.h * 0.34, "procpad")); // carrillera
+    g.add(box(0.012, s.h * 0.34, s.w * 0.8, ax - s.len * 0.62, by + s.h * 0.42, "procmetal")); // tope de ajuste
   } else if (s.kind === "skeleton") {
     // Esqueleto: marco de pletina (barra superior, inferior y travesaño), una sola pieza ancha como las reales
     // (las varillas finas a cada lado se leían como alambre en armas largas)
@@ -89,9 +93,9 @@ export function buildStock(s: ProcStock): THREE.Group {
     const botY = (t: number) => ay - s.drop * t - s.h * (k === "carbine" ? (t < 0.3 ? 0.32 : 0.32 + 0.75 * (t - 0.3)) : k === "polymer" ? 0.3 + 0.12 * t : 0.4 + 0.4 * t);
     // El brace de polímero va sobre un tubo: el cuerpo empieza a un tercio del largo
     const t0 = k === "polymer" ? 0.32 : 0;
-    if (k === "carbine" || (k === "wood" && s.len < 0.24)) {
-      // Carabina con forma: lomo con leve carrillera, talón redondeado, panza curva hasta la muñeca estrecha y un
-      // vaciado ovalado detrás (antes era una placa plana de bordes rectos)
+    if (k === "carbine" || k === "wood") {
+      // Carabina y madera con forma: lomo con leve carrillera, talón redondeado, panza curva hasta la muñeca estrecha y un
+      // vaciado ovalado detrás (antes la madera larga salía como una tabla plana de bordes rectos: auditoría 22a)
       const X = (t: number) => ax - s.len * t;
       sh.moveTo(ax, topY(0));
       sh.quadraticCurveTo(X(0.45), topY(0.45) + s.h * 0.06, X(0.93), topY(0.93));
@@ -158,13 +162,15 @@ export function buildFront(f: ProcFront): { group: THREE.Group; barrel: THREE.Gr
     }
     g.add(box(0.008, f.h * 0.7, f.w * 0.7, ax + f.len - 0.004, ay, "cap"));
   } else {
-    const tube = new THREE.Mesh(new THREE.CylinderGeometry(f.h * 0.44, f.h * 0.46, f.len, 12), new THREE.MeshStandardMaterial({ name: "proc" }));
+    // Guardamanos tubular con cuerpo: camisa gruesa y dos abrazaderas que lo unen al cajón y a la boca. Antes era un
+    // tubo de 20-30 mm que parecía flotar bajo el cañón (auditoría 22a).
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(f.h * 0.5, f.h * 0.5, f.len, 12), new THREE.MeshStandardMaterial({ name: "proc" }));
     tube.rotation.z = -Math.PI / 2; tube.position.set(ax + f.len / 2, ay, 0); g.add(tube);
-    // Ranuras de ventilación a los lados
+    g.add(box(0.014, f.h * 1.08, f.h * 1.08, ax + 0.007, ay, "procmetal"));
     for (let x = ax + f.len * 0.12; x < ax + f.len * 0.9; x += f.len * 0.14) for (const z of [-1, 1]) {
-      const v = box(f.len * 0.08, f.h * 0.22, 0.004, x, ay + f.h * 0.08, "vent"); v.position.z = z * f.h * 0.44; g.add(v);
+      const v = box(f.len * 0.08, f.h * 0.22, 0.004, x, ay + f.h * 0.08, "vent"); v.position.z = z * f.h * 0.5; g.add(v);
     }
-    g.add(box(0.012, f.h * 0.95, f.h * 0.95, ax + f.len - 0.006, ay, "cap"));
+    g.add(box(0.012, f.h * 1.02, f.h * 1.02, ax + f.len - 0.006, ay, "cap"));
   }
   const barrel = new THREE.Group();
   if (f.barrel <= 0) return { group: g, barrel, muzzle: new THREE.Vector3(ax + f.len, ay, 0) };

@@ -9,13 +9,53 @@ import { clipProfile, frontProfile, stockProfile, type FrontKind, type StockKind
 import { BATCH_MAX_SIMILARITY, SIMILARITY_RANGE, midZone, similarity, spans, zoneLen, type Box2, type Placed, type Stretch } from "./variation";
 import { LONG_ARCHES, LONG_HINTS, LONG_MUTATIONS, LONG_STRUCTURAL, longArchDesign, longArchesFor, longEntry, longKey, longMutationAllowed, longPolys, longSpans, type LEra, type LFamily, type LongDesign } from "./longgen";
 import { CAL_EFFECT, PISTOL_ARCHES, PISTOL_MUTATIONS, STRUCTURAL, archDesign, archesFor, designEntry, designKey, designPolys, designSpans, gripCorners, mutationAllowed, upgradeDesign, type PEra, type PistolDesign } from "./pistolgen";
-import { KIT_MODS, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
+import { KIT_MODS, KIT_PLATFORM_TYPE, KIT_ROLE, KitIndex, isKit, kitLengths, realOptics, realSuppressors, kitMagazine, kitMuzzleOptions, kitOpticOptions, kitPlacements, rollKit } from "./kit";
 import { ensureGrip } from "./grip";
 import { recipeStatMods } from "./effects";
 import { isLight, PROC_LIGHTS } from "./lights";
 import { NO_TWEAKS, type AssetEntry, type IronSet, type Effect, type FireMode, type Manifest, type Paint, type PartPick, type PartRole, type Addon, type Rarity, type RarityId, type Stats, type StatKey, type Tweaks, type WeaponSpec, type WeaponType } from "./types";
 
 export type BaseType = Exclude<WeaponType, "accessory">;
+
+/**
+ * Techo de parecido de un revólver recortado («snub») con su base: el cañón corto cambia poco la silueta, así que la
+ * banda normal le quedaba alta y todos los de una misma base salían iguales; se admite hasta 0,92 (el margen que la
+ * banda permite por arriba), pero nunca una copia (auditoría 22a).
+ */
+export const SNUB_MAX_SIMILARITY = 0.92;
+/** Tope de alto del cargador montado (m) por tipo: un cargador de 200 mm en una pistola desentona (auditoría 22a). */
+export const MAG_MAX_H: Partial<Record<WeaponType, number>> = { pistol: 0.155, revolver: 0.155 };
+/**
+ * Puerta de escala del cargador: la escala vertical pedida (`want`) se recorta si el cargador montado pasaría del alto
+ * máximo del tipo. `naturalH` es el alto natural del cargador (m), ya estirado por `magLen`.
+ */
+export function magScaleCap(type: WeaponType, naturalH: number, want: number): number {
+  const maxH = MAG_MAX_H[type];
+  if (!maxH || naturalH <= 0 || naturalH * want <= maxH) return want;
+  return Math.max(0.55, maxH / naturalH);
+}
+/**
+ * Piezas que no prestan su (rol) a otras armas aunque sigan en la biblioteca (auditoría 22a): la empuñadura del
+ * `x-shotgun-1` lleva su guardamonte integrado (segundo guardamonte al frente), el frente de `x-subfusil-9` y los
+ * frentes/culatas de `x-subfusil-2`/`x-subfusil-5` arrastraban bloques sueltos del GLB del donante.
+ */
+const PART_OUT = new Set<string>([
+  "x-shotgun-1:grip", "x-subfusil-9:front", "x-subfusil-2:stock", "x-subfusil-5:front",
+]);
+export const partAllowed = (id: string, role: string) => !PART_OUT.has(`${id}:${role}`);
+/**
+ * Puerta de compatibilidad por razón de secciones de unión (`seccion_union_m` del conversor) entre piezas mezcladas.
+ * El guardamanos es la junta más sensible: una sección demasiado pequeña obligaba a estirar la pieza y el conjunto
+ * quedaba como un bloque desproporcionado (w-xm8 sobre w-scarh, auditoría 22a). La culata admite algo más y la empuñadura,
+ * al ser estrecha, se mide aparte.
+ */
+export const JOINT_RANGE: Record<"rear" | "front" | "grip", [number, number]> = {
+  rear: [0.75, 1.35], front: [0.78, 1.3], grip: [0.72, 1.35],
+};
+export function jointOk(recv: AssetEntry, donor: AssetEntry, joint: "rear" | "front" | "grip"): boolean {
+  const [lo, hi] = JOINT_RANGE[joint];
+  return within(jointScale(recv, donor, joint), lo, hi);
+}
 
 // ---------- Rarezas ----------
 // Blanca: base, sin efectos ni accesorios. Verde: +5-10% y 1 accesorio. Azul: +10-18% y 1 efecto A.
@@ -331,7 +371,10 @@ export class WeaponGenerator {
     const own = serie(this.kit, bodyId ? this.byId.get(bodyId) : undefined, "bocachas");
     if (type === "revolver") return [...own, "acc:compensator"];
     // (escopetas sin supresor: un tubo largo en la boca de una escopeta no quedaba natural)
-    return [...own, ...ACCESSORIES.filter((a) => a.kind === "muzzle" && (!a.quiet || type === "pistol")).map((a) => a.id), ...(type === "shotgun" ? [] : realSuppressors(this.kit, type))];
+    const opts = [...own, ...ACCESSORIES.filter((a) => a.kind === "muzzle" && (!a.quiet || type === "pistol")).map((a) => a.id), ...(type === "shotgun" ? [] : realSuppressors(this.kit, type))];
+    // Pistolas de bolsillo: un supresor largo doblaba su longitud total y la hacía irreconocible (auditoría 22a)
+    const pocket = type === "pistol" && /pocket|mini|compact|subcompact/i.test(bodyId ?? "");
+    return pocket ? opts.filter((id) => id !== "acc:suppressor-l") : opts;
   }
 
   /**
@@ -340,10 +383,23 @@ export class WeaponGenerator {
    */
   generate(seed: number, wanted?: BaseType, forceRarity?: RarityId): WeaponSpec {
     let best: WeaponSpec | null = null;
-    for (let k = 0; k < 5; k++) {
+    // Semillas vecinas: dos armas seguidas de la misma base con los mismos cambios salían indistinguibles (sniper 2 y 3
+    // de la auditoría 22a). Solo se compara en lotes por tipo (wanted), que es donde se ve el defecto; el generador
+    // normal no paga el coste. Los modos forzados del banco tampoco (cada semilla es una decisión independiente).
+    const prev = wanted && seed > 1 && !this.ppForce && !this.plForce ? this.generateOne(seed - 1, wanted, forceRarity) : null;
+    const prevSil = prev && prev.layout === "body" ? this.silhouette(prev.layout, prev.parts, prev.tweaks ?? NO_TWEAKS, prev.barrelLength) : null;
+    for (let k = 0; k < (prevSil ? 8 : 5); k++) {
       const w = this.generateOne(seed + k * 104729, wanted, forceRarity);
       const sim = w.lineage?.similarity ?? 0;
-      if ((w.layout !== "modular-long" && w.layout !== "body") || sim <= SIMILARITY_RANGE[1] || (w.type === "revolver" && w.layout === "body" && (w.tweaks.body ?? 1) < 0.8)) return k ? { ...w, seed } : w;
+      // La banda de parecido vale para todos los layouts (antes el kit y los revólveres «snub» se colaban casi iguales
+      // a su base: auditoría 22a). Un revólver recortado (cañón corto) cambia poco la silueta: se le admite hasta 0,92,
+      // el margen que la propia banda permite por arriba, pero nunca una copia.
+      const snub = w.type === "revolver" && w.layout === "body" && (w.tweaks.body ?? 1) < 0.8 && sim <= SNUB_MAX_SIMILARITY;
+      // No repetir la silueta de la semilla anterior. Se exige misma base: entre bases distintas la repetición es
+      // de silueta, no un clon, y recortaría la variedad sin necesidad.
+      const twin = !!(prev && prevSil && w.layout === "body" && prev.parts[0].from === w.parts[0].from &&
+        similarity(prevSil, this.silhouette(w.layout, w.parts, w.tweaks ?? NO_TWEAKS, w.barrelLength)) > 0.955);
+      if ((sim <= SIMILARITY_RANGE[1] || snub) && !twin) return k ? { ...w, seed } : w;
       if (!best || sim < (best.lineage?.similarity ?? 1)) best = w;
     }
     return { ...best!, seed };
@@ -394,8 +450,10 @@ export class WeaponGenerator {
       let candidates = bodies;
       let base = weighted(r, candidates, (x) => (PACK_WEIGHT[x.pack] ?? 1) * (x.modular ? 2 : 1));
       let chosen: { stock: AssetEntry; front: AssetEntry; grip: AssetEntry } | null = null;
-      // Arma larga despiezada: si el cajón no admite ninguna pieza ajena (arma genérica), se elige otro
-      while (base.modular) {
+      // Arma larga despiezada: si el cajón no admite ninguna pieza ajena (arma genérica), se elige otro.
+      // Sin pozo de cargador no se despieza: el banco anuncia ranura de cargador en toda arma modular y el
+      // ensamblador no puede montar un cargador donde no hay socket (rifles de palanca con depósito tubular).
+      while (base.modular && base.sockets.magazine) {
         tweaks = rollTweaks(r);
         chosen = this.mixLong(r, base, type, tweaks);
         if (chosen) break;
@@ -404,7 +462,7 @@ export class WeaponGenerator {
         candidates = rest;
         base = weighted(r, candidates, (x) => (PACK_WEIGHT[x.pack] ?? 1) * (x.modular ? 2 : 1));
       }
-      if (base.modular && chosen) {
+      if (base.modular && base.sockets.magazine && chosen) {
         layout = "modular-long";
         parts.push({ role: "receiver", from: base.id });
         parts.push({ role: "stock", from: chosen.stock.id }, { role: "grip", from: chosen.grip.id }, { role: "front", from: chosen.front.id });
@@ -543,14 +601,16 @@ export class WeaponGenerator {
         // Una base y poco más: 1-2 piezas de la misma familia (se adaptan a la junta: pieceScale)
         // (los modelos del usuario, u-…, prestan culata, empuñadura y cargador, pero no el guardamanos: en cuña quedaba
         // como un pico pegado en otros fusiles; sí reciben piezas de otros)
-        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && !w.excluded && !RETIRED.has(w.id) && (!w.id.startsWith("u-") || role !== "front") && w.pack === base.pack && sameEra(w, base) && w.id !== base.id && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)) && !w.quarantine);
+        const donors = (role: PartRole, ok: (w: AssetEntry) => boolean) => this.manifest.weapons.filter((w) => w.modular && !w.excluded && !RETIRED.has(w.id) && partAllowed(w.id, role) && (!w.id.startsWith("u-") || role !== "front") && w.pack === base.pack && sameEra(w, base) && w.id !== base.id && ok(w) && w.parts.some((p) => p.role === role) && (!w.approved || w.approved.includes(role)) && !w.quarantine);
         const cls = (t: WeaponType) => (t === "smg" ? "compact" : "long");
-        const fit = (joint: "rear" | "front" | "grip", lo: number, hi: number) => (w: AssetEntry) => within(jointScale(base, w, joint), lo, hi);
+        const fit = (joint: "rear" | "front" | "grip") => (w: AssetEntry) => jointOk(base, w, joint);
         const libOk = (joint: "rear" | "front" | "grip") => (w: AssetEntry) => !w.donor || within(jointScale(base, w, joint), 0.82, 1.22);
+        // Puertas por razón de secciones de unión (más estrechas que antes): con juntas al borde, las piezas se escalaban
+        // hasta quedar desproporcionadas con el cajón (frente de 80 mm sobre cajón de 186 mm, auditoría 22a)
         // (las culatas sueltas son de fusil: en un subfusil quedaban como una placa)
-        const stocks = donors("stock", (w) => (w.donor ? cls(type) === "long" : cls(w.type) === cls(type))).filter(fit("rear", 0.7, 1.4)).filter(libOk("rear"));
-        const fronts = donors("front", (w) => (!!w.donor && type !== "sniper") || w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front", 0.7, 1.4)).filter(libOk("front"));
-        const grips = donors("grip", () => true).filter(fit("grip", 0.72, 1.35)).filter(libOk("grip"));
+        const stocks = donors("stock", (w) => (w.donor ? cls(type) === "long" : cls(w.type) === cls(type))).filter(fit("rear")).filter(libOk("rear"));
+        const fronts = donors("front", (w) => (!!w.donor && type !== "sniper") || w.type === type || (cls(w.type) === cls(type) && type !== "sniper" && w.type !== "sniper")).filter(fit("front")).filter(libOk("front"));
+        const grips = donors("grip", () => true).filter(fit("grip")).filter(libOk("grip"));
         // Piezas sueltas de la biblioteca: menos frecuentes que las de armas reales (son muchas y más sencillas) y solo
         // si la junta casi coincide (sin agrandarlas hasta parecer bloques)
         const choose = (list: AssetEntry[]) => {
@@ -596,7 +656,9 @@ export class WeaponGenerator {
     }
     if (layout === "kit") {
       const { placements } = kitPlacements(this.kit, { parts, optic: null, muzzle: null, barrelLength, tweaks: tw });
-      for (const pl of placements) if (pl.part.profile) put(pl.role, { profile: pl.part.profile, offset: pl.pos, scale: [pl.stretch, pl.role === "magazine" ? tw.magLen ?? 1 : 1, 1] });
+      // (el mismo tope de cargador que el ensamblador: la silueta y el modelo montado miden igual)
+      const typeOf = KIT_PLATFORM_TYPE[parts[0].from] ?? "rifle";
+      for (const pl of placements) if (pl.part.profile) put(pl.role, { profile: pl.part.profile, offset: pl.pos, scale: [pl.stretch, pl.role === "magazine" ? magScaleCap(typeOf, pl.part.bounds.max[1] - pl.part.bounds.min[1], tw.magLen ?? 1) : 1, 1] });
       if (tw.pstock) put("stock", { profile: stockProfile(tw.pstock) }); // (en el kit, la culata por código sustituye a la suya)
       if (tw.pfront) put("front", { profile: frontProfile(tw.pfront) });
       const kdev = tw.device ? this.kit.byId.get(tw.device.id) : null;
@@ -642,7 +704,12 @@ export class WeaponGenerator {
       if (tw.drum) { const d = drumOf(base); boxes.push({ x0: d.x - d.R, x1: d.x + d.R, y0: d.y - d.R, y1: d.y + d.R }); }
       else {
         const m = this.byId.get(magPick.from); const prof = m?.profiles?.magazine; const have = m?.sockets.magazine, want = base.sockets.magazine;
-        if (prof && have) { const k = Math.min(1.6, Math.max(0.6, (want.size?.[0] ?? 1) / (have.size?.[0] ?? 1))); const ky = k * (tw.magLen ?? 1); put("magazine", { profile: prof, scale: [k, ky, k], offset: [want.pos[0] - have.pos[0] * k, want.pos[1] - have.pos[1] * ky, 0] }); }
+        if (prof && have) {
+          const k = Math.min(1.6, Math.max(0.6, (want.size?.[0] ?? 1) / (have.size?.[0] ?? 1)));
+          const mb = m.partBounds?.magazine, magH = mb ? mb.max[1] - mb.min[1] : m.bounds.max[1] - m.bounds.min[1];
+          const ky = magScaleCap(base.type, magH, k * (tw.magLen ?? 1)); // (tope de alto del cargador, igual que el ensamblador)
+          put("magazine", { profile: prof, scale: [k, ky, k], offset: [want.pos[0] - have.pos[0] * k, want.pos[1] - have.pos[1] * ky, 0] });
+        }
       }
     }
     if (tw.rail) boxes.push({ x0: tw.rail[0], x1: tw.rail[1], y0: tw.rail[2] - 0.004, y1: tw.rail[2] + 0.012 });
@@ -712,6 +779,8 @@ export class WeaponGenerator {
     // Culata de hombro: se decide una vez por arma (~12 %; en carbinas, más), no por candidata
     const wantStock = r() < (d0.family === "carbine" ? CARBINE_STOCK_P : PISTOL_STOCK_P);
     const tries = target ? 120 : 40;
+    // Tope de largo total de una pistola (auditoría 22a): una de bolsillo con guardamanos y silenciador llegaba a 2× su base
+    const Lref = d0.slide.len + d0.barrel.ext;
     for (let i = 0; i < tries; i++) {
       // Lejos de la banda por arriba: más cambios estructurales; por debajo: menos
       if (best && best.sim > hi && i % 3 === 2) { nS = Math.min(structural.length, nS + 1); amp = Math.min(target ? 2.6 : 1.8, amp * 1.2); }
@@ -729,11 +798,13 @@ export class WeaponGenerator {
       if (d.frame.rail && era !== "classic" && d.mag.kind !== "front" && (!d.frame.vgrip || d.frame.vgrip === "none") && r() < 0.3) {
         const fx = d.frame.full ? d.slide.len + d.barrel.ext : d.slide.len * d.frame.dust;
         const at: [number, number] = [fx - 0.03, -d.frame.h - 0.006];
-        tw.light = { id: pick(r, this.lightPool()).id, at, side: false }; tw.lightZone = { at, side: false }; ch.push("device");
+        // En el costado del armazón, no colgando por debajo: bajo el armazón quedaba una caja flotante (auditoría 22a)
+        tw.light = { id: pick(r, this.handgunLights()).id, at: [at[0], 0], side: true }; tw.lightZone = { at: [at[0], 0], side: true }; ch.push("device");
       }
       const sim = similarity(ref, this.silhouette("modular-pistol", parts, tw, 1));
       const nStruct = ch.filter((c) => STRUCTURAL.has(c) || c.startsWith("stock-")).length;
-      const dd = (ch.length < 3 ? 1 : 0) + (sim < 0.8 && nStruct < 2 ? 1 : 0) + (sim < lo ? lo - sim : sim > hi ? sim - hi : 0);
+      const L1 = d.slide.len + d.barrel.ext;
+      const dd = (ch.length < 3 ? 1 : 0) + (sim < 0.8 && nStruct < 2 ? 1 : 0) + (L1 > 0.3 || L1 > Lref * 1.85 ? 1 : 0) + (sim < lo ? lo - sim : sim > hi ? sim - hi : 0);
       const c = { tw, sim, dd, ch }; cands.push(c);
       if (!best || dd < best.dd) best = c;
       if (cands.filter((x) => x.dd === 0).length >= (target ? 1 : 3)) break;
@@ -832,8 +903,9 @@ export class WeaponGenerator {
       const sim = similarity(ref, this.silhouette(layout, parts, tw, bl));
       // Mínimo 3 cambios; dentro de eso, el parecido más cercano al rango buscado
       // (revólver entero recortado: el cañón corto cambia poco la silueta, pero es otra arma; con 3 cambios vale, si no el
-      // filtro solo aceptaba cañones larguísimos y todos los de la misma base salían iguales)
-      const snub = snubOk && layout === "body" && type === "revolver" && (tw.body ?? 1) < 0.8 && sim > hi;
+      // filtro solo aceptaba cañones larguísimos y todos los de la misma base salían iguales; techo en SNUB_MAX_SIMILARITY:
+      // por encima ya es una copia de la base)
+      const snub = snubOk && layout === "body" && type === "revolver" && (tw.body ?? 1) < 0.8 && sim > hi && sim <= SNUB_MAX_SIMILARITY;
       const d = (ch.length < 3 ? 1 : 0) + (snub ? 0 : sim < lo ? lo - sim : sim > hi ? sim - hi : 0);
       const c = { tw, bl, sim, d, ch }; cands.push(c);
       if (!best || d < best.d) best = c;
@@ -894,16 +966,19 @@ export class WeaponGenerator {
       if (!long && prof && rare.hgStock) {
         const L = prof.x1 - prof.x0, n = prof.top.length;
         ops.push({ id: "pstock", run: () => {
-          // Se engancha detrás de la empuñadura, a media altura de la parte trasera
+          // Se engancha detrás de la empuñadura, en la parte alta de la trasera (más cerca del eje del cañón: la caída
+          // dejaba la culata por debajo del ancla, auditoría 22a)
           const k = Math.min(n - 1, Math.floor(n * 0.06)); const t = prof.top[k], b = prof.bot[k];
           if (t == null || b == null) return;
-          const y = b + (t - b) * 0.35;
+          const y = b + (t - b) * 0.58;
           // Tipos de culata (prompt 05-A): esqueleto, tubo, plegable, brace de polímero, de carabina; madera en las clásicas
           // Pistolas y revólveres: solo macizas (las de varilla quedaban finas y mal unidas en un arma corta)
           const short = type === "pistol" || type === "revolver";
           const kinds: StockKind[] = short ? (era === "classic" ? ["wood"] : era === "rustic" ? ["wood", "polymer"] : ["polymer", "carbine"])
             : era === "classic" ? ["wood", "folding"] : era === "rustic" ? ["wood", "tube", "skeleton", "folding"] : ["skeleton", "tube", "folding", "polymer", "carbine"];
-          tw.pstock = { kind: kinds[Math.floor(r() * kinds.length)], at: [prof.x0 + L * 0.04, y], h: 0.032, w: 0.024, len: 0.15 + r() * 0.07, drop: 0.012 + r() * 0.02 };
+          const kind = kinds[Math.floor(r() * kinds.length)];
+          // (tabla maciza de verdad: 26 mm de grosor era una tabla de plancha, auditoría 22a)
+          tw.pstock = { kind, at: [prof.x0 + L * 0.04, y], h: 0.046, w: 0.03, len: 0.15 + r() * 0.07, drop: kind === "carbine" ? 0.005 + r() * 0.012 : 0.008 + r() * 0.016 };
           // Revólver: la culata solo como kit de carabina, con el cañón alargado (regla del usuario)
           if (type === "revolver") tw.body = Math.max(tw.body ?? 1, 1.3 + r() * 0.15);
         } });
@@ -922,7 +997,7 @@ export class WeaponGenerator {
           // (subfusiles: conjunto corto; uno largo y fino parecía un tubo pegado en la boca)
           const len = type === "smg" ? ((BASE_SIZE[parts[0].from] ?? 1) < 1 ? 0.14 + r() * 0.09 : 0.07 + r() * 0.06) : (long ? 0.12 : 0.07) + r() * (long ? 0.12 : 0.07);
           tw.body = 1; tw.cutFront = null; // sin estirar ni cortar el cuerpo: el conjunto va en la boca de serie
-          tw.pfront = { kind: era === "classic" ? (r(), "tube") : (["tube", "quad", "slot"] as const)[Math.floor(r() * 3)], at: [xEnd - 0.012, mz.pos[1]], h, w: Math.min(0.04, h * 0.9), len, barrel: type === "smg" ? 0.015 + r() * 0.035 : 0.02 + r() * 0.05, d: Math.min(0.02, Math.max(0.011, mz.diameter ?? 0.013)) };
+          tw.pfront = { kind: era === "classic" ? (r(), "tube") : (["tube", "quad", "slot"] as const)[Math.floor(r() * 3)], at: [xEnd - 0.012, mz.pos[1]], h, w: Math.min(0.04, h * 0.9), len, barrel: type === "smg" ? 0.015 + r() * 0.03 : 0.02 + r() * 0.04, d: Math.min(0.02, Math.max(0.016, mz.diameter ?? 0.016)) };
         } });
       }
       if (long && prof && !sawed) {
@@ -951,6 +1026,12 @@ export class WeaponGenerator {
         const kinds = ["solid", "polymer", "carbine", "skeleton"] as const; // (sin tubo: nada de varillas finas)
         const h = 0.045 + r() * 0.03;
         tw.pstock = { ...st, kind: kinds[Math.floor(r() * kinds.length)], len: 0.17 + r() * 0.16, h, drop: h * (0.2 + r() * 0.9) }; tw.nostock = true;
+      } });
+      // Pistolas del kit: culata de carabina maciza como cambio estructural. Sin ella, cambiar solo corredera/cargador
+      // dejaba la silueta a 0,96-0,97 de la base (auditoría 22a) y la banda rechazaba todas las del kit.
+      if (type === "pistol" && plat && era !== "classic") ops.push({ id: "pstock", run: () => {
+        const h = 0.046;
+        tw.pstock = { kind: r() < 0.5 ? "carbine" : "polymer", at: [plat.bounds.min[0] + 0.01, plat.bounds.min[1] + 0.035], h, w: 0.03, len: 0.14 + r() * 0.05, drop: 0.006 + r() * 0.012 };
       } });
       if (type === "pistol" && !parts.some((p) => this.kit.byId.get(p.from)?.slot === "Device")) ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) });
     }
@@ -990,7 +1071,11 @@ export class WeaponGenerator {
     // (alargar solo los cargadores casi rectos: estirar en vertical uno inclinado o curvo lo deforma en diagonal)
     const magOf = base && base.sockets.magazine ? this.byId.get(parts.find((p) => p.role === "magazine")?.from ?? base.id) ?? base : null;
     const straight = !magOf || magSpread(magOf) < 1.35;
-    if (magBelow && type !== "shotgun") ops.push({ id: "mag", run: () => { if (["smg", "rifle", "lmg", "bullpup"].includes(type) && (r() < 0.35 || !straight)) tw.drum = true; else tw.magLen = 1.22 + r() * 0.28; } });
+    // Tambor solo en cajones con cuerpo suficiente: si no, cuelga un tambor enorme de un cajón diminuto (queja visual)
+    const bodyH = base ? base.bounds.max[1] - base.bounds.min[1] : 0.2;
+    const drumFits = bodyH >= 0.14 && (base?.sockets.magazine?.size?.[1] ?? 0) >= 0.07;
+    // (en pistolas y revólveres el alargado se limita: con mag-ext los cargadores salían de 240 mm, auditoría 22a)
+    if (magBelow && type !== "shotgun") ops.push({ id: "mag", run: () => { if (drumFits && ["smg", "rifle", "lmg", "bullpup"].includes(type) && (r() < 0.35 || !straight)) tw.drum = true; else tw.magLen = type === "pistol" || type === "revolver" ? 1.06 + r() * 0.12 : 1.22 + r() * 0.24; } });
     if (layout !== "kit") { ops.push({ id: "rail", run: () => (tw.rail = [0, 0, 0]) }); ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) }); }
     // Escopetas del kit: linterna o láser (ahora en la ranura de accesorio, en el costado)
     else if (type === "shotgun") ops.push({ id: "device", run: () => (tw.device = { id: "", at: [0, 0] }) });
@@ -1046,7 +1131,8 @@ export class WeaponGenerator {
             if (hiY - lo > maxH) continue;
             const ownDev = serie(this.kit, base, "agarres");
             if (devs.length) tw.device = { id: ownDev.length && r() < 0.7 ? ownDev[0] : pick(r, devs).id, at: [x, lo] };
-            else if (!long) { tw.light = { id: pick(r, this.lightPool()).id, at: [x, lo], side: false }; tw.lightZone = { at: [x, lo], side: false }; }
+            // Armas cortas: en el costado del armazón (debajo quedaba flotando, auditoría 22a)
+            else if (!long) { const zone = { at: [x, (lo + hiY) / 2] as [number, number], side: true }; tw.light = { id: pick(r, this.handgunLights()).id, ...zone }; tw.lightZone = zone; }
             break;
           }
         }
@@ -1079,7 +1165,8 @@ export class WeaponGenerator {
     // Kit del usuario (pack kit39): piezas reales con sus anclas; nada de culatas, guardamanos o añadidos por código
     // (quedaban pegotes); la variedad viene de cambiar piezas entre armas, los largos, el cargador y raíl/accesorio
     if (this.byId.get(parts[0].from)?.pack === "kit39") {
-      tw.pstock = null; tw.pfront = null; tw.cutFront = null; tw.cutRear = null; tw.nostock = false;
+      if (long) tw.pstock = null;
+      tw.pfront = null; tw.cutFront = null; tw.cutRear = null; tw.nostock = false;
       tw.adds = tw.adds?.filter((a) => a.kind !== "jacket" && a.kind !== "shield") ?? null; // (sin camisas ni cubrecañones)
     }
     return { tw, barrelLength: bl };
@@ -1207,7 +1294,9 @@ export class WeaponGenerator {
         if (sp === stock && tw.pstock && tw.pstock.kind !== "solid") continue; // no se venda un tubo fino
         const s = sect(sp, 0.3, 0.55); if (s && s.h < 0.1) { out.tapes!.push([s.x0, s.y, s.x1 - s.x0, s.h, thick]); any = true; }
       }
-      if (r() < 0.5) { const s = sect(recv, 0.3, 0.42); if (s) { out.patches!.push([s.x0 + 0.02, s.y, thick * 0.55 + 0.002]); any = true; } }
+      // (el parche va en el flanco del cajón, en su tercio alto: con el centro de la sección caía por debajo del arma
+      // y se leía como un fragmento suelto —auditoría 22a, fragmentos de rifle 3 y pistol 5—)
+      if (r() < 0.5) { const s = sect(recv, 0.3, 0.42); if (s) { out.patches!.push([s.x0 + 0.02, s.y + s.h * 0.22, thick * 0.55 + 0.002]); any = true; } }
     }
     return any ? out : null;
   }
@@ -1215,10 +1304,17 @@ export class WeaponGenerator {
   /** Recalcula estadísticas (tras generar o tras cambiar piezas en el banco). */
   /** Linternas y láseres posibles (del kit y por código). */
   lightPool(): { id: string }[] { return [...this.kit.options("Device", "any").filter((d) => isLight(d.id)), ...PROC_LIGHTS]; }
+  /** Luces de empuñadura: las hechas por código, sin GLB del kit (no dependen de assets externos). */
+  private handgunLights(): { id: string }[] { return PROC_LIGHTS; }
   refresh(spec: WeaponSpec): WeaponSpec {
     // Partidas antiguas: la linterna o el láser montados bajo el raíl pasan a la ranura de accesorio
     const tw = spec.tweaks;
-    if (tw?.device && isLight(tw.device.id)) { tw.light = { id: tw.device.id, at: tw.device.at, side: false }; tw.lightZone = { at: tw.device.at, side: false }; tw.device = null; }
+    if (tw?.device && isLight(tw.device.id)) {
+      // Las armas cortas montan linterna y láser en el costado del armazón: debajo parecía una caja flotante
+      const short = spec.type === "pistol" || spec.type === "revolver";
+      const zone = { at: tw.device.at, side: short };
+      tw.light = { id: tw.device.id, ...zone }; tw.lightZone = { ...zone }; tw.device = null;
+    }
     if (spec.layout === "kit") { const i = spec.parts.findIndex((p) => p.role === "device" && isLight(p.from)); if (i >= 0) { spec.parts.splice(i, 1); } }
     this.ensureDesign(spec);
     ensureGrip(spec); // el agarre sigue a las piezas y accesorios (taller incluido)
@@ -1236,14 +1332,19 @@ function pistolStock(r: Rng, d: PistolDesign): import("./procparts").ProcStock {
   const kinds: StockKind[] = d.era === "classic" ? ["wood"] : d.era === "rustic" ? ["wood", "polymer"] : ["polymer", "carbine"];
   const kind = kinds[Math.floor(r() * kinds.length)];
   const len = (d.family === "carbine" ? 0.17 : 0.14) + r() * 0.045;
-  if (heel) { const g = gripCorners(d); return { kind, at: [g.BB[0] + 0.004, g.BB[1] + 0.022], h: 0.034, w: 0.022, len, drop: -(0.03 + r() * 0.02) }; }
-  return { kind, at: [0.004, -d.frame.h * 0.45], h: 0.032, w: 0.022, len, drop: 0.012 + r() * 0.018 };
+  // (cuerpo de verdad —grosor y altura de tabla maciza— y ancla más alta, más cerca del eje del cañón: las tablas de
+  // 26 mm y las carabinas caídas desentonaban, auditoría 22a)
+  const h = 0.046, w = 0.029;
+  // (en la de carabina la caída se reduce: el filo trasero caía por debajo del ancla)
+  if (heel) { const g = gripCorners(d); const drop = kind === "carbine" ? -(0.012 + r() * 0.012) : -(0.03 + r() * 0.02); return { kind, at: [g.BB[0] + 0.004, g.BB[1] + 0.034], h, w, len, drop }; }
+  return { kind, at: [0.004, -d.frame.h * 0.22], h, w, len, drop: kind === "carbine" ? 0.006 + r() * 0.012 : 0.01 + r() * 0.016 };
 }
 function procStock(r: Rng, type: BaseType, at: [number, number], h: number, w: number) {
   const kinds: StockKind[] = type === "sniper" || type === "lmg" ? ["solid", "skeleton"] : type === "smg" ? ["tube", "skeleton", "solid"] : ["skeleton", "solid", "tube"];
   const len = ({ smg: [0.17, 0.25], rifle: [0.22, 0.3], shotgun: [0.26, 0.33], sniper: [0.28, 0.35], lmg: [0.24, 0.3], bullpup: [0.06, 0.1] } as Record<string, [number, number]>)[type] ?? [0.22, 0.3];
-  const hh = Math.min(0.075, Math.max(0.032, h));
-  return { kind: kinds[Math.floor(r() * kinds.length)], at, h: hh, w: Math.min(0.045, Math.max(0.022, w)), len: len[0] + r() * (len[1] - len[0]), drop: hh * (0.3 + r() * 0.6) };
+  // (suelo de cuerpo más alto y menos caída: la sección fina quedaba como tabla o varilla —auditoría 22a—)
+  const hh = Math.min(0.075, Math.max(0.045, h));
+  return { kind: kinds[Math.floor(r() * kinds.length)], at, h: hh, w: Math.min(0.045, Math.max(0.026, w)), len: len[0] + r() * (len[1] - len[0]), drop: hh * (0.18 + r() * 0.5) };
 }
 /** Guardamanos por código con cañón que sobresale. */
 function procFront(r: Rng, type: BaseType, at: [number, number], h: number, w: number) {
@@ -1251,7 +1352,7 @@ function procFront(r: Rng, type: BaseType, at: [number, number], h: number, w: n
   const len = ({ smg: [0.09, 0.16], rifle: [0.2, 0.32], shotgun: [0.22, 0.34], lmg: [0.24, 0.34], sniper: [0.26, 0.38], bullpup: [0.12, 0.2] } as Record<string, [number, number]>)[type] ?? [0.2, 0.3];
   // (más grueso y con menos cañón asomando: un guardamanos fino y un cañón largo se veían como «un palo con mira»)
   const hh = Math.min(0.065, Math.max(0.036, h * 0.95));
-  return { kind: kinds[Math.floor(r() * kinds.length)], at, h: hh, w: Math.min(0.05, Math.max(0.03, w)), len: len[0] + r() * (len[1] - len[0]), barrel: (type === "smg" ? 0.025 : 0.035) + r() * 0.06, d: type === "shotgun" ? 0.022 : Math.min(0.02, Math.max(0.012, hh * 0.3)) };
+  return { kind: kinds[Math.floor(r() * kinds.length)], at, h: hh, w: Math.min(0.05, Math.max(0.03, w)), len: len[0] + r() * (len[1] - len[0]), barrel: (type === "smg" ? 0.025 : 0.035) + r() * 0.045, d: type === "shotgun" ? 0.022 : Math.min(0.02, Math.max(0.016, hh * 0.3)) };
 }
 
 /** Cajas en la silueta de los añadidos de era que cambian el perfil. */
@@ -1341,6 +1442,13 @@ const WHOLE_OUT = new Set<string>([
   "z-assaultrifle-01", "z-assaultrifle-02", "z-submachinegun-01", "z-submachinegun-02", "z-submachinegun-03", "z-sniperrifle-02",
   "p-machine-gun-4", "p-submachine-gun-2", "p-submachine-gun-5",
   "x-pistol-3",
+  // Culata de varilla fina propia del modelo (barra de 7 mm de sección en la junta): como arma entera desentona; sus
+  // piezas (frente, empuñadura, cargador) siguen prestando a su familia y la varilla ya no encaja en otros cajones
+  // (auditoría 22a, bases #155)
+  "x-smg-w",
+  // Cajón de bloques que, mezclado con culatas y cargadores de su familia, daba amalgamas desproporcionadas
+  // (smg 30, 41 y 44 de la auditoría 22a). El resto de la familia sigue prestando piezas.
+  "x-subfusil-9",
 ]);
 const RETIRED = new Set<string>(["w-m60", /* (modelo descentrado: todo el arma fuera del eje, apuntaba de lado) */
   // Muy poco detalle (una sola pieza y < 750 triángulos) o no encajan en primera persona (decisión del usuario)
@@ -1351,6 +1459,9 @@ const RETIRED = new Set<string>(["w-m60", /* (modelo descentrado: todo el arma f
   "x-subfusil-10", // subfusil del kit de bloques: con cualquier pieza quedaba deforme (decisión del usuario, "Hound")
   "z-submachinegun-03", "p-submachine-gun-1", // P90 que venían del revés: fuera del todo, también sus piezas (decisión del usuario)
   "w-f2000", // demasiado parecidas entre sí (decisión del usuario); los bullpups por código y u-bullpup-b cubren el tipo
+  // Culatas de varilla/placa finas propias del GLB (sin arreglo sin tocar los .glb): fuera del sorteo enteras
+  "q-submachinegun-3", // (barra + cantonera; era el origen de las smg 34 y 45 de la auditoría 22a)
+  "p-submachine-gun-3", // (placa fina de la familia pmw; smg 38 de la auditoría 22a)
 ]);
 export const TYPE_LENGTH: Partial<Record<WeaponType, number>> = { pistol: 0.22, revolver: 0.26, smg: 0.5, rifle: 0.9, bullpup: 0.75, shotgun: 1.0, sniper: 1.2, lmg: 1.15, launcher: 1.1, flamethrower: 0.95 };
 const within = (v: number, lo: number, hi: number) => v >= lo && v <= hi;
@@ -1384,11 +1495,16 @@ const THREE_clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a,
 /** Silueta vertical (y la anchura de la empuñadura) de una pieza ajena colocada en el cajón, comparada con la original. */
 function shapeOk(recv: AssetEntry, donor: AssetEntry, role: "stock" | "front" | "grip", tw: Tweaks): boolean {
   if (donor.id === recv.id) return true;
-  const own = recv.partBounds?.[role], db = donor.partBounds?.[role];
-  if (!own || !db || !recv.joints || !donor.joints) return true;
+  const db = donor.partBounds?.[role];
+  if (!db || !recv.joints || !donor.joints) return true;
   const [sx, sy] = pieceScale(recv, donor, role, tw);
   const face = role === "stock" ? donor.joints.stockFace : role === "front" ? donor.joints.frontFace : donor.joints.gripFace;
   const at = role === "stock" ? recv.joints.rear : role === "front" ? recv.joints.front : recv.joints.grip;
+  // Sin pieza propia del cajón que sirva de referencia, la referencia es la sección de su junta (puerta de secciones
+  // de unión: si no, una pieza ajena enorme pasaba sin comparar, auditoría 22a)
+  const sec = at.size?.[0] ?? 0;
+  const own = recv.partBounds?.[role] ?? (sec > 1e-4 ? { min: [at.pos[0] - sec / 2, at.pos[1] - sec / 2, 0] as [number, number, number], max: [at.pos[0] + sec / 2, at.pos[1] + sec / 2, 0] as [number, number, number] } : null);
+  if (!own) return true;
   const top = at.pos[1] + (db.max[1] - face.pos[1]) * sy, bottom = at.pos[1] + (db.min[1] - face.pos[1]) * sy;
   const H = own.max[1] - own.min[1];
   if (role === "grip") {
@@ -1405,9 +1521,11 @@ const STOCK_TALL = new Set(["x-sniper-0"]);
 export function longGunOk(recv: AssetEntry, stock: AssetEntry, front: AssetEntry, grip: AssetEntry, type: WeaponType, tw: Tweaks = NO_TWEAKS): boolean {
   if (!recv.joints || !stock.joints || !front.joints || !grip.joints) return false;
   const own = (x: AssetEntry) => x.id === recv.id;
-  const kS = own(stock) ? 1 : jointScale(recv, stock, "rear"), kF = own(front) ? 1 : jointScale(recv, front, "front"), kG = own(grip) ? 1 : jointScale(recv, grip, "grip");
-  // La sección se adapta (solo en un eje), así que se admite más diferencia; aun así nada desproporcionado
-  if (!within(kS, 0.7, 1.4) || !within(kF, 0.7, 1.4) || !within(kG, 0.72, 1.35)) return false;
+  // La sección se adapta (solo en un eje), así que se admite más diferencia; aun así nada desproporcionado.
+  // (puertas por razón de secciones de unión, más estrechas para frente y culata: auditoría 22a)
+  // La pieza propia no se mide: grip y gripFace del mismo modelo no tienen por qué compartir sección (el ancla
+  // de empuñadura del cajón incluye el guardamonte).
+  if ((!own(stock) && !jointOk(recv, stock, "rear")) || (!own(front) && !jointOk(recv, front, "front")) || (!own(grip) && !jointOk(recv, grip, "grip"))) return false;
   // Puerta de forma: cada pieza ajena, ya escalada y colocada en su junta, debe quedar dentro de la silueta de la
   // pieza original del cajón (con margen). Evita guardamanos a la altura de la mira, empuñaduras enormes o culatas
   // desproporcionadas.

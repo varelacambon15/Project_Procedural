@@ -1,0 +1,172 @@
+{
+  "nombre": "MAUSER",
+  "tipo_juego": "pistol",
+  "chasis": "pistola",
+  "accion": "semiautomatica",
+  "era_sugerida": "moderna",
+  "base_real": "Mauser C96 de chasis tactico con railes y compensador (moderna)",
+  "largo_m": 0.288,
+  "alto_m": 0.1415,
+  "orientacion": "+X = boca, +Y = arriba, Z = grosor",
+  "unidades": "metros",
+  "origen_arma": "centro en X y Z, base en Y = 0",
+  "normales": "aristas vivas por encima de 32°",
+  "piezas": {
+    "cuerpo": {
+      "triangulos": 902,
+      "origen_local": "origen del arma",
+      "posicion_en_arma": [
+        0,
+        0,
+        0
+      ],
+      "bbox_local_min": [
+        -0.1313,
+        0.0066,
+        -0.0116
+      ],
+      "bbox_local_max": [
+        0.1016,
+        0.1281,
+        0.022
+      ],
+      "material": "mat_cuerpo",
+      "color": [
+        0.0728,
+        0.0728,
+        0.0728
+      ]
+    },
+    "guardamanos_canon": {
+      "triangulos": 1146,
+      "origen_local": "cara_guardamanos",
+      "posicion_en_arma": [
+        -0.115,
+        0.1252,
+        0
+      ],
+      "bbox_local_min": [
+        0,
+        -0.0253,
+        -0.0225
+      ],
+      "bbox_local_max": [
+        0.259,
+        0.0163,
+        0.0215
+      ],
+      "material": "mat_guardamanos_canon",
+      "color": [
+        0.1231,
+        0.1182,
+        0.1132
+      ]
+    },
+    "empunadura": {
+      "triangulos": 204,
+      "origen_local": "cara_empunadura",
+      "posicion_en_arma": [
+        -0.1238,
+        0.081,
+        0
+      ],
+      "bbox_local_min": [
+        -0.0202,
+        -0.0808,
+        -0.0055
+      ],
+      "bbox_local_max": [
+        0.0471,
+        0,
+        0.022
+      ],
+      "material": "mat_empunadura",
+      "color": [
+        0.0863,
+        0.0837,
+        0.0812
+      ]
+    },
+    "cargador": {
+      "triangulos": 247,
+      "origen_local": "pozo_cargador",
+      "posicion_en_arma": [
+        -0.0281,
+        0.0567,
+        0
+      ],
+      "bbox_local_min": [
+        -0.0251,
+        -0.0487,
+        -0.0084
+      ],
+      "bbox_local_max": [
+        0.016,
+        0,
+        0.0138
+      ],
+      "material": "mat_cargador",
+      "color": [
+        0.1423,
+        0.1379,
+        0.1334
+      ]
+    }
+  },
+  "anclas": {
+    "boca": [
+      0.144,
+      0.1215,
+      0
+    ],
+    "cara_guardamanos": [
+      -0.115,
+      0.1252,
+      0
+    ],
+    "cara_empunadura": [
+      -0.1238,
+      0.081,
+      0
+    ],
+    "pozo_cargador": [
+      -0.0281,
+      0.0567,
+      0
+    ],
+    "raíl_frontal": [
+      0.104,
+      0.1413,
+      0
+    ],
+    "linea_mira": [
+      -0.0028,
+      0.1413,
+      0
+    ],
+    "raíl_superior": [
+      0.035,
+      0.1353,
+      0
+    ],
+    "cara_culata": [
+      -0.1313,
+      0.0921,
+      0
+    ]
+  },
+  "triangulos_total": 2499,
+  "piezas_ausentes": [
+    "culata",
+    "mira"
+  ],
+  "boca_diametro_m": 0.0347,
+  "mira_integrada": "alza",
+  "accesorios_de_serie": [],
+  "funcionamiento": "Pistola semiautomatica estilo Mauser C96 tactica: alza con muesca y punto de mira integrados en la corredera (mira_integrada='alza', misma linea de mira), cargador extraible delante del gatillo y compensador de boca fusionado con el guardamanos.",
+  "accion_detalle": {
+    "ciclo": "semiautomatica: un disparo por pulsacion; la corredera retrocede y vuelve sola",
+    "anim": "la pieza guardamanos_canon ES la corredera: retrocede ~0,025 m en -X y vuelve en ~0,06 s; con cargador vacio se queda atras hasta recargar",
+    "nota": "chasis 'pistola' + accion 'semiautomatica' = corredera (ver raw/pack5/acciones.json); martillo, gatillo y gatillera van dentro del cuerpo, no son piezas"
+  }
+}
