@@ -3,7 +3,7 @@ import pkg from "../../../package.json";
 // controles, idioma, salir) y un panel que muestra el arma equipada girando, los ajustes, las ranuras o los controles.
 import { LANGS, getLang, setLang, t, type Lang } from "../../i18n";
 import { PIXEL_LEVELS, pixelLevel, setPixelLevel } from "../../weapons/textures";
-import { settings, setSetting, type Settings } from "../settings";
+import { settings, setSetting, QUALITIES, type Quality, type Settings } from "../settings";
 import { BIND_ORDER, DEFAULT_BINDS, DEFAULT_PAD, PAD_NAMES, PAD_ORDER } from "../input";
 import { AUTO, SLOTS, type SlotId, type SlotSummary } from "../save";
 import { $, esc, keyHint, softConfirm, type ModelView } from "./common";
@@ -69,6 +69,7 @@ export class StartScreen {
   // ---------- Ajustes ----------
   private settingsHTML() {
     const s = settings;
+    const QLABEL: Record<Quality, string> = { low: "set.quality.low", medium: "set.quality.medium", high: "set.quality.high" };
     const range = (k: keyof Settings, min: number, max: number, step: number, fmt: (v: number) => string) =>
       `<label class="row"><span>${t(`set.${k}`)}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${s[k]}" data-set="${k}"><output>${fmt(s[k] as number)}</output></label>`;
     const toggle = (k: keyof Settings) => `<div class="row"><span>${t(`set.${k}`)}</span><button type="button" class="tog ${s[k] ? "on" : ""}" data-tog="${k}">${s[k] ? t("ui.on") : t("ui.off")}</button></div>`;
@@ -79,7 +80,9 @@ export class StartScreen {
       ${range("volume", 0, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}
       ${range("music", 0, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}
       <label class="row"><span>${t("set.playerName")}</span><input type="text" maxlength="18" data-name value="${esc(s.playerName ?? "")}" placeholder="${t("set.playerNameHint")}"></label>${toggle("botVoice")}
-      ${toggle("damageNumbers")}${toggle("impactFx")}${toggle("screenShake")}${toggle("arms")}${toggle("night")}${toggle("bloom")}${range("renderScale", 0.5, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}${toggle("showFps")}
+      ${toggle("damageNumbers")}${toggle("impactFx")}${toggle("screenShake")}${toggle("arms")}${toggle("night")}${toggle("bloom")}
+      <div class="row"><span>${t("set.quality")}</span><div class="seg">${QUALITIES.map((q) => `<button type="button" class="chip ${s.quality === q ? "on" : ""}" data-quality="${q}">${t(QLABEL[q])}</button>`).join("")}</div></div>
+      ${range("renderScale", 0.5, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}${toggle("showFps")}
       <div class="row"><span>${t("ui.language")}</span><div class="seg">${LANGS.map((l) => `<button type="button" class="chip ${l.id === getLang() ? "on" : ""}" data-lang="${l.id}">${l.name}</button>`).join("")}</div></div>
       <h3>${t("set.devTitle")}</h3>${toggle("dev")}
       ${s.dev ? `<p class="note">${t("set.devNote")}</p><div class="row dev-actions">${["lvl1", "lvl10", "cr", "modules", "armor", "raid"].map((a) => `<button type="button" class="chip" data-dev="${a}">${t(`set.dev.${a}`)}</button>`).join("")}</div>` : ""}
@@ -154,6 +157,8 @@ export class StartScreen {
     if (target.closest("[data-bindreset]")) { setSetting("binds", {}); this.render(); return; }
     const dv = target.closest<HTMLElement>("[data-dev]")?.dataset.dev;
     if (dv) { this.hooks.dev?.(dv); return; }
+    const q = target.closest<HTMLElement>("[data-quality]")?.dataset.quality as Quality | undefined;
+    if (q) { setSetting("quality", q); this.render(); this.el.querySelector<HTMLElement>(`[data-quality="${q}"]`)?.focus(); return; }
     const px = target.closest<HTMLElement>("[data-px]")?.dataset.px;
     if (px) { setPixelLevel(Number(px)); this.render(); this.el.querySelector<HTMLElement>(`[data-px="${px}"]`)?.focus(); return; }
     const lang = target.closest<HTMLElement>("[data-lang]")?.dataset.lang;

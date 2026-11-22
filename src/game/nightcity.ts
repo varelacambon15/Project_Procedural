@@ -4,6 +4,7 @@
 // tuberías, carteles pegados, bolsas de basura, bolardos y cuervos. Todo por código; solo se ve de noche.
 import * as THREE from "three";
 import { decal } from "./world";
+import { roughnessTexture } from "../weapons/textures";
 
 export interface NightCity {
   group: THREE.Group;
@@ -155,7 +156,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   neonSign(["工房"], NEON.pink, new THREE.Vector3(R, 4.4, 10), -Math.PI / 2, true, 1.1);
 
   // ---------- Detalles del callejón ----------
-  const dark = new THREE.MeshLambertMaterial({ color: 0x141c1f }), metal = new THREE.MeshStandardMaterial({ color: 0x2a3438, metalness: 0.6, roughness: 0.5 });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x141c1f }), metal = new THREE.MeshStandardMaterial({ color: 0x2a3438, metalness: 0.7, roughness: 0.48, roughnessMap: roughnessTexture("steel") });
   const add = (m: THREE.Object3D) => { g.add(m); return m; };
   // Aparatos de aire acondicionado con su rejilla, en lo alto de los muros
   const grill = canvasTex(8, 8, (c) => { c.fillStyle = "#26302f"; c.fillRect(0, 0, 8, 8); c.fillStyle = "#0e1414"; for (let y = 1; y < 8; y += 2) c.fillRect(1, y, 6, 1); });
@@ -205,7 +206,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
     else { const c = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.6), new THREE.MeshLambertMaterial({ color: 0x2a2620 })); c.position.set(side * (W / 2 - 0.6), 0.3, z); c.rotation.y = r() * 0.6; add(c); }
   }
   // Bolardos a lo largo de los muros, con franja reflectante
-  const stripe = new THREE.MeshStandardMaterial({ color: 0xcfd6c8, roughness: 0.3, emissive: 0x404840, emissiveIntensity: 0.4 });
+  const stripe = new THREE.MeshStandardMaterial({ color: 0xcfd6c8, roughness: 0.28, metalness: 0.25, emissive: 0x404840, emissiveIntensity: 0.4 });
   for (let z = BACK - 4; z > FRONT + 4; z -= 7) for (const side of [-1, 1]) {
     const b = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.9, 8), metal); b.position.set(side * (W / 2 - 1.5), 0.45, z); add(b);
     const s = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.06, 8), stripe); s.position.set(b.position.x, 0.75, z); add(s);
@@ -251,7 +252,7 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   for (let x = -W / 2 + 1; x <= W / 2 - 1; x += 4) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.7, 6), metal); post.position.set(x, 1.85, FRONT + 2.2); add(post); }
   for (let i = 0; i < 5; i++) { const pl = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.22, 0.04), new THREE.MeshLambertMaterial({ color: 0x5a3a28 })); pl.position.set(-14 + i * 7 + r() * 2, 0.8 + r() * 1.6, FRONT + 2.1); pl.rotation.z = (r() - 0.5) * 0.6; add(pl); }
   // Andamio de tubos en un tramo del muro derecho
-  const scaf = new THREE.MeshStandardMaterial({ color: 0x3a3a40, metalness: 0.7, roughness: 0.45 });
+  const scaf = new THREE.MeshStandardMaterial({ color: 0x3a3a40, metalness: 0.75, roughness: 0.42, roughnessMap: roughnessTexture("steel") });
   for (let z = -8; z >= -20; z -= 3) for (const x of [W / 2 - 0.3, W / 2 - 1.5]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, H - 0.6, 6), scaf); p.position.set(x, (H - 0.6) / 2, z); add(p); }
   for (let y = 1.6; y < H - 0.5; y += 1.7) {
     for (const x of [W / 2 - 0.3, W / 2 - 1.5]) { const rl = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 12.2, 6), scaf); rl.rotation.x = Math.PI / 2; rl.position.set(x, y, -14); add(rl); }
@@ -260,8 +261,8 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
   }
   // Rejilla de desagüe de lado a lado (detrás de la línea de tiro) y una tapa de alcantarilla
   const grate = canvasTex(4, 4, (c) => { c.fillStyle = "#7a4a2a"; c.fillRect(0, 0, 4, 4); c.fillStyle = "#1a0e08"; c.fillRect(1, 0, 1, 4); c.fillRect(3, 0, 1, 4); }, [W * 2.5, 1]);
-  const gr2 = decal(new THREE.Mesh(new THREE.PlaneGeometry(W - 2, 0.35), new THREE.MeshStandardMaterial({ map: grate, metalness: 0.6, roughness: 0.5 }))); gr2.rotation.x = -Math.PI / 2; gr2.position.set(0, 0.013, -3.2); add(gr2);
-  const manhole = new THREE.Mesh(new THREE.CircleGeometry(0.45, 14), new THREE.MeshStandardMaterial({ map: canvasTex(16, 16, (c) => { c.fillStyle = "#3a3236"; c.fillRect(0, 0, 16, 16); c.strokeStyle = "#1a1418"; for (let k = 2; k < 8; k += 2) { c.beginPath(); c.arc(8, 8, k, 0, Math.PI * 2); c.stroke(); } }), metalness: 0.7, roughness: 0.35 }));
+  const gr2 = decal(new THREE.Mesh(new THREE.PlaneGeometry(W - 2, 0.35), new THREE.MeshStandardMaterial({ map: grate, metalness: 0.7, roughness: 0.45, roughnessMap: roughnessTexture("steel") }))); gr2.rotation.x = -Math.PI / 2; gr2.position.set(0, 0.013, -3.2); add(gr2);
+  const manhole = new THREE.Mesh(new THREE.CircleGeometry(0.45, 14), new THREE.MeshStandardMaterial({ map: canvasTex(16, 16, (c) => { c.fillStyle = "#3a3236"; c.fillRect(0, 0, 16, 16); c.strokeStyle = "#1a1418"; for (let k = 2; k < 8; k += 2) { c.beginPath(); c.arc(8, 8, k, 0, Math.PI * 2); c.stroke(); } }), metalness: 0.75, roughness: 0.32, roughnessMap: roughnessTexture("steel") }));
   manhole.rotation.x = -Math.PI / 2; manhole.position.set(-8, 0.014, -16); add(manhole);
   // Foco de pared de luz blanca fría (contrapunto al neón) y contenedor de basura
   const lampW = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.3), new THREE.MeshBasicMaterial({ color: 0xf0f4ff })); lampW.position.set(W / 2 - 0.3, 5.6, -24); add(lampW);
@@ -300,10 +301,10 @@ export function buildNightCity(scene: THREE.Scene, d: { W: number; FRONT: number
 
   // ---------- Recinto del campo de tiro (de noche): muros altos, cubierta, deflectores y parapeto ----------
   const TOP = 15; // altura de los muros de noche
-  const brick = new THREE.MeshStandardMaterial({ map: (() => { const t2 = wallMap.clone(); t2.needsUpdate = true; t2.wrapS = t2.wrapT = THREE.RepeatWrapping; t2.repeat.set((BACK - FRONT) / 3, (TOP - H) / 5); return t2; })(), roughness: 0.9 });
-  const concrete = new THREE.MeshStandardMaterial({ map: canvasTex(32, 32, (c) => { c.fillStyle = "#3a3440"; c.fillRect(0, 0, 32, 32); for (let i = 0; i < 260; i++) { const v = Math.floor(r() * 30); c.fillStyle = `rgba(${v + 20},${v + 16},${v + 26},0.5)`; c.fillRect(Math.floor(r() * 32), Math.floor(r() * 32), 1, 1); } c.fillStyle = "rgba(0,0,0,0.4)"; c.fillRect(0, 0, 32, 1); c.fillRect(0, 0, 1, 32); }, [8, 2]), roughness: 0.95 });
-  const steelDark = new THREE.MeshStandardMaterial({ color: 0x24222c, metalness: 0.6, roughness: 0.55 });
-  const corr = new THREE.MeshStandardMaterial({ map: canvasTex(16, 8, (c) => { for (let x = 0; x < 16; x++) { c.fillStyle = x % 4 < 2 ? "#3a3646" : "#2a2634"; c.fillRect(x, 0, 1, 8); } }, [W / 2, 6]), metalness: 0.5, roughness: 0.6, side: THREE.DoubleSide });
+  const brick = new THREE.MeshStandardMaterial({ map: (() => { const t2 = wallMap.clone(); t2.needsUpdate = true; t2.wrapS = t2.wrapT = THREE.RepeatWrapping; t2.repeat.set((BACK - FRONT) / 3, (TOP - H) / 5); return t2; })(), roughness: 0.82, roughnessMap: roughnessTexture("panel", [(BACK - FRONT) / 3, (TOP - H) / 5]) });
+  const concrete = new THREE.MeshStandardMaterial({ map: canvasTex(32, 32, (c) => { c.fillStyle = "#3a3440"; c.fillRect(0, 0, 32, 32); for (let i = 0; i < 260; i++) { const v = Math.floor(r() * 30); c.fillStyle = `rgba(${v + 20},${v + 16},${v + 26},0.5)`; c.fillRect(Math.floor(r() * 32), Math.floor(r() * 32), 1, 1); } c.fillStyle = "rgba(0,0,0,0.4)"; c.fillRect(0, 0, 32, 1); c.fillRect(0, 0, 1, 32); }, [8, 2]), roughness: 0.72, metalness: 0.1, roughnessMap: roughnessTexture("panel", [8, 2]) });
+  const steelDark = new THREE.MeshStandardMaterial({ color: 0x24222c, metalness: 0.75, roughness: 0.48, roughnessMap: roughnessTexture("steel") });
+  const corr = new THREE.MeshStandardMaterial({ map: canvasTex(16, 8, (c) => { for (let x = 0; x < 16; x++) { c.fillStyle = x % 4 < 2 ? "#3a3646" : "#2a2634"; c.fillRect(x, 0, 1, 8); } }, [W / 2, 6]), metalness: 0.65, roughness: 0.52, roughnessMap: roughnessTexture("steel", [W / 2, 6]), side: THREE.DoubleSide });
   const blk = (w: number, h: number, dd: number, x: number, y: number, z: number, m: THREE.Material) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, dd), m); b.position.set(x, y, z); add(b); return b; };
   const LEN = BACK - FRONT, MID = (BACK + FRONT) / 2;
   // Muros laterales que siguen hacia arriba (ladrillo), con una cornisa de hormigón y un remate

@@ -4,7 +4,9 @@
 //  - si le disparas se enfada: cara roja, cejas fruncidas, interferencias y groserías (cuantos más tiros, peor);
 //    con el tiempo se calma y te perdona (con retintín);
 //  - al volver de una incursión (ganada o perdida), al subir de nivel, al acercarte, si lo ignoras mucho rato (se
-//    aburre y se duerme) y al despertarle.
+//    aburre y se duerme) y al despertarle;
+//  - y al contexto de tu progreso: pocos créditos al entrar al hall, súper desbloqueada, equipamiento recogido y
+//    mobiliario del hall completo.
 // Para que parezca vivo: respira (la cara sube y baja), parpadea a ritmo irregular (a veces doble), mueve los ojos a
 // saltitos, te sigue con la mirada, ladea la cara y cambia de expresión poco a poco (las formas se interpolan); la voz
 // cambia de tono y velocidad según el ánimo.
@@ -17,11 +19,11 @@ export interface HallBotOpts {
 }
 /** Estados de ánimo (cada uno es una cara). */
 export type Mood = "happy" | "neutral" | "angry" | "furious" | "hurt" | "sad" | "surprised" | "sleepy" | "excited" | "smug" | "curious";
-export type BotEvent = "raidWon" | "raidLost" | "levelUp";
+export type BotEvent = "raidWon" | "raidLost" | "levelUp" | "lowCredits" | "newSuper" | "newGadget" | "furnitureFull";
 
 const W = 512, H = 300;
 /** Cuántas frases hay de cada tipo (claves bot.<tipo>.0 … N-1 en i18n). */
-export const BOT_LINES = { idle: 14, shot: 8, rage: 6, forgive: 4, near: 5, bored: 4, wake: 3, raidWon: 3, raidLost: 3, levelUp: 3, drone: 5 } as const;
+export const BOT_LINES = { idle: 14, shot: 8, rage: 6, forgive: 4, near: 5, bored: 4, wake: 3, raidWon: 3, raidLost: 3, levelUp: 3, lowCredits: 3, newSuper: 3, newGadget: 3, furnitureFull: 3, drone: 5 } as const;
 
 /** Forma de la cara por ánimo: apertura de ojos, cejas (+ fruncidas, − de pena), sonrisa (−1..1), boca abierta, ojos felices (^ ^), color. */
 interface Face { eye: number; brow: number; browY: number; smile: number; open: number; happyEyes: number; color: [number, number, number]; cheeks: number }
@@ -89,8 +91,17 @@ export class HallBot {
     this.anger = Math.min(10, this.anger + 0.6);
     if (this.time - this.lastInsult > 2.5) { this.lastInsult = this.time; this.line("drone", "angry", true); }
   }
-  /** Algo ha pasado fuera del hall: lo comenta la próxima vez que entres. */
-  event(e: BotEvent) { this.pending = { text: this.pick(e), mood: e === "raidLost" ? "sad" : "excited" }; }
+  /** Algo ha pasado (dentro o fuera del hall): lo comenta, como mucho una vez cada ~20 s (reutiliza el enfriamiento
+   *  del saludo). Si ya estás en el hall lo dice en el momento; si no, la próxima vez que entres. */
+  event(e: BotEvent) {
+    if (this.greetCd > 70) return; // (el saludo/frase anterior deja el enfriamiento en 90 s: ~20 s de margen)
+    const mood: Mood = e === "raidLost" ? "sad" : e === "lowCredits" ? "smug" : e === "newGadget" ? "curious" : "excited";
+    const text = this.pick(e);
+    if (this.wasIn) { this.say(text, mood); this.greetCd = 90; }
+    else this.pending = { text, mood };
+  }
+  /** ¿Tiene algo pendiente de comentar al entrar al hall? */
+  get hasPending() { return this.pending !== null; }
 
   /** Cada fotograma: `inHall` = el jugador está en el hall; `player` y `camDir` (dirección de la cámara) para mirarle. */
   update(dt: number, inHall: boolean, player: THREE.Vector3, camDir?: THREE.Vector3) {

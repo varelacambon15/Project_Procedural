@@ -30,7 +30,8 @@ export function buildLight(id: string): THREE.Group {
   const g = new THREE.Group();
   const body = new THREE.MeshStandardMaterial({ color: 0x24272b, roughness: 0.55, metalness: 0.5 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x121416, roughness: 0.7, metalness: 0.3 });
-  const glass = new THREE.MeshStandardMaterial({ color: 0x9fb4c8, roughness: 0.15, metalness: 0.2, emissive: new THREE.Color(0x111820) });
+  // Lente del iluminador: cristal con clearcoat (reflejo nítido del entorno); solo visores y cristales llevan Physical
+  const glass = new THREE.MeshPhysicalMaterial({ color: 0x9fb4c8, roughness: 0.15, metalness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08, emissive: new THREE.Color(0x111820) });
   const box = (w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z = 0) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); g.add(o); return o; };
   const cyl = (r: number, l: number, m: THREE.Material, x: number, y: number, z = 0, seg = 14) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, l, seg), m); o.rotation.z = Math.PI / 2; o.position.set(x, y, z); g.add(o); return o; };
   const clamp = (x: number, w: number) => box(w, 0.008, 0.02, dark, x, -0.004);

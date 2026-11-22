@@ -1,0 +1,30 @@
+{
+  "_doc": "Encargo 21 — identidad de acabado por era. Solo aspecto: no cambia estadísticas, rarezas ni forma. 'families' define el grano y la respuesta física de cada acabado; 'eras' reparte familias por rol; 'quality' permite apagar o atenuar desgaste y detalles; 'rarityTicks' es la marca discreta del cajón.",
+  "families": {
+    "blued": { "kind": "metal", "roughness": 0.3, "metalness": 0.85, "edge": 1 },
+    "steel": { "kind": "metal", "roughness": 0.26, "metalness": 0.92, "edge": 0.8 },
+    "cerakote": { "kind": "cerakote", "roughness": 0.62, "metalness": 0.38, "edge": 0.45 },
+    "anodized": { "kind": "anodized", "roughness": 0.36, "metalness": 0.72, "edge": 0.28 },
+    "polymer": { "kind": "polymer", "roughness": 0.86, "metalness": 0.02, "edge": 0.22 },
+    "varnished": { "kind": "varnished", "roughness": 0.5, "metalness": 0, "edge": 0.55 },
+    "parkerized": { "kind": "parkerized", "roughness": 0.72, "metalness": 0.45, "edge": 0.7 },
+    "rust": { "kind": "rust", "roughness": 0.94, "metalness": 0.12, "edge": 0.55 },
+    "brass": { "kind": "brass", "roughness": 0.26, "metalness": 1, "edge": 0.15 },
+    "engrave": { "kind": "engrave", "roughness": 0.55, "metalness": 0.55, "edge": 0.1 }
+  },
+  "eras": {
+    "classic": { "receiver": "blued", "furniture": "varnished", "metal": "steel", "accent": "blued", "wear": 0.48 },
+    "modern": { "receiver": "cerakote", "furniture": "polymer", "metal": "parkerized", "accent": "polymer", "wear": 0.14 },
+    "rustic": { "receiver": "rust", "furniture": "varnished", "metal": "rust", "accent": "parkerized", "wear": 0.72 },
+    "scifi": { "receiver": "anodized", "furniture": "polymer", "metal": "anodized", "accent": "anodized", "wear": 0.05 }
+  },
+  "palettes": {
+    "cerakote": ["black", "olive", "sand", "gunmetal", "twotone", "graphite", "arctic"]
+  },
+  "quality": {
+    "low": { "wear": 0.35, "edge": 0, "details": false, "veinSegments": 2 },
+    "medium": { "wear": 1, "edge": 1, "details": true, "veinSegments": 3 },
+    "high": { "wear": 1.15, "edge": 1.15, "details": true, "veinSegments": 4 }
+  },
+  "rarityTicks": { "comun": 0, "poco": 1, "rara": 2, "epica": 3, "legendaria": 4 }
+}

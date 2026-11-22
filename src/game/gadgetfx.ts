@@ -20,7 +20,7 @@ export interface GadgetHooks {
   /** Inyección temporal: todo menos tú va a `k` de velocidad durante `sec` s. */ slowTime(sec: number, k: number): void;
   /** Dirección en la que se mueve el jugador (propulsor); null si está quieto. */ moveDir(): THREE.Vector3 | null;
   teleport(p: THREE.Vector3): void;
-  sound(kind: "boom" | "zap" | "shot"): void;
+  sound(kind: "boom" | "zap" | "shot" | "swing"): void;
 }
 interface Live { kind: GadgetSpec["kind"]; g: GadgetSpec; root: THREE.Object3D; t: number; cd: number; pos: THREE.Vector3; box?: THREE.Box3; vel?: THREE.Vector3 }
 
@@ -82,7 +82,7 @@ export class GadgetFx {
         const { eye, dir } = this.hooks.view(); let best: Dummy | null = null, bd = 1e9;
         for (const d of this.hooks.enemies()) { if (!d.alive) continue; const to = d.center.clone().sub(eye), along = to.dot(dir); if (along < 0 || along > (g.kind === "knife" ? g.radius : 22)) continue; const off = to.clone().addScaledVector(dir, -along).length(); if (off < 0.9 && along < bd) { bd = along; best = d; } }
         const end = best ? best.center.clone() : eye.clone().addScaledVector(dir, 12);
-        this.beam(eye.clone().add(new THREE.Vector3(0, -0.2, 0)), end, c); this.hooks.sound(g.kind === "knife" ? "shot" : "zap");
+        this.beam(eye.clone().add(new THREE.Vector3(0, -0.2, 0)), end, c); this.hooks.sound(g.kind === "knife" ? "swing" : "zap");
         if (!best) return true;
         if (g.kind === "knife") { this.hooks.onHit(best, best.center, g.power, null); return true; }
         this.hooks.onHit(best, best.center, g.power, "electrico");

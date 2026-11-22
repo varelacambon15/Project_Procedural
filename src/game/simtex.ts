@@ -8,6 +8,27 @@ const tex = (c: HTMLCanvasElement, rep: [number, number], srgb = true) => {
 };
 /** Hexágonos de punta arriba: ancho de baldosa W = √3·R y alto 3R (dos filas desplazadas), así se repite sin cortes. */
 const HW = 64, HR = HW / Math.sqrt(3), HH = Math.round(3 * HR);
+const roughCache = new Map<string, THREE.CanvasTexture>();
+/**
+ * Variación de rugosidad de la baldosa hexagonal (misma parrilla que el color): junta rugosa, baldosa pulida.
+ * Textura pequeña de lienzo, cacheada y compartida por repetición (arena y mazmorras usan la misma).
+ */
+function hexRough(rep: [number, number]) {
+  const key = rep.join(",");
+  let t = roughCache.get(key);
+  if (!t) {
+    const c = document.createElement("canvas"); c.width = HW; c.height = HH;
+    const g = c.getContext("2d")!;
+    g.fillStyle = "#b4b4b4"; g.fillRect(0, 0, HW, HH); // baldosa: algo pulida
+    for (let i = 0; i < 170; i++) { const v = 168 + Math.floor(Math.random() * 34); g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(Math.floor(Math.random() * HW), Math.floor(Math.random() * HH), 1, 1); }
+    g.strokeStyle = "#f2f2f2"; g.lineWidth = 3; hexGrid(g); // junta: más rugosa
+    t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...rep);
+    t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestMipmapNearestFilter;
+    roughCache.set(key, t);
+  }
+  return t;
+}
 function hexGrid(g: CanvasRenderingContext2D) {
   for (let row = -1; row <= 3; row++) for (let col = -1; col <= 2; col++) {
     const cx = col * HW + (row % 2 ? HW / 2 : 0), cy = row * 1.5 * HR;
@@ -16,7 +37,7 @@ function hexGrid(g: CanvasRenderingContext2D) {
     g.closePath(); g.stroke();
   }
 }
-/** Suelo de baldosas hexagonales: mapa de color (con algo de ruido) y mapa emisivo con las juntas. */
+/** Suelo de baldosas hexagonales: mapa de color (con algo de ruido), mapa emisivo con las juntas y mapa de rugosidad (baldosa pulida, junta rugosa). */
 export function hexFloor(base: string, joint: string, rep: [number, number]) {
   const c = document.createElement("canvas"); c.width = HW; c.height = HH;
   const g = c.getContext("2d")!; g.fillStyle = base; g.fillRect(0, 0, HW, HH);
@@ -24,7 +45,7 @@ export function hexFloor(base: string, joint: string, rep: [number, number]) {
   g.strokeStyle = joint; g.lineWidth = 3; hexGrid(g);
   const e = document.createElement("canvas"); e.width = HW; e.height = HH; const ge = e.getContext("2d")!;
   ge.fillStyle = "#000"; ge.fillRect(0, 0, HW, HH); ge.strokeStyle = "#fff"; ge.lineWidth = 1; hexGrid(ge);
-  return { map: tex(c, rep), emissive: tex(e, rep) };
+  return { map: tex(c, rep), emissive: tex(e, rep), rough: hexRough(rep) };
 }
 /** Panel holográfico con columnas de números y una cabecera (se usa como mapa emisivo, sobre un plano oscuro). */
 export function dataPanel(color = "#5fe0ff", seed = 1) {

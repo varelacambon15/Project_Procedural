@@ -2,10 +2,7 @@
 import { DeathFx } from "./deathfx";
 import { FURNITURE, HallProps, type FurnCat, type HallPropId } from "./hallprops";
 import { HallBot } from "./hallbot";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { Post } from "./post";
 import * as THREE from "three";
 import { GADGET_RARITY, makeGadget, setGadgetUid, type GadgetRarity, type GadgetSpec } from "./gadgets";
 import { GadgetFx } from "./gadgetfx";
@@ -18,7 +15,6 @@ import { grenadeObject, loadGrenadeModel } from "./grenademodel";
 import { applyEvent, claimAll, refreshContracts, type Contract, type ContractState } from "./contracts";
 import { audio, initSounds, loadSamples, out, playSample, sample, soundManifest, startMusic } from "./audio";
 import showcaseWeapon from "../data/showcase-weapon.json";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RARITIES, WeaponGenerator } from "../weapons/generator";
 import { WeaponAssembler } from "../weapons/assembler";
 import { archName, rarityName, typeName } from "../weapons/labels";
@@ -32,6 +28,7 @@ import type { Manifest, RarityId, WeaponSpec } from "../weapons/types";
 import { getLang, onLang, setLang, t, type Lang } from "../i18n";
 import { DEFAULT_BINDS, DEFAULT_PAD, Input, PAD_NAMES } from "./input";
 import { buildRange, type Interactable } from "./world";
+import { applyEnvIntensity, envIntensityFor, makeEnv } from "./envmap";
 import { PIXEL_LEVELS, pixelLevel, setPixelLevel } from "../weapons/textures";
 import { onSettings, replaceSettings, setSetting, settings, type Settings } from "./settings";
 import { BOSS_EVERY, PlayerHealth, Waves } from "./waves";
@@ -59,6 +56,8 @@ import { platformStorage } from "./storage";
 import { SHOP, newShopState, type ShopState } from "./shop";
 
 const ASSETS = "./weapons/";
+/** Con menos créditos que esto al entrar al hall, el asistente comenta que toca practicar en el campo de tiro. */
+const LOW_CREDITS_BOT = 50;
 void installPixelFont();
 setLang(getLang());
 
@@ -68,9 +67,13 @@ renderer.localClippingEnabled = true; // escaneo de los muñecos de la simulaci�
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+renderer.info.autoReset = false; // el coste del fotograma se acumula en draw() y lo lee el contador de FPS
 $("game").appendChild(renderer.domElement);
 const scene = new THREE.Scene();
-const weaponEnv = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+// Mapa de entorno (PMREM de un interior de estudio; NO es una luz): metal, polímero y suelos devuelven el entorno en
+// vez de verse planos. La intensidad se escala con «Calidad gráfica» (ENV_INTENSITY), ver applyLook()
+const weaponEnv = makeEnv(renderer);
+scene.environment = weaponEnv;
 const camera = new THREE.PerspectiveCamera(settings.fov, 1, 0.02, 300);
 scene.add(camera);
 // Luz de borde ligada a la cámara: perfila el arma en primera persona para que las oscuras no se pierdan en la sala
@@ -86,20 +89,21 @@ scene.add(hallBot.mesh); world.shootables.push(...hallBot.hitMeshes);
 const VM_FOV = 62, VM_BACK = 0.03;
 const deathFx = new DeathFx(camera);
 const vmCam = new THREE.PerspectiveCamera(VM_FOV, 1, 0.02, 30); vmCam.position.z = VM_BACK; vmCam.layers.set(1); camera.add(vmCam);
-class ViewmodelPass extends RenderPass {
-  override render(r: THREE.WebGLRenderer, w: THREE.WebGLRenderTarget, rd: THREE.WebGLRenderTarget, dt: number, mask: boolean) { const bg = scene.background; scene.background = null; super.render(r, w, rd, dt, mask); scene.background = bg; }
-}
-const vmPass = new ViewmodelPass(scene, vmCam); vmPass.clear = false; vmPass.clearDepth = true;
+// Cadena de postprocesado (post.ts): tono filmic, bloom, viñeta, grano y aberración al recibir daño.
+// El nivel de calidad decide qué entra; si falla, se cae sola a Bajo (render directo) sin errores.
+const post = new Post(renderer, scene, camera, vmCam, settings.quality);
+// Intensidad del mapa de entorno según «Calidad gráfica» y día/noche; se re-aplica cada pocos fotogramas para que
+// lo que se añade después (armas, enemigos) herede el mismo ajuste
+let envI = envIntensityFor(settings.quality, settings.night);
 let lightSync = 0;
 function syncLayers() {
   for (const c of camera.children) { if (c === vmCam) continue; c.traverse((o) => { const want = (o as THREE.Light).isLight ? 3 : 2; if (o.layers.mask !== want) o.layers.mask = want; }); }
-  if (--lightSync <= 0) { lightSync = 45; scene.traverse((o) => { if ((o as THREE.Light).isLight) o.layers.enable(1); }); }
+  if (--lightSync <= 0) {
+    lightSync = 45;
+    scene.traverse((o) => { if ((o as THREE.Light).isLight) o.layers.enable(1); });
+    applyEnvIntensity(scene, envI);
+  }
 }
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-composer.addPass(vmPass);
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.8, 0.5, 0.82);
-composer.addPass(bloom); composer.addPass(new OutputPass());
 // Relleno de la vista en primera persona: de noche el arma y los brazos recogen el rebote del neón (cian arriba, magenta abajo)
 const fill = new THREE.DirectionalLight(0xe040a0, 0); fill.position.set(-0.6, -0.8, -0.4); camera.add(fill); camera.add(fill.target); fill.target.position.set(0, 0, -1);
 // Contorno extra para armas oscuras: según la luminancia del color principal del acabado (negro → más contorno)
@@ -109,25 +113,23 @@ const weaponDarkness = (spec: WeaponSpec | null | undefined) => {
   const lum = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   return Math.max(0, Math.min(1, (0.35 - lum) / 0.3));
 };
-const applyLook = () => { world.setNight(settings.night); rim.intensity = (settings.night ? 0.8 : 0.4) + darkBoost * 1.1; rim.color.set(settings.night ? 0xc8b0ff : 0xbfd8ff); fill.intensity = settings.night ? 0.5 : 0; bloom.enabled = settings.bloom; bloom.strength = settings.night ? 0.55 : 0.3; renderer.toneMappingExposure = settings.night ? 1.25 : 1.0; };
+const applyLook = () => { world.setNight(settings.night); rim.intensity = (settings.night ? 0.8 : 0.4) + darkBoost * 1.1; rim.color.set(settings.night ? 0xc8b0ff : 0xbfd8ff); fill.intensity = settings.night ? 0.5 : 0; envI = envIntensityFor(settings.quality, settings.night); applyEnvIntensity(scene, envI); post.setQuality(settings.quality); post.bloomLook(settings.bloom, settings.night ? 0.55 : 0.3); renderer.toneMappingExposure = settings.night ? 1.25 : 1.0; };
 applyLook(); onSettings(applyLook);
 // Resolución del render (ajuste) y contador de FPS
 const applyScale = () => { const pr = Math.min(devicePixelRatio, 1.5) * (settings.renderScale ?? 1); if (Math.abs(renderer.getPixelRatio() - pr) > 0.01) { renderer.setPixelRatio(pr); resize(); } };
 const fpsEl = (() => { const e = document.createElement("div"); e.id = "fps"; e.style.cssText = "position:fixed;top:6px;right:8px;z-index:50;font:12px monospace;color:#7affc8;background:rgba(0,0,0,0.5);padding:2px 6px;pointer-events:none"; e.hidden = true; document.body.appendChild(e); return e; })();
 let fpsN = 0, fpsT = performance.now();
-const fpsTick = () => { if (!settings.showFps) { fpsEl.hidden = true; return; } fpsN++; const n = performance.now(); if (n - fpsT >= 500) { fpsEl.hidden = false; fpsEl.textContent = `${Math.round((fpsN * 1000) / (n - fpsT))} FPS · ${renderer.info.render.calls} dc`; fpsN = 0; fpsT = n; } };
+const fpsTick = () => { if (!settings.showFps) { fpsEl.hidden = true; return; } fpsN++; const n = performance.now(); if (n - fpsT >= 500) { fpsEl.hidden = false; fpsEl.textContent = `${Math.round((fpsN * 1000) / (n - fpsT))} FPS · ${renderer.info.render.calls} dc · ${Math.round(renderer.info.render.triangles / 1000)}k tri`; fpsN = 0; fpsT = n; } };
 applyScale(); onSettings(applyScale);
 startMusic("./music/ambient-03.ogg");
 // Pack de sonidos (assets/sonidos): manifest ahora; las muestras de cada arma se cargan al equiparla
 void initSounds("./sonidos/").then((m) => { if (m) void loadSamples(["melee_cuchillo_swing", "melee_cuchillo_golpe", "melee_culatazo", "recoger_arma", "explosion"].flatMap((k) => m.efectos[k] ?? [])); });
-const draw = () => {
+const draw = (dt: number) => {
   syncLayers();
-  if (settings.bloom) { composer.render(); return; }
-  renderer.render(scene, camera);
-  const ac = renderer.autoClear, bg = scene.background; renderer.autoClear = false; renderer.clearDepth(); scene.background = null;
-  renderer.render(scene, vmCam); scene.background = bg; renderer.autoClear = ac;
+  renderer.info.reset(); // (aquí empieza la cuenta de llamadas de dibujo y triángulos del fotograma)
+  post.render(dt);
 };
-function resize() { renderer.setSize(innerWidth, innerHeight); composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); vmCam.aspect = camera.aspect; vmCam.updateProjectionMatrix(); }
+function resize() { renderer.setSize(innerWidth, innerHeight); post.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); vmCam.aspect = camera.aspect; vmCam.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
 
 // ---------- Estado ----------
@@ -313,6 +315,7 @@ async function boot() {
     shards: { f0: 2600, f1: 3600, wave: "triangle", len: 0.45, noise: 0.15, lp: 8000, vol: 0.08, chord: [1.26, 1.5] },
   };
   let wasInZone = false;
+  let wasInHall = false; // (para avisar al asistente al entrar al hall con pocos créditos)
   let wasStopped = false, tsInvT = 0, tsTick = 0;
   /** Parada del tiempo: zumbido grave que sube y se corta en seco, tictac de reloj y reanudación con un barrido que cae. */
   function timeSnd(k: "stop" | "tick" | "resume") {
@@ -375,12 +378,23 @@ async function boot() {
     feet: () => player.pos.clone(),
     lunge: (dir, dist, time) => player.lunge(dir, dist, time),
     launch: (vy) => { player.vel.y = vy; player.onGround = false; },
-    refill: () => { const it = gun.item; if (it) { it.ammo = it.spec.stats.cargador; inv.changed(); } },
+    refill: () => { const it = gun.item; if (it) { it.ammo = it.spec.stats.cargador; inv.changed(); } const l = soundManifest?.efectos.recoger_municion; if (l?.length) playSample(sample(l[Math.floor(Math.random() * l.length)]), 0.5); },
     boost: (sec, k) => { injectT = sec; injectK = k; applyPerks(); },
     slowTime: (sec, k) => { chronoT = sec; chronoK = k; },
     moveDir: () => { const v = player.vel.clone().setY(0); return v.length() > 0.5 ? v.normalize() : null; },
     teleport: (p) => { player.pos.set(p.x, 0, p.z); player.vel.set(0, 0, 0); },
-    sound: () => { /* (sonidos del equipamiento: pendiente) */ },
+    sound: (k) => {
+      // Sonidos propios del equipamiento con las muestras del pack (antes no hacía nada)
+      const e = soundManifest?.efectos; if (!e) return;
+      if (k === "boom") { const x = e.explosion; if (x?.length) playSample(sample(x[Math.floor(Math.random() * x.length)]), 0.45, 1.1); const g = e.explosion_grave; if (g?.length) playSample(sample(g[0]), 0.55); }
+      else if (k === "zap") { const l = e.flash_aturdidora; if (l?.length) playSample(sample(l[Math.floor(Math.random() * l.length)]), 0.3, 1.6); }
+      else if (k === "swing") { const l = e.melee_cuchillo_swing; if (l?.length) playSample(sample(l[Math.floor(Math.random() * l.length)]), 0.5, 1.05 + Math.random() * 0.1); }
+      else if (k === "shot") { // bala de la mini torreta: disparo lejano de pistola, agudo y bajo; si no, chasquido agudo
+        const l = soundManifest?.tipos.pistol.lejano; const f = l?.length ? l[Math.floor(Math.random() * l.length)] : null;
+        if (f && playSample(sample(f), 0.1, 2.1)) return;
+        const l2 = e.flash_aturdidora; if (l2?.length) playSample(sample(l2[0]), 0.08, 2.6);
+      }
+    },
   });
   // Compilación de shaders en segundo plano (KHR_parallel_shader_compile): armas nuevas sin congelar el juego
   const prewarm = (o: THREE.Object3D) => { o.updateMatrixWorld(true); return renderer.compileAsync(o, camera, scene); };
@@ -485,7 +499,9 @@ async function boot() {
     if (b) {
       const f = FURNITURE.find((x) => x.id === b.dataset.buyfurn); if (!f || inv.furniture.includes(f.id) || inv.credits < f.price || inv.progress.level < f.level) return;
       inv.credits -= f.price; inv.furniture.push(f.id); hallProps.apply(new Set(inv.furniture)); creditsHud(); autosave();
-      toast(t("fs.bought", { n: t(`fs.n.${f.id}`) })); hallBot.say(t("bot.furn", { n: t(`fs.n.${f.id}`) }), "excited"); openFurniture();
+      toast(t("fs.bought", { n: t(`fs.n.${f.id}`) }));
+      if (inv.furniture.length >= FURNITURE.length) hallBot.event("furnitureFull"); // (mobiliario completo)
+      else hallBot.say(t("bot.furn", { n: t(`fs.n.${f.id}`) }), "excited"); openFurniture();
     }
   });
   const FURN_ICON: Record<FurnCat, string> = { fun: "♫", util: "⚙", life: "❀", decor: "◆" };
@@ -655,7 +671,7 @@ async function boot() {
     const id = rollModule(inv.supersOwned, Math.random());
     if (!id) { earn(400); toast(t("sp.moduleDup", { c: 400 })); return; }
     inv.supersOwned.push(id); if (!inv.supersOwned.includes(inv.superId)) inv.superId = id;
-    lootChime(4); toast(t("sp.moduleGot", { n: t(`sp.${id}`) })); autosave();
+    lootChime(4); toast(t("sp.moduleGot", { n: t(`sp.${id}`) })); autosave(); hallBot.event("newSuper");
   }
   function gainXp(n: number) {
     const up = addXp(inv.progress, n * curPerks.fortune); xpShowT = 4; // (la barra se ve unos segundos al ganar experiencia)
@@ -812,6 +828,7 @@ async function boot() {
     if (sfx.shieldsPlayer(player.pos)) return;
     dmg *= sfx.guard * curPerks.guard * damageTaken(armorT, kind) * gadgets.guardAt(player.pos); // (la cúpula del equipamiento protege dentro) // (armadura: reducción y resistencias)
     if (curPerks.secondWind && !windUsed && php.value - dmg <= 0) { windUsed = true; php.value = php.max * 0.4; toast(t("pg.secondWind")); return; }
+    if (dmg > 0) post.hit(dmg); // (la aberración cromática solo al recibir daño)
     if (php.hit(dmg)) {
       windUsed = false;
       // Animación de muerte (la mano se desintegra) y, al acabar, lo que toque según dónde estés
@@ -1180,6 +1197,7 @@ async function boot() {
     if (inv.gadgets.length >= 8) { toast(t("gd.full")); return; }
     inv.gadgets.push(n.g); if (inv.gadgetActive < 0) inv.gadgetActive = inv.gadgets.length - 1;
     toast(t("gd.found", { n: t(`gd.${n.g.kind}`), r: t(`rarity.${n.g.rarity}`) }));
+    hallBot.event("newGadget");
     { const l = soundManifest?.efectos.recoger_granada; if (l?.length) playSample(sample(l[0]), 0.6, 1.3); }
     scene.remove(n.mesh); gadgetDrops.splice(gadgetDrops.indexOf(n), 1);
   }
@@ -1407,7 +1425,11 @@ async function boot() {
       const now = performance.now() / 1000;
       while (sim.log.length && now - sim.log[0][0] > 3) sim.log.shift();
       const dps = sim.log.reduce((a, x) => a + x[1], 0) / 3;
-      { const p = player.pos, inHall = state === "play" && !raid.active && p.x > -24 && p.x < 24 && p.z > 0 && p.z < 28; hallBot.update(dt, inHall, p, camera.getWorldDirection(new THREE.Vector3())); hallProps.update(dt, p, inHall); }
+      { const p = player.pos, inHall = state === "play" && !raid.active && p.x > -24 && p.x < 24 && p.z > 0 && p.z < 28;
+        // Entras al hall con menos de 50 CR: el asistente se ríe un poco de tu bolsillo (si no hay otra cosa pendiente)
+        if (inHall && !wasInHall && inv.credits < LOW_CREDITS_BOT && !hallBot.hasPending) hallBot.event("lowCredits");
+        wasInHall = inHall;
+        hallBot.update(dt, inHall, p, camera.getWorldDirection(new THREE.Vector3())); hallProps.update(dt, p, inHall); }
       world.update(dt, { dps, ttk: sim.ttk, accuracy: sim.shots ? Math.min(1, sim.hits / sim.shots) : null, distance: sim.distance, message: t(now - sim.lastShot < 2 ? "sim.active" : "sim.calibrating") });
     }
     // Miras: visor a pantalla completa o retícula de punto rojo / holográfica
@@ -1427,7 +1449,7 @@ async function boot() {
     frameNo++; fpsTick();
     // Sombras: solo en el complejo (la luz que las proyecta no llega a la incursión) y cada 2 fotogramas
     renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = !raid.active && frameNo % 2 === 0;
-    if (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0) draw();
+    if (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0) draw(dt);
     requestAnimationFrame(frame);
   }
   player.applyCamera(camera, 0);

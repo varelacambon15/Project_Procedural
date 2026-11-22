@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { t } from "../i18n";
 import { buildNightCity } from "./nightcity";
 import { mergeStatic } from "./merge";
+import { roughnessTexture } from "../weapons/textures";
 
 /**
  * Calcomanía: un plano pegado a otra superficie (marcas del suelo, carteles, pantallas). Se adelanta en profundidad
@@ -66,9 +67,15 @@ export function buildRange(scene: THREE.Scene): World {
   // Instalación de pruebas clara y legible: hormigón claro, paneles gris claro con franja de seguridad, techo con
   // paneles de luz. El color fuerte se reserva para lo que importa (muñecos, terminales, carteles).
   const floorTex = pixelTexture(64, 64, (g) => { speckle(g, 64, 64, "#9a9ea3", 500, 0.08); g.fillStyle = "#7d8186"; g.fillRect(0, 0, 64, 1); g.fillRect(0, 0, 1, 64); g.fillStyle = "#a6aaaf"; g.fillRect(1, 1, 62, 1); }, [W / 2, (BACK - FRONT) / 2]);
-  const floor = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.85, metalness: 0.05 });
+  // Suelo pulido (baldosa clara con junta rugosa): el entorno se refleja algo en el suelo del hall. Es una superficie
+  // muy grande y clara: con la intensidad de entorno normal se quemaba en blanco, así que se atenúa su respuesta
+  // (el brillo sigue ahí, pero no inunda el suelo ni alimenta el bloom).
+  const floor = new THREE.MeshStandardMaterial({ map: floorTex, roughnessMap: roughnessTexture("floor", [W / 2, (BACK - FRONT) / 2]), roughness: 0.55, metalness: 0.15 });
+  floor.userData.envBoost = 0.15;
   const wallTex = pixelTexture(64, 64, (g) => { speckle(g, 64, 64, "#b9bdc2", 300, 0.06); g.fillStyle = "#8e9297"; g.fillRect(0, 0, 64, 1); g.fillRect(0, 0, 1, 64); g.fillStyle = "#c6cacf"; g.fillRect(1, 1, 62, 1); }, [24, 2]);
-  const wall = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.9, metalness: 0.05 });
+  // Paneles de pared con ligera reflectividad (chapa pintada mate, no cemento seco). Igual atenuación parcial.
+  const wall = new THREE.MeshStandardMaterial({ map: wallTex, roughnessMap: roughnessTexture("panel", [24, 2]), roughness: 0.72, metalness: 0.12 });
+  wall.userData.envBoost = 0.35;
   // Estética de simulación (Coded Arms): rejilla luminosa fina en el suelo con nodos en los cruces y pistas de
   // circuito en las paredes. Solo brillo (emisivo): no añade luces. De noche se apaga (la ciudad tiene sus neones).
   const floorGrid = pixelTexture(64, 64, (g) => {
@@ -82,7 +89,8 @@ export function buildRange(scene: THREE.Scene): World {
     for (const [x, y] of [[10, 44], [32, 54], [46, 44], [46, 30]]) { g.fillStyle = "#c8fbff"; g.fillRect(x - 1, y - 1, 3, 3); g.fillStyle = "#5fd8e0"; }
   }, [24, 2]);
   wall.emissive.set(0x3fd0d8); wall.emissiveMap = wallCircuit; wall.emissiveIntensity = 0.28;
-  const steel = new THREE.MeshStandardMaterial({ color: 0x5d636a, metalness: 0.45, roughness: 0.6 });
+  // Estructura de acero: rugosidad variable (mapa cepillado compartido) y metal de verdad, para que el entorno se lea
+  const steel = new THREE.MeshStandardMaterial({ color: 0x5d636a, metalness: 0.75, roughness: 0.45, roughnessMap: roughnessTexture("steel") });
   const dark = new THREE.MeshStandardMaterial({ color: 0x80868c, roughness: 0.95 });
   const safety = new THREE.MeshStandardMaterial({ color: 0xe07a2a, roughness: 0.7 });
   const signMats: THREE.MeshStandardMaterial[] = [], boardMats: THREE.MeshBasicMaterial[] = [];
@@ -151,11 +159,11 @@ export function buildRange(scene: THREE.Scene): World {
   // Zócalo, friso inferior con remate metálico, pilastras con tira de luz, moldura en el techo, marcos de puerta y una
   // banda oscura en el suelo junto a las paredes. Todo se corta en los huecos de las puertas. Sin luces nuevas.
   {
-    const skirt = new THREE.MeshStandardMaterial({ color: 0x2a2f36, roughness: 0.6, metalness: 0.2 });
-    const wains = new THREE.MeshStandardMaterial({ color: 0x5d6671, roughness: 0.75, metalness: 0.1 });
-    const cap = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.35, metalness: 0.7 });
-    const pil = new THREE.MeshStandardMaterial({ color: 0x8f98a2, roughness: 0.55, metalness: 0.25 });
-    const cornice = new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.6, metalness: 0.3 });
+    const skirt = new THREE.MeshStandardMaterial({ color: 0x2a2f36, roughness: 0.55, metalness: 0.3 });
+    const wains = new THREE.MeshStandardMaterial({ color: 0x5d6671, roughnessMap: roughnessTexture("panel"), roughness: 0.62, metalness: 0.22 });
+    const cap = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.32, metalness: 0.75, roughnessMap: roughnessTexture("steel") });
+    const pil = new THREE.MeshStandardMaterial({ color: 0x8f98a2, roughness: 0.5, metalness: 0.3 });
+    const cornice = new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.55, metalness: 0.35 });
     const strip = new THREE.MeshBasicMaterial({ color: 0x9fe8ff });
     const bandMat = new THREE.MeshStandardMaterial({ color: 0x4a525c, roughness: 0.85 });
     // Tramos de una pared, sin los huecos `gaps` ([a, b] a lo largo de la pared)
@@ -207,7 +215,7 @@ export function buildRange(scene: THREE.Scene): World {
     frame(W / 2, (SD0 + SD1) / 2, SD1 - SD0, false, -1);
 
     // ---------- Techo: casetones (vigas longitudinales que cruzan las transversales), conductos y bandejas de cables ----------
-    const duct = new THREE.MeshStandardMaterial({ color: 0xa8b0b8, roughness: 0.45, metalness: 0.6 });
+    const duct = new THREE.MeshStandardMaterial({ color: 0xa8b0b8, roughness: 0.45, metalness: 0.65, roughnessMap: roughnessTexture("steel") });
     for (const x of [-16, -8, 8, 16]) box(0.25, 0.32, BACK, x, H - 0.16, BACK / 2, steel, false, false);
     for (const x of [-20.5, 20.5]) {
       const c = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, BACK - 0.6, 18), duct); c.rotation.x = Math.PI / 2; c.position.set(x, H - 0.75, BACK / 2); scene.add(c);
@@ -227,7 +235,7 @@ export function buildRange(scene: THREE.Scene): World {
     }
 
     // ---------- Paredes: tuberías con abrazaderas y válvulas, rejillas de ventilación y extintores ----------
-    const pipeMats = [new THREE.MeshStandardMaterial({ color: 0x8a939c, metalness: 0.7, roughness: 0.35 }), new THREE.MeshStandardMaterial({ color: 0x3a6a8a, metalness: 0.5, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0xa8402e, metalness: 0.4, roughness: 0.5 })];
+    const pipeMats = [new THREE.MeshStandardMaterial({ color: 0x8a939c, metalness: 0.75, roughness: 0.35, roughnessMap: roughnessTexture("steel") }), new THREE.MeshStandardMaterial({ color: 0x3a6a8a, metalness: 0.55, roughness: 0.4, roughnessMap: roughnessTexture("steel") }), new THREE.MeshStandardMaterial({ color: 0xa8402e, metalness: 0.45, roughness: 0.5, roughnessMap: roughnessTexture("panel") })];
     pipeMats.forEach((m, i) => {
       const r = 0.07 + i * 0.015, y = H - 1.35 - i * 0.24;
       const pp = new THREE.Mesh(new THREE.CylinderGeometry(r, r, W - 1, 12), m); pp.rotation.z = Math.PI / 2; pp.position.set(0, y, 0.46 + i * 0.03); scene.add(pp);
@@ -574,8 +582,9 @@ export function buildRange(scene: THREE.Scene): World {
   // Arena con la estética de las referencias (Coded Arms): baldosas hexagonales oscuras con juntas luminosas,
   // paredes de paneles con molduras de neón, columnas de luz y paneles holográficos de datos (todo emisivo: sin luces)
   const hx = hexFloor("#4a505a", "#2a2e35", [RW / 3.2, (R1 - R0) / 5.5]);
-  const arenaFloor = new THREE.MeshStandardMaterial({ map: hx.map, emissiveMap: hx.emissive, emissive: 0x3fd0d8, emissiveIntensity: 0.45, roughness: 0.55, metalness: 0.35 });
-  const arenaWall = new THREE.MeshStandardMaterial({ map: wallTex, color: 0x8a909a, roughness: 0.8, metalness: 0.2, emissive: 0xff4a8a, emissiveMap: wallCircuit, emissiveIntensity: 0.35 });
+  // Baldosa hexagonal pulida (la junta rugosa va en hx.rough): el entorno y el neón se reflejan en el suelo
+  const arenaFloor = new THREE.MeshStandardMaterial({ map: hx.map, emissiveMap: hx.emissive, emissive: 0x3fd0d8, emissiveIntensity: 0.45, roughnessMap: hx.rough, roughness: 0.5, metalness: 0.35 });
+  const arenaWall = new THREE.MeshStandardMaterial({ map: wallTex, color: 0x8a909a, roughness: 0.72, metalness: 0.22, roughnessMap: roughnessTexture("panel", [24, 2]), emissive: 0xff4a8a, emissiveMap: wallCircuit, emissiveIntensity: 0.35 });
   const neonPink = new THREE.MeshStandardMaterial({ color: 0xff4a8a, emissive: 0xff4a8a, emissiveIntensity: 1.3 });
   const neonCyan = new THREE.MeshStandardMaterial({ color: 0x5fe0ff, emissive: 0x5fe0ff, emissiveIntensity: 1.2 });
   const roomFloor = new THREE.Mesh(new THREE.PlaneGeometry(RW, R1 - R0), arenaFloor);
@@ -653,10 +662,11 @@ export function buildRange(scene: THREE.Scene): World {
     night = on;
     city.group.visible = on; for (const o of dayOnly) o.visible = !on;
     wall.map = on ? city.wallMap : wallDay; floor.map = on ? city.floorMap : floorDay;
-    // Suelo mojado de noche: más liso (recoge los brillos del neón)
+    // Suelo mojado de noche: más liso (recoge los brillos del neón); de día, baldosa pulida
     floor.emissiveIntensity = on ? 0 : 0.32; wall.emissiveIntensity = on ? 0 : 0.28;
     motes.visible = !on;
-    floor.roughness = on ? 0.55 : 0.8; floor.metalness = on ? 0.3 : 0.35; wall.needsUpdate = floor.needsUpdate = true;
+    // Mojado de noche: muy pulido, pero no un espejo (0.32 quemaba el reflejo del neón con bloom)
+    floor.roughness = on ? 0.45 : 0.55; floor.metalness = on ? 0.35 : 0.15; wall.needsUpdate = floor.needsUpdate = true;
     // Ambiente: luna fría y neblina violeta de noche; luz de día clara
     hemi.color.set(on ? 0x8a7ab8 : 0xe8eef4); hemi.groundColor.set(on ? 0x3a2a48 : 0x8a8478); hemi.intensity = on ? 1.5 : 2.2;
     // Noche legible: carteles atenuados (no deslumbran con el resplandor) y sala de oleadas con luz más suave

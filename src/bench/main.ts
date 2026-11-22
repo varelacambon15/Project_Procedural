@@ -515,6 +515,21 @@ async function boot() {
     }
     return out.toDataURL("image/png");
   };
-  (window as unknown as Record<string, unknown>).__bench = { modelSheet, longSheet, inspect, decisionSheet, varietySheet, closeups, lotSheet, simSheet, showcase, sheet, show, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+  /** Coste de un arma montada (informe de rendimiento): mallas, triángulos y llamadas de dibujo de un fotograma. */
+  const cost = async (seed: number, type: string, rarity?: string) => {
+    const spec = gen.generate(seed, type as never, rarity as never);
+    const built = await asm.assemble(spec);
+    const sc = new THREE.Scene(); studioLights(sc, renderer, 0x4a4e55);
+    sc.add(built.group);
+    let meshes = 0, tris = 0;
+    built.group.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { meshes++; const g = m.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
+    renderer.info.reset();
+    const cam = new THREE.PerspectiveCamera(30, 1, 0.01, 50); cam.position.set(0, 0, 2); cam.lookAt(0, 0, 0);
+    renderer.render(sc, cam);
+    const out = { seed, type: spec.type, paint: spec.paint.id, era: spec.era ?? "?", rarity: spec.rarity.id, meshes, triangles: Math.round(tris), drawCalls: renderer.info.render.calls, renderedTris: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures };
+    sc.remove(built.group);
+    return out;
+  };
+  (window as unknown as Record<string, unknown>).__bench = { modelSheet, longSheet, inspect, decisionSheet, varietySheet, closeups, lotSheet, simSheet, showcase, sheet, show, cost, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
 }
 boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });
