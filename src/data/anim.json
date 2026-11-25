@@ -311,7 +311,7 @@
       "rest": [0, 0, 0]
     },
     "bullpup": {
-      "frame": {"bulk": 0.22, "depthMax": 0.65, "grip": [0.79, 0.93], "muzzle": [0.555, 0.56], "depth": 0.46},
+      "frame": {"aim": [0.04, 0.08], "bulk": 0.3, "depthMax": 0.55, "grip": [0.73, 0.86], "muzzle": [0.555, 0.56], "depth": 0.42},
       "gripZ": 0.32, "rearMax": 0.02,
       "hip": [0.145, -0.045, 0.02], "hipYaw": 0.209, "hipPitch": 0.069,
       "reload": {
