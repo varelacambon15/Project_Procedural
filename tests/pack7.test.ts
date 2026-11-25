@@ -53,11 +53,15 @@ function leerGlb(ruta: URL) {
   return { triangulos, lo, hi };
 }
 
-const PIEZAS: Pieza[] = JSON.parse(readFileSync(new URL("../raw/pack7/piezas_sueltas/piezas.json", import.meta.url), "utf8"));
-const ACCESORIOS: Pieza[] = JSON.parse(readFileSync(new URL("../raw/pack7/accesorios/accesorios.json", import.meta.url), "utf8"));
+// raw/pack7 no se sube al repositorio (piezas donantes): si falta, el bloque se omite limpiamente.
+const PIEZAS_JSON = new URL("../raw/pack7/piezas_sueltas/piezas.json", import.meta.url);
+const ACCESORIOS_JSON = new URL("../raw/pack7/accesorios/accesorios.json", import.meta.url);
+const HAY_PACK7 = existsSync(PIEZAS_JSON) && existsSync(ACCESORIOS_JSON);
+const PIEZAS: Pieza[] = HAY_PACK7 ? JSON.parse(readFileSync(PIEZAS_JSON, "utf8")) : [];
+const ACCESORIOS: Pieza[] = HAY_PACK7 ? JSON.parse(readFileSync(ACCESORIOS_JSON, "utf8")) : [];
 const TODAS = [...PIEZAS, ...ACCESORIOS];
 
-describe("pack7 — piezas donantes low poly e Infinite Warfare", () => {
+describe.skipIf(!HAY_PACK7)("pack7 — piezas donantes low poly e Infinite Warfare", () => {
   it("hay piezas de las dos fases", () => {
     expect(PIEZAS.length + ACCESORIOS.length).toBeGreaterThanOrEqual(50);
     expect(TODAS.filter((p) => p.id.startsWith("lp_")).length).toBeGreaterThan(0);
