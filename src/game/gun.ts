@@ -1138,18 +1138,23 @@ export class Gun {
     const fist = (side: 1 | -1): HandPose => {
       // Guardia: puños cerrados a la altura del pecho, algo adelantados, hacia dentro y arriba; al esprintar bajan y
       // se balancean alternos. El dorso mira arriba, afuera y hacia la cámara (así se ven los nudillos, no la muñeca).
-      const base = new THREE.Vector3(side * 0.13, -0.12 + breathe - 0.3 * (1 - raise), -0.44);
+      // (tarea 13, referencia del usuario: guardia relajada estilo Apex/Source, puños bajos y separados, cerca de la
+      //  cámara, con las palmas mirándose y el pulgar arriba; el antebrazo baja en diagonal a cada esquina)
+      const base = new THREE.Vector3(side * 0.135, -0.105 + breathe - 0.3 * (1 - raise) + (side > 0 ? 0.006 : 0), -0.32);
       base.y -= 0.06 * sp; base.z += Math.sin(tm * 9 + (side > 0 ? 0 : Math.PI)) * 0.07 * sp;
       const hitting = this.punchT > 0 && side === this.punchSide;
-      let pos = base, back = new THREE.Vector3(side * 0.5, 0.55, 0.67); // dorso hacia arriba y afuera, como en guardia
+      let pos = base, back = new THREE.Vector3(side * 0.45, 0.25, -0.86); // dorso al frente y afuera: se ven los dedos cerrados y el pulgar, como en la referencia
       if (hitting) {
         // Recto al centro de la pantalla con giro de muñeca; el fuerte, más largo
-        const target = new THREE.Vector3(side * 0.03, this.punchHeavy ? -0.04 : -0.08, this.punchHeavy ? -0.72 : -0.64);
+        // (tarea 13: más cerca y algo más bajo: al fondo del centro el antebrazo se veía de punta, como un tubo, y tapaba el puño)
+        const target = new THREE.Vector3(side * 0.04, this.punchHeavy ? -0.07 : -0.09, this.punchHeavy ? -0.52 : -0.47);
         pos = base.clone().lerp(target, ext);
-        back = back.lerp(new THREE.Vector3(side * 0.15, 1, 0), ext * 0.8); // al golpear, la muñeca gira y el dorso queda arriba
+        back = back.lerp(new THREE.Vector3(side * 0.3, 0.45, -0.84), ext); // al golpear, la muñeca gira y el dorso queda arriba
       } else if (this.punchT > 0) pos = base.clone().add(new THREE.Vector3(0, 0.01 * ext, 0.05 * ext)); // la otra se recoge
       // Dedos en puño (falanges cerradas) y pulgar cruzado sobre ellos; nudillos arriba y al frente.
-      return { pos, orient: handBasis(new THREE.Vector3(side * 0.1, 0.62, -0.78), back), curl: { fingers: [1, 1, 1, 1], thumb: 1 }, thumbTurn: 1.3 };
+      // (nudillos hacia delante, algo arriba y hacia dentro; puño bien cerrado y muñeca casi recta)
+      const fingersDir = new THREE.Vector3(-side * 0.3, 0.88, -0.36).lerp(new THREE.Vector3(-side * 0.72, 0.4, -0.57), hitting ? ext : 0); // (al golpear, el puño gira hacia el centro y se ven los dedos cerrados: de punta, la muñequera lo tapaba)
+      return { pos, orient: handBasis(fingersDir, back), curl: { fingers: [1.55, 1.6, 1.6, 1.6], thumb: 0.85 }, thumbTurn: 0.8, fore: new THREE.Vector3(side * 0.5, -0.78, 0.38).lerp(new THREE.Vector3(side * 0.32, -0.94, 0.12), hitting ? ext : 0) };
     };
     // Gesto de equipamiento/granada sobre la mano libre (también sin arma equipada)
     const gk = this.gesture.kind, gc = this.gesture.curve(), fl = fist(-1), fr = fist(1);

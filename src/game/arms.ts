@@ -30,7 +30,7 @@ export const ARM_DATA = {
 
 /** Cierre de la mano: índice, corazón, anular, meñique (0 abierta … 1 puño) y pulgar. */
 export interface Curl { fingers: [number, number, number, number]; thumb: number }
-export interface HandPose { pos: THREE.Vector3; orient: THREE.Quaternion; curl: Curl; /** Muñeca recta: el antebrazo sigue el eje de la mano (0 = no, 1 = del todo; pistolas). */ straight?: number; /** Abre el codo de la mano de apoyo hacia fuera (0 = el de siempre): el antebrazo sale en diagonal por el borde inferior, sin quedar como un poste vertical (cerrojos, ametralladoras y bullpup). */ flare?: number; /** Grosor del antebrazo (1 = el de siempre; <1 lo afina): el francotirador lo lleva más fino para que el tubo de la manga no domine la vista. */ girth?: number; /** Giro del pulgar en el plano de la palma (rad; 0 = el del modelo): los puños lo cruzan sobre los dedos. */ thumbTurn?: number }
+export interface HandPose { pos: THREE.Vector3; orient: THREE.Quaternion; curl: Curl; /** Muñeca recta: el antebrazo sigue el eje de la mano (0 = no, 1 = del todo; pistolas). */ straight?: number; /** Abre el codo de la mano de apoyo hacia fuera (0 = el de siempre): el antebrazo sale en diagonal por el borde inferior, sin quedar como un poste vertical (cerrojos, ametralladoras y bullpup). */ flare?: number; /** Grosor del antebrazo (1 = el de siempre; <1 lo afina): el francotirador lo lleva más fino para que el tubo de la manga no domine la vista. */ girth?: number; /** Giro del pulgar en el plano de la palma (rad; 0 = el del modelo): los puños lo cruzan sobre los dedos. */ thumbTurn?: number; /** Dirección del antebrazo desde la muñeca hacia el codo (cámara), si la pose la fija (puños en guardia: hacia la esquina de su lado). */ fore?: THREE.Vector3 }
 export interface HandTargets { right: HandPose; left: HandPose | null; dt?: number; /** Desplazamiento de los hombros (movimientos rápidos del arma). */ shoulder?: THREE.Vector3 }
 
 /** IK de dos huesos: devuelve la posición del codo. */
@@ -299,13 +299,13 @@ class Arm {
     // (con `straight`, el antebrazo continúa el eje de la mano, un poco hacia abajo: muñeca sin quebrar)
     const handAxis = new THREE.Vector3(0, 0, 1).applyQuaternion(this.hand.g.quaternion).multiply(new THREE.Vector3(0.25, 1, 1)).add(new THREE.Vector3(0, -1.8, 0)).normalize();
     const along = p.straight ? natural.clone().lerp(handAxis, p.straight).normalize() : natural;
-    const dIk = ik.clone().sub(wrist).normalize(), dir = dIk.clone().lerp(along, p.straight ? 0.92 : ARM_DATA.wristStraight).normalize();
+    const dIk = ik.clone().sub(wrist).normalize(), dir = p.fore ? p.fore.clone().normalize() : dIk.clone().lerp(along, p.straight ? 0.92 : ARM_DATA.wristStraight).normalize();
     const elbow = wrist.clone().addScaledVector(dir, ARM_DATA.fore);
     // (pistolas: el brazo superior sigue hacia abajo, fuera de cuadro; desde el hombro fijo pasaba pegado a la cámara
     // y en perspectiva se veía como un tubo enorme hacia el lado)
     // (tarea 13: el brazo derecho siempre cuelga del codo hacia abajo y fuera de cuadro; desde el hombro fijo el brazo
     //  superior pasaba junto a la cámara y se veía como un bloque enorme abajo a la derecha)
-    const sh = p.straight || this.side > 0 ? elbow.clone().addScaledVector(dir.clone().add(new THREE.Vector3(0.1 * this.side, -0.6, 0)).normalize(), ARM_DATA.upper) : shoulder;
+    const sh = p.straight || p.fore || this.side > 0 ? elbow.clone().addScaledVector(dir.clone().add(new THREE.Vector3(0.1 * this.side, -0.6, 0)).normalize(), ARM_DATA.upper) : shoulder;
     this.upper.set(sh, elbow); this.elbowM.position.copy(elbow);
     this.fore.set(elbow, wrist);
     // (grosor del antebrazo: el francotirador lo lleva más fino; el resto, el de siempre)
