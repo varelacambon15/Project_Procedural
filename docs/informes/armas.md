@@ -52,6 +52,14 @@ la herramienta de validación primero. Las hojas de contactos de cada clase y ac
    táctica. **No se ha tocado**: la dispersión (escopetas incluidas), el retroceso y su patrón, el balanceo al andar ni
    la respiración. No hay desalineación de miras.
 
+## Imágenes (`docs/informes/img/`, MÍRALAS antes de probar)
+- `armas_reposo_antes_despues.jpg`: las 24 armas del primer barrido (las mismas semillas), antes y ahora, a 960×470.
+- `armas_<clase>_reload.jpg` y `armas_<clase>_reloadEmpty.jpg`: recarga táctica y en vacío de cada clase. Cada hoja
+  tiene 16 fotogramas a 960×470 seguidos de 16 a 1280×720, con el tiempo y la fase en cada uno.
+- `armas_pistol_inspect.jpg`, `armas_pistol_draw.jpg`, `armas_rifle_inspect.jpg`: inspección y sacado.
+- Las 56 hojas completas (7 acciones × 8 clases, ADS y disparo incluidos) se regeneran con
+  `node tools/capture/vmcap.mjs --classes pistol,revolver,smg,rifle,shotgun,bullpup,lmg,sniper`; no se suben por peso.
+
 ## Tests y verificación
 - Nuevos: `tests/hipframe.test.ts` (los objetivos se cumplen en pantalla a cualquier aspecto; las voluminosas se
   alejan sin mover la mano), `tests/vmpose.test.ts` (pistas ordenadas, empiezan y acaban en reposo, cargador en su
