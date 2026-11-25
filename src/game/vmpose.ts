@@ -24,7 +24,7 @@ export interface Key<T> { t: number; v: T; /** Curva del tramo que LLEGA a esta 
 
 export type Anchor = "rest" | "grip" | "magwell" | "mag" | "support" | "charge" | "slide" | "muzzle" | "cyl" | "cam";
 export type HandShape = "grab" | "palm" | "pinch" | "wrap" | "open" | "relax" | "fist";
-export interface LeftKey { at: Anchor; off?: V3; dir?: V3; up?: V3; hand?: HandShape }
+export interface LeftKey { at: Anchor; /** Desplazamiento en la cámara (m). */ off?: V3; /** Desplazamiento en el arma (m; +X boca, +Y arriba). */ offW?: V3; dir?: V3; up?: V3; hand?: HandShape }
 export type MagMode = "seat" | "well" | "hand" | "hide";
 export interface MagKey { mode: MagMode; out?: number }
 
@@ -92,7 +92,7 @@ export function sampleMag(keys: readonly Key<MagKey>[] | undefined, t: number): 
 }
 
 /** Comprobaciones de una pista (para tests): claves ordenadas en 0..1, que empiecen y acaben en reposo. */
-export function checkTrack(tr: Track): string[] {
+export function checkTrack(tr: Track, fromRest = true): string[] {
   const errs: string[] = [];
   const chans: [string, Key<unknown>[] | undefined][] = [["gun", tr.gun], ["left", tr.left], ["mag", tr.mag], ["slide", tr.slide], ["cyl", tr.cyl], ["right", tr.right]];
   for (const [name, keys] of chans) {
@@ -105,7 +105,7 @@ export function checkTrack(tr: Track): string[] {
   }
   const zero = (v: number[]) => v.every((x) => Math.abs(x) < 1e-9);
   if (tr.gun?.length) {
-    if (tr.gun[0].t !== 0 || !zero(tr.gun[0].v)) errs.push("gun: no empieza en reposo");
+    if (tr.gun[0].t !== 0 || (fromRest && !zero(tr.gun[0].v))) errs.push("gun: no empieza en reposo");
     if (tr.gun[tr.gun.length - 1].t !== 1 || !zero(tr.gun[tr.gun.length - 1].v)) errs.push("gun: no acaba en reposo");
   }
   if (tr.left?.length) {

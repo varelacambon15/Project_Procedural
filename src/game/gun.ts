@@ -27,6 +27,8 @@ const hasSequence = (c: string, s: HandSequence) => !realOff(c) && hasSequenceRa
 const sequenceOrientAt: typeof sequenceOrientAtRaw = (c, ...r) => (realOff(c) ? null : sequenceOrientAtRaw(c, ...r));
 const sequencePathAt: typeof sequencePathAtRaw = (c, ...r) => (realOff(c) ? null : sequencePathAtRaw(c, ...r));
 import { solveHipFit, type HipSolution } from "./hipframe";
+import { sampleLeft, sampleMag, sampleNum, sampleVec, type Gun6, type HandShape, type LeftKey, type MagMode, type Track } from "./vmpose";
+import { trackFor, type VmAction } from "./vmtracks";
 import { VM_BACK, HIP_H_MAX, HIP_H_TALL, HIP_W_MAX, HIP_W_MIN, VM_SCALE_MIN, VM_SCALE_FLOOR, aimScale, hipScale, projectPoint, projectedSize } from "./vmfit";
 
 const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3, smg: 1.8, rifle: 2.2, bullpup: 2.4, shotgun: 2.6, sniper: 2.9, launcher: 3.2, lmg: 4.4, flamethrower: 2.8 };
@@ -126,6 +128,10 @@ export class Gun {
   /** Tarea 13: pose de cadera de esta arma resuelta por objetivos en pantalla (hipframe.ts) y el aspecto con que se
    *  resolvió (se rehace al cambiar el tamaño de la ventana). Sin objetivos en la clase, la cadera de siempre. */
   hipSol: HipSolution | null = null; private hipAspect = 0;
+  /** Tarea 13: acción animada ahora por una pista de poses clave (vmtracks.ts), su progreso y la pista. */
+  keyed: { action: VmAction; t: number; track: Track } | null = null;
+  /** Estado del cargador en la pista del fotograma anterior (para soltar el viejo al pasar del brocal a «oculto»). */
+  private keyMagPrev: MagMode = "seat"; private keyMagOut = 0; private keyMagHand = false; private keyEjected = false;
   private moving: Partial<Record<MovingPart, AssembledPart>> = {};
   private holsterT = 0; private pending: { item: Item | null; rebuild: boolean } | null = null;
   /** Para capturas: coloca el arma en su pose al instante, sin suavizado. */
@@ -706,6 +712,8 @@ export class Gun {
     this.reloadProg = this.poseOverride?.reload ?? reloadIn ?? 1;
     this.drawIn = this.poseOverride?.draw ?? (this.equipT > 0 ? this.equipT / this.equipDur : 0);
     this.inspectIn = this.poseOverride?.inspect !== undefined ? this.poseOverride.inspect : this.inspectT > 0 ? 1 - this.inspectT / 2.6 : null;
+    this.keyed = this.keyState();
+    const ks = this.keyed;
     const frame = this.anim.p.frame;
     if (this.model && frame && (!this.hipSol || Math.abs(this.hipAspect - this.camera.aspect) > 0.005)) {
       this.hipSol = solveHipFit(this.model.height ?? 0, this.gripOffset, this.muzzleOffset, frame, frame, VM_FOV, this.camera.aspect, VM_BACK); this.hipAspect = this.camera.aspect;
@@ -718,16 +726,22 @@ export class Gun {
       holster: this.pending ? 1 - Math.max(0, this.holsterT) / Math.max(0.01, this.anim.p.holster) : 0,
       inspect: this.inspectT > 0 ? 1 - this.inspectT / 2.6 : null,
       cycle: this.cycleT > 0 ? 1 - this.cycleT / this.cycleDur : null, tactical: this.tacReload, cycleKind: this.spec?.fireMode === "bolt" ? "bolt" : this.spec?.fireMode === "pump" ? "pump" : undefined, cock: this.cockT > 0 ? 1 - this.cockT / 0.42 : null, empty: !!it && it.ammo <= 0,
+      keyed: ks ? { reload: ks.action === "reload", inspect: ks.action === "inspect", draw: ks.action === "draw" } : undefined,
       ...this.poseOverride,
     });
+    if (ks) this.applyKeyedGun(ks, pose);
     this.reloadPhase = pose.phase;
     if (this.mag) {
       this.mag.object.position.copy(this.mag.base).add(new THREE.Vector3(...pose.mag.offset)); this.mag.object.visible = pose.mag.visible;
       // Revólver: el tambor bascula hacia la izquierda (−Z del arma) mientras está abierto
-      const ph = pose.phase, cyl = (this.anim.reloadOverride?.style ?? this.anim.p.reload.style) === "cylinder" && ph ? (ph.id === "open" ? ease(ph.t) : ph.id === "eject" || ph.id === "load" ? 1 : ph.id === "close" ? 1 - ease(ph.t) : 0) : 0;
+      const ph = pose.phase, cyl = ks?.track.cyl ? sampleNum(ks.track.cyl, ks.t) : (this.anim.reloadOverride?.style ?? this.anim.p.reload.style) === "cylinder" && ph ? (ph.id === "open" ? ease(ph.t) : ph.id === "eject" || ph.id === "load" ? 1 : ph.id === "close" ? 1 - ease(ph.t) : 0) : 0;
       this.mag.object.position.add(new THREE.Vector3(0, -0.006 * cyl, -0.032 * cyl));
       this.mag.object.rotation.x = -0.45 * cyl;
+      this.applyKeyedMag(ks);
     }
+    // Revólver con pista: al vaciar (boca arriba) caen las vainas del tambor
+    if (ks?.action === "reload" && this.spec?.type === "revolver") { if (ks.t >= 0.32 && !this.keyEjected) { this.keyEjected = true; this.ejectRounds(6); } }
+    else this.keyEjected = false;
     // Basculante: los cañones giran sobre la bisagra; al abrir del todo salen las dos vainas
     if (this.breakParts.length) {
       const ph = pose.phase, st = this.anim.reloadOverride?.style;
@@ -1214,6 +1228,113 @@ export class Gun {
   }
 
   /** Manos: la derecha en la empuñadura; la izquierda en el guardamanos o siguiendo la fase de recarga / corredera. */
+  // ---------- Tarea 13: animación por poses clave (vmpose.ts + vmtracks.ts) ----------
+  /** Acción que anima ahora una pista de poses clave, con su progreso (0..1); null = la animación procedural de antes. */
+  private keyState(): Gun["keyed"] {
+    const s = this.spec; if (!s || !this.model) return null;
+    if (this.reloadT > 0 || this.poseOverride?.reload != null) {
+      // (recargas especiales con su propio estilo —escopetas de cartuchos, basculantes, portilla— siguen como estaban)
+      const st = this.anim.reloadOverride?.style;
+      if ((st && st !== "mag") || s.type === "shotgun") return null;
+      const tr = (!this.tacReload ? trackFor(s.type, "reloadEmpty") : null) ?? trackFor(s.type, "reload");
+      return tr ? { action: "reload", t: this.reloadProg, track: tr } : null;
+    }
+    if (this.inspectIn !== null) { const tr = trackFor(s.type, "inspect"); return tr ? { action: "inspect", t: this.inspectIn, track: tr } : null; }
+    if (this.drawIn > 0) { const tr = trackFor(s.type, "draw"); return tr ? { action: "draw", t: 1 - this.drawIn, track: tr } : null; }
+    return null;
+  }
+  /** Suma la pose del arma de la pista (desplazamiento en la cámara y giro con pivote en la empuñadura) y la corredera. */
+  private applyKeyedGun(ks: NonNullable<Gun["keyed"]>, pose: Pose) {
+    if (ks.track.gun) {
+      const o = sampleVec(ks.track.gun, ks.t, [0, 0, 0, 0, 0, 0] as Gun6);
+      const q0 = new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.rot[0], pose.rot[1], pose.rot[2]));
+      pose.rot[0] += o[3]; pose.rot[1] += o[4]; pose.rot[2] += o[5];
+      const q1 = new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.rot[0], pose.rot[1], pose.rot[2]));
+      // (gira alrededor de la mano derecha: la muñeca mueve el arma, no el centro del modelo)
+      const d = this.gripOffset.clone().applyQuaternion(q0).sub(this.gripOffset.clone().applyQuaternion(q1));
+      pose.pos[0] += o[0] + d.x; pose.pos[1] += o[1] + d.y; pose.pos[2] += o[2] + d.z;
+    }
+    if (ks.track.slide) {
+      const v = sampleNum(ks.track.slide, ks.t), p = this.anim.p;
+      if (this.spec?.type === "pistol" && p.cycle.part) pose.parts[p.cycle.part] = p.cycle.travel * v;
+      else if (p.reload.rackPart) pose.parts[p.reload.rackPart] = Math.max(pose.parts[p.reload.rackPart], p.reload.rackTravel * v);
+    }
+  }
+  /** Cargador según la pista: en su sitio, en el brocal desplazado, en la mano (lo coloca `keyedLeft`) u oculto; al pasar
+   *  del brocal a oculto (recarga en vacío) se suelta el viejo y cae. */
+  private applyKeyedMag(ks: Gun["keyed"]) {
+    const mg = this.mag;
+    if (!mg || !ks?.track.mag || this.spec?.type === "revolver") { this.keyMagPrev = "seat"; this.keyMagOut = 0; this.keyMagHand = false; return; }
+    const st = sampleMag(ks.track.mag, ks.t);
+    if (this.keyMagPrev === "well" && st.mode === "hide" && this.keyMagOut > 0.02) this.dropMag();
+    mg.object.visible = st.mode !== "hide";
+    mg.object.position.copy(mg.base);
+    if (st.mode === "well") mg.object.position.y -= st.out;
+    this.keyMagPrev = st.mode; this.keyMagOut = st.out; this.keyMagHand = st.mode === "hand";
+  }
+  /** Vainas del tambor del revólver: caen del tambor abierto. */
+  private ejectRounds(n: number) {
+    const m = this.model; if (!m) return;
+    const camQ = this.camera.getWorldQuaternion(new THREE.Quaternion());
+    const at = this.mag ? this.mag.object.position.clone() : m.handles.magwell.clone();
+    for (let i = 0; i < n; i++) {
+      const mesh = new THREE.Mesh(casingGeo.small, brassMat); mesh.position.copy(m.group.localToWorld(at.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.02, (Math.random() - 0.5) * 0.02, (Math.random() - 0.5) * 0.02))));
+      this.scene.add(mesh);
+      this.casings.push({ mesh, vel: new THREE.Vector3(-0.3 + Math.random() * 0.4, -0.4 - Math.random() * 0.6, 0.2 + Math.random() * 0.3).applyQuaternion(camQ), spin: new THREE.Vector3(Math.random() * 14, Math.random() * 14, Math.random() * 14), t: 2.5 });
+    }
+    const l = soundManifest?.efectos.casquillo; if (l?.length) playSample(sample(l[0]), 0.35, 1.1, audio().currentTime + 0.35);
+  }
+  /** Mano izquierda de la pista: mezcla las dos poses clave del tramo (anclas del arma o de la cámara). */
+  private keyedLeft(ks: NonNullable<Gun["keyed"]>, rest: HandPose | null, m: AssembledWeapon, toCam: (p: THREE.Vector3) => THREE.Vector3, hq: THREE.Quaternion, sup: THREE.Vector3): HandPose | null {
+    const sl = sampleLeft(ks.track.left, ks.t); if (!sl) return rest;
+    // (sin mano de apoyo en reposo —pistola a una mano—, su «reposo» es fuera de cuadro, abajo a la izquierda)
+    const restP: HandPose = rest ?? { pos: V(-0.24, -0.5, -0.18), orient: hq.clone().multiply(GRIPS.grab.q), curl: SHAPES.relax };
+    const h = m.handles;
+    const magOff = this.mag ? this.mag.object.position.clone().sub(this.mag.base) : new THREE.Vector3();
+    const anchor = (a: LeftKey["at"]): THREE.Vector3 | null => {
+      switch (a) {
+        case "magwell": return h.magwell.clone();
+        case "mag": case "cyl": return h.magwell.clone().add(magOff);
+        case "support": return sup.clone();
+        case "charge": case "slide": return h.charge.clone();
+        case "grip": return h.grip.clone();
+        case "muzzle": return m.muzzle.clone();
+        default: return null;
+      }
+    };
+    const resolve = (L: LeftKey): HandPose => {
+      let pos: THREE.Vector3;
+      if (L.at === "rest") pos = restP.pos.clone();
+      else if (L.at === "cam") pos = new THREE.Vector3();
+      else { const a = anchor(L.at)!; if (L.offW) a.add(V(...L.offW)); pos = toCam(a); }
+      if (L.off) pos.add(V(...L.off));
+      const orient = L.dir ? hq.clone().multiply(handBasis(V(...L.dir), V(...(L.up ?? [-0.3, 0.8, 0.5]))))
+        : L.at === "rest" ? restP.orient.clone()
+        : handBasis(toCam(h.grip).sub(pos).lengthSq() > 1e-6 ? toCam(h.grip).sub(pos) : V(1, 0, -0.5), V(-0.3, 0.8, 0.5));
+      const curl = L.hand ? SHAPES[L.hand] : L.at === "rest" ? restP.curl : SHAPES.grab;
+      return { pos, orient, curl };
+    };
+    const A = resolve(sl.a), B = resolve(sl.b), k = sl.k;
+    const out: HandPose = {
+      pos: A.pos.lerp(B.pos, k), orient: A.orient.slerp(B.orient, k),
+      curl: { fingers: A.curl.fingers.map((f, i) => f + (B.curl.fingers[i] - f) * k) as Curl["fingers"], thumb: A.curl.thumb + (B.curl.thumb - A.curl.thumb) * k },
+      straight: rest?.straight ?? 0.4,
+    };
+    // Cargador en la mano: va con ella (un poco por encima de la palma, hacia los dedos)
+    if (this.keyMagHand && this.mag) {
+      const p = out.pos.clone().add(V(0, 0.02, -0.03).applyQuaternion(out.orient));
+      const local = m.group.worldToLocal(this.camera.localToWorld(p));
+      this.mag.object.position.copy(this.mag.base).add(local.sub(h.magwell)); this.mag.object.visible = true;
+    }
+    // Revólver: el cargador rápido va en la mano izquierda mientras viene y se mete
+    if (this.inHand && this.spec?.type === "revolver" && ks.action === "reload") {
+      const show = ks.t > 0.5 && ks.t < 0.72;
+      this.inHand.loader.visible = show;
+      if (show) this.inHand.loader.position.copy(m.group.worldToLocal(this.camera.localToWorld(out.pos.clone().add(V(0, 0.015, -0.035).applyQuaternion(out.orient)))));
+    }
+    return out;
+  }
+
   private updateHands(dt: number) {
     const m = this.model!; const h = m.handles;
     // La cámara primero: si no, el arma se calculaba con la rotación de la cámara del fotograma anterior y las manos
@@ -1295,7 +1416,7 @@ export class Gun {
     let pathCurl: Curl | null = null;
     /** Giro de muñeca de la referencia y punto al que apuntan los dedos (marco del arma), si la secuencia lo trae. */
     let pathOrient: V4 | null = null, pathTarget: THREE.Vector3 | null = null;
-    const ph = this.reloadPhase, style = this.anim.reloadOverride?.style ?? this.anim.p.reload.style;
+    const ph = this.keyed ? null : this.reloadPhase, style = this.anim.reloadOverride?.style ?? this.anim.p.reload.style;
     const phId = ph ? `${ph.index}:${ph.id}` : "";
     if (phId !== this.lastPhaseId && ph?.id === "pouch" && style === "mag" && this.mag) this.dropMag();
     this.lastPhaseId = phId;
@@ -1440,7 +1561,7 @@ export class Gun {
     // Sacar e inspeccionar con el recorrido real: el apoyo llega desde abajo al sacar y sube a la corredera/tambor
     // (armas cortas) o al cerrojo/palanca (largas con dato) al inspeccionar. Su reposo es la pose de apoyo, para no
     // saltar al acabar.
-    if (left && base && (gdat || hasSequence(tipo ?? "", "draw") || hasSequence(tipo ?? "", "inspect"))) {
+    if (!this.keyed && left && base && (gdat || hasSequence(tipo ?? "", "draw") || hasSequence(tipo ?? "", "inspect"))) {
       // Armas cortas: reposo en el agarre a dos manos derivado de la referencia; largas: el propio apoyo del arma.
       let restL: [number, number, number] = anchors.rest;
       if (gdat) {
@@ -1494,6 +1615,9 @@ export class Gun {
       leftPose = { ...leftPose, orient: qd.multiply(base), straight: handgun ? 0.85 : tipo === "sniper" ? 0.55 : tipo === "lmg" || tipo === "bullpup" ? 0.34 : 0.45 };
     }
     if (leftPose && pathCurl) leftPose = { ...leftPose, curl: pathCurl }; // dedos de la mano de apoyo según el recorrido (recarga real)
+    // Tarea 13: acción con pista de poses clave: la mano izquierda va de pose en pose (anclas del arma o puntos fijos de
+    // la cámara); su reposo es la pose de agarre de siempre, así entra y sale sin saltos
+    if (this.keyed?.track.left) leftPose = this.keyedLeft(this.keyed, leftPose, m, toCam, hq, sup);
     // Gesto de equipamiento/granada (encargo 34): capa sobre la mano libre. La recarga no se cancela ni se toca: si la
     // izquierda está recargando, el gesto lo hace la derecha; el arma y sus piezas no cambian.
     const gk = this.gesture.kind, gc = this.gesture.curve();
@@ -1759,6 +1883,16 @@ export class Gun {
 
 // ---------- Agarres de las manos (05-E / 08) ----------
 type HandKind = "under" | "wrap" | "vgrip" | "grab";
+/** Cierres de la mano izquierda que usan las pistas de poses clave. */
+const SHAPES: Record<HandShape, Curl> = {
+  grab: { fingers: [0.55, 0.6, 0.65, 0.7], thumb: 0.35 },
+  palm: { fingers: [0.12, 0.12, 0.14, 0.18], thumb: 0.12 },
+  pinch: { fingers: [0.75, 0.9, 1.15, 1.25], thumb: 0.65 },
+  wrap: { fingers: [0.95, 0.99, 1.01, 1.03], thumb: 0.35 },
+  open: { fingers: [0.3, 0.34, 0.38, 0.42], thumb: 0.22 },
+  relax: { fingers: [0.62, 0.68, 0.74, 0.8], thumb: 0.35 },
+  fist: { fingers: [1.5, 1.6, 1.6, 1.6], thumb: 1 },
+};
 interface HandGrip { q: THREE.Quaternion; off: THREE.Vector3; curl: Curl }
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 const rx = (a: number) => new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), a);

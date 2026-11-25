@@ -24,6 +24,8 @@ const PER = Number(arg("per", 2));
 const OUT = arg("out", "docs/capturas/armas");
 const NAMES = (arg("names", "") || "").split(",").filter(Boolean);
 const SEEDS = (arg("seeds", "") || "").split(",").filter(Boolean).map((s) => s.split(":")); // clase:semilla
+/** Zona de cada fotograma que se ve en la hoja (fracciones x0,y0,x1,y1): por defecto, donde vive el arma. */
+const CROP = arg("crop", "0.2,0.12,1,1").split(",").map(Number);
 
 /** Duración (s) de cada acción y cómo se dispara; el arma se deja en reposo antes de cada una. */
 const ACTION = {
@@ -66,7 +68,8 @@ async function pickWeapons(page, cls) {
     for (const n of names) {
       for (let s = 0; s < 40000; s++) { const w = g.gen.generate(s, cls); if (w.name.includes(n)) { out.push(w); break; } }
     }
-    const want = [(w) => w.rarity.id === "comun" && !w.optic, (w) => !!w.optic, (w) => w.rarity.id === "legendaria", (w) => w.rarity.id === "epica" && !!w.muzzle];
+    const nostock = (w) => !(w.tweaks?.pstock && !w.tweaks?.nostock);
+    const want = [(w) => w.rarity.id === "comun" && !w.optic && nostock(w), (w) => !!w.optic && nostock(w), (w) => w.rarity.id === "legendaria", (w) => w.rarity.id === "epica" && !!w.muzzle];
     for (const f of want) {
       if (out.length >= per + names.length) break;
       for (let s = 1; s < 600; s++) { const w = g.gen.generate(s * 7 + 3, cls); if (f(w) && !out.some((o) => o.parts[0].from === w.parts[0].from)) { out.push(w); break; } }
@@ -147,9 +150,9 @@ async function sheet(browser, tiles, title, file) {
   await page.setContent(`<html><body style="margin:0;background:#1b1d21;color:#ddd;font:13px sans-serif">
   <div style="padding:6px 10px;font-weight:bold">${title}</div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px">
-  ${imgs.map((t) => `<div style="position:relative"><img src="data:image/png;base64,${t.b64}" style="width:100%;display:block">
-    <div style="position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border:1px solid #f0f"></div>
-    <div style="position:absolute;left:2px;top:1px;font-size:11px;background:#000a;padding:0 3px">${t.label}</div></div>`).join("")}
+  ${imgs.map((t) => { const [x0, y0, x1, y1] = CROP, cw = x1 - x0, ch = y1 - y0; return `<div style="position:relative;overflow:hidden;aspect-ratio:${(cw * t.w) / (ch * t.h)}"><img src="data:image/png;base64,${t.b64}" style="position:absolute;left:${(-x0 / cw) * 100}%;top:${(-y0 / ch) * 100}%;width:${100 / cw}%;height:${100 / ch}%">
+    <div style="position:absolute;left:${((0.5 - x0) / cw) * 100}%;top:${((0.5 - y0) / ch) * 100}%;width:6px;height:6px;margin:-3px;border:1px solid #f0f"></div>
+    <div style="position:absolute;left:2px;top:1px;font-size:11px;background:#000a;padding:0 3px">${t.label}</div></div>`; }).join("")}
   </div></body></html>`);
   await page.waitForTimeout(100);
   const h = await page.evaluate(() => document.body.scrollHeight);
@@ -183,7 +186,7 @@ for (const [W, H] of SIZES) {
 await mkdir(path.join(OUT, "hojas"), { recursive: true });
 for (const r of Object.values(results)) {
   const tiles = [];
-  for (const [sz, rows] of Object.entries(r.sizes)) for (const row of rows) tiles.push({ file: path.join(OUT, r.cls, r.slug, sz, `${r.act}_${String(row.f).padStart(2, "0")}.png`), label: `${sz} ${row.t}s${row.phase ? " " + row.phase : ""}` });
+  for (const [sz, rows] of Object.entries(r.sizes)) for (const row of rows) tiles.push({ w: Number(sz.split("x")[0]), h: Number(sz.split("x")[1]), file: path.join(OUT, r.cls, r.slug, sz, `${r.act}_${String(row.f).padStart(2, "0")}.png`), label: `${sz} ${row.t}s${row.phase ? " " + row.phase : ""}` });
   await sheet(browser, tiles, `${r.cls} · ${r.name} (${r.rarity}${r.optic ? ", " + r.optic : ""}) · ${r.act}`, path.join(OUT, "hojas", `${r.cls}_${r.slug}_${r.act}.png`));
 }
 await writeFile(path.join(OUT, "anclas.json"), JSON.stringify(results));

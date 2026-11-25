@@ -102,6 +102,7 @@ export interface AnimInput {
   /** Acción manual en curso (cerrojo o bombeo): elige la curva del gesto. */ cycleKind?: "bolt" | "pump";
   /** Amartillar (revólver de acción simple), 0..1, o null. */ cock?: number | null;
   /** Recarga táctica (quedaban balas): sin montar la palanca o la corredera. */ tactical?: boolean;
+  /** Tarea 13: acciones que anima una pista de poses clave (vmtracks.ts): aquí no se les suma la animación procedural. */ keyed?: { reload?: boolean; inspect?: boolean; draw?: boolean };
 }
 export interface Pose {
   pos: V3; rot: V3;
@@ -235,6 +236,7 @@ export class ViewAnimator {
       const r = this.reloadOverride ? { ...p.reload, ...this.reloadOverride } : p.reload;
       phase = phaseAt(r.phases, i.reload);
       const { id, t } = phase;
+      if (!i.keyed?.reload) {
       const first = r.phases[0][0], last = r.phases[r.phases.length - 1][0];
       const tilt = id === first ? ease(t) : id === last ? 1 - ease(t) : 1;
       for (let a = 0; a < 3; a++) { rot[a] += r.tilt[a] * tilt; pos[a] += r.drop[a] * tilt; }
@@ -265,13 +267,14 @@ export class ViewAnimator {
         const kk = tri(t, 0, 1); parts[r.rackPart] = Math.max(parts[r.rackPart], r.rackTravel * kk);
         pos[2] += 0.035 * kk; rot[0] -= 0.12 * kk;
       }
+      }
     }
     // Inspección: mostrar el lateral del arma. La mano se mantenía «muy pegada» a la cámara: en vez de acercarla, se
     // separa un poco (el giro es lo que enseña el lateral).
-    if (i.inspect !== null) { const kk = tri(i.inspect, 0, 1); rot[1] += -1.1 * ease(Math.min(1, kk * 1.4)); rot[2] += 0.45 * kk; pos[0] -= 0.06 * kk; pos[2] -= 0.015 * kk; pos[1] += 0.03 * kk; }
+    if (i.inspect !== null && !i.keyed?.inspect) { const kk = tri(i.inspect, 0, 1); rot[1] += -1.1 * ease(Math.min(1, kk * 1.4)); rot[2] += 0.45 * kk; pos[0] -= 0.06 * kk; pos[2] -= 0.015 * kk; pos[1] += 0.03 * kk; }
     // Sacar (de abajo, girada) y guardar (el gesto inverso, más rápido)
-    const away = Math.max(ease(i.draw), ease(i.holster));
-    if (away > 0) { pos[1] -= p.draw.drop * away; rot[0] -= p.draw.pitch * away; rot[2] += p.draw.roll * Math.max(i.draw, i.holster); }
+    const dIn = i.keyed?.draw ? 0 : i.draw, away = Math.max(ease(dIn), ease(i.holster));
+    if (away > 0) { pos[1] -= p.draw.drop * away; rot[0] -= p.draw.pitch * away; rot[2] += p.draw.roll * Math.max(dIn, i.holster); }
 
     // Inercia al girar la cámara: el arma se queda un poco atrás
     const keep = lerp(1, p.sway.adsKeep, ads);
