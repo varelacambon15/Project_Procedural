@@ -1584,8 +1584,9 @@ export class Gun {
     if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right.straight = 0.35;
     // (el pulgar del modelo, aun cerrado, salía hacia fuera a 45°: con su giro pasa por delante y rodea la empuñadura)
     if (reach <= 0.3) right.thumbTurn = 0.75;
+    // (tarea 13, validado por el usuario en el revólver: el pulgar girado hacia dentro rodea la empuñadura sin asomar)
+    if (reach <= 0.3 && this.spec?.type !== "pistol") right.thumbSwing = 1.2;
     // (revólver: el pulgar plegado junto al martillo; recto salía hacia la izquierda como un dedo «asomando»)
-    if (reach <= 0.3 && this.spec?.type === "revolver") { right.thumbTurn = 1.0; right.curl = { ...right.curl, thumb: 0.75 }; }
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
     // Hombros: siguen la mitad de los movimientos rápidos del arma (retroceso, balanceo) respecto a su media lenta

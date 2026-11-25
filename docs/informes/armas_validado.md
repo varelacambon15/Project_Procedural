@@ -42,5 +42,6 @@ pantalla, que en armas largas tendía a «torcer» el arma), `bulk`/`depthMax` (
 ## Ronda 3 (pendiente de validar)
 - Armas largas: la mano izquierda va a ~20 cm de la empuñadura (`sReach` 0,22 en `gun.ts`), bajo y al costado del
   guardamanos (`GRIPS.under`); antes acababa en la punta y encima del cañón con el antebrazo cruzando la pantalla.
-- Revólver: índice y pulgar derechos más plegados; `revolver:10` bien, en `revolver:59` aún asoma un dedo bajo el
-  gatillo (pendiente).
+- ✅ VALIDADO: pulgar derecho girado hacia dentro (`thumbSwing 1.2`, eje Y de la base del pulgar en `arms.ts`) en el
+  revólver («muchísimo mejor»). Rechazado: el pulgar recto o cruzado hacia abajo («feísimo»). Extendido a todas las
+  armas salvo la pistola (validada aparte); sin validar en las largas.
