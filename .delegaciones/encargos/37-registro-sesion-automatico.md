@@ -1,0 +1,9 @@
+# Encargo 37 — Registro de sesión automático en el navegador (sin F10)
+
+Problema: en el navegador (`http://localhost:5199/`) `window.ppSession` no existe, así que las notas (F9) y capturas no se guardan a disco; el usuario las perdió dos veces. Hoy hay un respaldo manual: `src/game/main.ts` guarda en memoria (`sessionFiles`) y F10 descarga un .json.
+Objetivo: guardado automático a disco desde el navegador, solo en desarrollo.
+1. `vite.config.ts`: plugin de desarrollo (solo `apply: "serve"`, sin dependencias nuevas) con un middleware `POST /__session/write` que recibe `{ rel, b64 }`, valida `rel` con la misma regla que `desktop/main.cjs` (solo `carpeta/archivo` con caracteres seguros, sin `..`) y escribe en `Documentos/ProvingGrounds/sesiones/<rel>` (usa `os.homedir()` + Documents). Rechaza otros métodos y tamaños > 20 MB.
+2. `src/game/main.ts`: si no hay `ppSession`, el `io.write` hace `fetch("/__session/write", { method: "POST", body: JSON.stringify({ rel, b64 }) })` y, solo si falla (no hay servidor de desarrollo, p. ej. build de producción), guarda en `sessionFiles` para F10 como respaldo. Además guarda las notas en `localStorage` (clave `pp.session.notes`) al escribirlas, y F10 descarga también lo que haya ahí.
+3. Test puro `tests/sessionio.test.ts` de la validación de `rel` (extraer la función a un módulo sin dependencias de Vite, p. ej. `src/game/sessionpath.ts`, usado por el plugin y por el test). Sin cambiar tests existentes.
+4. Comprobación: arrancar `npm run dev` ya está en marcha (puerto 5199); con Playwright abre el juego, activa el registro (modo desarrollador) y escribe una nota; confirma que aparece `eventos.jsonl` en la carpeta de sesiones.
+Restricciones: sin commit ni instalaciones; `tsc` limpio; informe de 10 líneas. Un solo agente en `src/`; ejecutar tras el encargo 31.

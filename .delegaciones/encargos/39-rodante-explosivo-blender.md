@@ -1,0 +1,9 @@
+# Encargo 39 — Variante «rodante explosivo» del robot rodante (Blender)
+
+Contexto: en el juego el enemigo `roller` es un kamikaze explosivo (explota con 220 de daño; parpadea más rápido al acercarse; ver `src/game/dummies.ts` y `main.ts:296`). El modelo nuevo `raw/pack10_lote2/enemigo_rodante.glb` lleva torreta y cañón, que no encajan con un kamikaze. Decisión del usuario: el modelo actual pasa a ser un enemigo NUEVO («rodante artillero»); y hay que hacer una variante editada que parezca un robot rodante explosivo.
+Tarea: parte del guion existente `.delegaciones/blender/lote2/enemigo_rodante.py` (cópialo a `enemigo_rodante_explosivo.py`; no modifiques el original ni `_comun.py`) y cambia:
+1. Sin torreta ni cañón ni ametralladora. Conserva la rueda gruesa (pieza `mov_rueda`), el chasis y la antena.
+2. Añade cargas de explosivo atadas al casco (4–6 bloques/cilindros con correas, tapas y símbolo de peligro en franjas amarillas y negras, sin texto ni logos), cableado visible entre las cargas y una luz roja central grande y emisiva (pieza `mov_luz`, para que el juego pueda parpadearla), un detonador/fusible corto en la parte superior y rejillas de ventilación.
+3. Acento rojo-naranja; aspecto más compacto y peligroso. ≥8 detalles distintos, biseles, ≤4.000 triángulos, mismas convenciones (metros, +X frente, +Y arriba, origen en el suelo en el centro de la base, una malla por pieza con nombre en español, piezas móviles `mov_*`, sin texturas/luces/cámaras).
+4. Salidas: `raw/pack10_lote2/enemigo_rodante_explosivo.glb` y `.png` (640×320 transparente, mismo encuadre que los demás). Actualiza `raw/pack10_lote2/LEEME.md` con la fila nueva y el nombre del artillero (`enemigo_rodante` = rodante artillero).
+Máx. 2 correcciones; abre el PNG para juzgarlo. Sin tocar `src/`. Sin commit ni instalaciones. Informe de 10 líneas.

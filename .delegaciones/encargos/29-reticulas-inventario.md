@@ -1,0 +1,10 @@
+# Encargo 29 — Inventario de retículas incluidas en los modelos de las ópticas (solo análisis, sin tocar el juego)
+
+Contexto: algunas ópticas (p. ej. ACOG y otras del kit `k-att-*` y de los packs en `assets/weapons/`) traen su retícula dibujada en el propio modelo (mallas finas, emisivas o con textura), y el juego además dibuja la suya de punto rojo/holográfica: se solapan («doble retícula»). Objetivo de la mejora (luego, otro encargo): quitar la retícula del modelo, guardar su FORMA en un catálogo y dibujar una sola retícula desde el juego con esa forma y el color del punto rojo.
+
+Tarea (solo lectura de modelos y creación de un informe y un script):
+1. Localiza dónde están las ópticas: `assets/weapons/manifest.json` (entradas de tipo accesorio/óptica; ids `k-att-*`, `acc:*`, miras propias de los packs) y cómo se cargan sus GLB. Para las ópticas procedurales de `src/weapons/accessories.ts` (`buildOptic`) anota qué mallas son retícula (aro, punto) leyendo el código.
+2. Script `tools/audit-reticles.mjs` (Node, sin dependencias nuevas; si necesitas leer GLB, usa el parser JSON del propio GLB, sin three) que para cada óptica con modelo liste: id, nº de mallas, y por malla: nombre, triángulos, material (color base, emisivo, alpha/transparencia, ¿textura?), tamaño del cuadro (m). Marca como «candidata a retícula» la malla que cumpla alguna: nombre con ret|reticle|dot|cross|mark|chevron|lens|glass; material emisivo; plana (grosor < 1 mm) y pequeña (< 3 cm); o con textura de punto.
+3. Informe `.delegaciones/informe_reticulas.md`: tabla por óptica (id, tipo de mira del juego `dot|holo|scope|prisma`, ¿trae retícula propia?, qué malla/s, forma probable: punto, aro, cruz, chevron/ACOG, mil-dot, otra), recuento de cuántas ópticas tienen retícula propia, y la lista de ópticas sin modelo (solo procedurales). Propón en 10 líneas un catálogo de formas de retícula (ids cortos) que cubra lo que hayas visto.
+4. Restricciones: no modifiques `src/`, ni assets, ni tests. Sin commit. Resumen final de 10 líneas.
+Verificación: `node tools/audit-reticles.mjs` se ejecuta sin errores y genera la tabla.

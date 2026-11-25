@@ -1,0 +1,1 @@
+- **No uses Blender ni sus herramientas MCP** (está ocupado por otra tarea): trabaja solo con código, CSS y capturas.

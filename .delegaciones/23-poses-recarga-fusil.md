@@ -1,0 +1,12 @@
+# Encargo 23 — Poses reales de las manos en la recarga (piloto: fusil)
+Agente: coder, `opencode-go/deepseek-v4.1-flash` (o `mimo-v2.6-flash`). Sin `pro`. Un solo arreglo si falla. Parar al primer aviso de límite de cuota.
+## Contexto
+El usuario aportó animaciones propias (`Aportes propios/`, excluida de git). Se extrajeron recorridos reales de manos en `.delegaciones/herramientas/poses/` (`poses_parecidosamw.json`, `poses_parecidosamwtre.json`, `poses_parecidosabf.json`; léase `.delegaciones/APORTES_PROPIOS.md` §7). Formato: `{ <modelo>: { clase, secuencias: { reload|reload_empty|idle|draw|inspect|fire|melee|throw: [ { nombre, dur, fps, muestras: [ { f, t, izq:[x,y,z], qi:[x,y,z,w], der, qd, ci:[5], cd:[5] } ] } ] } } }`. Ejes del juego (m): x hacia la boca, y arriba, z derecha; posiciones de las muñecas respecto a la raíz del arma; `ci`/`cd` = curvatura de los 5 dedos (grados, índice, corazón, anular, meñique, pulgar).
+Hoy la recarga es procedural por fases (`animParams(clase).reload.phases` en `src/game/anim.ts`: tilt, grab, out, pouch, in, rack, settle) con los puntos de agarre de `AssembledWeapon.handles` (`grip`, `support`, `magwell`, `charge`).
+## Objetivo
+Que la mano de apoyo (izquierda) siga en la recarga de los **fusiles** el recorrido real (guardamanos → cargador → vuelta), con su ritmo, en lugar del procedural, sin romper el resto de clases.
+1. `tools/build-poses.mjs`: lee el modelo `rif_ak47` (y 2–3 fusiles más de `poses_parecidosamw.json`), toma `reload_empty` y genera `src/data/poses.json` con el recorrido de la mano izquierda **relativo a su posición en reposo** y normalizado por la distancia reposo→cargador (para trasladarlo por anclas a cualquier arma). Incluir los tiempos relativos (0–1) y la curvatura de dedos. Resultado compacto (≤ 40 KB).
+2. Función pura `handPathAt(clase, fase 0..1, anclas)` en un módulo nuevo (sin DOM ni three) que devuelve posición y curvatura; usada por `gun.ts`/`anim.ts` solo cuando `clase === "rifle"` (y bullpup) y existe el dato; si no, el camino actual.
+3. Tests puros en `tests/poses.test.ts`: la mano termina donde empezó, pasa por el cargador (`magwell`) a mitad de la recarga, la mano derecha no se mueve, y para clases sin dato se conserva el comportamiento anterior. Sin cambiar valores de tests existentes.
+## Criterio de aceptación
+`npx tsc --noEmit` limpio, `npx vitest run tests/poses.test.ts tests/anim.test.ts tests/optic_ads.test.ts` en verde. Informe con qué ficheros tocó y por qué. **Sin commit ni push.** El usuario lo valora luego jugando con el registro de sesión.

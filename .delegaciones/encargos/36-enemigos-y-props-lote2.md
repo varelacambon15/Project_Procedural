@@ -1,0 +1,10 @@
+# Encargo 36 — Modelado Blender, lote 2: enemigos robot (araña, rodante) y props del hall
+
+Base: el piloto aprobado (`raw/pack8_pilotos/`: dron, torreta enemiga, máquina de bebidas; guiones en `.delegaciones/blender/pilotos/`, biblioteca `.delegaciones/blender/equipo/_comun.py`). El usuario quiere elevar todo el juego a esa calidad (el estilo actual se ve «de juguete y plastilina»). Mismas reglas del encargo 28: GLB en metros, +X frente, +Y arriba, origen en el suelo (centro de la base), una malla por pieza con nombre en español, **máximo 4.000 triángulos por objeto**, materiales Principled simples (color, metal, rugosidad, emisión; cristal con alfa), sin texturas/luces/cámaras, piezas móviles aparte con pivote en su eje (`mov_*`), diseños propios, biseles, ≥8 detalles distintos (paneles, juntas, tornillos, rejillas, cables, desgaste), emisión real, acento de color. Más un PNG 640×320 transparente con el mismo encuadre (usa `C.foto`/`C.camara` como el piloto).
+
+Salida en `raw/pack10_lote2/` (`<id>.glb` + `<id>.png`) y guiones en `.delegaciones/blender/lote2/<id>.py` (importan `_comun.py` sin modificarla):
+1. `enemigo_arana` — robot araña de combate de 6 patas articuladas (segmentos con juntas y pistones), cuerpo central blindado con visor emisivo rojo, 2 cañones/aguijón al frente. Patas como piezas `mov_pata_1..6`. ~1,1 m de ancho. Acento rojo.
+2. `enemigo_rodante` — robot rodante: esfera/rueda blindada con carenados, orugas o neumático grueso, torreta pequeña con ametralladora y sensor emisivo, ventilaciones. Pieza `mov_rueda` y `mov_torreta`. ~0,9 m. Acento naranja.
+3. `prop_dispensador_agua` (fuente de agua del hall), `prop_recreativa` (máquina arcade con pantalla emisiva y mandos, sin logos) y `prop_armero` (soporte de armas de pared con 6 huecos, luces de estado). Acento cian.
+Máximo 2 correcciones por objeto; abre cada PNG para juzgarlo. `raw/pack10_lote2/LEEME.md`: tabla (objeto, triángulos, mallas, piezas móviles, medidas) y qué falta para integrarlo.
+Restricciones: no toques `src/`, `assets/`, tests ni `_comun.py`. Sin commit ni instalaciones. Informe de 10 líneas.
