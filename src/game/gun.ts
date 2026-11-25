@@ -1560,7 +1560,7 @@ export class Gun {
     // (armas cortas: el índice va cerrado sobre el gatillo y el pulgar pegado al armazón; recto, el índice se veía
     //  larguísimo y el pulgar asomaba hacia arriba —«dedos deformes y demasiado largos»—)
     const shortGun = this.spec?.type === "pistol" || this.spec?.type === "revolver";
-    let right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? Math.max(shortGun ? 1.2 : 0.85, fc[0] - 0.12) + 0.15 * this.trigT - 0.1 * sp : trig, Math.max(1.6, fc?.[1] ?? 1.02) - 0.1 * sp, Math.max(1.35, fc?.[2] ?? 1.06) - 0.1 * sp, Math.max(1.4, fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (shortGun ? 0.55 : fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
+    let right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? Math.max(shortGun ? 1.2 : 0.85, fc[0] - 0.12) + 0.15 * this.trigT - 0.1 * sp : trig, Math.max(1.7, fc?.[1] ?? 1.02) - 0.1 * sp, Math.max(1.7, fc?.[2] ?? 1.06) - 0.1 * sp, Math.max(1.7, fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (shortGun ? 0.55 : fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
     // (tarea 13: muñeca casi recta pero sin seguir del todo el eje de la mano: con 1 el antebrazo venía hacia la cámara y
     //  se veía como un bloque enorme abajo a la derecha)
     if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right.straight = 0.35;
@@ -1926,12 +1926,13 @@ const GRIPS: Record<HandKind | "right" | "rightHandgun", HandGrip> = {
   // por encima de la mano como en los shooters de referencia) y la muñeca algo menos inclinada
   rightHandgun: { q: rx(-0.22).multiply(handBasis(V(-0.1, -0.1, -0.99), V(0.99, 0.12, 0))), off: V(0.014, 0.002, 0.012), curl: C(1.1, 0.75) },
   // Bajo el guardamanos: palma arriba, dedos hacia la derecha envolviéndolo
-  under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.016, -0.012, 0.004), curl: C(1.15, 0.7) },
+  // (tarea 13: algo más abajo —la palma atravesaba el guardamanos— y los dedos más cerrados: agarraba «sin fuerza»)
+  under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.016, -0.026, 0.004), curl: C(1.45, 0.85) },
   // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
   // (agarre en C: la izquierda queda debajo de la derecha y la envuelve, pulgares hacia delante)
-  wrap: { q: rx(-0.25).multiply(handBasis(V(0.45, -0.25, -0.86), V(-0.9, -0.15, 0.1))), off: V(-0.026, -0.022, -0.004), curl: C(0.95, 0.35) },
+  wrap: { q: rx(-0.25).multiply(handBasis(V(0.45, -0.25, -0.86), V(-0.9, -0.15, 0.1))), off: V(-0.026, -0.022, -0.004), curl: C(1.3, 0.5) },
   // Empuñadura vertical o cargador: mano cerrada alrededor, dorso a la izquierda
-  vgrip: { q: rx(-0.1).multiply(handBasis(V(0.35, -0.05, -1), V(-1, 0.2, 0))), off: V(-0.022, 0, 0.026), curl: C(1.1, 0.65) },
+  vgrip: { q: rx(-0.1).multiply(handBasis(V(0.35, -0.05, -1), V(-1, 0.2, 0))), off: V(-0.022, 0, 0.026), curl: C(1.45, 0.8) },
   // Coger el cargador o la palanca: mano semiabierta que llega desde la izquierda
   grab: { q: handBasis(V(0.45, -0.25, -0.85), V(-0.85, 0.3, 0.2)), off: V(-0.02, 0, 0), curl: C(0.55, 0.35) },
 };
