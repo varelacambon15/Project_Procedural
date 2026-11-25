@@ -1,5 +1,6 @@
 // Equipamiento (botón LB / X): objetos de apoyo con tipo, rareza y cargas que se recargan solas, como las granadas
 // pero en su propia sección. Datos y generación puros (sin DOM ni three); el efecto en juego está en gadgetfx.ts.
+import { GADGET_GRENADE_KINDS } from "./grenades";
 
 export type GadgetKind = "turret" | "shield" | "dome" | "orb" | "hook" | "mine" | "gravity" | "slowfield" | "jump" | "beacon" | "knife" | "chain" | "harpoon" | "decoy" | "glitch" | "ammo" | "inject" | "thrust" | "teleport" | "chrono";
 export type GadgetRarity = "comun" | "poco" | "rara" | "epica" | "legendaria";
@@ -34,7 +35,9 @@ export const GADGET_KINDS: Record<GadgetKind, KindDef> = {
   teleport: { power: 0, duration: 10, radius: 0, charges: 1, recharge: 14, color: 0xa070ff },   // teleportador: lanza la baliza y vuelve a pulsar para ir
   chrono: { power: 0.3, duration: 4, radius: 0, charges: 1, recharge: 34, color: 0x80c0ff },   // inyección temporal: todo menos tú a cámara lenta
 };
-export const GADGET_KIND_LIST = Object.keys(GADGET_KINDS) as GadgetKind[];
+// Los 5 tipos reclasificados como granadas siguen en GADGET_KINDS porque gadgetfx/gadgetthumb consultan ahí su color
+// y su duración al lanzarlos desde GADGET_KIND_LIST no intervienen: el equipamiento generable son los otros 15.
+export const GADGET_KIND_LIST = (Object.keys(GADGET_KINDS) as GadgetKind[]).filter((k) => !(GADGET_GRENADE_KINDS as readonly string[]).includes(k));
 
 /** Mejora por rareza: potencia, duración, radio, cargas extra y recarga más rápida. */
 export const GADGET_RARITY: Record<GadgetRarity, { mult: number; dur: number; radius: number; charges: number; recharge: number; color: string; price: number }> = {

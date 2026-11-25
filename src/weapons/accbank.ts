@@ -140,3 +140,18 @@ export function attach(gen: WeaponGenerator, w: WeaponSpec, a: AccItem): AccItem
 export function accessoriesOf(w: WeaponSpec): AccItem[] {
   return ACC_KINDS.map((k) => mountedAcc(w, k)).flatMap((id, i) => (id ? [newAcc(ACC_KINDS[i], id, w.rarity.id)] : []));
 }
+
+/** Créditos por accesorio al desguazar duplicados (pocos, pero algo): por rareza. */
+export const ACC_SCRAP: Record<RarityId, number> = { comun: 2, poco: 4, rara: 10, epica: 25, legendaria: 60 };
+
+/** Desguaza los duplicados del banco: de cada pieza y rareza se conserva una (la más antigua) y el resto se paga en créditos. */
+export function scrapDuplicates(bank: AccItem[]): { bank: AccItem[]; removed: number; credits: number } {
+  const seen = new Set<string>(); const keep: AccItem[] = []; let credits = 0, removed = 0;
+  for (const a of [...bank].sort((x, y) => x.uid - y.uid)) {
+    const k = `${a.id}|${a.rarity}`;
+    if (seen.has(k)) { credits += ACC_SCRAP[a.rarity] ?? 0; removed++; } else { seen.add(k); keep.push(a); }
+  }
+  // (se respeta el orden original del banco)
+  const kept = new Set(keep.map((a) => a.uid));
+  return { bank: bank.filter((a) => kept.has(a.uid)), removed, credits };
+}

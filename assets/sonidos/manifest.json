@@ -634,7 +634,7 @@
      "accion/cerrojo/fly_sniper_bd.ogg"
     ]
    },
-   "volumen_sugerido": 1.0
+   "volumen_sugerido": 1
   },
   "lmg": {
    "disparo": [
@@ -875,6 +875,128 @@
   ],
   "recoger_granada": [
    "objetos/granada_0.ogg"
+  ],
+  "bala_arena": [
+   "impactos/bala_arena_0.ogg",
+   "impactos/bala_arena_1.ogg"
+  ],
+  "bala_baldosa": [
+   "impactos/bala_baldosa_0.ogg",
+   "impactos/bala_baldosa_1.ogg"
+  ],
+  "bala_carne": [
+   "impactos/bala_carne_0.ogg",
+   "impactos/bala_carne_1.ogg",
+   "impactos/bala_carne_2.ogg",
+   "impactos/bala_carne_3.ogg"
+  ],
+  "bala_cristal": [
+   "impactos/bala_cristal_0.ogg",
+   "impactos/bala_cristal_1.ogg",
+   "impactos/bala_cristal_2.ogg"
+  ],
+  "bala_hormigon": [
+   "impactos/bala_hormigon_0.ogg",
+   "impactos/bala_hormigon_1.ogg",
+   "impactos/bala_hormigon_2.ogg"
+  ],
+  "bala_madera": [
+   "impactos/bala_madera_0.ogg",
+   "impactos/bala_madera_1.ogg",
+   "impactos/bala_madera_2.ogg"
+  ],
+  "bala_metal": [
+   "impactos/bala_metal_0.ogg",
+   "impactos/bala_metal_1.ogg",
+   "impactos/bala_metal_2.ogg"
+  ],
+  "bala_plastico": [
+   "impactos/bala_plastico_0.ogg",
+   "impactos/bala_plastico_1.ogg"
+  ],
+  "codazo": [
+   "melee/codazo_0.ogg",
+   "melee/codazo_1.ogg"
+  ],
+  "paso_baldosa": [
+   "pasos/paso_baldosa_0.ogg",
+   "pasos/paso_baldosa_1.ogg",
+   "pasos/paso_baldosa_2.ogg"
+  ],
+  "paso_hormigon": [
+   "pasos/paso_hormigon_0.ogg",
+   "pasos/paso_hormigon_1.ogg",
+   "pasos/paso_hormigon_2.ogg"
+  ],
+  "paso_madera": [
+   "pasos/paso_madera_0.ogg",
+   "pasos/paso_madera_1.ogg",
+   "pasos/paso_madera_2.ogg"
+  ],
+  "paso_metal": [
+   "pasos/paso_metal_0.ogg",
+   "pasos/paso_metal_1.ogg",
+   "pasos/paso_metal_2.ogg"
+  ],
+  "paso_rejilla": [
+   "pasos/paso_rejilla_0.ogg",
+   "pasos/paso_rejilla_1.ogg",
+   "pasos/paso_rejilla_2.ogg"
+  ],
+  "patada": [
+   "melee/patada_0.ogg",
+   "melee/patada_1.ogg",
+   "melee/patada_2.ogg"
+  ],
+  "punos_gancho_der": [
+   "melee/punos_gancho_der_0.ogg",
+   "melee/punos_gancho_der_1.ogg"
+  ],
+  "punos_gancho_izq": [
+   "melee/punos_gancho_izq_0.ogg",
+   "melee/punos_gancho_izq_1.ogg"
+  ],
+  "punos_golpe": [
+   "melee/punos_golpe_0.ogg",
+   "melee/punos_golpe_1.ogg",
+   "melee/punos_golpe_2.ogg"
+  ],
+  "punos_golpe_carne": [
+   "melee/punos_golpe_carne_0.ogg",
+   "melee/punos_golpe_carne_1.ogg",
+   "melee/punos_golpe_carne_2.ogg"
+  ],
+  "punos_preparar": [
+   "melee/punos_preparar_0.ogg",
+   "melee/punos_preparar_1.ogg"
+  ],
+  "punos_uppercut": [
+   "melee/punos_uppercut_0.ogg",
+   "melee/punos_uppercut_1.ogg"
+  ],
+  "rebote_duro": [
+   "granada/rebote_duro_0.ogg",
+   "granada/rebote_duro_1.ogg",
+   "granada/rebote_duro_2.ogg"
+  ],
+  "rebote_medio": [
+   "granada/rebote_medio_0.ogg",
+   "granada/rebote_medio_1.ogg"
+  ],
+  "rodillazo": [
+   "melee/rodillazo_0.ogg",
+   "melee/rodillazo_1.ogg"
+  ],
+  "salto": [
+   "movimiento/salto_0.ogg",
+   "movimiento/salto_1.ogg",
+   "movimiento/salto_2.ogg"
+  ],
+  "sprint_equipo": [
+   "movimiento/sprint_equipo_0.ogg",
+   "movimiento/sprint_equipo_1.ogg",
+   "movimiento/sprint_equipo_2.ogg",
+   "movimiento/sprint_equipo_3.ogg"
   ]
  },
  "scifi_storm_psr": {

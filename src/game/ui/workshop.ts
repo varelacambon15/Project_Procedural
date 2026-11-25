@@ -1,7 +1,7 @@
 // Taller de armas: vista 3D grande (giro y zoom), zonas de accesorio del arma, banco de accesorios desmontados con
 // compatibilidad clara, vista previa con estadísticas antes/después, confirmar/cancelar, deshacer y acabado.
 // En modo inspección (banco de inspección de la sala) solo se ve el arma y su ficha comparada con la equipada.
-import { ACC_KINDS, accZones, attach, canDetach, canMount, detach, mountedAcc, type AccItem, type AccKind } from "../../weapons/accbank";
+import { ACC_KINDS, accZones, attach, canDetach, canMount, detach, mountedAcc, scrapDuplicates, type AccItem, type AccKind } from "../../weapons/accbank";
 import { accessory } from "../../weapons/accessories";
 import type { WeaponGenerator } from "../../weapons/generator";
 import { accName, holdName, paintName } from "../../weapons/labels";
@@ -84,7 +84,7 @@ export class WorkshopScreen {
     const zoneRows = ACC_KINDS.map((k) => {
       const has = zones.includes(k), id = mountedAcc(s, k);
       const det = id ? canDetach(this.gen, s, k) : null;
-      return `<div class="zone ${has ? "" : "off"}">
+      return `<div class="zone ${has ? "" : "off"} ${has && this.bankKind === k ? "sel" : ""}" ${has ? `data-zone="${k}" tabindex="0"` : ""}>
         <div class="zh"><b>${t(`zone.${k}`)}</b><small>${t(`socket.${k}`)}</small></div>
         <div class="zv">${!has ? `<span class="why">${t(k === "optic" && s.optic === s.parts[0].from ? "acc.noIntegrated" : `acc.noZone.${k}`)}</span>` : id ? `<span class="acc">${accName(id)}</span><span class="mods">${mods(id)}</span>` : `<span class="empty">${t("ui.emptyZone")}</span>`}</div>
         ${id ? `<button type="button" class="btn ghost sm" data-detach="${k}" ${det!.ok && !p ? "" : "disabled"} title="${det!.ok ? "" : t(det!.reason!)}">${t("ui.detach")}</button>` : ""}
@@ -92,10 +92,15 @@ export class WorkshopScreen {
     }).join("");
     const list = this.inv.bank.filter((a) => this.bankKind === "all" || a.kind === this.bankKind)
       .sort((a, b) => this.bankSort === "rarity" ? ORDER.indexOf(b.rarity) - ORDER.indexOf(a.rarity) || a.kind.localeCompare(b.kind) : a.kind.localeCompare(b.kind) || ORDER.indexOf(b.rarity) - ORDER.indexOf(a.rarity));
-    const bank = list.map((a) => {
-      const f = canMount(this.gen, s, a);
-      return `<button type="button" class="bankitem ${f.ok ? "fit" : "nofit"}" data-acc="${a.uid}" data-why="${f.ok ? "" : t(f.reason!)}" style="--c:${color(a.rarity)}" ${p ? "disabled" : ""}>
-        <span class="dot"></span><span class="an">${accName(a.id)}</span><span class="ak">${t(`zone.${a.kind}`)}</span>
+    // Los iguales (misma pieza y rareza) se apilan: «×3»
+    const count = new Map<string, number>(); for (const a of list) { const k = `${a.id}|${a.rarity}`; count.set(k, (count.get(k) ?? 0) + 1); }
+    const seen = new Set<string>();
+    const stacks = list.filter((a) => { const k = `${a.id}|${a.rarity}`; if (seen.has(k)) return false; seen.add(k); return true; });
+    // Las piezas que encajan primero (dentro de cada grupo se mantiene el orden elegido)
+    const bank = stacks.map((a) => ({ a, f: canMount(this.gen, s, a) })).sort((x, y) => Number(y.f.ok) - Number(x.f.ok)).map(({ a, f }) => {
+      const why = f.ok ? "" : t(f.reason!) + (f.reason === "acc.wrongType" && accessory(a.id)?.for?.length ? ` — ${t("acc.onlyFor")}: ${accessory(a.id)!.for!.map((x) => t(`type.${x}`)).join(", ")}` : "");
+      return `<button type="button" class="bankitem ${f.ok ? "fit" : "nofit"}" data-acc="${a.uid}" data-why="${why}" style="--c:${color(a.rarity)}" ${p ? "disabled" : ""}>
+        <span class="dot"></span><span class="an">${accName(a.id)}${(count.get(`${a.id}|${a.rarity}`) ?? 1) > 1 ? ` <b class="cnt">×${count.get(`${a.id}|${a.rarity}`)}</b>` : ""}</span><span class="ak">${t(`zone.${a.kind}`)}</span>
         <span class="mods">${mods(a.id)}</span><span class="ok">${f.ok ? "✓" : "✕"}</span></button>`;
     }).join("") || `<p class="note">${t(this.inv.bank.length ? "ui.bankNoMatch" : "ui.bankEmpty")}</p>`;
     return `
@@ -103,7 +108,8 @@ export class WorkshopScreen {
       <div class="zones">${zoneRows}</div>
       <div class="bankhead"><h2>${t("ui.bank")} <small>${this.inv.bank.length}</small></h2>
         <div class="chips">${(["all", ...ACC_KINDS] as const).map((k) => `<button type="button" class="chip ${this.bankKind === k ? "on" : ""}" data-bk="${k}">${k === "all" ? t("ui.all") : t(`zone.${k}`)}</button>`).join("")}
-        <button type="button" class="cyc" data-act="bsort"><span>${t("ui.sortBy")}</span><b>${t(this.bankSort === "rarity" ? "sort.rarity" : "sort.zone")}</b></button></div></div>
+        <button type="button" class="cyc" data-act="bsort"><span>${t("ui.sortBy")}</span><b>${t(this.bankSort === "rarity" ? "sort.rarity" : "sort.zone")}</b></button>
+        <button type="button" class="chip" data-act="dupes">${t("ui.dupes")}</button></div></div>
       <div class="bank">${bank}</div>
       <p class="why" id="ws-why">${p ? "" : t("ui.bankHelp")}</p>
       <div class="actions">
@@ -132,8 +138,8 @@ export class WorkshopScreen {
     if (!this.sel) return;
     const spec = structuredClone(this.sel.spec), bank = structuredClone(this.inv.bank);
     try { mutate(spec, bank); } catch (e) { this.hooks.toast(t((e as Error).message)); return; }
-    this.pending = { spec, bank, label }; this.showBefore = false; this.view.autoSpin = false; this.render();
-    this.el.querySelector<HTMLElement>('[data-act="confirm"]')?.focus({ preventScroll: true });
+    // Estilo Gunsmith: se equipa al momento, sin confirmar (queda el deshacer, Z / LB)
+    this.pending = { spec, bank, label }; this.showBefore = false; this.commit();
   }
   private commit() {
     const p = this.pending, it = this.sel; if (!p || !it) return;
@@ -141,6 +147,14 @@ export class WorkshopScreen {
     if (this.undo.length > 20) this.undo.shift();
     it.spec = p.spec; this.inv.bank = p.bank; it.ammo = Math.min(it.ammo, it.spec.stats.cargador);
     this.pending = null; this.view.autoSpin = true; this.thumbs.forget(it.uid); this.hooks.changed(it); this.hooks.toast(t("ui.applied", { n: p.label })); this.render();
+  }
+  /** Desguaza los duplicados del banco a cambio de unos pocos créditos. Se vacía el deshacer: no puede devolver piezas ya cobradas. */
+  private dupes() {
+    const r = scrapDuplicates(this.inv.bank);
+    if (!r.removed) { this.hooks.toast(t("ui.dupesNone")); return; }
+    this.inv.bank = r.bank; this.inv.credits += r.credits; this.undo = [];
+    if (this.sel) this.hooks.changed(this.sel);
+    this.hooks.toast(t("ui.dupesDone", { n: r.removed, c: r.credits })); this.render();
   }
   private doUndo() {
     const it = this.sel; if (!it) return;
@@ -168,6 +182,9 @@ export class WorkshopScreen {
         const old = attach(this.gen, spec, mine); if (old) bank.push(old);
       });
     }
+    // Clic en una ranura (óptica, boca, accesorio, luz): se enseña solo lo que va ahí; elegir una pieza la equipa
+    const zn = target.closest<HTMLElement>("[data-zone]");
+    if (zn && !target.closest("[data-detach]") && !this.pending) { this.bankKind = zn.dataset.zone as AccKind; this.render(); this.el.querySelector<HTMLElement>(".bankitem.fit")?.focus({ preventScroll: true }); return; }
     const bk = target.closest<HTMLElement>("[data-bk]"); if (bk) { this.bankKind = bk.dataset.bk as AccKind | "all"; this.render(); this.el.querySelector<HTMLElement>(`[data-bk="${this.bankKind}"]`)?.focus({ preventScroll: true }); return; }
     const sw = target.closest<HTMLElement>("[data-paint]");
     if (sw && !this.pending) return this.stage(t("ui.paintLabel", { p: paintName(paints()[Number(sw.dataset.paint)]) }), (spec) => repaint(this.gen, spec, paints()[Number(sw.dataset.paint)]));
@@ -186,6 +203,7 @@ export class WorkshopScreen {
     else if (a === "cancel") { this.pending = null; this.view.autoSpin = true; this.render(); }
     else if (a === "undo") this.doUndo();
     else if (a === "ab" && this.pending) { this.showBefore = !this.showBefore; this.render(); }
+    else if (a === "dupes") this.dupes();
     else if (a === "bsort") { this.bankSort = this.bankSort === "rarity" ? "kind" : "rarity"; this.render(); }
     else if (a === "rename" && this.sel && !this.pending) this.hooks.rename(this.sel);
   }

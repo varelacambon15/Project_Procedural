@@ -12,7 +12,7 @@ describe("kit modular por sockets", () => {
   it("sale en fusiles, pistolas y escopetas, y todas sus piezas se colocan", () => {
     for (const type of ["rifle", "pistol", "shotgun"] as const) {
       const guns = kitGuns(type);
-      expect(guns.length).toBeGreaterThan(40);
+      expect(guns.length).toBeGreaterThan(type === "pistol" ? 8 : 40); // (pistolas del kit: cuota baja a propósito, todas llevan culata y las pistolas con culata son ~15 %)
       for (const w of guns) {
         const { placements, muzzle } = kitPlacements(gen.kit, w);
         for (const p of w.parts) if (!(p.role === "stock" && w.tweaks.nostock)) expect(placements.some((pl) => pl.part.id === p.from)).toBe(true);

@@ -4,8 +4,9 @@
 // Sin luces nuevas: todo emisivo o aditivo.
 import * as THREE from "three";
 import type { Dummy } from "./dummies";
-import type { GadgetSpec } from "./gadgets";
+import type { GadgetKind, GadgetSpec } from "./gadgets";
 import { GADGET_KINDS } from "./gadgets";
+import { deployScale, deployTime, gadgetModelNow, preloadGadgetModel } from "./gadgetmodel";
 
 export interface GadgetHooks {
   enemies(): Dummy[];
@@ -22,21 +23,50 @@ export interface GadgetHooks {
   teleport(p: THREE.Vector3): void;
   sound(kind: "boom" | "zap" | "shot" | "swing"): void;
 }
-interface Live { kind: GadgetSpec["kind"]; g: GadgetSpec; root: THREE.Object3D; t: number; cd: number; pos: THREE.Vector3; box?: THREE.Box3; vel?: THREE.Vector3 }
+interface Live { kind: GadgetSpec["kind"]; g: GadgetSpec; root: THREE.Object3D; t: number; cd: number; dep: number; pos: THREE.Vector3; box?: THREE.Box3; vel?: THREE.Vector3 }
 
 const add = (c: number, op = 0.5) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false });
 const solid = (c: number, e = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.5, metalness: 0.4, emissive: e || 0x000000, emissiveIntensity: e ? 1.4 : 0 });
+/** Tipos que despliegan un GLB en el mundo (se precargan al crear el sistema; el resto se carga al usarse). */
+const GADGET_KINDS_MODEL: GadgetKind[] = ["turret", "shield", "dome", "mine", "hook", "gravity", "slowfield", "jump", "beacon", "decoy", "glitch", "ammo", "teleport", "orb"];
 
 export class GadgetFx {
   private live: Live[] = [];
   private fx: { m: THREE.Object3D; t: number; life: number }[] = [];
+  /** Objetos GLB breves (gancho clavado, caja de munición) que se retiran solos. */
+  private staged: { m: THREE.Object3D; t: number; life: number; kind: GadgetKind }[] = [];
   /** Enemigos con fallo (se atacan entre ellos) y segundos que les quedan. */ readonly glitched = new Map<Dummy, number>();
   /** Señuelo activo: los enemigos van a por él en vez de a por ti. */ get decoyPos() { const l = this.live.find((x) => x.kind === "decoy"); return l ? l.pos : null; }
   /** Baliza del teleportador colocada: la siguiente pulsación lleva al jugador a ella (sin gastar carga). */
   tryTeleport() { const i = this.live.findIndex((x) => x.kind === "teleport"); if (i < 0) return false; const L = this.live[i]; this.hooks.teleport(L.pos.clone()); this.burst(L.pos.clone().setY(1), 1.5, GADGET_KINDS.teleport.color); this.scene.remove(L.root); this.live.splice(i, 1); return true; }
   /** Enemigos marcados por la baliza (reciben más daño) hasta el instante dado. */ readonly marked = new Map<Dummy, number>();
   private time = 0;
-  constructor(private scene: THREE.Scene, private hooks: GadgetHooks) {}
+  constructor(private scene: THREE.Scene, private hooks: GadgetHooks) {
+    // Los GLB se cargan en segundo plano al arrancar: el primer uso ya suele tenerlos listos (si no, primitiva).
+    for (const k of GADGET_KINDS_MODEL) preloadGadgetModel(k);
+  }
+
+  /** Copia lista del GLB del tipo (null = se usa la primitiva) y calienta la caché para el siguiente uso. */
+  private model(kind: GadgetKind) { preloadGadgetModel(kind); return gadgetModelNow(kind); }
+  /** Objeto GLB breve que se retira solo (gancho clavado, caja de munición). */
+  private stage(m: THREE.Object3D, at: THREE.Vector3, kind: GadgetKind, life = 1.2, yaw = 0) {
+    m.position.copy(at); m.rotation.y = yaw; m.scale.setScalar(0);
+    this.scene.add(m); this.staged.push({ m, t: 0, life, kind });
+  }
+  /** Parpadeo único de las luces del modelo (sensor de la mina al asentarse). */
+  private pulse(root: THREE.Object3D) {
+    const glows: { m: THREE.MeshStandardMaterial; i: number }[] = [];
+    root.traverse((o) => {
+      const mesh = o as THREE.Mesh; if (!mesh.isMesh) return;
+      for (const mat of ([] as THREE.Material[]).concat(mesh.material)) {
+        const s = mat as THREE.MeshStandardMaterial;
+        if (s.emissive && s.emissive.getHex() !== 0) glows.push({ m: s, i: s.emissiveIntensity });
+      }
+    });
+    if (!glows.length) return;
+    for (const gl of glows) gl.m.emissiveIntensity = gl.i * 4;
+    setTimeout(() => { for (const gl of glows) gl.m.emissiveIntensity = gl.i; }, 140);
+  }
 
   /** Reducción del daño que recibe el jugador (cúpula): 1 = ninguna. */
   guardAt(p: THREE.Vector3) { let k = 1; for (const l of this.live) if (l.kind === "dome" && l.pos.distanceTo(p) < l.g.radius) k = Math.min(k, 1 - l.g.power); return k; }
@@ -57,24 +87,35 @@ export class GadgetFx {
   /** Usa el equipamiento; devuelve false si no se pudo (p. ej. el gancho sin nada a lo que engancharse). */
   use(g: GadgetSpec): boolean {
     const c = GADGET_KINDS[g.kind].color, root = new THREE.Group();
-    const L: Live = { kind: g.kind, g, root, t: 0, cd: 0, pos: new THREE.Vector3() };
+    const L: Live = { kind: g.kind, g, root, t: 0, cd: 0, dep: 0, pos: new THREE.Vector3() };
     switch (g.kind) {
       case "hook": {
         const { eye, dir } = this.hooks.view(), ray = new THREE.Raycaster(eye, dir, 0.5, g.radius);
         const hit = ray.intersectObjects(this.hooks.shootables, false)[0]; if (!hit) return false;
         this.beam(eye.clone().add(new THREE.Vector3(0, -0.2, 0)), hit.point, c);
+        const hook = this.model("hook"); if (hook) this.stage(hook, hit.point.clone(), "hook", 1.5, Math.atan2(-dir.z, dir.x));
         this.hooks.lunge(dir.clone().setY(0), Math.max(0, hit.distance - 1.2), 0.32); if (dir.y > 0.15) this.hooks.launch(Math.min(9, 4 + dir.y * 8));
         return true;
       }
       case "orb": {
         const { eye, dir } = this.hooks.view();
-        const m = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), add(c, 0.9)); root.add(m);
-        const halo = new THREE.Mesh(new THREE.SphereGeometry(0.4, 14, 10), add(c, 0.3)); root.add(halo);
+        const orb = this.model("orb");
+        if (orb) root.add(orb);
+        else {
+          const m = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), add(c, 0.9)); root.add(m);
+          const halo = new THREE.Mesh(new THREE.SphereGeometry(0.4, 14, 10), add(c, 0.3)); root.add(halo);
+        }
+        root.rotation.y = Math.atan2(-dir.z, dir.x);
         L.pos.copy(eye).addScaledVector(dir, 0.8); L.vel = dir.clone().multiplyScalar(22); break;
       }
       case "turret": {
-        const { p } = this.ahead(1.6); L.pos.copy(p);
-        const b = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.5, 10), solid(0x3a4048)); b.position.y = 0.25; root.add(b); const h = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.22, 0.5), solid(0x4a5058, c)); h.position.y = 0.62; h.name = "head"; root.add(h);
+        const { p, f } = this.ahead(1.6); L.pos.copy(p);
+        const turret = this.model("turret");
+        if (turret) root.add(turret);
+        else {
+          const b = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.5, 10), solid(0x3a4048)); b.position.y = 0.25; root.add(b); const h = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.22, 0.5), solid(0x4a5058, c)); h.position.y = 0.62; h.name = "head"; root.add(h);
+        }
+        root.rotation.y = Math.atan2(-f.z, f.x); // (mira hacia donde miras hasta que vea un enemigo)
         break;
       }
       case "knife": case "harpoon": {
@@ -93,66 +134,102 @@ export class GadgetFx {
         const { p, f } = this.ahead(4); for (let k = 0; k < 3; k++) setTimeout(() => this.explode(p.clone().addScaledVector(f, k * 2.2).setY(0.6), g.radius, g.power, c), 250 + k * 280);
         this.hooks.sound("zap"); return true;
       }
-      case "ammo": this.hooks.refill(); this.burst(this.hooks.feet().clone().setY(1), 1.2, c); return true;
+      case "ammo": {
+        this.hooks.refill();
+        const crate = this.model("ammo"); if (crate) this.stage(crate, this.hooks.feet().clone(), "ammo", 1.4);
+        this.burst(this.hooks.feet().clone().setY(1), 1.2, c); return true;
+      }
       case "chrono": this.hooks.slowTime(g.duration, g.power); this.burst(this.hooks.feet().clone().setY(1.2), 1, c); return true;
       case "inject": this.hooks.boost(g.duration, g.power); this.burst(this.hooks.feet().clone().setY(1.2), 1, c); return true;
       case "thrust": { const md = this.hooks.moveDir() ?? this.hooks.view().dir.clone().setY(0).normalize(); this.hooks.lunge(md, g.power, 0.22); this.burst(this.hooks.feet().clone().setY(0.8), 1, c); return true; }
       case "teleport": {
         // Primera pulsación: se lanza la baliza (unos metros por delante); la segunda (sin gastar carga) te lleva a ella
         const { p } = this.ahead(9); L.pos.copy(p);
-        const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.25), add(c, 0.9)); m.position.y = 0.6; root.add(m);
-        const ring = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.7, 32), add(c, 0.8)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; root.add(ring); break;
+        const beacon = this.model("teleport");
+        if (beacon) root.add(beacon);
+        else {
+          const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.25), add(c, 0.9)); m.position.y = 0.6; root.add(m);
+          const ring = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.7, 32), add(c, 0.8)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; root.add(ring);
+        }
+        break;
       }
       case "decoy": case "glitch": {
         const at = g.kind === "decoy" ? this.ahead(3).p : this.ahead(7).p; L.pos.copy(at);
-        if (g.kind === "decoy") { const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 1.1, 4, 10), add(c, 0.45)); body.position.y = 0.85; root.add(body); }
+        const deco = this.model(g.kind);
+        if (deco) root.add(deco);
+        if (g.kind === "decoy") { if (!deco) { const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 1.1, 4, 10), add(c, 0.45)); body.position.y = 0.85; root.add(body); } }
         else { this.burst(at.clone().setY(1), g.radius, c); for (const d of this.hooks.enemies()) if (d.alive && d.center.distanceTo(at) < g.radius) this.glitched.set(d, g.duration); }
         break;
       }
       case "shield": {
         const { p, f } = this.ahead(2.2); L.pos.copy(p);
-        const wall = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.3, 0.18), add(c, 0.35)); wall.position.y = 1.15; root.add(wall);
-        const edge = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.08, 0.22), add(c, 0.9)); edge.position.y = 2.3; root.add(edge);
+        const panel = this.model("shield");
+        if (panel) { panel.rotation.y = -Math.PI / 2; root.add(panel); } // (+X del GLB al frente local +Z del muro)
+        else {
+          const wall = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.3, 0.18), add(c, 0.35)); wall.position.y = 1.15; root.add(wall);
+          const edge = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.08, 0.22), add(c, 0.9)); edge.position.y = 2.3; root.add(edge);
+        }
+        // La colisión sigue siendo el muro de siempre (3,2 × 2,3 × 0,18), aunque el modelo sea más compacto.
+        const collider = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.3, 0.18), solid(0x000000)); collider.position.y = 1.15; collider.visible = false; root.add(collider);
         root.rotation.y = Math.atan2(f.x, f.z);
-        root.position.copy(p); root.updateMatrixWorld(true); L.box = new THREE.Box3().setFromObject(wall); this.hooks.colliders.push(L.box); break;
+        root.position.copy(p); root.updateMatrixWorld(true); L.box = new THREE.Box3().setFromObject(collider); this.hooks.colliders.push(L.box); break;
       }
       case "dome": case "slowfield": case "gravity": case "beacon": {
         const at = g.kind === "dome" || g.kind === "beacon" ? this.hooks.feet().clone() : this.ahead(Math.min(10, g.radius + 2)).p;
         L.pos.copy(at);
-        const sph = new THREE.Mesh(new THREE.SphereGeometry(g.kind === "beacon" ? 0.4 : g.radius, 28, 18, 0, Math.PI * 2, 0, g.kind === "gravity" ? Math.PI : Math.PI / 2), add(c, g.kind === "dome" ? 0.18 : 0.12)); sph.material.side = THREE.DoubleSide; root.add(sph);
-        const ring = new THREE.Mesh(new THREE.RingGeometry(g.radius - 0.08, g.radius, 48), add(c, 0.7)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; if (g.kind !== "beacon") root.add(ring);
+        const device = this.model(g.kind);
+        if (device) root.add(device);
+        // El módulo es el modelo; la cúpula/pozo de área sigue mostrando el radio de juego (sin cambiarlo).
+        if (g.kind !== "beacon") {
+          const sph = new THREE.Mesh(new THREE.SphereGeometry(g.radius, 28, 18, 0, Math.PI * 2, 0, g.kind === "gravity" ? Math.PI : Math.PI / 2), add(c, g.kind === "dome" ? 0.18 : 0.12)); sph.material.side = THREE.DoubleSide; root.add(sph);
+          const ring = new THREE.Mesh(new THREE.RingGeometry(g.radius - 0.08, g.radius, 48), add(c, 0.7)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; root.add(ring);
+        } else if (!device) { const sph = new THREE.Mesh(new THREE.SphereGeometry(0.4, 28, 18, 0, Math.PI * 2, 0, Math.PI / 2), add(c, 0.12)); sph.material.side = THREE.DoubleSide; root.add(sph); }
         if (g.kind === "beacon") { for (const d of this.hooks.enemies()) if (d.alive && d.center.distanceTo(at) < g.radius) this.marked.set(d, this.time + g.duration); this.burst(at.clone().setY(1), g.radius * 0.5, c); }
         break;
       }
       case "mine": case "jump": {
         const { p } = this.ahead(g.kind === "mine" ? 2 : 1.8); L.pos.copy(p);
-        const disc = new THREE.Mesh(new THREE.CylinderGeometry(g.kind === "jump" ? g.radius : 0.3, g.kind === "jump" ? g.radius : 0.34, 0.1, 18), solid(0x2c3036, c)); disc.position.y = 0.05; root.add(disc);
-        const lamp = new THREE.Mesh(new THREE.CircleGeometry(g.kind === "jump" ? g.radius * 0.8 : 0.12, 18), add(c, 0.9)); lamp.rotation.x = -Math.PI / 2; lamp.position.y = 0.11; root.add(lamp);
+        const device = this.model(g.kind);
+        if (device) root.add(device);
+        else {
+          const disc = new THREE.Mesh(new THREE.CylinderGeometry(g.kind === "jump" ? g.radius : 0.3, g.kind === "jump" ? g.radius : 0.34, 0.1, 18), solid(0x2c3036, c)); disc.position.y = 0.05; root.add(disc);
+          const lamp = new THREE.Mesh(new THREE.CircleGeometry(g.kind === "jump" ? g.radius * 0.8 : 0.12, 18), add(c, 0.9)); lamp.rotation.x = -Math.PI / 2; lamp.position.y = 0.11; root.add(lamp);
+        }
         break;
       }
     }
-    root.position.copy(L.pos); this.scene.add(root); this.live.push(L); this.hooks.sound("zap");
+    root.position.copy(L.pos); root.scale.set(1, 1, 1); this.scene.add(root); this.live.push(L); this.hooks.sound("zap");
+    // Despliegue: arranca en el estado inicial (escala 0, mina 10 cm arriba) y una chispa al brotar la torreta
+    const d0 = deployScale(g.kind, 0); root.scale.set(d0.sx, d0.sy, d0.sz); root.position.y = L.pos.y + d0.y;
+    if (g.kind === "turret") this.burst(L.pos.clone().setY(0.15), 1.1, c);
     return true;
   }
 
   update(dt: number) {
     this.time += dt;
     for (let i = this.fx.length - 1; i >= 0; i--) { const f = this.fx[i]; f.t += dt; const k = f.t / f.life; if (f.m.userData.r) f.m.scale.setScalar(f.m.userData.r * (0.3 + 0.7 * k)); ((f.m as THREE.Mesh).material as THREE.Material & { opacity: number }).opacity = Math.max(0, 0.7 * (1 - k)); if (k >= 1) { this.scene.remove(f.m); this.fx.splice(i, 1); } }
+    for (let i = this.staged.length - 1; i >= 0; i--) { const s = this.staged[i]; s.t += dt; const st = deployScale(s.kind, s.t); s.m.scale.set(st.sx, st.sy, st.sz); if (s.t >= s.life) { this.scene.remove(s.m); this.staged.splice(i, 1); } }
     const feet = this.hooks.feet();
     for (let i = this.live.length - 1; i >= 0; i--) {
       const L = this.live[i], g = L.g; L.t += dt; L.cd -= dt; let done = g.duration > 0 && L.t >= g.duration;
       switch (L.kind) {
         case "orb": {
-          L.pos.addScaledVector(L.vel!, dt); L.root.position.copy(L.pos);
+          L.pos.addScaledVector(L.vel!, dt); L.root.position.copy(L.pos); L.root.rotation.x += dt * 9;
           const hitE = this.hooks.enemies().some((d) => d.alive && d.center.distanceTo(L.pos) < 0.9);
           const hitW = this.hooks.colliders.some((b) => b.containsPoint(L.pos)) || L.pos.y < 0.1;
           if (hitE || hitW || L.t > 2) { this.explode(L.pos.clone(), g.radius, g.power, GADGET_KINDS.orb.color); done = true; }
           break;
         }
         case "turret": {
-          const from = L.root.position.clone().add(new THREE.Vector3(0, 0.62, 0)), d = this.nearest(from, g.radius);
-          if (d) { const head = L.root.getObjectByName("head"); if (head) head.rotation.y = Math.atan2(d.center.x - from.x, d.center.z - from.z) - L.root.rotation.y;
-            if (L.cd <= 0) { L.cd = 0.22; this.beam(from, d.center, GADGET_KINDS[L.kind].color); this.hooks.onHit(d, d.center, g.power, null); this.hooks.sound("shot"); } }
+          L.root.updateMatrixWorld();
+          const from = L.root.localToWorld(new THREE.Vector3(0, 0.62, 0)), d = this.nearest(from, g.radius);
+          if (d) {
+            const aim = Math.atan2(-(d.center.z - from.z), d.center.x - from.x);
+            const head = L.root.getObjectByName("mov_torreta") ?? L.root.getObjectByName("head");
+            if (head) head.rotation.y = (head.name === "mov_torreta" ? aim : Math.atan2(d.center.x - from.x, d.center.z - from.z)) - L.root.rotation.y;
+            else L.root.rotation.y = aim;
+            if (L.cd <= 0) { L.cd = 0.22; this.beam(from, d.center, GADGET_KINDS[L.kind].color); this.hooks.onHit(d, d.center, g.power, null); this.hooks.sound("shot"); }
+          }
           break;
         }
         case "mine": {
@@ -170,10 +247,24 @@ export class GadgetFx {
           L.root.rotation.y += dt * (L.kind === "gravity" ? 3 : 0.5);
           break;
         }
+        case "dome": {
+          const a = L.root.getObjectByName("mov_anillo_nucleo_1"), b = L.root.getObjectByName("mov_anillo_nucleo_2");
+          if (a) a.rotation.y += dt * 2.2;
+          if (b) b.rotation.y -= dt * 1.5;
+          break;
+        }
         case "decoy": L.root.rotation.y += dt * 1.5; L.root.visible = Math.random() > 0.06; break;
         case "teleport": L.root.rotation.y += dt * 3; break;
         case "jump": if (feet.distanceTo(L.pos) < g.radius && feet.y < 0.3 && L.cd <= 0) { L.cd = 0.6; this.hooks.launch(g.power); this.burst(L.pos.clone().setY(0.3), 1.5, GADGET_KINDS.jump.color); } break;
-        case "beacon": L.root.position.y = 1 + Math.sin(L.t * 4) * 0.1; break;
+        case "beacon": L.root.position.y = L.pos.y + 0.02 + Math.sin(L.t * 4) * 0.02; break;
+      }
+      // Despliegue (0,3–0,6 s): solo visual, no toca colisión, daño, radio ni duración
+      if (L.kind !== "orb" && L.dep < deployTime(L.kind)) {
+        L.dep = Math.min(deployTime(L.kind), L.dep + dt);
+        const st = deployScale(L.kind, L.dep);
+        L.root.scale.set(st.sx, st.sy, st.sz);
+        if (L.kind !== "beacon") L.root.position.y = L.pos.y + st.y;
+        if (st.done && L.kind === "mine") this.pulse(L.root);
       }
       // Al acabar se desvanece (el escudo libera su colisión)
       if (done) {
@@ -190,5 +281,5 @@ export class GadgetFx {
     }
   }
   /** Quita todo (al cambiar de zona o de partida). */
-  clear() { for (const L of this.live) { this.scene.remove(L.root); if (L.box) { const k = this.hooks.colliders.indexOf(L.box); if (k >= 0) this.hooks.colliders.splice(k, 1); } } this.live = []; for (const f of this.fx) this.scene.remove(f.m); this.fx = []; this.marked.clear(); this.glitched.clear(); }
+  clear() { for (const L of this.live) { this.scene.remove(L.root); if (L.box) { const k = this.hooks.colliders.indexOf(L.box); if (k >= 0) this.hooks.colliders.splice(k, 1); } } this.live = []; for (const f of this.fx) this.scene.remove(f.m); this.fx = []; for (const s of this.staged) this.scene.remove(s.m); this.staged = []; this.marked.clear(); this.glitched.clear(); }
 }

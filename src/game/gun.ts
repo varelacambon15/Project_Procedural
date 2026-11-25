@@ -17,9 +17,20 @@ import { Arms, handBasis, type Curl, type HandPose } from "./arms";
 import { audio, fadeOut, loadSamples, out, out as masterOut, playSample, sample, soundManifest } from "./audio";
 import { cycleKind, cycleSounds, filesOfType, pickReload, pickShot, type RecargaVariante } from "./sounds";
 import { settings } from "./settings";
-import { CYCLE_TIME, ViewAnimator, animParams, boltCurve, ease, phaseAt, pumpCurve, tri, type AnimInput, type MovingPart, type Phase } from "./anim";
+import { CYCLE_TIME, GadgetGesture, ViewAnimator, VM_FOV, animParams, boltCurve, ease, phaseAt, pumpCurve, tri, type AnimInput, type GestureCurve, type GestureKind, type MovingPart, type Phase, type Pose } from "./anim";
+import { gripAt, hasSequence as hasSequenceRaw, sequenceOrientAt as sequenceOrientAtRaw, sequencePathAt as sequencePathAtRaw, type HandSequence, type V4 } from "./handpath";
+// Interruptor del 24/11/2026: los recorridos reales de las tandas A, B y C del encargo 49 se ven antinaturales.
+// true = se usa la animación procedural de antes en todas las clases menos el fusil; false = se reactivan los recorridos reales.
+const REAL_PATHS_OFF = true;
+const realOff = (c: string) => REAL_PATHS_OFF && c !== 'rifle';
+const hasSequence = (c: string, s: HandSequence) => !realOff(c) && hasSequenceRaw(c, s);
+const sequenceOrientAt: typeof sequenceOrientAtRaw = (c, ...r) => (realOff(c) ? null : sequenceOrientAtRaw(c, ...r));
+const sequencePathAt: typeof sequencePathAtRaw = (c, ...r) => (realOff(c) ? null : sequencePathAtRaw(c, ...r));
+import { VM_BACK, HIP_H_MAX, HIP_H_TALL, HIP_W_MAX, HIP_W_MIN, VM_SCALE_MIN, VM_SCALE_FLOOR, aimScale, hipScale, projectPoint, projectedSize } from "./vmfit";
 
 const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3, smg: 1.8, rifle: 2.2, bullpup: 2.4, shotgun: 2.6, sniper: 2.9, launcher: 3.2, lmg: 4.4, flamethrower: 2.8 };
+/** Clases cuyo cargador se cambia y que tienen `reload_empty` con recorrido propio en poses.json. */
+const EMPTY_RELOAD: WeaponType[] = ["pistol", "revolver", "smg", "sniper", "lmg", "bullpup"];
 
 const DECAL_GEO = new THREE.PlaneGeometry(0.045, 0.045);
 const GLYPH_GEO = (() => { const g = new THREE.PlaneGeometry(0.16, 0.006); const v = new THREE.PlaneGeometry(0.006, 0.16); const p1 = g.attributes.position.array as Float32Array, p2 = v.attributes.position.array as Float32Array; const out = new THREE.BufferGeometry(); const pos = new Float32Array(p1.length + p2.length); pos.set(p1); pos.set(p2, p1.length); out.setAttribute("position", new THREE.BufferAttribute(pos, 3)); const i1 = Array.from(g.index!.array), i2 = Array.from(v.index!.array).map((x) => x + 4); out.setIndex([...i1, ...i2]); return out; })();
@@ -67,6 +78,12 @@ export class Gun {
   readonly viewmodel = new THREE.Group();
   private sway = new THREE.Group();   // inercia y balanceo
   private holder = new THREE.Group(); // pose (cadera/mira/sprint) y animaciones
+  /** Escala de la silueta anclada en la empuñadura: el arma se encoge sin que la mano se mueva de sitio. */
+  private anchor = new THREE.Group();
+  /** Empuñadura en coordenadas del holder (sin la transformación de la pose), pivote del encogido. */
+  private gripOffset = new THREE.Vector3();
+  /** Boca en coordenadas del holder (para que el fogonazo siga al encogido anclado en la empuñadura). */
+  private muzzleOffset = new THREE.Vector3();
   private model: AssembledWeapon | null = null;
   /** Encuadre en cadera de esta arma (referencias: abajo a la derecha, 24–40 % del ancho, mira bajo la mitad). */
   private fit: [number, number, number, number] | null = null; private fitAspect = 0; private fitTune = 0;
@@ -88,6 +105,23 @@ export class Gun {
   recoil = 0; recoilYaw = 0;
   /** Capa de animación procedural (lógica pura, parámetros por clase en data/anim.json). */
   readonly anim = new ViewAnimator();
+  /** Encargo 46: vértices muestreados del modelo (sin el FX de linterna/láser) para medir su silueta en pantalla. */
+  private vmLocal: [number, number, number][] = [];
+  private vmPts: [number, number, number][] = [];
+  private vmScaled: [number, number, number][] = [];
+  private vmScale = 1;
+  private vmMat = new THREE.Matrix4();
+  private vmMat2 = new THREE.Matrix4();
+  private vmUnit = new THREE.Vector3(1, 1, 1);
+  private vmOrigin = new THREE.Vector3();
+  private vmVec = new THREE.Vector3();
+  /** Encargo 54: encuadre de las atípicas (alejamiento + convergencia antes de encoger) y su medida provisional. */
+  private fitAtypical = false; private fitAimed = false;
+  private vmMatA = new THREE.Matrix4(); private vmMatB = new THREE.Matrix4(); private vmMatC = new THREE.Matrix4();
+  private vmProbe: [number, number, number][] = [];
+  private vmPosePos = new THREE.Vector3(); private vmPoseQ = new THREE.Quaternion(); private vmPoseE = new THREE.Euler();
+  /** Última silueta medida (fracción de pantalla; `raw` sin el encogido) y escala aplicada; para capturas y pruebas. */
+  readonly vmFit = { w: 0, h: 0, rawW: 0, rawH: 0, scale: 1 };
   private moving: Partial<Record<MovingPart, AssembledPart>> = {};
   private holsterT = 0; private pending: { item: Item | null; rebuild: boolean } | null = null;
   /** Para capturas: coloca el arma en su pose al instante, sin suavizado. */
@@ -103,6 +137,15 @@ export class Gun {
   static readonly HELMET_PRESS = 0.3;
   helmetTap() { if (this.helmetT < 0) this.helmetT = 0; }
   get helmetBusy() { return this.helmetT >= 0; }
+  /** Gesto de manos al usar equipamiento (activar) o lanzar una granada (lanzar/lanzar suave): lógica pura en anim.ts. */
+  readonly gesture = new GadgetGesture();
+  /** Para capturas: fija el gesto (tipo y progreso 0..1) sin avanzarlo solo. */
+  gestureHold: { kind: GestureKind; t: number } | null = null;
+  /**
+   * Arranca el gesto de la mano libre: la izquierda de apoyo; si se está recargando, la derecha (la recarga no se
+   * cancela y la mano que actúa es la que queda libre).
+   */
+  gadgetGesture(kind: GestureKind) { this.gesture.start(kind, this.reloadT > 0 ? 1 : -1); }
   /** Mezcla la mano izquierda con el gesto del casco (si está en curso). */
   private helmetLeft(base: HandPose | null): HandPose | null {
     const t = this.helmetT; if (t < 0) return base;
@@ -140,6 +183,8 @@ export class Gun {
   /** Cierre de cada dedo de la mano derecha ajustado a la empuñadura de esta arma (se calcula al equiparla). */ private fitCurl: number[] | null = null; private fitWait = 0;
   /** Recarga táctica (quedaban balas en el cargador): sin montar el arma. */ private tacReload = false;
   private inspectT = 0;
+  /** Progresos efectivos de esta capa (incluyen poseOverride, para capturas): recarga, sacar e inspeccionar. */
+  private reloadProg = 1; private drawIn = 0; private inspectIn: number | null = null;
   /** Efectos de rareza del arma en mano (módulos de datos por eventos; ver weapons/effects.ts). */
   private fx: EffectRunner<Dummy, THREE.Vector3> | null = null;
   /** Último daño hecho por cada arma (para el efecto "relevo") y enemigos inestables (explotan al morir). */
@@ -270,7 +315,7 @@ export class Gun {
     for (let c = 0; c < 8; c++) pts.push(new THREE.Vector3(c & 1 ? lb.max.x : lb.min.x, c & 2 ? lb.max.y : lb.min.y, c & 4 ? lb.max.z : lb.min.z).applyMatrix4(m.group.matrix));
     const sight = new THREE.Vector3(m.sightX ?? (m.handles.grip.x + 0.06), this.sightY, 0).applyMatrix4(m.group.matrix);
     const muzzle = new THREE.Vector3(m.muzzle.x, m.muzzle.y, 0).applyMatrix4(m.group.matrix);
-    const base = this.anim.hipBase({ length: m.length, gripX: m.handles.grip.x, gripY: m.handles.grip.y });
+    const base = this.anim.hipBase({ length: m.length, gripX: m.handles.grip.x, gripY: m.handles.grip.y, bulk: m.height });
     const t0 = spec?.type ?? "rifle", t = t0 === "revolver" ? "pistol" : t0, h = Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2), w = h * this.camera.aspect;
     // Variación por arma (semilla): ±6 % de posición y ±2° de giro
     let sd = (spec?.seed ?? 7) >>> 0; const rnd = () => ((sd = (Math.imul(sd, 1664525) + 1013904223) >>> 0) / 4294967296) * 2 - 1;
@@ -313,7 +358,7 @@ export class Gun {
 
   constructor(private camera: THREE.PerspectiveCamera, private scene: THREE.Scene, private asm: WeaponAssembler, private world: THREE.Object3D[], readonly hooks: ShotHooks) {
     camera.add(this.viewmodel);
-    this.viewmodel.add(this.sway); this.sway.add(this.holder);
+    this.viewmodel.add(this.sway); this.sway.add(this.holder); this.holder.add(this.anchor);
     this.flash = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0 }));
     this.holder.add(this.flash, this.flashLight);
     this.arms = new Arms(camera);
@@ -360,8 +405,10 @@ export class Gun {
     this.equipDur = item && this.fx?.equipFast() ? 0.22 : 0.3 + (1 - (item?.spec.stats.manejo ?? 60) / 100) * 0.35;
     this.equipT = this.equipDur;
     // Vaciar la mano del todo (no solo el modelo conocido): si dos cargas se cruzaban, quedaban dos armas apiladas
-    for (const c of [...this.holder.children]) if (c !== this.flash && c !== this.flashLight) this.holder.remove(c);
+    for (const c of [...this.holder.children]) if (c !== this.flash && c !== this.flashLight && c !== this.anchor) this.holder.remove(c);
     this.model = null; this.mag = null; this.moving = {};
+    for (const c of [...this.anchor.children]) this.anchor.remove(c);
+    this.vmLocal = []; this.vmPts = []; this.vmScaled = []; this.vmScale = 1;
     if (!item) return;
     this.anim.setClass(item.spec.type, item.spec.hold?.stance);
     // Tipo de mira y aumentos (solo dependen del arma: se fijan ya, antes de cargar el modelo)
@@ -393,6 +440,10 @@ export class Gun {
       for (const mat of (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as THREE.MeshStandardMaterial[]) if (this.env && "envMap" in mat) { mat.envMap = this.env; mat.needsUpdate = true; }
     });
     m.group.rotation.y = Math.PI / 2; // +X (boca) hacia -Z de la cámara
+    m.group.updateMatrix();
+    // Pivote del encogido de silueta: la empuñadura (la mano no se mueve al reducir el arma)
+    this.gripOffset.set(m.handles.grip.x, m.handles.grip.y, m.handles.grip.z).applyMatrix4(m.group.matrix);
+    this.muzzleOffset.set(m.muzzle.x, m.muzzle.y, m.muzzle.z).applyMatrix4(m.group.matrix);
     this.sightY = m.sightY ?? new THREE.Box3().setFromObject(m.group).max.y;
     // Visor integrado en el modelo (sin óptica añadida): solo si de verdad hay una pieza de mira con aumentos
     // (solo francotiradores: en otras armas esa pieza suele ser un asa con alza, que apunta como mira de hierro)
@@ -415,14 +466,15 @@ export class Gun {
     }
     // Shaders del arma compilados en segundo plano mientras se saca (sin tirón al aparecer)
     if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item || seq !== this.equipSeq) return; }
-    this.model = m; this.fitCurl = null; this.fit = null; this.fitTune = 0;
+    this.model = m; this.fitCurl = null; this.fit = null; this.fitTune = 0; this.fitAimed = false; this.fitAtypical = false;
     this.buildDeviceFx(m);
     if (soundManifest) void loadSamples([...filesOfType(soundManifest, item.spec.type), ...(soundManifest.efectos.casquillo ?? [])]); this.fitWait = 12;
     // Rendimiento: dentro de cada pieza (que se anima entera) se fusionan sus mallas por material
     if (!m.group.userData.merged) { for (const p of m.parts) mergeStatic(p.object); m.group.userData.merged = true; }
-    for (const c of [...this.holder.children]) if (c !== this.flash && c !== this.flashLight) this.holder.remove(c);
-    this.holder.add(m.group);
-    this.flash.position.set(0, m.muzzle.y, -m.muzzle.x);
+    for (const c of [...this.holder.children]) if (c !== this.flash && c !== this.flashLight && c !== this.anchor) this.holder.remove(c);
+    this.anchor.add(m.group);
+    this.cacheVmPoints(m);
+    this.flash.position.copy(this.muzzleOffset);
     this.flashLight.position.copy(this.flash.position);
   }
 
@@ -645,9 +697,14 @@ export class Gun {
     // ---------- Animación (capa procedural: src/game/anim.ts) ----------
     // (encuadre por arma desactivado: empeoraba la mayoría; la pose de cadera es la de cada clase, como en la 0.16.0)
     if (FIT_ENABLED && this.model && (!this.fit || Math.abs(this.fitAspect - this.camera.aspect) > 0.01)) this.computeFit();
+    // Progresos efectivos (con poseOverride) para las manos: así las capturas fijan la recarga/sacar sin tocar el reloj.
+    const reloadIn = this.reloadT > 0 && s ? 1 - this.reloadT / this.reloadDur : null;
+    this.reloadProg = this.poseOverride?.reload ?? reloadIn ?? 1;
+    this.drawIn = this.poseOverride?.draw ?? (this.equipT > 0 ? this.equipT / this.equipDur : 0);
+    this.inspectIn = this.poseOverride?.inspect !== undefined ? this.poseOverride.inspect : this.inspectT > 0 ? 1 - this.inspectT / 2.6 : null;
     const pose = this.anim.update({
       dt, time: performance.now() / 1000, ads: this.aimT, moving: c.moving, sprinting: c.sprinting, grounded: c.grounded, vy: c.vy,
-      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, bulk: this.model?.height, sightY: this.sightY, sightX: this.sight === "irons" ? this.model?.sightX : undefined, gripX: this.model?.handles.grip.x, gripY: this.model?.handles.grip.y, fit: this.fit ?? undefined, iron: this.sight === "iron",
+      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, bulk: this.model?.height, sightY: this.sightY, sightX: this.sight === "irons" ? this.model?.sightX : undefined, opticX: this.sight !== "irons" ? this.model?.opticX : undefined, gripX: this.model?.handles.grip.x, gripY: this.model?.handles.grip.y, fit: this.fit ?? undefined, iron: this.sight === "iron",
       reload: this.reloadT > 0 && s ? 1 - this.reloadT / this.reloadDur : null,
       draw: this.equipT > 0 ? this.equipT / this.equipDur : 0,
       holster: this.pending ? 1 - Math.max(0, this.holsterT) / Math.max(0.01, this.anim.p.holster) : 0,
@@ -689,6 +746,8 @@ export class Gun {
       THREE.MathUtils.lerp(this.holder.rotation.y, pose.rot[1], Math.max(follow, Math.min(1, dt * 14))),
       THREE.MathUtils.lerp(this.holder.rotation.z, pose.rot[2], Math.max(follow, Math.min(1, dt * 16))));
     this.sway.rotation.set(...pose.swayRot); this.sway.position.set(...pose.swayPos);
+    this.updateViewScale(dt);
+    this.planAtypicalFit(pose);
     this.updateDevice(dt);
     // Ajuste fino del encuadre sobre la pose real (la estimación de computeFit no ve la inclinación de la pose): durante
     // el primer segundo y medio en cadera y quieto, se mide en pantalla la empuñadura y la mira y se corrige el desfase
@@ -715,6 +774,9 @@ export class Gun {
     this.onTrigT = Math.max(0, this.onTrigT - dt);
     if (c.fire) this.onTrigT = 1.2;
     if (this.helmetT >= 0 && (this.helmetT += dt) > Gun.HELMET_DUR) this.helmetT = -1;
+    // Gesto de equipamiento/granada: solo avanza el tiempo (el daño no lo corta)
+    if (this.gestureHold) this.gesture.set(this.gestureHold.kind, this.gestureHold.t);
+    else this.gesture.update(dt);
     if (this.model) this.updateHands(dt); else if (fists) this.updateFists(dt);
     // Invocación de un súper: las manos siguen la línea de tiempo y el arma baja fuera de la vista
     this.arms.override = this.superPose ? { right: this.superPose.right, left: this.superPose.left } : null;
@@ -745,6 +807,196 @@ export class Gun {
       const b = this.bursts[i]; b.t -= dt; b.mesh.scale.setScalar(1 + (0.35 - b.t) * 9); (b.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, b.t / 0.35);
       if (b.t <= 0) { this.scene.remove(b.mesh); this.bursts.splice(i, 1); }
     }
+  }
+
+  /**
+   * Recorte del arma en cadera por su silueta proyectada (encargo 46, recalibrado en el 50 y en el 54). Proyecta los
+   * vértices muestreados del modelo con la cámara del viewmodel (`VM_FOV`, `VM_BACK`) y, solo si ocupa más de
+   * `HIP_W_MAX`/`HIP_H_MAX` (o del alto de la clase) de la pantalla, encoge el modelo hasta esos límites (sin bajar de
+   * `VM_SCALE_MIN`, sin alejarlo); el resto se ve exactamente igual que antes del 46. Las atípicas se alejan antes de
+   * encoger (`planAtypicalFit`) y la clase puede pedir una silueta mayor (`hipScale`). El apuntado deshace todo ello
+   * (1 en ADS) y el cambio va suavizado, sin saltos. Se usa la silueta real (vértices por pieza) y no las 8 esquinas
+   * del AABB del conjunto: esa caja inventa esquinas que el modelo no tiene y en armas largas la culata queda junto a
+   * la cámara, con lo que medía varias pantallas y encogía todas. La mano de apoyo sigue al arma (sus anclajes se
+   * transforman con el grupo).
+   */
+  private updateViewScale(dt: number) {
+    const m = this.model;
+    let target = 1, rawW = 0, rawH = 0;
+    if (m && this.vmPts.length) {
+      this.viewmodel.updateMatrix(); this.sway.updateMatrix(); m.group.updateMatrix();
+      this.vmMat2.multiplyMatrices(this.viewmodel.matrix, this.sway.matrix);
+      this.vmOrigin.copy(this.gripOffset).applyQuaternion(this.holder.quaternion).add(this.holder.position).applyMatrix4(this.vmMat2);
+      // Cadena hasta la cámara sin la escala del holder: se mide el arma a escala 1 (así el objetivo no depende del
+      // encogido del fotograma anterior y el suavizado converge)
+      this.vmMat.compose(this.holder.position, this.holder.quaternion, this.vmUnit);
+      this.vmMat.premultiply(this.vmMat2).multiply(m.group.matrix);
+      for (let i = 0; i < this.vmLocal.length; i++) {
+        const l = this.vmLocal[i], p = this.vmPts[i];
+        this.vmVec.set(l[0], l[1], l[2]).applyMatrix4(this.vmMat);
+        p[2] = this.vmVec.z - VM_BACK;
+        if (p[2] >= -0.02) { p[0] = NaN; p[1] = NaN; p[2] = NaN; } // (detrás del plano cercano: no se ve)
+        else { p[0] = this.vmVec.x; p[1] = this.vmVec.y; }
+      }
+      const raw = projectedSize(this.vmPts, VM_FOV, this.camera.aspect, true);
+      rawW = raw.w; rawH = raw.h;
+      target = this.fitScale(raw);
+    }
+    this.vmScale = this.snap ? target : this.vmScale + (target - this.vmScale) * Math.min(1, dt * 8);
+    // Encargo 54: la clase puede pedir una silueta mayor en cadera (subfusiles, que salían pequeños); `aimScale` la
+    // deshace al apuntar, así que ADS no cambia.
+    const s = aimScale(this.vmScale * (this.anim.p.hipScale ?? 1), this.aimT);
+    // Encogido anclado en la empuñadura: escala `s` alrededor del pivote (la mano de la empuñadura no se mueve)
+    this.anchor.scale.setScalar(s);
+    this.anchor.position.copy(this.gripOffset).multiplyScalar(1 - s);
+    // El fogonazo sigue a la boca con el mismo encogido anclado en la empuñadura
+    this.flash.position.copy(this.gripOffset).multiplyScalar(1 - s).addScaledVector(this.muzzleOffset, s);
+    this.flashLight.position.copy(this.flash.position);
+    // Medida final (la que se ve): la misma silueta con la escala aplicada, para capturas y pruebas
+    const fin = m && this.vmPts.length ? this.measureAt(s) : { w: 0, h: 0 };
+    this.vmFit.w = fin.w; this.vmFit.h = fin.h; this.vmFit.rawW = rawW; this.vmFit.rawH = rawH; this.vmFit.scale = s;
+  }
+
+  /** Silueta proyectada (fracción de pantalla, recortada al viewport) con el arma escalada `s` sobre su empuñadura. */
+  private measureAt(s: number): { w: number; h: number } {
+    if (s === 1) return projectedSize(this.vmPts, VM_FOV, this.camera.aspect, true);
+    const ox = this.vmOrigin.x, oy = this.vmOrigin.y, oz = this.vmOrigin.z - VM_BACK;
+    while (this.vmScaled.length < this.vmPts.length) this.vmScaled.push([0, 0, 0]);
+    for (let i = 0; i < this.vmPts.length; i++) {
+      const p = this.vmPts[i], q = this.vmScaled[i];
+      if (!Number.isFinite(p[0])) { q[0] = NaN; q[1] = NaN; q[2] = NaN; continue; }
+      q[0] = ox + s * (p[0] - ox); q[1] = oy + s * (p[1] - oy); q[2] = oz + s * (p[2] - oz);
+    }
+    return projectedSize(this.vmScaled, VM_FOV, this.camera.aspect, true);
+  }
+
+  /**
+   * Mayor escala de cadera que deja la silueta dentro de los límites (el alto puede venir de la clase: encargo 54).
+   * `hipScale()` de vmfit da la estimación; el recorte de pantalla no es lineal con la escala (lo que sale de cuadro
+   * deja de contar), así que se afina con una búsqueda alrededor de esa estimación; si ni con el suelo cabe, se queda
+   * el suelo (normal o duro para las atípicas).
+   */
+  private fitScale(raw: { w: number; h: number }): number {
+    const maxH = this.anim.p.hipMaxH ?? HIP_H_MAX;
+    const cabe = (q: { w: number; h: number }) => q.w <= HIP_W_MAX + 1e-6 && q.h <= maxH + 1e-6;
+    if (cabe(raw)) return 1;
+    // Encargo 54: las atípicas ya se han alejado y convergido en `planAtypicalFit`; aquí solo queda el suelo duro.
+    if (this.fitAtypical) return VM_SCALE_FLOOR;
+    // Suelo normal (0,82) para todas (encargo 50); solo las atípicas que ya llenan la pantalla sin escalar (Partisan y
+    // similares: silueta recortada de lado a lado) siguen encogiéndose hasta un suelo duro (encargo 51).
+    const floor = raw.w >= 0.9 || raw.h >= 0.9 ? VM_SCALE_FLOOR : VM_SCALE_MIN;
+    const est = Math.min(1, Math.max(floor, hipScale(raw.w, raw.h, floor, HIP_W_MAX, maxH)));
+    let lo: number, hi: number;
+    if (cabe(this.measureAt(est))) { lo = est; hi = 1; }
+    else { lo = floor; hi = est; if (!cabe(this.measureAt(lo))) return floor; }
+    for (let i = 0; i < 5; i++) { const mid = (lo + hi) / 2; if (cabe(this.measureAt(mid))) lo = mid; else hi = mid; }
+    return lo;
+  }
+
+  /**
+   * Encargo 54: silueta y anclas (empuñadura y boca) con un ajuste extra de cadera (`dx`, `dy`, `dz` en coordenadas de
+   * la cámara, como `AnimInput.fit`) y la escala `s`, medidas con la cámara del arma: el mismo camino que el render,
+   * sobre la pose de destino (sin el suavizado del fotograma).
+   */
+  private probeFit(s: number, dx: number, dy: number, dz: number, pos: THREE.Vector3, quat: THREE.Quaternion) {
+    const m = this.model!;
+    this.viewmodel.updateMatrix(); this.sway.updateMatrix(); m.group.updateMatrix();
+    this.vmMat2.multiplyMatrices(this.viewmodel.matrix, this.sway.matrix);
+    this.vmMatA.compose(this.vmVec.set(pos.x + dx, pos.y + dy, pos.z + dz), quat, this.vmUnit);
+    // (encogido anclado en la empuñadura, como el render: T(g·(1−s)) · S(s))
+    this.vmMatB.makeTranslation(this.gripOffset.x * (1 - s), this.gripOffset.y * (1 - s), this.gripOffset.z * (1 - s)).multiply(this.vmMatC.makeScale(s, s, s));
+    this.vmMat.copy(this.vmMat2).multiply(this.vmMatA).multiply(this.vmMatB).multiply(m.group.matrix);
+    while (this.vmProbe.length < this.vmLocal.length) this.vmProbe.push([0, 0, 0]);
+    for (let i = 0; i < this.vmLocal.length; i++) {
+      const l = this.vmLocal[i], p = this.vmProbe[i], v = this.vmVec.set(l[0], l[1], l[2]).applyMatrix4(this.vmMat);
+      p[2] = v.z - VM_BACK;
+      if (p[2] >= -0.02) { p[0] = NaN; p[1] = NaN; p[2] = NaN; } else { p[0] = v.x; p[1] = v.y; }
+    }
+    const size = projectedSize(this.vmProbe, VM_FOV, this.camera.aspect, true);
+    const scr = (v: THREE.Vector3): [number, number] => {
+      const q = this.vmVec.copy(v).applyMatrix4(this.vmMat), z = q.z - VM_BACK;
+      if (z >= -0.02) return [NaN, NaN];
+      const p = projectPoint([q.x, q.y, z], VM_FOV, this.camera.aspect);
+      return p ?? [NaN, NaN];
+    };
+    const grip = scr(m.handles.grip), muzzle = scr(m.muzzle);
+    const gripZ = this.vmVec.copy(m.handles.grip).applyMatrix4(this.vmMat).z - VM_BACK;
+    return { w: size.w, h: size.h, grip, muzzle, gripZ };
+  }
+
+  /**
+   * Encargo 54: las atípicas que aun con el suelo de escala no caben (la silueta se corta de lado a lado, como la
+   * Partisan 233) se alejan y convergen antes de encogerlas. Se busca el menor alejamiento (z hacia delante de la
+   * cámara) que, con la escala del suelo (0,78) y la convergencia de cadera de la clase, deja el alto en el objetivo
+   * (≤ 0,56, se apunta a 0,55), conserva 0,40 de ancho y no saca la empuñadura ni la boca de su rango; el
+   * desplazamiento lateral devuelve la empuñadura hacia su sitio (alejar la lleva al centro y encogía el cuadro).
+   * Se calcula una vez por arma, en cadera, y se aplica con `AnimInput.fit` (se desvanece al apuntar: ADS no cambia).
+   */
+  private planAtypicalFit(pose: Pose) {
+    if (!this.model || !this.vmLocal.length) return;
+    if (this.fitAimed) return;
+    if (this.aimT > 0.02 || this.drawIn > 0.02 || this.reloadT > 0 || this.holsterT > 0 || this.sprintT >= 0.05 || this.inspectT > 0 || Math.abs(this.anim.kick) > 0.05) return;
+    this.fitAimed = true;
+    const raw = { w: this.vmFit.rawW, h: this.vmFit.rawH };
+    // (solo las que llenan la pantalla sin escalar: el resto queda exactamente como está desde el encargo 51)
+    if (raw.w < 0.9 && raw.h < 0.9) return;
+    this.fitAtypical = true;
+    const pos = this.vmPosePos.set(pose.pos[0], pose.pos[1], pose.pos[2]), quat = this.vmPoseQ.setFromEuler(this.vmPoseE.set(pose.rot[0], pose.rot[1], pose.rot[2]));
+    const s = VM_SCALE_FLOOR, hMax = HIP_H_TALL - 0.002, wMin = HIP_W_MIN + 0.002;
+    const base = this.probeFit(s, 0, 0, 0, pos, quat);
+    const hh = Math.tan((VM_FOV * Math.PI) / 360), hw = hh * Math.max(1e-4, this.camera.aspect);
+    const inR = (v: number, a: number, b: number) => v >= a - 1e-6 && v <= b + 1e-6;
+    const gripOK = (p: { grip: [number, number] }) => inR(p.grip[0], 0.72, 0.92) && inR(p.grip[1], 0.78, 0.98);
+    const muzzleOK = (p: { muzzle: [number, number] }) => inR(p.muzzle[0], 0.5, 0.62) && inR(p.muzzle[1], 0.45, 0.6);
+    const cabe = (p: { w: number; h: number; grip: [number, number]; muzzle: [number, number] }) =>
+      p.h <= hMax && p.w >= wMin && p.w <= HIP_W_MAX + 1e-6 && gripOK(p) && muzzleOK(p);
+    let best: { d: [number, number, number]; score: number } | null = null;
+    for (let dz = -0.02; dz >= -0.45 - 1e-9; dz -= 0.005) {
+      // (compensación lateral: cuánto del desvío de la empuñadura se devuelve; 0 = ninguna, 1 = dejarla donde estaba)
+      for (const c of [0.5, 0.65, 0.35, 0.8]) {
+        let dx = 0, dy = 0, p = this.probeFit(s, 0, 0, dz, pos, quat);
+        for (let it = 0; it < 3; it++) {
+          const z = Math.max(0.1, -p.gripZ);
+          dx += (base.grip[0] - p.grip[0]) * c * 2 * z * hw;
+          dy -= (base.grip[1] - p.grip[1]) * c * 2 * z * hh;
+          p = this.probeFit(s, dx, dy, dz, pos, quat);
+        }
+        const score = Math.max(0, p.h - hMax) * 20 + Math.max(0, wMin - p.w) * 20 + Math.max(0, p.w - HIP_W_MAX) * 5
+          + (gripOK(p) ? 0 : 1) + (muzzleOK(p) ? 0 : 1);
+        if (cabe(p)) { best = { d: [dx, dy, dz], score: 0 }; break; }
+        if (!best || score < best.score - 1e-9) best = { d: [dx, dy, dz], score };
+      }
+      if (best && best.score <= 0) break;
+    }
+    if (best) this.fit = [best.d[0], best.d[1], best.d[2], 0];
+  }
+
+  /**
+   * Vértices muestreados de la silueta del modelo en su espacio local (sin el FX del accesorio: su cono/haz mide
+   * metros y no es el arma). Se muestrean hasta ~40 por malla: basta para la silueta y evita recorrer todas cada
+   * fotograma (el encargo 46 permite medir al equipar y al cambiar de pose; aquí la pose solo mueve los puntos).
+   */
+  private cacheVmPoints(m: AssembledWeapon) {
+    this.vmLocal = []; this.vmPts = []; this.vmScaled = []; this.vmScale = 1;
+    m.group.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4().copy(m.group.matrixWorld).invert();
+    const v = new THREE.Vector3();
+    for (const p of m.parts) {
+      if (!p.object.visible) continue;
+      p.object.traverse((o) => {
+        const me = o as THREE.Mesh;
+        if (!me.isMesh || me.visible === false || !me.geometry) return;
+        const mat = me.material as THREE.Material | THREE.Material[];
+        if ((Array.isArray(mat) ? mat[0] : mat)?.visible === false) return;
+        const pos = me.geometry.attributes.position;
+        const step = Math.max(1, Math.ceil(pos.count / 40));
+        for (let i = 0; i < pos.count; i += step) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(me.matrixWorld).applyMatrix4(inv);
+          this.vmLocal.push([v.x, v.y, v.z]);
+        }
+      });
+    }
+    for (let i = 0; i < this.vmLocal.length; i++) this.vmPts.push([0, 0, 0]);
   }
 
   /**
@@ -859,20 +1111,26 @@ export class Gun {
     const k = this.punchT > 0 ? this.punchT / this.punchDur : 0;
     const ext = k <= 0 ? 0 : k < 0.28 ? ease(k / 0.28) : 1 - ease((k - 0.28) / 0.72);
     const fist = (side: 1 | -1): HandPose => {
-      // Guardia: puños a la altura del pecho, algo hacia dentro; al esprintar bajan y se balancean alternos
-      const base = new THREE.Vector3(side * 0.15, -0.15 + breathe - 0.3 * (1 - raise), side > 0 ? -0.38 : -0.42);
+      // Guardia: puños cerrados a la altura del pecho, algo adelantados, hacia dentro y arriba; al esprintar bajan y
+      // se balancean alternos. El dorso mira arriba, afuera y hacia la cámara (así se ven los nudillos, no la muñeca).
+      const base = new THREE.Vector3(side * 0.13, -0.12 + breathe - 0.3 * (1 - raise), -0.44);
       base.y -= 0.06 * sp; base.z += Math.sin(tm * 9 + (side > 0 ? 0 : Math.PI)) * 0.07 * sp;
       const hitting = this.punchT > 0 && side === this.punchSide;
-      let pos = base, back = new THREE.Vector3(side * 0.8, 0.6, 0.15); // dorso hacia fuera, como en guardia de boxeo
+      let pos = base, back = new THREE.Vector3(side * 0.5, 0.55, 0.67); // dorso hacia arriba y afuera, como en guardia
       if (hitting) {
         // Recto al centro de la pantalla con giro de muñeca; el fuerte, más largo
-        const target = new THREE.Vector3(side * 0.03, this.punchHeavy ? -0.06 : -0.1, this.punchHeavy ? -0.72 : -0.64);
+        const target = new THREE.Vector3(side * 0.03, this.punchHeavy ? -0.04 : -0.08, this.punchHeavy ? -0.72 : -0.64);
         pos = base.clone().lerp(target, ext);
         back = back.lerp(new THREE.Vector3(side * 0.15, 1, 0), ext * 0.8); // al golpear, la muñeca gira y el dorso queda arriba
       } else if (this.punchT > 0) pos = base.clone().add(new THREE.Vector3(0, 0.01 * ext, 0.05 * ext)); // la otra se recoge
-      return { pos, orient: handBasis(new THREE.Vector3(-side * 0.12, 0.05, -1), back), curl: { fingers: [1, 1, 1, 1], thumb: 0.85 } };
+      // Dedos en puño (falanges cerradas) y pulgar cruzado sobre ellos; nudillos arriba y al frente.
+      return { pos, orient: handBasis(new THREE.Vector3(side * 0.1, 0.62, -0.78), back), curl: { fingers: [1, 1, 1, 1], thumb: 1 }, thumbTurn: 1.3 };
     };
-    this.arms.update({ right: fist(1), left: this.helmetLeft(fist(-1)), dt, shoulder: new THREE.Vector3(0, 0, -0.06 * ext) });
+    // Gesto de equipamiento/granada sobre la mano libre (también sin arma equipada)
+    const gk = this.gesture.kind, gc = this.gesture.curve(), fl = fist(-1), fr = fist(1);
+    const left = gk && gc && this.gesture.side === -1 ? this.gestureHand(fl, -1, gc, gk) : fl;
+    const right = gk && gc && this.gesture.side === 1 ? this.gestureHand(fr, 1, gc, gk) : fr;
+    this.arms.update({ right, left: this.helmetLeft(left), dt, shoulder: new THREE.Vector3(0, 0, -0.06 * ext) });
   }
   /** El cargador vacío cae al suelo (copia del real, con física simple como los casquillos). */
   private dropMag() {
@@ -961,21 +1219,29 @@ export class Gun {
     // Mano de apoyo según el perfil de agarre: su soporte en la cadera y al apuntar (con transición suave); sin soporte,
     // la mano baja fuera de la vista (pistola a una mano)
     const hold = this.spec?.hold, A = h.anchors, k = ease(Math.min(1, Math.max(0, this.poseOverride?.ads ?? this.aimT)));
+    /** Punto válido (existe y no es NaN/Infinity): una pieza sin malla dejaba anclajes en NaN y la mano desaparecía. */
+    const fin = (p: THREE.Vector3 | null | undefined): p is THREE.Vector3 => !!p && Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z);
+    // (una pistola sin culata se sujeta a una mano y su apoyo es la empuñadura; con culata, como un arma larga)
+    const twoHanded = !hold ? true : hold.stance !== "hip";
     const at = (s: Support | undefined) => {
       if (!s || s === "none") return null;
       if (s === "custom") { // agarre libre: a lo largo del arma, entre la empuñadura y la boca, a la altura del guardamanos
         const f = Math.min(1, Math.max(0, hold?.at ?? 0.5)), x0 = h.grip.x + 0.07, x1 = Math.min(m.muzzle.x - 0.04, h.grip.x + 0.42);
         return new THREE.Vector3(x0 + (x1 - x0) * f, (A.front ?? h.support).y, 0);
       }
-      // (anclaje que el arma no tiene: en armas largas, al guardamanos; nunca a la empuñadura, que era agarrarla como una pistola)
-      return (A[s] ?? (this.spec?.type === "pistol" || this.spec?.type === "revolver" ? A.grip : null) ?? h.support).clone();
+      // (anclaje que el arma no tiene o que salió inválido: en armas largas y pistolas con culata, al guardamanos; nunca
+      // a la empuñadura, que era agarrarla como una pistola y la izquierda quedaba encima de la derecha)
+      if (fin(A[s])) return A[s]!.clone();
+      if (fin(h.support) && twoHanded) return h.support.clone();
+      if (fin(A.grip) && !twoHanded) return A.grip!.clone();
+      return fin(h.support) ? h.support.clone() : null;
     };
     const rest = h.grip.clone().add(new THREE.Vector3(-0.05, -0.24, -0.12));
     // Pistolas y revólveres: en la cadera a una mano (la otra entra al apuntar), como en los shooters de referencia;
     // si el jugador eligió otro agarre en el banco, se respeta
     const handgun = this.spec?.type === "pistol" || this.spec?.type === "revolver";
     // (variedad: cada pistola trae su agarre de serie, a una o a dos manos; ya no se fuerza a una mano)
-    void handgun; const hipS: Support | undefined = hold?.hip;
+    const hipS: Support | undefined = hold?.hip;
     const hipP = at(hipS ?? "front"), adsP = at(hold?.ads ?? "front");
     let base: THREE.Vector3 | null = hipP && adsP ? hipP.lerp(adsP, k) : adsP ? (k < 0.03 ? null : rest.clone().lerp(adsP, k)) : hipP ? (k > 0.97 ? null : hipP.lerp(rest, k)) : null;
     if (!hold && !base) base = h.support.clone();
@@ -990,19 +1256,60 @@ export class Gun {
       const sMin = Math.min(sReach, this.spec?.type === "bullpup" ? 0.1 : this.spec?.type === "smg" ? Math.max(0.14, (m.muzzle.x - h.grip.x) * 0.35) : Math.max(0.2, (m.muzzle.x - h.grip.x) * 0.32));
       if (base.x - h.grip.x < sMin) base.x = h.grip.x + sMin;
     }
-    const sup = base ?? (A.grip ?? h.support).clone(); // a dónde vuelve la mano tras recargar
+    const sup = base ?? (fin(A.grip) ? A.grip!.clone() : fin(h.support) ? h.support.clone() : h.grip.clone()); // a dónde vuelve la mano tras recargar
+    // Anclas del recorrido real (src/data/poses.json): reposo, cargador, cartuchera (baja, para sacar) y punto alto
+    // (corredera/tambor, para inspeccionar). En espacio del modelo, como `sup`.
+    const pouch = h.magwell.clone().add(new THREE.Vector3(-0.02, -0.25, 0.04));
+    const tipo = this.spec?.type;
+    // Armas cortas: la cartuchera del recorrido real se ancla en un punto visible abajo a la izquierda de la vista
+    // (en espacio de cámara y convertido al del modelo), no 25 cm bajo el arma, que la sacaba de cuadro.
+    const handPouch = tipo === "pistol" || tipo === "revolver"
+      ? m.group.worldToLocal(this.camera.localToWorld(new THREE.Vector3(-0.09, -0.13, -0.30)))
+      : pouch;
+    // Punto alto (corredera/tambor) de la inspección: en armas cortas se mantiene a una distancia mínima de la cámara
+    // (la inspección salía «muy pegada» y la mano llenaba la pantalla); se empuja por el mismo rayo de vista, así el
+    // encuadre no cambia de lado.
+    // Punto alto de la inspección: corredera/tambor en armas cortas (separado de la cámara para que la mano no llene
+    // la vista) y cerrojo/palanca de carga en las largas (subfusiles y escopetas con dato de inspección).
+    let highP = handgun ? new THREE.Vector3(sup.x + 0.03, sup.y + 0.05, sup.z) : h.charge.clone();
+    if (handgun) {
+      const hc = toCam(highP); if (hc.z > -0.37) hc.z = -0.37;
+      highP = m.group.worldToLocal(this.camera.localToWorld(hc));
+    }
+    const anchors = {
+      rest: [sup.x, sup.y, sup.z] as [number, number, number],
+      mag: [h.magwell.x, h.magwell.y, h.magwell.z] as [number, number, number],
+      far: [handPouch.x, handPouch.y, handPouch.z] as [number, number, number],
+      high: [highP.x, highP.y, highP.z] as [number, number, number],
+    };
     let left: THREE.Vector3 | null = base;
+    /** Curvatura de los dedos para esta mano de apoyo si el recorrido real la trae (si no, la del agarre). */
+    let pathCurl: Curl | null = null;
+    /** Giro de muñeca de la referencia y punto al que apuntan los dedos (marco del arma), si la secuencia lo trae. */
+    let pathOrient: V4 | null = null, pathTarget: THREE.Vector3 | null = null;
     const ph = this.reloadPhase, style = this.anim.reloadOverride?.style ?? this.anim.p.reload.style;
     const phId = ph ? `${ph.index}:${ph.id}` : "";
     if (phId !== this.lastPhaseId && ph?.id === "pouch" && style === "mag" && this.mag) this.dropMag();
     this.lastPhaseId = phId;
     this.updateInHand(m, ph, style);
-    const pouch = h.magwell.clone().add(new THREE.Vector3(-0.02, -0.25, 0.04));
     const pumpOff = new THREE.Vector3(-(this.moving.pump ? this.moving.pump.base.x - this.moving.pump.object.position.x : 0), 0, 0);
     if (ph && style === "shells") {
-      // Cartucho a cartucho: la mano va de la cartuchera a la ventana de carga y empuja
-      if (ph.id === "shell") left = ph.t < 0.5 ? pouch.clone().lerp(h.magwell, ease(ph.t * 2)) : h.magwell.clone().add(new THREE.Vector3(0.02 * tri(ph.t, 0.5, 1), 0.01 * tri(ph.t, 0.5, 1), 0));
-      else if (ph.id === "rack") left = sup.clone().add(pumpOff);
+      // Cartucho a cartucho. Con recorrido real (poses.json): la mano viaja del guardamanos a la ventana de carga
+      // durante el primer cartucho, alimenta ahí (con el empujón de cada uno) y vuelve al guardamanos en el último
+      // para recoger el bombeo. Sin dato, el vaivén procedural de siempre.
+      const phs = this.anim.reloadOverride?.phases ?? this.anim.p.reload.phases;
+      let s0 = -1, s1 = -1;
+      phs.forEach(([id], i) => { if (id === "shell") { if (s0 < 0) s0 = i; s1 = i; } });
+      const f = ph.id !== "shell" ? -1 : ph.index === s0 ? ph.t * 0.5 : ph.index === s1 ? 0.5 + ph.t * 0.5 : 0.5;
+      const real = f >= 0 ? sequencePathAt(tipo ?? "", "reload", f, anchors, this.spec!.seed) : null;
+      const ori = f >= 0 ? sequenceOrientAt(tipo ?? "", "reload", f, anchors, this.spec!.seed) : null;
+      if (ph.id === "rack") left = sup.clone().add(pumpOff);
+      else if (real) {
+        left = new THREE.Vector3(real.pos[0], real.pos[1], real.pos[2]);
+        left.x += 0.02 * tri(ph.t, 0.5, 1); // (empujón de cada cartucho hacia la recámara)
+        pathCurl = real.curl;
+        if (ori) { pathOrient = ori; pathTarget = h.magwell.clone(); }
+      } else if (ph.id === "shell") left = ph.t < 0.5 ? pouch.clone().lerp(h.magwell, ease(ph.t * 2)) : h.magwell.clone().add(new THREE.Vector3(0.02 * tri(ph.t, 0.5, 1), 0.01 * tri(ph.t, 0.5, 1), 0));
       else if (ph.id === "settle") left = h.magwell.clone().lerp(sup, ease(ph.t));
       else left = sup.clone().lerp(h.magwell, ease(ph.t));
     } else if (ph && style === "break") {
@@ -1023,33 +1330,58 @@ export class Gun {
       else if (ph.id === "close") left = gate;
       else if (ph.id === "settle") left = gate.clone().lerp(sup, ease(ph.t));
     } else if (ph && style === "cylinder") {
-      // Revólver: la mano bascula el tambor (sale a la izquierda), lo vacía, mete un cargador rápido y lo cierra
+      // Revólver: la mano bascula el tambor (sale a la izquierda), lo vacía, mete un cargador rápido y lo cierra.
+      // Si hay recorrido real (poses.json), lo sigue con el tambor abierto como ancla central.
       const cyl = this.mag ? this.mag.object.position.clone().sub(this.mag.base) : new THREE.Vector3();
       const atCyl = h.magwell.clone().add(cyl);
-      if (ph.id === "open") left = sup.clone().lerp(atCyl, ease(ph.t));
+      const real = sequencePathAt(tipo ?? "revolver", "reload", this.reloadProg,
+        { ...anchors, mag: [atCyl.x, atCyl.y, atCyl.z] }, this.spec!.seed);
+      const ori = sequenceOrientAt(tipo ?? "revolver", "reload", this.reloadProg,
+        { ...anchors, mag: [atCyl.x, atCyl.y, atCyl.z] }, this.spec!.seed);
+      if (real) {
+        left = new THREE.Vector3(real.pos[0], real.pos[1], real.pos[2]);
+        pathCurl = real.curl;
+        if (ori) { pathOrient = ori; pathTarget = atCyl; }
+      } else if (ph.id === "open") left = sup.clone().lerp(atCyl, ease(ph.t));
       else if (ph.id === "eject") left = atCyl;
       else if (ph.id === "load") left = ph.t < 0.45 ? atCyl.clone().lerp(pouch, ease(ph.t / 0.45)) : pouch.clone().lerp(atCyl, ease(Math.min(1, (ph.t - 0.45) / 0.4)));
       else if (ph.id === "close") left = atCyl.clone().add(new THREE.Vector3(0, 0, 0.02 * tri(ph.t, 0, 1)));
       else if (ph.id === "settle") left = atCyl.clone().lerp(sup, ease(ph.t));
     } else if (ph) {
-      const mag = this.mag ? this.mag.object.position.clone().sub(this.mag.base) : new THREE.Vector3();
-      const atMag = h.magwell.clone().add(mag);
-      if (ph.id === "grab") left = sup.clone().lerp(atMag, ease(ph.t));
-      else if (ph.id === "out") left = atMag;
-      else if (ph.id === "pouch") {
-        // Ida a la cartuchera con la mano vacía (el cargador viejo cae al suelo) y vuelta con el nuevo en la mano
-        // La cartuchera está abajo a la izquierda de la vista (en espacio de cámara; el arma va girada al recargar)
-        const away = m.group.worldToLocal(this.camera.localToWorld(new THREE.Vector3(-0.16, -0.5, -0.22)));
-        if (ph.t < 0.5) left = atMag.clone().lerp(away, ease(ph.t * 2));
-        else {
-          left = away.clone().lerp(atMag, ease((ph.t - 0.5) * 2));
-          if (this.mag) { this.mag.object.visible = true; this.mag.object.position.copy(this.mag.base).add(left.clone().sub(h.magwell)); }
+      // Recarga real por clase (src/data/poses.json, generado desde los aportes). Fusiles/bullpups conservan su
+      // recorrido; pistolas, revólveres, subfusiles, cerrojos y ametralladoras usan `reload_empty` cuando el cargador
+      // estaba vacío. Sin dato, camino procedural.
+      const seq: HandSequence = tipo && EMPTY_RELOAD.includes(tipo) && !this.tacReload && hasSequence(tipo, "reload_empty")
+        ? "reload_empty" : "reload";
+      const prog = this.reloadProg;
+      const real = sequencePathAt(tipo ?? "", seq, prog, anchors, this.spec!.seed)
+        ?? (seq !== "reload" ? sequencePathAt(tipo ?? "", "reload", prog, anchors, this.spec!.seed) : null);
+      const ori = sequenceOrientAt(tipo ?? "", seq, prog, anchors, this.spec!.seed)
+        ?? (seq !== "reload" ? sequenceOrientAt(tipo ?? "", "reload", prog, anchors, this.spec!.seed) : null);
+      if (real) {
+        left = new THREE.Vector3(real.pos[0], real.pos[1], real.pos[2]);
+        pathCurl = real.curl;
+        if (ori) { pathOrient = ori; pathTarget = h.magwell.clone(); }
+      } else {
+        const mag = this.mag ? this.mag.object.position.clone().sub(this.mag.base) : new THREE.Vector3();
+        const atMag = h.magwell.clone().add(mag);
+        if (ph.id === "grab") left = sup.clone().lerp(atMag, ease(ph.t));
+        else if (ph.id === "out") left = atMag;
+        else if (ph.id === "pouch") {
+          // Ida a la cartuchera con la mano vacía (el cargador viejo cae al suelo) y vuelta con el nuevo en la mano
+          // La cartuchera está abajo a la izquierda de la vista (en espacio de cámara; el arma va girada al recargar)
+          const away = m.group.worldToLocal(this.camera.localToWorld(new THREE.Vector3(-0.16, -0.5, -0.22)));
+          if (ph.t < 0.5) left = atMag.clone().lerp(away, ease(ph.t * 2));
+          else {
+            left = away.clone().lerp(atMag, ease((ph.t - 0.5) * 2));
+            if (this.mag) { this.mag.object.visible = true; this.mag.object.position.copy(this.mag.base).add(left.clone().sub(h.magwell)); }
+          }
         }
+        else if (ph.id === "in") left = atMag;
+        else if (ph.id === "rack" && !this.tacReload) left = h.charge.clone().add(new THREE.Vector3(-0.05 * tri(ph.t, 0, 1), 0.01, 0.03));
+        else if (ph.id === "rack") left = atMag.clone().lerp(sup, ease(ph.t)); // táctica: la mano vuelve directa al guardamanos
+        else if (ph.id === "settle") left = this.tacReload ? sup.clone() : h.charge.clone().lerp(sup, ease(ph.t));
       }
-      else if (ph.id === "in") left = atMag;
-      else if (ph.id === "rack" && !this.tacReload) left = h.charge.clone().add(new THREE.Vector3(-0.05 * tri(ph.t, 0, 1), 0.01, 0.03));
-      else if (ph.id === "rack") left = atMag.clone().lerp(sup, ease(ph.t)); // táctica: la mano vuelve directa al guardamanos
-      else if (ph.id === "settle") left = this.tacReload ? sup.clone() : h.charge.clone().lerp(sup, ease(ph.t));
     } else if (this.cycleT > 0 && this.spec?.fireMode === "pump") {
       left = this.moving.pump ? sup.clone().add(pumpOff) : sup.clone().add(new THREE.Vector3(-0.08 * pumpCurve(1 - this.cycleT / this.cycleDur).pull, 0, 0));
     }
@@ -1085,7 +1417,7 @@ export class Gun {
     }
     const fc = this.fitCurl;
     const trig = 0.85 + 0.25 * this.trigT - 0.1 * sp;
-    const right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? Math.max(0.85, fc[0] - 0.12) + 0.15 * this.trigT - 0.1 * sp : trig, Math.max(1.6, fc?.[1] ?? 1.02) - 0.1 * sp, Math.max(1.35, fc?.[2] ?? 1.06) - 0.1 * sp, Math.max(1.4, fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (this.spec?.type === "revolver" || this.spec?.type === "pistol" ? 1.05 : fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
+    let right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? Math.max(0.85, fc[0] - 0.12) + 0.15 * this.trigT - 0.1 * sp : trig, Math.max(1.6, fc?.[1] ?? 1.02) - 0.1 * sp, Math.max(1.35, fc?.[2] ?? 1.06) - 0.1 * sp, Math.max(1.4, fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (this.spec?.type === "revolver" || this.spec?.type === "pistol" ? 1.05 : fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
     if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right.straight = 1;
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
@@ -1093,21 +1425,123 @@ export class Gun {
     const hc = this.camera.worldToLocal(this.holder.getWorldPosition(new THREE.Vector3()));
     if (!this.holdAvg) this.holdAvg = hc.clone(); else this.holdAvg.lerp(hc, Math.min(1, dt * 2.5));
     const shoulder = hc.clone().sub(this.holdAvg).multiplyScalar(0.5).clampLength(0, 0.08);
+    // Agarre a dos manos derivado del reposo de la referencia (pistolas y revólveres)
+    const gdat = tipo === "pistol" || tipo === "revolver" ? gripAt(tipo, anchors, this.spec?.seed ?? 0) : null;
+    // Sacar e inspeccionar con el recorrido real: el apoyo llega desde abajo al sacar y sube a la corredera/tambor
+    // (armas cortas) o al cerrojo/palanca (largas con dato) al inspeccionar. Su reposo es la pose de apoyo, para no
+    // saltar al acabar.
+    if (left && base && (gdat || hasSequence(tipo ?? "", "draw") || hasSequence(tipo ?? "", "inspect"))) {
+      // Armas cortas: reposo en el agarre a dos manos derivado de la referencia; largas: el propio apoyo del arma.
+      let restL: [number, number, number] = anchors.rest;
+      if (gdat) {
+        const r = m.group.worldToLocal(this.camera.localToWorld(right.pos.clone()));
+        restL = [r.x + gdat.offset[0], r.y + gdat.offset[1], r.z + gdat.offset[2]];
+      }
+      const ga = { ...anchors, rest: restL };
+      const kDraw = this.drawIn > 0 ? 1 - this.drawIn : -1;
+      const kInsp = this.inspectIn !== null ? tri(this.inspectIn, 0, 1) : -1;
+      const k = kDraw >= 0 ? kDraw : kInsp;
+      const seq = kDraw >= 0 ? "draw" : "inspect";
+      const real = k >= 0 ? sequencePathAt(tipo ?? "", seq, k, ga, this.spec!.seed) : null;
+      const ori = k >= 0 ? sequenceOrientAt(tipo ?? "", seq, k, ga, this.spec!.seed) : null;
+      if (real) { left = new THREE.Vector3(real.pos[0], real.pos[1], real.pos[2]); pathCurl = real.curl; }
+      if (ori) { pathOrient = ori; pathTarget = seq === "inspect" ? h.charge.clone() : h.grip.clone(); }
+    }
     // La mano de apoyo viaja (en coordenadas del arma) solo en los saltos de agarre reales: cartuchera, cambio de soporte
     if (left) { if (!this.leftLocal || this.leftLocal.distanceTo(left) < 0.02) this.leftLocal = left.clone(); else this.leftLocal.lerp(left, Math.min(1, dt * 14)); }
     else this.leftLocal = null;
-    // Pistola a dos manos: agarre en C. La izquierda se coloca respecto a la derecha (a su izquierda y algo más baja),
-    // con los dedos envolviendo los de la derecha por delante, pulgar hacia delante y la muñeca recta
+    // Pistola a dos manos: agarre en C. La izquierda se coloca respecto a la derecha según el reposo de la referencia
+    // (`gripAt`: dirección y diferencia entre dedos), con la muñeca recta para que no parezca un palo cruzado
     let leftPose = left && this.leftLocal ? pose(this.leftLocal, L, loose) : null;
-    if (leftPose && kind === "wrap" && (this.spec?.type === "pistol" || this.spec?.type === "revolver")) {
+    if (leftPose && kind === "wrap" && (this.spec?.type === "pistol" || this.spec?.type === "revolver") && this.drawIn <= 0 && this.inspectIn === null) {
+      const go = gdat ? gdat.offset : ([-0.034, -0.016, -0.006] as [number, number, number]);
       leftPose = {
-        pos: right.pos.clone().add(new THREE.Vector3(-0.034, -0.016, -0.006).applyQuaternion(hq)),
+        pos: right.pos.clone().add(new THREE.Vector3(go[0], go[1], go[2]).applyQuaternion(hq)),
         orient: hq.clone().multiply(rx(-0.2).multiply(handBasis(V(0.7, 0.2, -0.68), V(-0.55, 0.15, -0.82)))),
-        curl: { fingers: [1.05, 1.15, 1.2, 1.25], thumb: 0.25 }, straight: 1,
+        curl: gdat ? gdat.curl : { fingers: [1.05, 1.15, 1.2, 1.25], thumb: 0.25 }, straight: 1,
       };
     }
-    else if (leftPose) leftPose.straight = 0.75; // (armas largas: el antebrazo de apoyo baja casi vertical, sin cruzar la pantalla)
+    else if (leftPose) leftPose.straight = tipo === "sniper" ? 0.55 : tipo === "lmg" || tipo === "bullpup" ? 0.32 : 0.4; // (armas largas: el antebrazo de apoyo baja en diagonal desde el borde, sin cruzar la pantalla; francotirador: más recto de muñeca, en escorzo)
+    // Orientación de muñeca de las referencias (giro respecto al reposo de la secuencia) sobre una base «que agarra»:
+    // los dedos apuntan a lo que la mano manipula (cargador, empuñadura, corredera) y el dorso mira arriba/cámara, así
+    // el puño del guante no queda de frente (el «disco» negro) y el antebrazo baja hacia el borde inferior de la vista.
+    // (el fusil conserva su pose de mano actual hasta su tanda; escopetas, subfusiles, cerrojos, ametralladoras y
+    // bullpup ya usan la orientación real)
+    if (leftPose && pathOrient && (handgun || tipo === "shotgun" || tipo === "smg" || tipo === "sniper" || tipo === "lmg" || tipo === "bullpup")) {
+      const fingers = (pathTarget ? toCam(pathTarget) : toCam(h.grip)).sub(leftPose.pos);
+      if (fingers.length() < 0.03) fingers.copy(toCam(h.grip).sub(leftPose.pos));
+      if (fingers.lengthSq() < 1e-8) fingers.set(1, 0, -0.6);
+      fingers.normalize();
+      // Dorso del guante hacia arriba y algo hacia la cámara (se ve el dorso, no la boca del puño). Si los dedos van
+      // casi en esa dirección, se usa otro eje para que la base no degeneré.
+      const back = Math.abs(fingers.dot(V(-0.3, 0.8, 0.5))) > 0.97 ? V(1, 0, 0) : V(-0.3, 0.8, 0.5);
+      const base = handBasis(fingers, back);
+      const dq = new THREE.Quaternion(pathOrient[0], pathOrient[1], pathOrient[2], pathOrient[3]);
+      const qd = hq.clone().multiply(dq).multiply(hq.clone().invert());
+      // Armas cortas: muñeca recta. Largas: el antebrazo de apoyo cae en diagonal hacia el borde inferior, sin quedar
+      // como un poste rígido delante de la vista (cerrojos, ametralladoras y bullpup: algo más tumbado que escopetas y
+      // subfusiles, que llevan la mano más adelantada).
+      leftPose = { ...leftPose, orient: qd.multiply(base), straight: handgun ? 0.85 : tipo === "sniper" ? 0.55 : tipo === "lmg" || tipo === "bullpup" ? 0.34 : 0.45 };
+    }
+    if (leftPose && pathCurl) leftPose = { ...leftPose, curl: pathCurl }; // dedos de la mano de apoyo según el recorrido (recarga real)
+    // Gesto de equipamiento/granada (encargo 34): capa sobre la mano libre. La recarga no se cancela ni se toca: si la
+    // izquierda está recargando, el gesto lo hace la derecha; el arma y sus piezas no cambian.
+    const gk = this.gesture.kind, gc = this.gesture.curve();
+    if (gk && gc && !this.superPose) {
+      if (this.gesture.side === 1) right = this.gestureHand(right, 1, gc, gk);
+      else if (this.reloadT <= 0) {
+        // (pistola a una mano: la izquierda está fuera de cuadro y no tiene pose; entra una mano desde abajo al gesto)
+        const base = leftPose ?? { pos: new THREE.Vector3(-0.2, -0.5, -0.3), orient: hq.clone().multiply(GRIPS.grab.q), curl: GRIPS.grab.curl };
+        leftPose = this.gestureHand(base, -1, gc, gk);
+      }
+    }
+    // Cerrojos, ametralladoras y bullpup: la mano de apoyo suele quedar baja en cadera; el codo se abre hacia fuera para
+    // que el antebrazo salga en diagonal por el borde inferior (como en las referencias), no como un poste vertical.
+    // (francotirador: menos apertura; el antebrazo cae más hacia el borde inferior, no cruza la pantalla)
+    if (leftPose && (tipo === "sniper" || tipo === "lmg" || tipo === "bullpup")) leftPose = { ...leftPose, flare: tipo === "sniper" ? 0.5 : 1, girth: tipo === "sniper" ? 0.78 : undefined };
+    // Francotirador: la mano de apoyo recarga por el lado de la cámara; al ir al cargador y al volver se acerca por el
+    // mismo rayo de vista (escala alrededor de la cámara: la posición en pantalla no cambia) para que no quede pequeña
+    // y tapada por el cajón del arma (el modelo es grande y la mano iba muy atrás).
+    if (leftPose && tipo === "sniper" && ph) {
+      const near = ph.id === "grab" ? ease(ph.t) : ph.id === "settle" ? 1 - ease(ph.t)
+        : ph.id === "out" || ph.id === "pouch" || ph.id === "in" || ph.id === "rack" ? 1 : 0;
+      if (near > 0) {
+        const dz = 0.12 * near, z = leftPose.pos.z, k = (z + dz) / z;
+        leftPose = { ...leftPose, pos: new THREE.Vector3(leftPose.pos.x * k, leftPose.pos.y * k, z + dz) };
+      }
+    }
     this.arms.update({ right, left: this.helmetLeft(leftPose), dt, shoulder });
+  }
+
+  /**
+   * Mezcla el gesto de equipamiento/granada en la pose de una mano (espacio de la cámara): `out` la saca (a la cadera
+   * al activar, atrás al lanzar) y `hit` la trae con el toque corto o el golpe hacia delante (la suave, por debajo).
+   */
+  private gestureHand(p: HandPose, side: 1 | -1, c: GestureCurve, kind: GestureKind): HandPose {
+    const out = c.out, hit = c.hit, rot = new THREE.Euler();
+    // Puntos de la mano en el espacio de la cámara (espejados para la derecha): no dependen de dónde esté el arma, así
+    // el gesto se ve igual con cualquier arma. La cadera queda al borde inferior (la mano baja y vuelve a asomar).
+    const hip = new THREE.Vector3(0.16 * side, -0.27, -0.55);
+    const back = new THREE.Vector3(0.2 * side, 0, -0.42), fwd = new THREE.Vector3(0.04 * side, -0.1, -0.72);
+    const softBack = new THREE.Vector3(0.2 * side, -0.14, -0.45), softFwd = new THREE.Vector3(0.03 * side, -0.26, -0.62);
+    const pos = p.pos.clone();
+    if (kind === "activate") {
+      pos.lerp(hip, out); // (baja hasta la cadera)
+      pos.add(new THREE.Vector3(0, -0.02 * hit, -0.05 * hit)); // (toque corto hacia delante y abajo)
+      rot.set(-0.55 * out - 0.25 * hit, 0, 0.12 * side * out);
+    } else if (kind === "throw") {
+      pos.lerp(back, out).lerp(fwd, hit); // (brazo atrás y adelante)
+      rot.set(0.5 * out - 0.95 * hit, 0.18 * side * out, 0);
+    } else {
+      pos.lerp(softBack, out).lerp(softFwd, hit); // (corto y por debajo)
+      rot.set(0.3 * out - 0.45 * hit, 0.14 * side * out, 0);
+    }
+    const grip = c.grip;
+    const curl: Curl = {
+      fingers: p.curl.fingers.map((f) => f + (1.2 - f) * grip) as Curl["fingers"],
+      thumb: p.curl.thumb + (0.85 - p.curl.thumb) * grip,
+    };
+    return { ...p, pos, orient: p.orient.clone().multiply(new THREE.Quaternion().setFromEuler(rot)), curl };
   }
 
   private fire(moving: number, echo = false) {

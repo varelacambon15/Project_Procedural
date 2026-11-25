@@ -266,7 +266,8 @@ function weighted<T>(r: Rng, arr: T[], w: (x: T) => number): T {
   return arr[arr.length - 1];
 }
 /** Proporción de armas del kit modular en cada tipo que lo admite. */
-const KIT_SHARE: Partial<Record<WeaponType, number>> = { rifle: 0.3, pistol: 0.2, shotgun: 0.4 };
+// (pistolas del kit: todas llevan culata —la usan para alejarse de su base—, así que su cuota se mantiene baja para que las pistolas con culata sean ~15 %)
+const KIT_SHARE: Partial<Record<WeaponType, number>> = { rifle: 0.3, pistol: 0.04, shotgun: 0.4 };
 /** Parte de las pistolas que son modulares generadas por código (el resto: kit y modelos enteros). */
 const PROC_PISTOL_SHARE = 0.65;
 /** Parte de los revólveres generados por código (el resto: modelos enteros). */
@@ -275,7 +276,7 @@ const ERA_W: Record<PEra, number> = { modern: 4, classic: 2, rustic: 2, scifi: 1
 /** Peso de cada familia al elegir arquetipo (las de corredera son las más comunes). */
 const FAMILY_W: Record<string, number> = { auto: 1, frontmag: 0.8, carbine: 1.2, revolver: 1 };
 /** Culata de hombro en pistolas y revólveres generados: ~12 % (carbinas, más a menudo). */
-const PISTOL_STOCK_P = 0.09, CARBINE_STOCK_P = 0.55;
+const PISTOL_STOCK_P = 0.09, CARBINE_STOCK_P = 0.1;
 /** Variante de estadísticas de cada arquetipo de pistola generada. */
 /** Arquetipo (base) de una pistola generada a partir del id de su diseño: pp-<arquetipo>-<era>[-<huella>]. */
 export const ppArchId = (id: string) => id.split("-").slice(0, 3).join("-");
@@ -358,7 +359,7 @@ export class WeaponGenerator {
     // Packs del usuario (kit39): solo miras del pool (su pieza "mira" es decorativa) y las de serie del modelo
     if (body?.pack === "kit39") return spec.type === "launcher" || spec.type === "flamethrower" ? [] : [...new Set([...serie(this.kit, body, "miras"), ...realOptics(this.kit, spec.type), ...procedural(), ...this.ironOptions(spec)])];
     if (body?.parts.some((p) => p.role === "scope")) return this.scopes.filter((x) => x.pack === body.pack && x.id !== body.id && !RETIRED.has(x.id)).map((x) => x.id);
-    if (!body?.sockets.rail || spec.type === "sniper" || spec.type === "launcher" || spec.type === "flamethrower") return [];
+    if (!body?.sockets.rail || spec.type === "launcher" || spec.type === "flamethrower") return [];
     // Miras reales (preferidas al generar) y las hechas por código como alternativa
     return [...realOptics(this.kit, spec.type), ...procedural()];
   }
@@ -878,13 +879,14 @@ export class WeaponGenerator {
     const cands: { tw: Tweaks; bl: number; sim: number; d: number; ch: string[] }[] = [];
     let amp = 1;
     // Cambios llamativos solo en una parte de las armas (si no, el generador los usaría siempre para alejarse de la base)
-    const rare = { nostock: r() < 0.3, hgStock: r() < 0.4, front: r() < 0.4 }; const snubOk = r() < 0.4;
+    const rare = { nostock: r() < 0.3, hgStock: r() < (type === "pistol" ? 0.1 : type === "revolver" ? 0.12 : 0.4), front: r() < 0.4 }; const snubOk = r() < 0.4;
     for (let i = 0; i < 110; i++) {
       // Si la mejor tirada hasta ahora se aleja demasiado de la base, las siguientes cambian con menos amplitud
       if (best && best.sim < lo && i % 6 === 5) amp = Math.max(0.35, amp * 0.7);
       if (best && best.sim > hi && i % 4 === 3) amp = Math.min(2.8, amp * 1.3);
       // Si con los cambios normales no entra en la banda (amplitud alta), se permiten también culata y conjunto carabina
-      const gate = amp > 1.4 ? { nostock: rare.nostock, hgStock: true, front: true } : rare;
+      // (la culata en pistolas y revólveres es minoría: no se fuerza para alejarse de la base)
+      const gate = amp > 1.4 ? { nostock: rare.nostock, hgStock: type === "pistol" || type === "revolver" ? rare.hgStock : true, front: true } : rare;
       const { tw, barrelLength: bl } = this.rollOps(r, type, layout, parts, tw0, barrelLength, swaps.length, amp, gate, era);
       if (layout === "modular-long" && base) {
         const get = (role: string) => this.byId.get(parts.find((p) => p.role === role)!.from)!;

@@ -32,11 +32,14 @@ describe("banco de trabajo", () => {
     expect(w.name).not.toContain("SD");
   });
 
-  it("una mira de accesorio encaja en un fusil con raíl pero no en un francotirador", () => {
+  it("una mira de accesorio encaja en un fusil con raíl y en un francotirador, pero no en un arma sin opciones de óptica", () => {
     const rifle = Array.from({ length: 300 }, (_, s) => gen.generate(s, "rifle")).find((x) => gen.opticOptions(x).length)!;
     expect(fits(gen, rifle, "scope", newPart("scope", "acc:reddot"))).toBe(true);
-    // (un francotirador sin raíl; se busca como el fusil, porque las semillas cambian al añadir modelos nuevos)
-    const noRail = Array.from({ length: 300 }, (_, s) => gen.generate(s, "sniper")).find((x) => !gen.opticOptions(x).length)!;
+    // (el francotirador ya no lleva su mira propia: admite las mismas ópticas que un fusil; decisión del usuario, 22/11)
+    const sniper = Array.from({ length: 300 }, (_, s) => gen.generate(s, "sniper")).find((x) => gen.opticOptions(x).length)!;
+    expect(fits(gen, sniper, "scope", newPart("scope", "acc:reddot"))).toBe(true);
+    // (un arma sin opciones de óptica; se busca como el fusil, porque las semillas cambian al añadir modelos nuevos)
+    const noRail = Array.from({ length: 300 }, (_, s) => gen.generate(s, "pistol")).find((x) => !gen.opticOptions(x).length)!;
     expect(fits(gen, noRail, "scope", newPart("scope", "acc:reddot"))).toBe(false);
   });
 

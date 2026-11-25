@@ -3,10 +3,11 @@ import { DeathFx } from "./deathfx";
 import { FURNITURE, HallProps, type FurnCat, type HallPropId } from "./hallprops";
 import { HallBot } from "./hallbot";
 import { Post } from "./post";
+import { SessionRecorder, type SessionIO } from "./session";
 import * as THREE from "three";
-import { GADGET_RARITY, makeGadget, setGadgetUid, type GadgetRarity, type GadgetSpec } from "./gadgets";
+import { GADGET_KINDS, GADGET_KIND_LIST, GADGET_RARITY, makeGadget, setGadgetUid, type GadgetKind, type GadgetRarity, type GadgetSpec } from "./gadgets";
 import { GadgetFx } from "./gadgetfx";
-import { GRENADE_RARITY, GrenadePouch, makeGrenade, setGrenadeUid, type GrenadeRarity, type GrenadeSpec } from "./grenades";
+import { GRENADE_KIND_LIST, GRENADE_RARITY, GrenadePouch, isGadgetGrenade, makeGrenade, setGrenadeUid, type GrenadeRarity, type GrenadeSpec } from "./grenades";
 import { GrenadeFx } from "./grenadefx";
 import { SuperFx } from "./superfx";
 import { MODULE_CHANCE, SUPER_IDS, SuperMeter, rollModule, type SuperId } from "./supers";
@@ -19,7 +20,7 @@ import { RARITIES, WeaponGenerator } from "../weapons/generator";
 import { WeaponAssembler } from "../weapons/assembler";
 import { archName, rarityName, typeName } from "../weapons/labels";
 import { displayName, rename } from "../weapons/naming";
-import { setAccUid } from "../weapons/accbank";
+import { newAcc, setAccUid, type AccKind } from "../weapons/accbank";
 import { BUILD, BUILDS, BUILD_BETWEEN, BUILD_TIME, EARLY_BONUS, HUNTERS, SPAWN_GAP, START_CREDITS, coreWave, killReward, sellValue, waveReward } from "./defense";
 import { DefenseFx, type Pad } from "./defensefx";
 import { rng as seedRng } from "./raidgen";
@@ -40,6 +41,9 @@ import { Raid, RAID_ORIGIN } from "./raid";
 import { spawnDummies, DamageNumbers, type Dummy } from "./dummies";
 import { Player } from "./player";
 import { Gun } from "./gun";
+import { VM_FOV } from "./anim";
+import { VM_BACK } from "./vmfit";
+import { RETICLES, reticleFor } from "./reticles";
 import { Inventory, makeItem, type Item } from "./inventory";
 import { Pickups, type Pickup } from "./pickups";
 import { LOOT, LootDirector, type LootSource } from "../weapons/loot";
@@ -86,7 +90,6 @@ scene.add(hallBot.mesh); world.shootables.push(...hallBot.hitMeshes);
 // Cámara del arma (como en los shooters, «viewmodel FOV»): arma y brazos se dibujan encima con un campo de visión más
 // estrecho, retrasada para que el tamaño aparente no cambie; con el campo de visión del mundo (75°) las armas largas se
 // deformaban (culata enorme, boca diminuta y el cañón «subiendo» hacia el centro). Mismo eje: al apuntar sigue centrada.
-const VM_FOV = 62, VM_BACK = 0.03;
 const deathFx = new DeathFx(camera);
 const vmCam = new THREE.PerspectiveCamera(VM_FOV, 1, 0.02, 30); vmCam.position.z = VM_BACK; vmCam.layers.set(1); camera.add(vmCam);
 // Cadena de postprocesado (post.ts): tono filmic, bloom, viñeta, grano y aberración al recibir daño.
@@ -124,10 +127,66 @@ applyScale(); onSettings(applyScale);
 startMusic("./music/ambient-03.ogg");
 // Pack de sonidos (assets/sonidos): manifest ahora; las muestras de cada arma se cargan al equiparla
 void initSounds("./sonidos/").then((m) => { if (m) void loadSamples(["melee_cuchillo_swing", "melee_cuchillo_golpe", "melee_culatazo", "recoger_arma", "explosion"].flatMap((k) => m.efectos[k] ?? [])); });
+// ---------- Registro de sesión (modo desarrollador): capturas, notas y registro para revisar después ----------
+const grabShot = async (): Promise<string | null> => {
+  try {
+    const c = renderer.domElement, w = Math.min(960, c.width), h = Math.round(c.height * (w / c.width));
+    const o = document.createElement("canvas"); o.width = w; o.height = h; o.getContext("2d")!.drawImage(c, 0, 0, w, h);
+    return o.toDataURL("image/jpeg", 0.6).split(",")[1];
+  } catch { return null; }
+};
+let sessionCtx: () => Record<string, unknown> = () => ({}); // (se rellena más abajo, donde existen el modo de juego y el inventario)
+// Registro de sesión en el navegador: sin el puente de escritorio (window.ppSession) los archivos van al servidor de
+// desarrollo (POST /__session/write → Documentos/ProvingGrounds/sesiones); si no hay servidor (build de producción),
+// quedan en memoria y F10 descarga un solo paquete .json. Las notas se apuntan además en localStorage.
+const NOTES_KEY = "pp.session.notes";
+const readNotes = (): string[] => {
+  try { const v: unknown = JSON.parse(localStorage.getItem(NOTES_KEY) ?? "[]"); return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []; } catch { return []; }
+};
+const addNote = (text: string) => { const s = text.trim().slice(0, 300); if (!s) return; try { localStorage.setItem(NOTES_KEY, JSON.stringify([...readNotes(), s])); } catch { /* sin almacenamiento */ } };
+const sessionFiles = new Map<string, string>();
+const browserSessionIo: SessionIO = {
+  write: async (rel, b64) => {
+    try {
+      const r = await fetch("/__session/write", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ rel, b64 }) });
+      if (!r.ok) throw new Error(`write ${r.status}`);
+    } catch { sessionFiles.set(rel, b64); } // sin servidor de desarrollo: respaldo para F10
+  },
+};
+function downloadSession() {
+  const notes = readNotes();
+  if (!sessionFiles.size && !notes.length) return;
+  const blob = new Blob([JSON.stringify({ version: 1, files: Object.fromEntries(sessionFiles), notas: notes })], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `sesion_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const session = new SessionRecorder((globalThis as unknown as { ppSession?: SessionIO }).ppSession ?? browserSessionIo, grabShot,
+  () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles }),
+  () => sessionCtx());
+{
+  const box = document.createElement("div"); box.id = "sessionnote"; box.hidden = true;
+  box.innerHTML = `<input type="text" maxlength="300" autocomplete="off" spellcheck="false">`;
+  const input = box.querySelector("input")!; input.placeholder = t("set.sessionNote");
+  const dot = document.createElement("div"); dot.id = "sessiondot"; dot.textContent = "● REC"; dot.hidden = true;
+  document.body.append(box, dot);
+  const close = (save: boolean) => { if (save) { session.note(input.value); addNote(input.value); } input.value = ""; box.hidden = true; session.noteOpen = false; input.blur(); };
+  for (const type of ["keydown", "keyup", "keypress"] as const) input.addEventListener(type, (e) => { e.stopPropagation(); if (type === "keydown") { if ((e as KeyboardEvent).key === "Enter") close(true); else if ((e as KeyboardEvent).key === "Escape") close(false); } });
+  window.addEventListener("keydown", (e) => {
+    if (!session.active) return;
+    if (e.key === "F8") { e.preventDefault(); session.mark(); }
+    else if (e.key === "F10") { e.preventDefault(); void downloadSession(); }
+    else if (e.key === "F9" && !session.noteOpen) { e.preventDefault(); session.noteOpen = true; box.hidden = false; input.focus(); }
+  });
+  window.addEventListener("error", (e) => session.error(`${e.message} @ ${(e.filename ?? "").split("/").pop()}:${e.lineno}`));
+  window.addEventListener("unhandledrejection", (e) => session.error(`promesa rechazada: ${String(e.reason).slice(0, 160)}`));
+  setInterval(() => { dot.hidden = !session.active; }, 500);
+}
 const draw = (dt: number) => {
   syncLayers();
   renderer.info.reset(); // (aquí empieza la cuenta de llamadas de dibujo y triángulos del fotograma)
   post.render(dt);
+  session.afterRender(); // (la captura pendiente del registro de sesión, justo tras dibujar)
 };
 function resize() { renderer.setSize(innerWidth, innerHeight); post.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); vmCam.aspect = camera.aspect; vmCam.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
@@ -355,6 +414,8 @@ async function boot() {
     el.innerHTML = `<span>${t(`sp.${inv.superId}`)}</span><span class="bar"><i style="width:${pct}%"></i></span><b>${left > 0 ? Math.ceil(left) + " s" : meter.ready ? `<kbd>${input.device === "pad" ? "LB+RB" : input.binds.super.replace(/^Key/, "")}</kbd>` : pct + " %"}</b>`;
   };
   // ---------- Equipamiento (LB / X): cargas como las granadas y efecto en gadgetfx ----------
+  /** Equipamiento que se lanza con la mano (gesto de lanzar); el resto se despliega o activa en la cadera. */
+  const GADGET_THROW: ReadonlySet<GadgetKind> = new Set<GadgetKind>(["orb", "knife", "mine", "chain", "harpoon", "teleport"]);
   const gpouch = new GrenadePouch(); // (mismo contador de cargas: solo usa charges y recharge)
   const syncGadget = () => { if (gpouch.g !== (inv.gadget as unknown)) { const fresh = gpouch.g == null; gpouch.equip(inv.gadget as never); if (fresh && inv.gadget) gpouch.charges = inv.gadget.charges; } };
   const gadgetHud = () => {
@@ -447,6 +508,28 @@ async function boot() {
       else if (a === "cr") earn(10000);
       else if (a === "modules") { inv.supersOwned = [...SUPER_IDS]; toast(t("set.dev.modulesDone")); }
       else if (a === "raid") { inv.raidsDone = 0; toast(t("set.dev.raidDone")); }
+      else if (a === "acc") {
+        // Para probar: una pieza legendaria de cada accesorio que el generador puede ofrecer (ópticas, bocas, bajo el cañón y módulos)
+        const found = new Map<string, AccKind>();
+        for (const type of gen.types) for (let sd = 1; sd <= 30; sd++) {
+          try { const w = gen.generate(sd * 17 + 3, type); for (const id of gen.opticOptions(w)) found.set(id, "optic"); for (const id of gen.muzzleOptions(w)) found.set(id, "muzzle"); } catch { /* arma sin opciones */ }
+        }
+        const lights = new Set(gen.lightPool().map((x) => x.id));
+        for (const id of lights) found.set(id, "light");
+        for (const d of gen.kit.options("Device", "any")) if (!lights.has(d.id)) found.set(d.id, "device");
+        let n = 0;
+        for (const [id, kind] of found) { if (id.startsWith("iron:")) continue; if (!inv.bank.some((b) => b.id === id && b.rarity === "legendaria")) { inv.bank.push(newAcc(kind, id, "legendaria")); n++; } }
+        toast(t("set.dev.accDone", { n }));
+      }
+      else if (a === "gear") {
+        // Para probar: una granada y un equipamiento legendarios de cada tipo que aún no se tenga (sin el tope de 8 del botín)
+        let g = 0, e = 0;
+        for (const k of GRENADE_KIND_LIST) if (!inv.grenades.some((x) => x.kind === k)) { inv.grenades.push(makeGrenade(Math.floor(Math.random() * 1e9), k, "legendaria")); g++; }
+        for (const k of GADGET_KIND_LIST) if (!inv.gadgets.some((x) => x.kind === k)) { inv.gadgets.push(makeGadget(Math.floor(Math.random() * 1e9), k, "legendaria")); e++; }
+        if (inv.grenadeActive < 0 && inv.grenades.length) inv.grenadeActive = 0;
+        if (inv.gadgetActive < 0 && inv.gadgets.length) inv.gadgetActive = 0;
+        toast(t("set.dev.gearDone", { g, e }));
+      }
       else if (a === "armor") { for (const sl of ["head", "torso", "legs"] as const) for (const v of ["light", "heavy"] as const) if (inv.armors.length < 12) inv.armors.push(makeArmor(Math.floor(Math.random() * 1e9), sl, "epica", v)); toast(t("set.dev.armorDone")); }
       autosave();
     },
@@ -529,6 +612,7 @@ async function boot() {
 
   // ---------- Partida: nueva, guardar, cargar ----------
   function newGame() {
+    rouletteCancel();
     if (raid.active) raid.end();
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
     // Se empieza sin nada: puños y 0 créditos. El primer dinero sale de golpear o disparar a los muñecos de práctica.
@@ -537,13 +621,26 @@ async function boot() {
     applyPerks(); inv.changed(); php.reset();
     toast(t("ui.practiceTip"));
   }
+  // Ruleta de armas (supervivencia, opcional): cada 30 s las armas equipadas se cambian por otras al azar; al salir vuelven las tuyas.
+  const survOpt = { roulette: false };
+  const roulette = { active: false, t: 0, saved: [null, null] as (Item | null)[], savedActive: 0, uids: new Set<number>() };
+  const ROULETTE_EVERY = 30, ROULETTE_FIRST = 5; // (la primera ruleta llega a los 5 s; las siguientes, cada 30)
+  const ROULETTE_RARITY: [RarityId, number][] = [["comun", 30], ["poco", 30], ["rara", 22], ["epica", 14], ["legendaria", 4]];
+  /** Con la ruleta en curso se guardan las armas de verdad, no las prestadas. */
   function collect(name = ""): SaveData {
+    if (!roulette.active) return collectRaw(name);
+    const cur = [inv.equip[0], inv.equip[1]], act = inv.active;
+    inv.equip[0] = roulette.saved[0]; inv.equip[1] = roulette.saved[1]; inv.active = roulette.savedActive;
+    try { return collectRaw(name); } finally { inv.equip[0] = cur[0]; inv.equip[1] = cur[1]; inv.active = act; }
+  }
+  function collectRaw(name = ""): SaveData {
     const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i })), ...inv.storage.map((it, i) => ({ it, area: "storage" as const, index: i }))]
       .filter((x) => x.it).map((x) => ({ spec: x.it!.spec, ammo: x.it!.ammo, area: x.area, index: x.index }));
     return { version: SAVE_VERSION, savedAt: "", name, playSeconds: Math.round(playSeconds), credits: inv.credits, weapons, active: inv.active, bank: inv.bank, shop: shopState,
       settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, gadgets: inv.gadgets, gadgetActive: inv.gadgetActive, furniture: inv.furniture, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone, armors: inv.armors, worn: inv.worn };
   }
   function apply(d: SaveData) {
+    rouletteCancel();
     if (raid.active) returnHub(false);
     inv.clear(); pickups.list.slice().forEach((p) => pickups.remove(p)); waves.stop();
     for (const w of d.weapons) {
@@ -827,12 +924,13 @@ async function boot() {
     if (sfx.decoyPos) return;
     if (sfx.shieldsPlayer(player.pos)) return;
     dmg *= sfx.guard * curPerks.guard * damageTaken(armorT, kind) * gadgets.guardAt(player.pos); // (la cúpula del equipamiento protege dentro) // (armadura: reducción y resistencias)
+    gun.gesture.hurt(dmg); // (el daño recibido nunca cancela el gesto de manos en curso: regla del encargo 34)
     if (curPerks.secondWind && !windUsed && php.value - dmg <= 0) { windUsed = true; php.value = php.max * 0.4; toast(t("pg.secondWind")); return; }
     if (dmg > 0) post.hit(dmg); // (la aberración cromática solo al recibir daño)
     if (php.hit(dmg)) {
       windUsed = false;
       // Animación de muerte (la mano se desintegra) y, al acabar, lo que toque según dónde estés
-      deathFx.start(() => {
+      session.event("muerte", { modo: sessionCtx().modo }); deathFx.start(() => {
         if (raid.active && hack.active) { hackEnd(false); return; }
         if (raid.active && dmode.active) { defenseEnd(); return; }
         if (raid.active) { toast(t("rd.lost")); returnHub(false); return; }
@@ -860,7 +958,7 @@ async function boot() {
       if (hack.active) { hackSectorDone(); return; }
       const D = RAID_DIFF[raidOpt.difficulty], k = raidOpt.rooms / 6;
       const rarity = (D.rarity === "legendaria" && Math.random() < 0.5 ? "epica" : D.rarity) as RarityId;
-      const it = makeItem(rollWeapon(rarity));
+      if (rarity === "legendaria") session.event("botin-legendario"); const it = makeItem(rollWeapon(rarity));
       if (!inv.add(it)) { const i = inv.storage.indexOf(null); if (i >= 0) { inv.storage[i] = it; inv.changed(); } }
       const cr = Math.round((120 + 12 * inv.progress.level) * D.cr * k * curPerks.fortune); earn(cr);
       gainXp(xpToNext(inv.progress.level) * D.xp * k);
@@ -891,6 +989,7 @@ async function boot() {
   }
   $("raidmenu").addEventListener("click", (e) => { if ((e.target as HTMLElement).closest("[data-sumok]")) { $("raidmenu").hidden = true; resume(); } });
   function returnHub(won: boolean) {
+    session.event("fin-incursion", { ganada: won });
     const loot = won ? pickups.list.filter((p) => raid.contains(p.root.position)) : [];
     const summary = !!run && !dmode.active; if (run && !run.result) run.result = won ? "won" : "lost"; if (run) { run.rooms = raid.cleared; run.fights = raid.fights; }
     raid.end(); raidReturnT = -1; sfx.reset(); hallBot.event(won ? "raidWon" : "raidLost");
@@ -906,11 +1005,40 @@ async function boot() {
     player.pos.set(pc.x - 2.5, 0, pc.z); player.vel.set(0, 0, 0); player.yaw = Math.PI / 2; player.pitch = 0;
   }
   // ---------- Supervivencia: oleadas sin fin en la arena cerrada (se entra desde el ordenador de modos) ----------
+  function rouletteRarity(): RarityId { let r = Math.random() * 100; for (const [id, w] of ROULETTE_RARITY) { if ((r -= w) < 0) return id; } return "comun"; }
+  function rouletteStash(it: Item) { const free = inv.pack.indexOf(null); if (free >= 0) inv.set({ area: "pack", index: free }, it); else dropItem(it); }
+  function rouletteRoll() {
+    const names: string[] = [];
+    for (let i = 0; i < inv.equip.length; i++) {
+      const old = inv.equip[i]; if (old && !roulette.uids.has(old.uid)) rouletteStash(old); // botín recogido durante la ruleta: a la mochila
+      const it = makeItem(rollWeapon(rouletteRarity())); roulette.uids.add(it.uid); inv.set({ area: "equip", index: i }, it); names.push(displayName(it.spec));
+    }
+    inv.changed(); toast(t("sv.rouletteNew", { names: names.join(" · ") }));
+  }
+  function rouletteStart() {
+    roulette.saved = [inv.equip[0], inv.equip[1]]; roulette.savedActive = inv.active; roulette.uids.clear(); roulette.active = true; roulette.t = ROULETTE_EVERY - ROULETTE_FIRST;
+    // Se empieza con las manos vacías (puños): las armas llegan con la ruleta, la primera a los 5 s.
+    for (let i = 0; i < inv.equip.length; i++) inv.set({ area: "equip", index: i }, null);
+    inv.active = 0; inv.changed();
+  }
+  function rouletteEnd() {
+    if (!roulette.active) return; roulette.active = false;
+    for (let i = 0; i < inv.pack.length; i++) { const it = inv.pack[i]; if (it && roulette.uids.has(it.uid)) inv.set({ area: "pack", index: i }, null); }
+    const kept: Item[] = [];
+    for (let i = 0; i < inv.equip.length; i++) { const it = inv.equip[i]; if (it && !roulette.uids.has(it.uid)) kept.push(it); inv.set({ area: "equip", index: i }, roulette.saved[i]); }
+    for (const it of kept) rouletteStash(it);
+    inv.active = inv.equip[roulette.savedActive] ? roulette.savedActive : Math.max(0, inv.equip.findIndex(Boolean));
+    roulette.uids.clear(); inv.changed(); toast(t("sv.rouletteEnd"));
+  }
+  /** Al cargar otra partida las armas prestadas ya no existen: se descarta sin devolver nada. */
+  function rouletteCancel() { roulette.active = false; roulette.uids.clear(); }
   function startSurvival() {
+    session.event("inicio", { modo: "supervivencia" });
     if (raid.active) return;
     const at = world.survivalAt; sfx.reset();
     player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
     php.reset(); arena.set(generateArena((Math.random() * 2 ** 31) | 0, arena.bounds), true, player.pos); waves.start(); toast(t("ui.wavesGo"));
+    if (survOpt.roulette) rouletteStart();
   }
   function leaveSurvival() {
     const n = waves.index + 1; waves.stop(); sfx.reset(); php.reset(); toHall(); autosave();
@@ -925,6 +1053,7 @@ async function boot() {
     resume();
   }
   function startRaid() {
+    session.event("inicio", { modo: "incursion" });
     beginRun("raid");
     mobs.mod = null; php.noRegen = false;
     const at = raid.start((Math.random() * 2 ** 31) | 0, raidOpt);
@@ -940,6 +1069,7 @@ async function boot() {
   });
   let waveTerm: THREE.Group | null = null;
   function startDefense() {
+    session.event("inicio", { modo: "defensa" });
     const seed = (Math.random() * 2 ** 31) | 0, at = raid.startNode(seed, "fight", [], 0, Math.floor(Math.random() * 5), true), room = raid.map!.rooms[1];
     Object.assign(dmode, { active: true, wave: 0, credits: START_CREDITS, phase: "build", t: BUILD_TIME, queue: [], spawnT: 0, rnd: seedRng(seed) });
     defense.setup(new THREE.Vector3(RAID_ORIGIN.x + room.cx, 0, RAID_ORIGIN.z + room.cz), Math.min(room.w, room.d) / 2 - 2, seedRng(seed ^ 77), room.covers.map((c) => ({ x: RAID_ORIGIN.x + c.x, z: RAID_ORIGIN.z + c.z, r: Math.max(c.w, c.d) / 2 })));
@@ -1011,6 +1141,7 @@ async function boot() {
   const HACK_ROOMS = 5;
   const roomData = () => Math.round((40 + hack.depth * 18) * curPerks.fortune * (mobs.mod ? 1.4 : 1));
   function startHack() {
+    session.event("inicio", { modo: "hack" });
     beginRun("hack");
     Object.assign(hack, { active: true, seed: (Math.random() * 2 ** 31) | 0, depth: 1, data: 0, node: null, extractable: false, path: [] });
     for (const k of HACK_BUFFS) hack.buffs[k] = 0;
@@ -1082,7 +1213,9 @@ async function boot() {
       <h2>${t("rd.difficulty")}</h2><div class="chips">${[0, 1, 2].map((d) => chip("diff", d, raidOpt.difficulty === d, t(`rd.diff${d}`))).join("")}</div>
       <p class="note">${t(`rd.diffd${raidOpt.difficulty}`)}</p>
       <div class="actions"><button type="button" class="btn" data-go="1" data-nav>${t("rd.start")}</button></div>`
-      : mode === "survival" ? `<p class="note">${t("sv.desc")}</p><div class="actions"><button type="button" class="btn" data-surv="1" data-go="1" data-nav>${t("sv.start")}</button></div>`
+      : mode === "survival" ? `<p class="note">${t("sv.desc")}</p>
+      <h2>${t("sv.roulette")}</h2><div class="chips">${chip("rou", 0, !survOpt.roulette, t("sv.rouletteOff"))}${chip("rou", 1, survOpt.roulette, t("sv.rouletteOn"))}</div>
+      <p class="note">${t("sv.rouletteDesc")}</p><div class="actions"><button type="button" class="btn" data-surv="1" data-go="1" data-nav>${t("sv.start")}</button></div>`
       : mode === "defense" ? `<p class="note">${t("df.desc")}</p><div class="actions"><button type="button" class="btn" data-def="1" data-go="1" data-nav>${t("df.start")}</button></div>`
       : `<p class="note">${t("hk.desc")}</p><div class="actions"><button type="button" class="btn" data-hack="1" data-go="1" data-nav>${t("hk.start")}</button></div>`;
     el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">SIM//</span><h1>${title}</h1><span class="credits">${t("pg.lv")} ${inv.progress.level}</span><button type="button" class="btn ghost sm" data-close="1">${t("ui.back")}</button></header>
@@ -1096,6 +1229,7 @@ async function boot() {
     if (tg.closest("[data-close]")) return closeRaidMenu();
     const r = tg.closest<HTMLElement>("[data-rooms]"); if (r) { raidOpt.rooms = Number(r.dataset.rooms); return openRaidMenu(); }
     const d = tg.closest<HTMLElement>("[data-diff]"); if (d) { raidOpt.difficulty = Number(d.dataset.diff) as 0 | 1 | 2; return openRaidMenu(); }
+    const ru = tg.closest<HTMLElement>("[data-rou]"); if (ru) { survOpt.roulette = ru.dataset.rou === "1"; return openRaidMenu(); }
     if (tg.closest("[data-surv]")) { closeRaidMenu(); startSurvival(); return; }
     if (tg.closest("[data-hack]")) { $("raidmenu").hidden = true; startHack(); return; }
     if (tg.closest("[data-def]")) { $("raidmenu").hidden = true; resume(); startDefense(); return; }
@@ -1104,13 +1238,13 @@ async function boot() {
   // Arena de oleadas: al azar al empezar; cambia un poco tras cada jefe
   const arena = new WaveArena(scene, world.colliders, world.shootables, { x0: world.wavesRoom.x0, x1: world.wavesRoom.x1, z0: world.wavesRoom.z0 + 0.5, z1: world.wavesRoom.z1 });
   arena.set(generateArena((Math.random() * 2 ** 31) | 0, arena.bounds), false);
-  const hooksWaveEnd = (_i: number, last: Dummy | null) => dropLoot("waveEnd", last?.group.position ?? new THREE.Vector3(0, 0, 8));
+  const hooksWaveEnd = (_i: number, last: Dummy | null) => { session.event("fin-oleada", { n: _i + 1 }); dropLoot("waveEnd", last?.group.position ?? new THREE.Vector3(0, 0, 8)); };
   function healthHud() {
     // Vida del jugador: siempre visible abajo a la izquierda, con cifras (y la oleada en curso encima)
     const el = $("phealth"); const show = state === "play";
     el.hidden = !show; if (!show) return;
     el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
-    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}` : raid.active && dmode.active ? `  ·  ${t("df.hud", { w: dmode.wave, hp: Math.ceil(defense.core.hp), max: defense.core.max, c: dmode.credits })}${defense.core.shield > 0 ? ` · 🛡 ${Math.ceil(defense.core.shield)}` : ""}${dmode.phase === "build" ? ` · ${t("df.buildT", { s: Math.ceil(dmode.t) })}` : raid.enemiesLeft || mobs.living ? ` · ${t("rd.left", { n: mobs.living + dmode.queue.length })}` : ""}`: raid.active && hack.active ? `  ·  HACK · ${t("hk.sectorN", { n: hack.depth })}${mobs.mod ? ` · ${t(`wm.${mobs.mod}`)}` : ""} · ${t("rd.hud", { n: raid.cleared, of: raid.fights })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
+    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}${roulette.active ? ` · ${t("sv.rouletteIn", { s: Math.ceil(ROULETTE_EVERY - roulette.t) })}` : ""}` : raid.active && dmode.active ? `  ·  ${t("df.hud", { w: dmode.wave, hp: Math.ceil(defense.core.hp), max: defense.core.max, c: dmode.credits })}${defense.core.shield > 0 ? ` · 🛡 ${Math.ceil(defense.core.shield)}` : ""}${dmode.phase === "build" ? ` · ${t("df.buildT", { s: Math.ceil(dmode.t) })}` : raid.enemiesLeft || mobs.living ? ` · ${t("rd.left", { n: mobs.living + dmode.queue.length })}` : ""}`: raid.active && hack.active ? `  ·  HACK · ${t("hk.sectorN", { n: hack.depth })}${mobs.mod ? ` · ${t(`wm.${mobs.mod}`)}` : ""} · ${t("rd.hud", { n: raid.cleared, of: raid.fights })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
   }
 
   // ---------- Botín de enemigos ----------
@@ -1260,9 +1394,14 @@ async function boot() {
   let shownPickup: object | null = null;
   const debug = { fire: false, aim: false }; // usado por las pruebas automáticas
   let frameNo = 0;
+  sessionCtx = () => ({ modo: hack.active ? "hack" : dmode.active ? "defensa" : raid.active ? "incursion" : waves.active ? "supervivencia" : "hall", arma: inv.current ? displayName(inv.current.spec) : "puños", nivel: inv.progress.level });
   function frame() {
     const dt = Math.min(clock.getDelta(), 0.05);
+    if (settings.sessionLog && inGame && !session.active) session.start(); else if (session.active && (!settings.sessionLog || !inGame)) session.stop();
+    if (session.noteOpen) { requestAnimationFrame(frame); return; } // escribiendo una nota: el juego espera
+    session.tick(dt);
     const edges = input.padEdges();
+    if (session.active && edges[8]) session.mark(); // botón Atrás del mando = marca
     const f = input.read(dt, edges);
     // Muriendo: sin control (la animación de muerte manda)
     if (deathFx.active) { f.moveX = f.moveZ = f.lookX = f.lookY = 0; f.fire = f.aim = f.jump = f.reload = f.interact = f.swap = f.sprint = f.crouch = false; f.grenade = f.gadget = f.super = f.kick = f.inspect = f.holdUse = f.useHeld = false; f.inventory = false; }
@@ -1282,13 +1421,22 @@ async function boot() {
       else if (f.super && !sfx.casting && !sfx.busy) { if (meter.use()) sfx.cast(inv.superId); else toast(t("sp.notReady")); }
       if (f.gadget) {
         if (!inv.gadget) toast(t("gd.none"));
-        else if (inv.gadget.kind === "teleport" && gadgets.tryTeleport()) { /* (segunda pulsación: viaje sin gastar carga) */ }
+        else if (inv.gadget.kind === "teleport" && gadgets.tryTeleport()) gun.gadgetGesture("activate"); // (segunda pulsación: viaje sin gastar carga)
         else if (gpouch.charges <= 0) toast(t("gd.empty"));
-        else if (gadgets.use(inv.gadget)) gpouch.use(); else toast(t("gd.fail"));
+        else if (gadgets.use(inv.gadget)) { gpouch.use(); gun.gadgetGesture(GADGET_THROW.has(inv.gadget.kind) ? "throw" : "activate"); } else toast(t("gd.fail"));
       }
       if (f.grenade) {
-        if (!inv.grenade) toast(t("gr.none"));
-        else if (pouch.use()) { const dir = camera.getWorldDirection(new THREE.Vector3()); nades.throw(inv.grenade, camera.getWorldPosition(new THREE.Vector3()).addScaledVector(dir, 0.5).add(new THREE.Vector3(0, -0.15, 0)), dir); }
+        const g = inv.grenade;
+        if (!g) toast(t("gr.none"));
+        else if (isGadgetGrenade(g.kind)) {
+          // Reclasificadas desde equipamiento: mismo efecto, pero con las cargas y recarga de la granada (pouch).
+          if (pouch.charges > 0) {
+            const d = GADGET_KINDS[g.kind];
+            const spec: GadgetSpec = { uid: g.uid, kind: g.kind, rarity: g.rarity, seed: g.seed, power: g.damage, radius: g.radius, duration: d.duration, charges: g.charges, recharge: g.recharge };
+            if (gadgets.use(spec)) { pouch.use(); gun.gadgetGesture("throw"); }
+          }
+        }
+        else if (pouch.use()) { gun.gadgetGesture("throw"); const dir = camera.getWorldDirection(new THREE.Vector3()); nades.throw(g, camera.getWorldPosition(new THREE.Vector3()).addScaledVector(dir, 0.5).add(new THREE.Vector3(0, -0.15, 0)), dir); }
       }
       const key = input.device === "pad" ? `<kbd class="hold" style="--p:${Math.round(input.useHold * 100)}%">${PAD_NAMES[input.padBinds.useReload]}</kbd>${t("ui.holdBtn")} ` : `<kbd>${input.binds.use.replace(/^Key/, "")}</kbd>`;
       const look = camera.getWorldDirection(new THREE.Vector3());
@@ -1406,6 +1554,7 @@ async function boot() {
       const ts = sfx.timeScale * (chronoT > 0 ? chronoK : 1); // (parada del tiempo / inyección temporal)
       const wdt = hitstop > 0 ? 0 : dt;
       waves.update(wdt * ts); arena.update(dt);
+      if (roulette.active) { if (!waves.active) rouletteEnd(); else if ((roulette.t += dt) >= ROULETTE_EVERY) { roulette.t = 0; rouletteRoll(); } }
       if (raid.active) { mobs.update(wdt * ts); raid.update(dt, player.pos); if (dmode.active) defenseTick(dt, f); if (raidReturnT > 0 && (raidReturnT -= dt) <= 0) returnHub(true); }
       // Nova espiritual: hay que quedarse quieto mientras se carga; si te mueves se cancela y pierdes la carga
       if (sfx.castingId === "spirit" && !sfx.castHit && (Math.abs(f.moveX) > 0.15 || Math.abs(f.moveZ) > 0.15 || f.jump)) { sfx.cancel(); toast(t("sp.spiritCancel")); }
@@ -1435,7 +1584,9 @@ async function boot() {
     // Miras: visor a pantalla completa o retícula de punto rojo / holográfica
     const scopeOn = state === "play" && gun.sight === "scope" && gun.aimT > 0.9;
     $("scope").classList.toggle("on", scopeOn);
-    const rd = $("reddot"); rd.dataset.kind = gun.sight;
+    const rd = $("reddot");
+    const reticle = reticleFor(gun.item?.spec.optic ?? null, gun.sight);
+    if (rd.dataset.reticle !== reticle) { rd.dataset.reticle = reticle; rd.innerHTML = reticle ? RETICLES[reticle] : ""; }
     rd.style.opacity = state === "play" && (gun.sight === "dot" || gun.sight === "holo") ? String(Math.max(0, (gun.aimT - 0.6) / 0.4)) : "0";
     // (pausa, inventario y demás menús paran el mundo: los enemigos no se mueven ni atacan)
     const stop = (state === "play" && hitstop > 0) || state !== "play"; hitstop = Math.max(0, hitstop - dt);

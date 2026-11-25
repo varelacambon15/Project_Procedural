@@ -117,10 +117,9 @@ body.menu-cursor, body.menu-cursor * { cursor: none !important; }
 #scope .h::after { content: ""; position: absolute; left: 0; right: 0; top: -3px; height: 8px; background: linear-gradient(90deg, transparent 0 15%, #111 15% 16%, transparent 16% 25%, #111 25% 26%, transparent 26% 35%, #111 35% 36%, transparent 36% 64%, #111 64% 65%, transparent 65% 74%, #111 74% 75%, transparent 75% 84%, #111 84% 85%, transparent 85%); }
 #scope .c { left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: #e02a1e; box-shadow: 0 0 6px #ff3b2a; }
 
-/* Punto rojo y holográfica: retícula luminosa en el centro */
-#reddot { position: fixed; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: #ff3b2a; box-shadow: 0 0 8px 1px rgba(255, 50, 30, .9); pointer-events: none; opacity: 0; }
-#reddot[data-kind="holo"] { width: 34px; height: 34px; margin: -17px; background: transparent; border: 2px solid rgba(255, 60, 40, .9); box-shadow: 0 0 8px rgba(255, 50, 30, .8), inset 0 0 6px rgba(255, 50, 30, .5); }
-#reddot[data-kind="holo"]::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #ff3b2a; }
+/* Retícula del juego: una sola capa SVG en el centro, roja con resplandor */
+#reddot { position: fixed; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px; pointer-events: none; opacity: 0; filter: drop-shadow(0 0 4px rgba(255, 50, 30, .85)); }
+#reddot svg { display: block; width: 100%; height: 100%; }
 
 /* Vida del jugador (solo en oleadas) y destello de daño */
 #phealth { left: max(22px, env(safe-area-inset-left, 0px)); bottom: calc(52px + env(safe-area-inset-bottom, 0px)); width: min(300px, 55vw); text-align: left; }
@@ -215,3 +214,8 @@ body.in-menu #gadgethud { visibility: hidden; }
 /* Muerte: la imagen pierde el color y se oscurece por los bordes mientras la mano se desintegra */
 body.dying #game canvas { filter: grayscale(.85) contrast(1.1) brightness(.85); transition: filter 1.2s; }
 body.dying::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 5; box-shadow: inset 0 0 260px rgba(160, 20, 20, .55); }
+
+/* Registro de sesión (modo desarrollador) */
+#sessionnote { position: fixed; left: 50%; bottom: 12%; transform: translateX(-50%); z-index: 80; width: min(560px, 80vw); padding: 10px 14px; background: rgba(10, 12, 14, 0.92); border: 1px solid var(--sim, #7fe3ff); }
+#sessionnote input { width: 100%; background: transparent; border: 0; outline: none; color: #fff; font: 16px sans-serif; }
+#sessiondot { position: fixed; top: 10px; right: 14px; z-index: 80; color: #ff5a5a; font: 12px monospace; opacity: 0.8; pointer-events: none; }

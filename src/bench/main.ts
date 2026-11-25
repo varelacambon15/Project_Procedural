@@ -309,6 +309,31 @@ async function boot() {
     return out.toDataURL("image/png");
   };
   /** Inspección: cajas de cada pieza montada de la primera arma que cumpla el filtro (depurar piezas flotantes). */
+  /** Auditoría de coherencia de miras: monta `count` armas del tipo y devuelve, por arma, si lleva una pieza de mira visible,
+   *  con qué se apunta (hierro, mira de serie o mira montada) y banderas de incoherencia. Solo para el banco/auditoría. */
+  const auditSights = async (type: string, from = 1, count = 40) => {
+    const rows: Record<string, unknown>[] = [];
+    for (let seed = from; seed < from + count; seed++) {
+      try {
+        const w = gen.generate(seed * 13 + 7, type as never); const built = await asm.assemble(w);
+        // Ópticas reales: no cuentan las miras de hierro (pack "iron"), ni el raíl ni la base elevadora que también son piezas «scope»
+        const opticParts = built.parts.filter((p) => p.role === "scope" && p.from.pack !== "iron" && p.from.id !== "rail" && p.from.id !== "riser");
+        const scopeMesh = opticParts.length > 0;
+        const iron = built.sightX !== undefined, own = !!built.ownSight, zoom = built.zoom;
+        const flags: string[] = [];
+        if (built.sightY === null) flags.push("sin-linea-de-mira");
+        if (scopeMesh && !w.optic && zoom <= 1 && iron && !own) flags.push("optica-del-modelo-visible-pero-apunta-con-hierro");
+        if (w.optic && iron) flags.push("optica-montada-pero-apunta-con-hierro");
+        if (w.optic && opticParts.length > 1) flags.push("dos-opticas-visibles");
+        if (zoom > 1 && iron) flags.push("zoom-y-hierro");
+        const h = built.height ?? 0; if (h > 0 && built.sightY !== null && (built.sightY < h * 0.25 || built.sightY > h * 1.05)) flags.push("linea-de-mira-fuera-de-rango");
+        const aspect = h > 0 ? built.length / h : 0; if (aspect > 0 && (aspect < 1.6 || aspect > 9)) flags.push("proporcion-rara");
+        rows.push({ seed: seed * 13 + 7, type, base: w.lineage?.base ?? w.parts[0].from, optic: w.optic ?? null, scopeMesh, scopeIds: opticParts.map((p) => p.from.id), opticX: built.opticX === undefined ? null : +built.opticX.toFixed(3), largo: +built.length.toFixed(3), iron, own, zoom, aspect: +aspect.toFixed(2), flags });
+        built.group.removeFromParent();
+      } catch (e) { rows.push({ seed, type, error: String(e).slice(0, 80), flags: ["error"] }); }
+    }
+    return rows;
+  };
   const inspect = async (type: string, need: string, start = 1) => {
     for (let s2 = start; s2 < start + 20000; s2++) {
       const w = gen.generate(s2, type as never);
@@ -530,6 +555,6 @@ async function boot() {
     sc.remove(built.group);
     return out;
   };
-  (window as unknown as Record<string, unknown>).__bench = { modelSheet, longSheet, inspect, decisionSheet, varietySheet, closeups, lotSheet, simSheet, showcase, sheet, show, cost, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
+  (window as unknown as Record<string, unknown>).__bench = { modelSheet, longSheet, inspect, decisionSheet, varietySheet, closeups, lotSheet, auditSights, simSheet, showcase, sheet, show, cost, setType, toggleExplode, get current() { return current?.spec; }, setView: (y: number, p: number) => { yaw = y; pitch = p; idle = -1e9; } };
 }
 boot().catch((e) => { $("loading").textContent = `No se pudieron cargar las armas: ${e.message}`; console.error(e); });

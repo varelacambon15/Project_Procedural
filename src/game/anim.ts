@@ -8,7 +8,7 @@ export type MovingPart = "slide" | "pump" | "charging";
 export interface Phase { id: string; t: number; index: number }
 
 export interface AnimParams {
-  hip: V3; aimZ: number; adsRoll: number; gripZ?: number; /** Al apuntar, distancia mínima del ojo por detrás de la empuñadura (m; pistolas: brazo extendido). */ adsGrip?: number; /** Hasta dónde puede quedar la culata detrás del ojo (m; bullpups: el cuerpo va detrás de la empuñadura). */ rearMax?: number;
+  hip: V3; /** Giro de cadera de la clase (rad): cabeceo hacia arriba, guiñada hacia el centro y alabeo; al apuntar se anula. */ hipYaw?: number; hipPitch?: number; hipRoll?: number; /** Encargo 54: escala de la silueta en cadera para la clase (1 = sin cambiar; los subfusiles salían pequeños). Se desvanece al apuntar. */ hipScale?: number; /** Encargo 54: alto máximo de la silueta en cadera para la clase (subfusiles: 0,55; por defecto el de vmfit). */ hipMaxH?: number; /** Base de la pose al apuntar con armas sin mira (`iron`): se fija aparte para que reencuadrar la cadera no la mueva. */ adsHip?: [number, number]; aimZ: number; adsRoll: number; gripZ?: number; /** Al apuntar, distancia mínima del ojo por detrás de la empuñadura (m; pistolas: brazo extendido). */ adsGrip?: number; /** Hasta dónde puede quedar la culata detrás del ojo (m; bullpups: el cuerpo va detrás de la empuñadura). */ rearMax?: number;
   kick: { k: number; zeta: number; peak: number; back: number; up: number; pitch: number; roll: number };
   recoil: { power: number; vertical: number; horizontal: number };
   sway: { gain: number; maxX: number; maxY: number; lag: number; adsKeep: number };
@@ -46,10 +46,18 @@ export function phaseAt(phases: [string, number][], p: number): Phase {
 
 const clamp = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 export const ease = (x: number) => x * x * (3 - 2 * x);
+/** Giro de cadera de la clase (radianes): cabeceo (arriba), guiñada (hacia el centro) y alabeo. Se aplica solo en
+ *  cadera y se desvanece al apuntar, así que ADS no cambia. */
+export function hipAngles(p: AnimParams, ads = 0): V3 {
+  const k = 1 - ease(clamp(ads, 0, 1));
+  return [(p.hipPitch ?? 0) * k, (p.hipYaw ?? 0) * k, (p.hipRoll ?? 0) * k];
+}
 const seg = (x: number, a: number, b: number) => Math.min(1, Math.max(0, (x - a) / (b - a)));
 const outCubic = (x: number) => 1 - (1 - x) ** 3;
 /** Duración del gesto manual (s): cerrojo en cuatro tiempos y bombeo seco. */
 export const CYCLE_TIME = { bolt: 0.8, pump: 0.55 } as const;
+/** Campo de visión con el que se dibuja el arma (main.ts: el viewmodel usa uno más estrecho que el mundo). */
+export const VM_FOV = 62;
 /**
  * Cerrojo (0..1): la mano va a la manilla (reach), la levanta (lift), tira atrás y empuja (pull), la baja y vuelve.
  * `slam` es el golpe al cerrar.
@@ -67,6 +75,9 @@ export function pumpCurve(t: number) {
 }
 export const tri = (x: number, a: number, b: number) => (x <= a || x >= b ? 0 : Math.sin(((x - a) / (b - a)) * Math.PI));
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+/** Cadera por la empuñadura (z local) y apartado de las muy altas, como antes del encargo 35 (sin alejamiento general). */
+const hipRawZ = (p: AnimParams, i: Pick<AnimInput, "length" | "gripX">) => i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, (p.rearMax ?? 0.34) - i.length * 0.5) : -(i.length * 0.5 + p.hip[2]);
+const hipBulkZ = (p: AnimParams, i: Pick<AnimInput, "length" | "gripX" | "bulk">) => hipRawZ(p, i) - (p.gripAnchor ? 0 : Math.min(0.12, Math.max(0, (i.bulk ?? 0) - 0.28) * 1.6));
 
 export interface AnimInput {
   dt: number; time: number;
@@ -80,6 +91,7 @@ export interface AnimInput {
   /** Y local de la empuñadura (las armas cortas se colocan por ella: igual altura de mano en todas). */ gripY?: number;
   /** Sin óptica: al apuntar no se alinea la mira de hierro; el arma se acerca y se centra un poco (estilo Black). */ iron?: boolean;
   /** Miras de hierro montadas: X del alza respecto al centro del arma (el ojo queda a 2,5 cm detrás de ella (los cuerpos de las alzas no pasan de 1,5 cm detrás de su lente), como en un shooter moderno: la mirilla llena la vista). */ sightX?: number;
+  /** Con óptica montada (no mira de hierro): X local de su lente trasera. El ojo se coloca a `OPTIC_EYE` detrás de ella, igual que con el alza, y no según el largo del arma. */ opticX?: number;
   /** Progreso de la recarga 0..1, o null. */ reload: number | null;
   /** Progreso de sacar el arma (1 al empezar … 0 lista), de guardarla (0 … 1 guardada) y de la inspección (0..1 o null). */
   draw: number; holster: number; inspect: number | null;
@@ -126,10 +138,9 @@ export class ViewAnimator {
   }
 
   /** Posición de cadera sin balanceo ni ajuste (para calcular el encuadre de cada arma). */
-  hipBase(i: Pick<AnimInput, "length" | "gripX" | "gripY">): V3 {
+  hipBase(i: Pick<AnimInput, "length" | "gripX" | "gripY" | "bulk">): V3 {
     const p = this.p;
-    const hipZ = i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, (p.rearMax ?? 0.34) - i.length * 0.5) : -(i.length * 0.5 + p.hip[2]);
-    return [p.hip[0], p.gripAnchor && i.gripY !== undefined ? p.hip[1] - i.gripY : p.hip[1], hipZ];
+    return [p.hip[0], p.gripAnchor && i.gripY !== undefined ? p.hip[1] - i.gripY : p.hip[1], hipBulkZ(p, i)];
   }
   update(i: AnimInput): Pose {
     const p = this.p, dt = i.dt;
@@ -147,21 +158,31 @@ export class ViewAnimator {
     // (con miras de hierro, el ojo justo detrás del alza: si no, la culata quedaba delante de una línea de mira tan baja)
     // (si con eso la mano de la empuñadura quedaba casi en el plano de la cámara, tapaba toda la vista: el ojo se
     // retrasa hasta 6 cm por detrás de la empuñadura)
+    const OPTIC_EYE = 0.085; // (ojo a 8,5 cm detrás de la lente trasera de una óptica montada)
     const EYE = 0.065; // (ojo a 6,5 cm detrás del alza: a 2,5 cm cualquier milímetro de desajuste se veía enorme)
-    const eyeX = i.sightX === undefined ? 0 : i.gripX !== undefined && i.sightX - EYE < i.gripX + (p.adsGrip ?? 0.06) - 0.015 ? Math.min(i.sightX - EYE, i.gripX - (p.adsGrip ?? 0.06)) : i.sightX - EYE;
-    const adsZ = i.sightX !== undefined ? eyeX : -(i.length * 0.5 + p.aimZ);
-    // (las muy altas —miras grandes, tambores, cuerpos voluminosos— un poco más lejos: no tapan la vista)
-    const hipZ = (i.gripX !== undefined && p.gripZ !== undefined ? Math.min(-p.gripZ + i.gripX, (p.rearMax ?? 0.34) - i.length * 0.5) : -(i.length * 0.5 + p.hip[2])) - (p.gripAnchor ? 0 : Math.min(0.12, Math.max(0, (i.bulk ?? 0) - 0.28) * 1.6));
+    // Con óptica montada el ojo va detrás de su lente trasera (antes se colocaba por el largo del arma y una constante por clase, y una
+    // óptica adelantada en el raíl dejaba el arma lejos y fina al apuntar)
+    const rearX = i.sightX ?? i.opticX, eye = i.sightX !== undefined ? EYE : OPTIC_EYE;
+    const eyeX = rearX === undefined ? 0 : i.gripX !== undefined && rearX - eye < i.gripX + (p.adsGrip ?? 0.06) - 0.015 ? Math.min(rearX - eye, i.gripX - (p.adsGrip ?? 0.06)) : rearX - eye;
+    const adsZ = rearX !== undefined ? eyeX : -(i.length * 0.5 + p.aimZ);
+    // (las muy altas —miras grandes, tambores, cuerpos voluminosos— un poco más lejos: no tapan la vista; las normales,
+    // exactamente en la cadera de antes del encargo 35)
+    const hipZ = hipBulkZ(p, i);
     // Mira de hierro: se acerca el arma hacia el centro, por debajo de la vista (la cámara hace zoom); con óptica, la
-    // línea de mira pasa por el centro de la óptica
-    const ironPos: V3 = [p.hip[0] * 0.45, p.hip[1] * 0.78, hipZ + 0.05 - (p.adsGrip ? p.adsGrip * 0.6 : 0)]; // (pistolas: al apuntar, el brazo se extiende)
+    // línea de mira pasa por el centro de la óptica. Al apuntar se mantiene la cadera de siempre, así ADS no cambia.
+    const adsH = p.adsHip ?? [p.hip[0], p.hip[1]]; // (encuadre de cadera original: al apuntar no cambia)
+    const adsHipZ = hipBulkZ(p, i);
+    const ironPos: V3 = [adsH[0] * 0.45, adsH[1] * 0.78, adsHipZ + 0.05 - (p.adsGrip ? p.adsGrip * 0.6 : 0)]; // (pistolas: al apuntar, el brazo se extiende)
     const tgt: V3 = i.iron ? ironPos : [0, -i.sightY, adsZ];
     // (armas cortas: la empuñadura siempre a la misma altura; un cargador largo o un tambor ya no suben el arma entera)
     const hipY = p.gripAnchor && i.gripY !== undefined ? p.hip[1] - i.gripY : p.hip[1];
     const pos: V3 = [lerp(p.hip[0], tgt[0], e), lerp(hipY, tgt[1], e), lerp(hipZ, tgt[2], e)];
     if (i.fit) { const f = 1 - e; pos[0] += i.fit[0] * f; pos[1] += i.fit[1] * f; pos[2] += i.fit[2] * f; }
     const rest = p.rest ?? [0, 0, 0];
-    const rot: V3 = [rest[0] * (1 - e), (rest[1] + (i.fit?.[3] ?? 0)) * (1 - e), rest[2] * (1 - e) - p.adsRoll * tri(ads, 0, 1)];
+    // Convergencia de cadera de la clase (encargo 51): la boca gira hacia el centro y el arma cabecea un poco, con el
+    // perfil y la cara superior a la vista. Se suma al giro en reposo y se desvanece al apuntar (ADS no cambia).
+    const ha = hipAngles(p, ads);
+    const rot: V3 = [rest[0] * (1 - e) + ha[0], (rest[1] + (i.fit?.[3] ?? 0)) * (1 - e) + ha[1], rest[2] * (1 - e) + ha[2] - p.adsRoll * tri(ads, 0, 1)];
     // Sprint
     this.sprint = lerp(this.sprint, i.sprinting && i.reload === null ? 1 : 0, Math.min(1, dt * p.sprint.speed));
     for (let a = 0; a < 3; a++) { pos[a] += p.sprint.pos[a] * this.sprint; rot[a] += p.sprint.rot[a] * this.sprint; }
@@ -240,8 +261,9 @@ export class ViewAnimator {
         pos[2] += 0.035 * kk; rot[0] -= 0.12 * kk;
       }
     }
-    // Inspección: mostrar el lateral del arma
-    if (i.inspect !== null) { const kk = tri(i.inspect, 0, 1); rot[1] += -1.1 * ease(Math.min(1, kk * 1.4)); rot[2] += 0.45 * kk; pos[0] -= 0.06 * kk; pos[2] += 0.05 * kk; pos[1] += 0.03 * kk; }
+    // Inspección: mostrar el lateral del arma. La mano se mantenía «muy pegada» a la cámara: en vez de acercarla, se
+    // separa un poco (el giro es lo que enseña el lateral).
+    if (i.inspect !== null) { const kk = tri(i.inspect, 0, 1); rot[1] += -1.1 * ease(Math.min(1, kk * 1.4)); rot[2] += 0.45 * kk; pos[0] -= 0.06 * kk; pos[2] -= 0.015 * kk; pos[1] += 0.03 * kk; }
     // Sacar (de abajo, girada) y guardar (el gesto inverso, más rápido)
     const away = Math.max(ease(i.draw), ease(i.holster));
     if (away > 0) { pos[1] -= p.draw.drop * away; rot[0] -= p.draw.pitch * away; rot[2] += p.draw.roll * Math.max(i.draw, i.holster); }
@@ -266,4 +288,75 @@ export class ViewAnimator {
 
   /** Valor actual del muelle (para pruebas y para la cámara). */
   get kick() { return this.kx; }
+}
+
+// ---------- Gestos de mano con equipamiento y granadas (encargo 34) ----------
+// Solo lógica (sin Three.js): qué hace la mano libre al activar o lanzar, con las duraciones y curvas de
+// src/data/anim.json. La pose concreta (posiciones en el espacio de la cámara) la pone gun.ts; aquí solo va el tiempo y
+// la curva, para poder probar las reglas sin escena: ≤ 0,45 s, la mano empieza y acaba en reposo y el daño no corta.
+export type GestureKind = "activate" | "throw" | "soft";
+/** Duración máxima de un gesto de mano (s): no debe tapar la recarga ni la animación del arma. */
+export const GESTURE_MAX = 0.45;
+export interface GestureParams {
+  /** Duración total (s); nunca pasa de `GESTURE_MAX`. */
+  dur: number;
+  /** Tramo en el que la mano sale (a la cadera al activar; atrás al lanzar), en fracción del gesto. */
+  out: [number, number];
+  /** Tramo del toque corto (activar) o del golpe hacia delante (lanzar). */
+  hit: [number, number];
+  /** Cierre de los dedos mientras el objeto va en la mano (0..1). */
+  curl: number;
+}
+/** Desplazamientos normalizados del gesto: `out` saca la mano, `hit` la trae con el toque/golpe y `grip` cierra los dedos. */
+export interface GestureCurve { out: number; hit: number; grip: number }
+
+const gestureData = (data as unknown as { gadget?: Record<GestureKind, GestureParams> }).gadget
+  ?? ({} as Record<GestureKind, GestureParams>);
+const gestureCache = new Map<GestureKind, GestureParams>();
+/** Parámetros de un gesto (con la duración acotada a `GESTURE_MAX`). */
+export function gestureParams(kind: GestureKind): GestureParams {
+  if (!gestureCache.has(kind)) {
+    const p = gestureData[kind] ?? { dur: GESTURE_MAX, out: [0, 0.35] as [number, number], hit: [0.35, 0.85] as [number, number], curl: 0.9 };
+    gestureCache.set(kind, { ...p, dur: Math.min(GESTURE_MAX, Math.max(0.05, p.dur)) });
+  }
+  return gestureCache.get(kind)!;
+}
+/**
+ * Curva de un gesto (progreso 0..1 → desplazamientos normalizados). Empieza y acaba en cero: al terminar, la mano
+ * vuelve sola a su reposo. No depende del daño ni de ninguna otra acción; solo del tiempo transcurrido.
+ */
+export function gestureCurve(kind: GestureKind, t: number): GestureCurve {
+  const p = gestureParams(kind), x = clamp(t, 0, 1);
+  const out = ease(seg(x, p.out[0], p.out[1])) * (1 - ease(seg(x, p.hit[0], p.hit[1])));
+  const hit = outCubic(seg(x, p.hit[0], p.hit[1])) * (1 - ease(seg(x, 0.92, 1)));
+  // (los dedos cierran al coger el objeto y se abren al soltarlo)
+  const grip = p.curl * ease(seg(x, 0, 0.18)) * (1 - ease(seg(x, 0.7, 0.95)));
+  return { out, hit, grip };
+}
+/**
+ * Estado de un gesto de mano: solo tiempo. Avanza con `update(dt)` y no atiende a nada más, así que el daño recibido
+ * nunca lo cancela ni lo reinicia; al acabarse, la curva queda en reposo (la mano vuelve a su sitio).
+ */
+export class GadgetGesture {
+  kind: GestureKind | null = null;
+  /** Segundos transcurridos del gesto en curso. */
+  t = 0;
+  /** Mano que actúa: -1 izquierda (apoyo), 1 derecha (cuando la izquierda está ocupada recargando). */
+  side: 1 | -1 = -1;
+  get dur() { return this.kind ? gestureParams(this.kind).dur : 0; }
+  /** Empieza un gesto; si ya había uno, lo sustituye (manda el más reciente). */
+  start(kind: GestureKind, side: 1 | -1 = -1) { this.kind = kind; this.side = side; this.t = 0; }
+  /** Daño recibido: nunca cancela ni reinicia el gesto (regla del encargo 34; ver tests). */
+  hurt(_amount = 0) { /* deliberadamente vacío: el gesto sigue */ }
+  /** Para capturas: fija el gesto y su progreso (0..1) sin avanzar solo. */
+  set(kind: GestureKind, t: number, side: 1 | -1 = -1) { this.kind = kind; this.side = side; this.t = clamp(t, 0, 1) * gestureParams(kind).dur; }
+  update(dt: number) {
+    if (!this.kind) return;
+    this.t += Math.max(0, dt);
+    if (this.t >= this.dur) { this.kind = null; this.t = 0; }
+  }
+  get active() { return this.kind !== null; }
+  /** Progreso del gesto (1 cuando no hay ninguno: la mano está en reposo). */
+  get progress() { return this.kind ? clamp(this.t / this.dur, 0, 1) : 1; }
+  curve(): GestureCurve | null { return this.kind ? gestureCurve(this.kind, this.progress) : null; }
 }

@@ -1,5 +1,5 @@
 {
-  "_doc": "gripZ = distancia (m) de la cámara a la empuñadura en cadera: todas las armas se sujetan a la misma distancia (antes era la culata, y las largas quedaban lejos). Capa de animación procedural del arma en primera persona. 'default' se mezcla con cada clase. Distancias en metros, ángulos en radianes. kick = muelle (rigidez k, amortiguación zeta, 'peak' = altura del pico por disparo); recoil = retroceso de cámara (jugabilidad: power por clase, sin cambiar los valores de antes). reload.phases = fracciones del tiempo de recarga (que sale del manejo y los efectos). cycle.part = pieza que se mueve al disparar (slide, pump, charging).",
+  "_doc": "gripZ = distancia (m) de la cámara a la empuñadura en cadera: todas las armas se sujetan a la misma distancia (antes era la culata, y las largas quedaban lejos). Capa de animación procedural del arma en primera persona. 'default' se mezcla con cada clase. Distancias en metros, ángulos en radianes. kick = muelle (rigidez k, amortiguación zeta, 'peak' = altura del pico por disparo); recoil = retroceso de cámara (jugabilidad: power por clase, sin cambiar los valores de antes). reload.phases = fracciones del tiempo de recarga (que sale del manejo y los efectos). cycle.part = pieza que se mueve al disparar (slide, pump, charging). hipYaw/hipPitch/hipRoll = giro de cadera de la clase (radianes, encargo 51): la boca converge 8–12° hacia el centro y el arma cabecea 2–4° hacia arriba; se desvanece al apuntar (ADS no cambia). hipScale = escala de la silueta en cadera de la clase (encargo 54: subfusiles, que salían pequeños; se anula al apuntar) e hipMaxH = alto máximo de la silueta en cadera para la clase (0,55 en subfusiles; el resto usa el límite general).",
   "default": {
     "hip": [
       0.15,
@@ -120,7 +120,7 @@
   "classes": {
     "pistol": {
       "gripZ": 0.19, "adsGrip": 0.2, "rest": [0, 0, 0.1],
-      "hip": [0.075, -0.115, 0.2],
+      "hip": [0.106, -0.0925, 0.2], "hipYaw": 0.209, "hipPitch": 0.069,
       "aimZ": 0.24,
       "adsRoll": 0.03,
       "kick": {
@@ -202,7 +202,7 @@
     },
     "revolver": {
       "gripZ": 0.19, "rest": [0, 0, 0.1],
-      "hip": [0.075, -0.115, 0.2],
+      "hip": [0.106, -0.0925, 0.2], "hipYaw": 0.209, "hipPitch": 0.069,
       "aimZ": 0.24,
       "adsRoll": 0.03,
       "kick": {
@@ -272,7 +272,9 @@
       "gripAnchor": true
     },
     "smg": {
-      "hip": [0.14, -0.14, 0.06],
+      "hip": [0.187, -0.201, 0.06], "hipYaw": 0.209, "hipPitch": 0.069,
+      "hipScale": 1.3, "hipMaxH": 0.55,
+      "adsHip": [0.14, -0.14],
       "kick": {
         "k": 560,
         "zeta": 0.8,
@@ -300,12 +302,13 @@
         "time": 0.05
       },
       "gripZ": 0.2,
-      "hip": [0.14, -0.14, 0.08],
+      "hip": [0.1625, -0.0775, 0.08], "hipYaw": 0.1425, "hipPitch": 0.035,
+      "adsHip": [0.14, -0.14],
       "rest": [0, 0, 0]
     },
     "bullpup": {
       "gripZ": 0.32, "rearMax": 0.02,
-      "hip": [0.15, -0.175, 0.02],
+      "hip": [0.145, -0.045, 0.02], "hipYaw": 0.209, "hipPitch": 0.069,
       "reload": {
         "mag": [
           0.0,
@@ -313,9 +316,9 @@
           0
         ],
         "tilt": [
-          -0.1,
+          -0.25,
           0.3,
-          -0.35
+          -0.65
         ]
       },
       "cycle": {
@@ -384,11 +387,13 @@
         "time": 0.45
       },
       "gripZ": 0.2,
-      "hip": [0.14, -0.14, 0.08],
+      "hip": [0.135, -0.1075, 0.08], "hipYaw": 0.1425, "hipPitch": 0.0475,
+      "adsHip": [0.14, -0.14],
       "rest": [0, 0, 0]
     },
     "sniper": {
-      "hip": [0.14, -0.14, 0.08],
+      "hip": [0.15, -0.13, 0.08], "hipYaw": 0.185, "hipPitch": 0.045,
+      "hipScale": 0.82, "adsHip": [0.14, -0.14],
       "kick": {
         "k": 180,
         "zeta": 0.7,
@@ -405,8 +410,23 @@
         "adsKeep": 0.15
       },
       "holster": 0.2,
+      "draw": {
+        "drop": 0.24,
+        "pitch": 0.32,
+        "roll": 0.5
+      },
       "reload": {
-        "rackTravel": 0.06
+        "rackTravel": 0.06,
+        "tilt": [
+          -0.1,
+          0.16,
+          -0.3
+        ],
+        "drop": [
+          -0.02,
+          -0.035,
+          0.015
+        ]
       },
       "cycle": {
         "part": "charging",
@@ -418,7 +438,8 @@
     },
     "lmg": {
       "gripZ": 0.24,
-      "hip": [0.14, -0.14, 0.08],
+      "hip": [0.110, -0.005, 0.08], "hipYaw": 0.1425, "hipPitch": 0.035,
+      "adsHip": [0.14, -0.14],
       "kick": {
         "k": 300,
         "zeta": 0.9,
@@ -493,9 +514,10 @@
     "launcher": {
       "hip": [
         0.16,
-        -0.16,
+        -0.11,
         0.06
       ],
+      "hipYaw": 0.15, "hipPitch": 0.045,
       "kick": {
         "k": 160,
         "zeta": 0.75,
@@ -513,9 +535,10 @@
     "flamethrower": {
       "hip": [
         0.16,
-        -0.17,
+        -0.12,
         0.06
       ],
+      "hipYaw": 0.15, "hipPitch": 0.045,
       "kick": {
         "k": 600,
         "zeta": 0.9,
@@ -530,13 +553,34 @@
       }
     }
   },
+  "gadget": {
+    "_doc": "Gestos de mano al usar equipamiento o granadas (encargo 34): dur = duración total en segundos (nunca más de 0,45); out = tramo (0..1 del gesto) en que la mano baja a la cadera (activar) o va atrás (lanzar); hit = tramo del toque corto o del golpe hacia delante; curl = cierre de los dedos mientras el objeto va en la mano. La mano vuelve sola a su reposo al acabar.",
+    "activate": {
+      "dur": 0.4,
+      "out": [0, 0.4],
+      "hit": [0.42, 0.84],
+      "curl": 0.9
+    },
+    "throw": {
+      "dur": 0.45,
+      "out": [0, 0.28],
+      "hit": [0.28, 0.62],
+      "curl": 0.95
+    },
+    "soft": {
+      "dur": 0.34,
+      "out": [0, 0.24],
+      "hit": [0.26, 0.66],
+      "curl": 0.9
+    }
+  },
   "stances": {
     "_doc": "Posturas del perfil de agarre (05-E) que cambian la pose de una clase: 'shoulder' = arma corta con culata, al hombro (se aplica a pistolas y revólveres).",
     "shoulder": {
       "hip": [
-        0.13,
-        -0.15,
-        0.05
+        0.12,
+        -0.0925,
+        0.2
       ],
       "aimZ": 0.1,
       "kick": {

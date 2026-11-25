@@ -40,7 +40,11 @@ export function gripTraits(spec: Pick<WeaponSpec, "type" | "layout" | "tweaks" |
 /** Todas las variantes que puede elegir el jugador en el banco (las de serie y, en armas largas, una mano o agarre libre). */
 export function gripChoices(spec: Pick<WeaponSpec, "type" | "layout" | "tweaks" | "fireMode"> & { parts?: WeaponSpec["parts"] }): GripProfile[] {
   const base = gripOptions(spec);
-  if (handgun(spec)) return dedupe([...base, P("two", "grip", "grip", "hip"), P("one", "none", "none", "hip")]);
+  if (handgun(spec)) {
+    // Con culata de hombro, solo agarres a dos manos: a una mano (o alternando) no se sostiene un arma con culata
+    if (gripTraits(spec).stock) return dedupe([...base, P("two", "grip", "grip", "shoulder")]);
+    return dedupe([...base, P("two", "grip", "grip", "hip"), P("one", "none", "none", "hip")]);
+  }
   const stance = base[0]?.stance ?? "shoulder";
   return dedupe([...base, P("front", "front", "front", stance), P("one", "none", "none", stance), P("custom", "custom", "custom", stance)]);
 }

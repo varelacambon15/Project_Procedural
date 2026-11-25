@@ -6,7 +6,7 @@
 import data from "../data/recipes.json";
 
 export type RStat = "dmg" | "rate" | "crit" | "spread" | "recoil" | "reload" | "mag" | "range";
-export type RCond = "always" | "aiming" | "hip" | "still" | "moving" | "near" | "lowammo" | "afterkill" | "afterreload" | "big" | "nth" | "chance";
+export type RCond = "always" | "aiming" | "hip" | "still" | "moving" | "near" | "lowammo" | "afterkill" | "afterreload" | "big" | "nth" | "killnth" | "hitnth" | "chance";
 export type RTrigger = "passive" | "onShot" | "onHit" | "onCrit" | "onKill" | "onReloadEnd";
 export type RAction = "stat" | "buff" | "explode" | "chain" | "ignite" | "shards" | "strike" | "pellets" | "pull" | "fury";
 export type TradeoffKind = "accuracy" | "recoil" | "rate" | "mag" | "ads" | "reload" | "range" | "ammoPerShot" | "selfDamage" | "heat" | "cooldown";

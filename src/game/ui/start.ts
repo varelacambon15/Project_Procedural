@@ -84,8 +84,8 @@ export class StartScreen {
       <div class="row"><span>${t("set.quality")}</span><div class="seg">${QUALITIES.map((q) => `<button type="button" class="chip ${s.quality === q ? "on" : ""}" data-quality="${q}">${t(QLABEL[q])}</button>`).join("")}</div></div>
       ${range("renderScale", 0.5, 1, 0.05, (v) => `${Math.round(v * 100)}%`)}${toggle("showFps")}
       <div class="row"><span>${t("ui.language")}</span><div class="seg">${LANGS.map((l) => `<button type="button" class="chip ${l.id === getLang() ? "on" : ""}" data-lang="${l.id}">${l.name}</button>`).join("")}</div></div>
-      <h3>${t("set.devTitle")}</h3>${toggle("dev")}
-      ${s.dev ? `<p class="note">${t("set.devNote")}</p><div class="row dev-actions">${["lvl1", "lvl10", "cr", "modules", "armor", "raid"].map((a) => `<button type="button" class="chip" data-dev="${a}">${t(`set.dev.${a}`)}</button>`).join("")}</div>` : ""}
+      <h3>${t("set.devTitle")}</h3>${toggle("dev")}${s.dev ? toggle("sessionLog") : ""}
+      ${s.dev ? `<p class="note">${t("set.devNote")}</p><div class="row dev-actions">${["lvl1", "lvl10", "cr", "modules", "armor", "raid", "gear", "acc"].map((a) => `<button type="button" class="chip" data-dev="${a}">${t(`set.dev.${a}`)}</button>`).join("")}</div>` : ""}
       <p class="note">${t("set.saved")}</p></div>`;
   }
   private input(e: Event) {

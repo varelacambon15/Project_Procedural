@@ -36,7 +36,7 @@ export function effectDesc(e: Effect): string {
   else if (r.action === "buff") main = `${r.trigger === "onShot" ? "" : t(`rc.trig.${r.trigger}`) + ": "}${t("rc.buff", { b: statTxt, d: r.duration ?? 4 })}${r.cond === "afterkill" || r.cond === "afterreload" ? ` ${cond}` : ""}`;
   else {
     const act = t(`rc.act.${r.action}`, { p: pct(r.value), n: r.targets ?? 3, r: r.radius ?? 4, v: r.value });
-    const when = r.cond === "nth" || r.cond === "chance" ? cond : t(`rc.trig.${r.trigger}`);
+    const when = r.cond === "nth" || r.cond === "chance" || r.cond === "killnth" || r.cond === "hitnth" ? cond : t(`rc.trig.${r.trigger}`);
     main = when ? `${when.charAt(0).toUpperCase()}${when.slice(1)}: ${act}` : act;
   }
   return d.element ? `${t(`rc.el.${d.element}`)} · ${main}` : main;

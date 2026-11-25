@@ -2,7 +2,11 @@
 // lanzan si hay una equipada; tienen cargas que se recargan solas con el tiempo (según tipo y rareza).
 // Datos y generación puros (sin DOM ni three): los usa gun.ts (lanzamiento), la tienda y el inventario.
 
-export type GrenadeKind = "frag" | "incendiary" | "shock" | "cluster" | "singularity" | "sticky";
+export type GrenadeKind = "frag" | "incendiary" | "shock" | "cluster" | "singularity" | "sticky" | "orb" | "knife" | "mine" | "chain" | "harpoon";
+/** Los 5 tipos reclasificados desde equipamiento: se lanzan con G pero su efecto sigue en gadgetfx. */
+export const GADGET_GRENADE_KINDS = ["orb", "knife", "mine", "chain", "harpoon"] as const;
+export type GadgetGrenadeKind = (typeof GADGET_GRENADE_KINDS)[number];
+export const isGadgetGrenade = (k: string): k is GadgetGrenadeKind => (GADGET_GRENADE_KINDS as readonly string[]).includes(k);
 export type GrenadeRarity = "comun" | "poco" | "rara" | "epica" | "legendaria";
 export interface GrenadeSpec {
   uid: number; kind: GrenadeKind; rarity: GrenadeRarity; seed: number;
@@ -26,6 +30,12 @@ export const GRENADE_KINDS: Record<GrenadeKind, KindDef> = {
   singularity: { damage: 220, radius: 8, charges: 1, recharge: 16, fuse: 1.4, element: null, color: 0x9a6aff },
   // Adhesiva: se pega al primer enemigo que toca y estalla enseguida
   sticky: { damage: 300, radius: 4, charges: 2, recharge: 12, fuse: 0.6, element: "explosive", color: 0x48c070 },
+  // Antes equipamiento: conservan sus números de GADGET_KINDS (power -> damage); el efecto sigue en gadgetfx.
+  orb: { damage: 340, radius: 4, charges: 2, recharge: 12, fuse: 1.5, element: "explosive", color: 0xb070ff },
+  knife: { damage: 260, radius: 30, charges: 3, recharge: 5, fuse: 0.5, element: null, color: 0xd0d8e0 },
+  mine: { damage: 420, radius: 3.5, charges: 2, recharge: 14, fuse: 1.5, element: "explosive", color: 0xff4040 },
+  chain: { damage: 200, radius: 3.5, charges: 1, recharge: 15, fuse: 1.5, element: "explosive", color: 0xff9a40 },
+  harpoon: { damage: 180, radius: 6, charges: 2, recharge: 11, fuse: 1.5, element: "electrico", color: 0x6ad8ff },
 };
 export const GRENADE_KIND_LIST = Object.keys(GRENADE_KINDS) as GrenadeKind[];
 

@@ -1,11 +1,12 @@
-import { GADGET_RARITY } from "../gadgets";
 // Inventario: rejilla por rareza con filtros y orden, ficha del arma elegida comparada con la equipada y acciones
 // (equipar, a la mochila, renombrar, soltar, desguazar con confirmación suave). Teclado, ratón y mando.
 import { type GrenadeSpec } from "../grenades";
 import { SUPERS, SUPER_IDS, type SuperId } from "../supers";
 import { BRANCHES, SKILLS, branchPoints, canRaise, pointsFree, raise, rank, respec, respecCost, xpToNext, MAX_LEVEL } from "../progress";
 import { fillNadeThumbs } from "./shop";
-import { armorCard, armorTile, grenadeCard, grenadeTile } from "./common";
+import { fillGadgetThumbs } from "../gadgetthumb";
+import type { GadgetSpec } from "../gadgets";
+import { armorCard, armorTile, gadgetCard, gadgetTile, grenadeCard, grenadeTile } from "./common";
 import { ARMOR_RARITY } from "../armor";
 import { fillArmorThumbs } from "../armormodel";
 import type { ArmorSpec } from "../armor";
@@ -38,7 +39,7 @@ export class InventoryScreen {
   /** Granada elegida (uid), en lugar de un arma. */ private selNade: number | null = null;
   private filter = { rarity: "all", cls: "all", era: "all" };
   private sort: Sort = "rarity";
-  /** Pestaña: equipo (armas y granadas) o habilidades (súper). */ private tab: "gear" | "armor" | "equipment" | "skills" | "tree" = "gear";
+  /** Pestaña: equipo (armas y granadas) o habilidades (súper). */ private tab: "gear" | "armor" | "skills" | "tree" = "gear";
 
   constructor(private inv: Inventory, private thumbs: Thumbnails, private hooks: InventoryHooks) {
     this.el.addEventListener("click", (e) => this.click(e));
@@ -53,9 +54,13 @@ export class InventoryScreen {
   private dragAndDrop() {
     let dragged: number | null = null;
     let draggedNade: number | null = null;
-    const target = (e: DragEvent) => (e.target as HTMLElement).closest<HTMLElement>(draggedNade != null ? "[data-nadeslot], [data-packzone], [data-dropzone]" : "[data-eqslot], [data-packzone], [data-dropzone], [data-storezone]");
+    let draggedGad: number | null = null;
+    const target = (e: DragEvent) => (e.target as HTMLElement).closest<HTMLElement>(draggedGad != null ? "[data-gadgetslot], [data-packzone]" : draggedNade != null ? "[data-nadeslot], [data-packzone], [data-dropzone]" : "[data-eqslot], [data-packzone], [data-dropzone], [data-storezone]");
     this.el.addEventListener("dragstart", (e) => {
       // Granadas: a su ranura (equipar), a la mochila (quitar) o a la zona de soltar
+      const gt = (e.target as HTMLElement).closest<HTMLElement>(".tile[data-gd]"); // Equipamiento: a su ranura (equipar) o a la mochila (quitar)
+      if (gt) { draggedGad = Number(gt.dataset.gd); this.selGadget = draggedGad; this.selNade = null; this.selArmor = null; this.sel = null;
+        e.dataTransfer?.setData("text/plain", "gadget"); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; this.el.classList.add("dragging"); return; }
       const nt = (e.target as HTMLElement).closest<HTMLElement>(".tile[data-nade]");
       if (nt) { draggedNade = Number(nt.dataset.nade); this.selNade = draggedNade; this.sel = null; // (sin redibujar: se cancelaría el arrastre)
         e.dataTransfer?.setData("text/plain", "nade"); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; this.el.classList.add("dragging"); return; }
@@ -64,15 +69,22 @@ export class InventoryScreen {
       e.dataTransfer?.setData("text/plain", String(dragged)); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
       this.el.classList.add("dragging");
     });
-    this.el.addEventListener("dragend", () => { dragged = null; draggedNade = null; this.el.classList.remove("dragging"); this.el.querySelectorAll(".over").forEach((x) => x.classList.remove("over")); });
+    this.el.addEventListener("dragend", () => { dragged = null; draggedNade = null; draggedGad = null; this.el.classList.remove("dragging"); this.el.querySelectorAll(".over").forEach((x) => x.classList.remove("over")); });
     this.el.addEventListener("dragover", (e) => {
-      const t = target(e); if ((dragged == null && draggedNade == null) || !t) return;
+      const t = target(e); if ((dragged == null && draggedNade == null && draggedGad == null) || !t) return;
       e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
       this.el.querySelectorAll(".over").forEach((x) => x !== t && x.classList.remove("over")); t.classList.add("over");
     });
     this.el.addEventListener("dragleave", (e) => { const t = target(e); if (t && !t.contains(e.relatedTarget as Node)) t.classList.remove("over"); });
     this.el.addEventListener("drop", (e) => {
       const t = target(e);
+      if (draggedGad != null && t) {
+        e.preventDefault(); const uid = draggedGad; draggedGad = null; this.el.classList.remove("dragging");
+        const k = this.inv.gadgets.findIndex((g) => g.uid === uid); if (k < 0) return this.render();
+        if (t.dataset.gadgetslot != null) this.inv.gadgetActive = k;
+        else if (t.dataset.packzone != null && this.inv.gadgetActive === k) this.inv.gadgetActive = -1;
+        return this.render();
+      }
       if (draggedNade != null && t) {
         e.preventDefault(); const uid = draggedNade; draggedNade = null; this.el.classList.remove("dragging");
         const k = this.inv.grenades.findIndex((g) => g.uid === uid); if (k < 0) return this.render();
@@ -153,21 +165,14 @@ export class InventoryScreen {
   }
   /** Súper que se está mirando (puede estar bloqueado). */ private spView: SuperId | null = null;
   /** Pestaña Habilidades: los súperes; elegir uno desbloqueado lo equipa (los bloqueados se ven, pero hace falta su módulo). */
-  /** Pestaña Equipamiento (LB / X): lo que tienes, el equipado y su ficha. */
   private selGadget: number | null = null;
-  private renderGadgets() {
-    const i = this.inv, list = i.gadgets, sel = list.find((g) => g.uid === this.selGadget) ?? i.gadget ?? list[0] ?? null;
-    const card = (g: import("../gadgets").GadgetSpec) => `<div class="card"><span class="lbl" style="color:${GADGET_RARITY[g.rarity].color}">${t(`rarity.${g.rarity}`)}</span><div class="nm">${t(`gd.${g.kind}`)}</div>
-      <p class="note">${t(`gd.d.${g.kind}`)}</p>
-      <p class="note">${t("gd.stats", { c: g.charges, s: g.recharge, d: g.duration || "—", r: g.radius })}</p>
-      <div class="actions">${i.gadget === g ? `<span class="note">${t("ui.equippedNow")}</span>` : `<button type="button" class="btn" data-gdeq="${g.uid}" data-nav>${t("gr.equip")}</button>`}</div></div>`;
-    $("inv-body").innerHTML = `
-      <section class="panel list"><h2>${t("gd.title")} <small>${list.length}/8</small></h2>
-        <div class="tiles">${list.map((g) => `<button type="button" class="tile ${sel === g ? "sel" : ""}" data-gd="${g.uid}" data-nav style="border-color:${GADGET_RARITY[g.rarity].color}"><b>${t(`gd.${g.kind}`)}</b>${i.gadget === g ? `<span class="slotno">LB</span>` : ""}</button>`).join("") || `<div class="tile empty wide">${t("gd.noneOwned")}</div>`}</div>
-        <p class="note">${t("gd.how")}</p></section>
-      <section class="panel detail">${sel ? card(sel) : `<div class="card empty">${t("gd.noneOwned")}</div>`}</section>`;
-    $("inv-credits").textContent = `${i.credits} ${t("unit.cr")}`;
-    $("inv-foot").innerHTML = keyHint("Enter", "Ⓐ", t("ui.select")) + keyHint("Q / E", "LB / RB", t("ui.tabs")) + keyHint("Esc", "Ⓑ", t("ui.back"));
+  private get gadgetSel() { return this.selGadget == null ? null : this.inv.gadgets.find((g) => g.uid === this.selGadget) ?? null; }
+  /** Ficha de equipamiento (cuarto espacio de Gear): foto, rareza, tipo, cargas. */
+  private gadgetTileHTML(g: GadgetSpec, equipped: boolean) { return gadgetTile(g, { sel: this.selGadget === g.uid, slot: equipped ? "E" : "", attrs: `data-gd="${g.uid}" draggable="true"` }); }
+  private gadgetPanel(g: GadgetSpec) {
+    const cur = this.inv.gadget;
+    return gadgetCard(g, cur && cur !== g ? t("ui.vsEquipped") : t("ui.equippedNow"), cur && cur !== g ? cur : null) +
+      `<div class="actions">${this.inv.gadget === g ? "" : `<button type="button" class="btn" data-gdeq="${g.uid}" data-nav>${t("gr.equip")}</button>`}</div><p class="note">${t("gd.how")}</p>`;
   }
   private renderSkills() {
     const eq = this.inv.superId, sel = this.spView ?? eq, have = this.inv.hasSuper(sel), n = SUPER_IDS.filter((id) => this.inv.hasSuper(id)).length;
@@ -191,7 +196,6 @@ export class InventoryScreen {
     if (this.tab === "skills" && !this.storageMode) return this.renderSkills();
     if (this.tab === "tree" && !this.storageMode) return this.renderTree();
     if (this.tab === "armor" && !this.storageMode) return this.renderArmor();
-    if (this.tab === "equipment" && !this.storageMode) return this.renderGadgets();
     const i = this.inv, it = this.selected, cur = i.current;
     const chips = ["all", ...ORDER].map((r) => `<button type="button" class="chip ${this.filter.rarity === r ? "on" : ""} ${r !== "all" ? `r-${r}` : ""}" data-rar="${r}" style="${r !== "all" ? `--c:${RARITIES.find((x) => x.id === r)!.color}` : ""}">${r === "all" ? t("ui.all") : t(`rarity.${r}`)}</button>`).join("");
     const packItems = this.visible(i.pack.filter((x): x is Item => !!x));
@@ -208,16 +212,17 @@ export class InventoryScreen {
         </div>
         <h2>${t("ui.equipped")}</h2>
         <div class="tiles eq">${i.equip.map((x, k) => `<div class="slotwrap" data-eqslot="${k}">${x ? tileHTML(x, { sel: x.uid === this.sel, slot: k, inHand: k === i.active, dim: !this.visible([x]).length }) : `<div class="tile empty"><span class="slotno">${k + 1}</span>${t("ui.empty")}</div>`}</div>`).join("")}
-          <div class="slotwrap" data-nadeslot>${i.grenade ? this.nadeTileHTML(i.grenade, true) : `<div class="tile empty"><span class="slotno">G</span>${t("gr.slot")}</div>`}</div></div>
+          <div class="slotwrap" data-nadeslot>${i.grenade ? this.nadeTileHTML(i.grenade, true) : `<div class="tile empty"><span class="slotno">G</span>${t("gr.slot")}</div>`}</div>
+          <div class="slotwrap" data-gadgetslot>${i.gadget ? this.gadgetTileHTML(i.gadget, true) : `<div class="tile empty"><span class="slotno">E</span>${t("gd.slot")}</div>`}</div></div>
 
         <h2>${t("ui.backpack")} <small>${18 - free}/18</small></h2>
-        <div class="tiles" data-packzone>${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${i.grenades.filter((g) => g !== i.grenade).map((g) => this.nadeTileHTML(g, false)).join("")}${packItems.length || i.grenades.length > (i.grenade ? 1 : 0) ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
+        <div class="tiles" data-packzone>${packItems.map((x) => tileHTML(x, { sel: x.uid === this.sel })).join("")}${i.grenades.filter((g) => g !== i.grenade).map((g) => this.nadeTileHTML(g, false)).join("")}${i.gadgets.filter((g) => g !== i.gadget).map((g) => this.gadgetTileHTML(g, false)).join("")}${packItems.length || i.grenades.length > (i.grenade ? 1 : 0) ? "" : `<div class="tile empty wide">${i.pack.some(Boolean) ? t("ui.noMatch") : t("ui.packEmpty")}</div>`}</div>
         <div class="dropzone" data-dropzone>${t("ui.dropZone")}</div>
         ${this.storageMode ? this.storageHTML() : ""}
       </section>
       <section class="panel detail">
-        ${this.armorSel ? this.armorCardHTML(this.armorSel) : this.nadeSel ? this.nadeCard(this.nadeSel) : it ? weaponCard(it.spec, cur && cur !== it ? cur.spec : null, cur && cur !== it ? t("ui.vsEquipped") : t("ui.equippedNow"), { wide: true }) : `<div class="card empty">${t("ui.noWeapons")}</div>`}
-        ${this.nadeSel || this.armorSel ? "" : it ? this.actions(it) : ""}
+        ${this.armorSel ? this.armorCardHTML(this.armorSel) : this.gadgetSel ? this.gadgetPanel(this.gadgetSel) : this.nadeSel ? this.nadeCard(this.nadeSel) : it ? weaponCard(it.spec, cur && cur !== it ? cur.spec : null, cur && cur !== it ? t("ui.vsEquipped") : t("ui.equippedNow"), { wide: true }) : `<div class="card empty">${t("ui.noWeapons")}</div>`}
+        ${this.nadeSel || this.armorSel || this.gadgetSel ? "" : it ? this.actions(it) : ""}
       </section>`;
     $("inv-credits").textContent = `${i.credits} ${t("unit.cr")}`;
     $("inv-foot").innerHTML = `<span>${t("ui.bankCount", { n: i.bank.length })}</span>` +
@@ -225,9 +230,9 @@ export class InventoryScreen {
     this.el.querySelectorAll<HTMLElement>(".tile[data-uid]").forEach((x) => { x.draggable = true; x.classList.toggle("grab", this.grab != null && Number(x.dataset.uid) === this.grab); });
     this.el.classList.toggle("padgrab", this.grab != null);
     this.thumbs.fill(this.el, this.storageMode ? i.all : i.carried);
-    fillNadeThumbs(this.el); fillArmorThumbs(this.el);
+    fillNadeThumbs(this.el); fillGadgetThumbs(this.el); fillArmorThumbs(this.el);
   }
-  static readonly TABS = ["gear", "armor", "equipment", "skills", "tree"] as const;
+  static readonly TABS = ["gear", "armor", "skills", "tree"] as const;
   /** Pestaña Armadura: silueta holográfica con las tres ranuras apiladas al lado; debajo, las piezas guardadas. */
   private renderArmor() {
     const i = this.inv, sel = this.armorSel, col = (sl: "head" | "torso" | "legs") => { const a = i.wornOf(sl); return a ? ARMOR_RARITY[a.rarity].color : "transparent"; };
@@ -285,7 +290,7 @@ export class InventoryScreen {
       <div class="actions"><button type="button" class="btn" data-nact="eq">${eq ? t("gr.unequip") : t("gr.equip")}</button><button type="button" class="btn ghost" data-nact="drop">${t("ui.drop")}</button></div>
       <p class="note">${t("gr.sellAtShop")}</p>`;
   }
-  private selectNade(uid: number) { this.selNade = uid; this.sel = null; this.selArmor = null; this.render(); }
+  private selectNade(uid: number) { this.selNade = uid; this.sel = null; this.selArmor = null; this.selGadget = null; this.render(); }
   private nadeAction(a: string) {
     const g = this.nadeSel; if (!g) return;
     const k = this.inv.grenades.indexOf(g);
@@ -320,7 +325,7 @@ export class InventoryScreen {
   }
 
   private select(uid: number, rerender = true) {
-    if (this.selNade != null || this.selArmor != null) { this.selNade = null; this.selArmor = null; this.sel = null; }
+    if (this.selNade != null || this.selArmor != null || this.selGadget != null) { this.selNade = null; this.selArmor = null; this.selGadget = null; this.sel = null; }
     if (this.sel === uid) return;
     this.sel = uid;
     if (rerender) { const f = document.activeElement as HTMLElement | null; const keep = f?.closest<HTMLElement>(".tile")?.dataset.uid; this.render(); if (keep) this.el.querySelector<HTMLElement>(`.tile[data-uid="${keep}"]`)?.focus({ preventScroll: true }); }
@@ -339,15 +344,15 @@ export class InventoryScreen {
     if (target.closest("[data-close]")) return this.close();
     const tb = target.closest<HTMLElement>("[data-tab]");
     if (tb) { this.tab = tb.dataset.tab as InventoryScreen["tab"]; this.render(); return this.el.querySelector<HTMLElement>(`[data-tab="${this.tab}"]`)?.focus({ preventScroll: true }); }
-    const gd = target.closest<HTMLElement>("[data-gd]"); if (gd) { const u = Number(gd.dataset.gd); if (this.selGadget === u) { this.inv.gadgetActive = this.inv.gadgets.findIndex((g) => g.uid === u); } this.selGadget = u; this.render(); return; }
-    const ge = target.closest<HTMLElement>("[data-gdeq]"); if (ge) { this.inv.gadgetActive = this.inv.gadgets.findIndex((g) => g.uid === Number(ge.dataset.gdeq)); this.render(); return; }
+    const gd = target.closest<HTMLElement>("[data-gd]"); if (gd) { const u = Number(gd.dataset.gd); if (this.selGadget === u) { this.inv.gadgetActive = this.inv.gadgets.findIndex((g) => g.uid === u); } this.selGadget = u; this.selNade = null; this.selArmor = null; this.sel = null; this.render(); return; }
+    const ge = target.closest<HTMLElement>("[data-gdeq]"); if (ge) { this.inv.gadgetActive = this.inv.gadgets.findIndex((g) => g.uid === Number(ge.dataset.gdeq)); this.selGadget = null; this.render(); return; }
     const sk = target.closest<HTMLElement>("[data-skill]");
     if (sk) { if (raise(this.inv.progress, sk.dataset.skill!)) this.hooks.perks?.(); this.render(); return this.el.querySelector<HTMLElement>(`[data-skill="${sk.dataset.skill}"]`)?.focus({ preventScroll: true }); }
     if (target.closest("[data-respec]")) { const c = respecCost(this.inv.progress); if (c && this.inv.credits >= c) { this.inv.credits -= c; respec(this.inv.progress); this.hooks.perks?.(); this.hooks.toast(t("pg.respecDone")); } return this.render(); }
     const sp = target.closest<HTMLElement>("[data-super]");
     if (sp) { const id = sp.dataset.super as SuperId; this.spView = id; if (this.inv.hasSuper(id)) { this.inv.superId = id; this.spView = null; } this.render(); return this.el.querySelector<HTMLElement>(`[data-super="${this.inv.superId}"]`)?.focus({ preventScroll: true }); }
     const at = target.closest<HTMLElement>(".tile[data-armor]");
-    if (at) { this.selArmor = Number(at.dataset.armor); this.selNade = null; this.sel = null; this.render(); return; }
+    if (at) { this.selArmor = Number(at.dataset.armor); this.selNade = null; this.selGadget = null; this.sel = null; this.render(); return; }
     const aa = target.closest<HTMLElement>("[data-aact]");
     if (aa && this.armorSel) {
       const a = this.armorSel;

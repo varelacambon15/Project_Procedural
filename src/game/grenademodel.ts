@@ -3,7 +3,9 @@
 // rareza añade brillo (de nada en común a un resplandor claro en legendaria).
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { GRENADE_KINDS, GRENADE_RARITY, type GrenadeKind, type GrenadeRarity } from "./grenades";
+import { GADGET_MODEL_SIZE, loadGadgetModel } from "./gadgetmodel";
+import { GRENADE_KINDS, GRENADE_RARITY, isGadgetGrenade, type GadgetGrenadeKind, type GrenadeKind, type GrenadeRarity } from "./grenades";
+import { gadgetThumb } from "./gadgetthumb";
 
 let base: Promise<THREE.Group | null> | null = null;
 /** Carga el modelo (centrado, con 1 de alto y el eje hacia arriba). null si falla: se usa una esfera. */
@@ -19,10 +21,12 @@ export function loadGrenadeModel(url = "./grenade/grenade.glb"): Promise<THREE.G
 }
 
 /** Proporciones por tipo (ancho, alto): piña clásica, incendiaria alargada, racimo achatada… */
-const SHAPE: Record<GrenadeKind, [number, number]> = { frag: [1, 1], incendiary: [0.82, 1.3], shock: [0.95, 1.05], cluster: [1.25, 0.85], singularity: [1.1, 1.1], sticky: [1.05, 0.92] };
+const SHAPE: Record<GrenadeKind, [number, number]> = { frag: [1, 1], incendiary: [0.82, 1.3], shock: [0.95, 1.05], cluster: [1.25, 0.85], singularity: [1.1, 1.1], sticky: [1.05, 0.92], orb: [1, 1], knife: [1, 1], mine: [1, 1], chain: [1, 1], harpoon: [1, 1] };
 
 /** Copia del modelo con el color del tipo y el brillo de la rareza, de `height` metros de alto. */
 export function grenadeObject(model: THREE.Group | null, kind: GrenadeKind, rarity: GrenadeRarity, height = 0.12): THREE.Object3D {
+  // Las reclasificadas desde equipamiento vuelan con su propio GLB (el del equipamiento), no con la piña genérica.
+  if (isGadgetGrenade(kind)) return gadgetGrenadeObject(kind, height);
   const col = new THREE.Color(GRENADE_KINDS[kind].color), rar = new THREE.Color(GRENADE_RARITY[rarity].color);
   const glow = { comun: 0, poco: 0.12, rara: 0.22, epica: 0.35, legendaria: 0.55 }[rarity];
   if (!model) return new THREE.Mesh(new THREE.SphereGeometry(height / 2, 12, 8), new THREE.MeshStandardMaterial({ color: col, emissive: rar, emissiveIntensity: glow }));
@@ -40,10 +44,22 @@ export function grenadeObject(model: THREE.Group | null, kind: GrenadeKind, rari
   return o;
 }
 
+/** Proyectil de una granada reclasificada: su GLB de equipamiento, a `height` metros (se coloca al llegar). */
+function gadgetGrenadeObject(kind: GadgetGrenadeKind, height: number): THREE.Object3D {
+  const o = new THREE.Group();
+  void loadGadgetModel(kind).then((model) => {
+    if (model) { model.scale.multiplyScalar(height / GADGET_MODEL_SIZE[kind]); o.add(model); }
+    else o.add(new THREE.Mesh(new THREE.SphereGeometry(height / 2, 12, 8), new THREE.MeshStandardMaterial({ color: GRENADE_KINDS[kind].color, emissive: GRENADE_KINDS[kind].color, emissiveIntensity: 0.4 })));
+  });
+  return o;
+}
+
 /** Foto de la granada (tienda, inventario): se dibuja una vez por tipo y rareza y se guarda. */
 const thumbs = new Map<string, Promise<string>>();
 let rr: THREE.WebGLRenderer | null = null;
 export function grenadeThumb(kind: GrenadeKind, rarity: GrenadeRarity): Promise<string> {
+  // Los 5 reclasificados no son piñas: reutilizan la figura 2D que ya tenían como equipamiento.
+  if (isGadgetGrenade(kind)) return gadgetThumb(kind);
   const key = `${kind}:${rarity}`;
   if (!thumbs.has(key)) thumbs.set(key, loadGrenadeModel().then((model) => {
     rr ??= new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });

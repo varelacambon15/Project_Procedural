@@ -351,11 +351,19 @@ export function gadgetCard(g: GadgetSpec, title = "", cmp: GadgetSpec | null = n
   const col = GADGET_RARITY[g.rarity].color, c = cmp && cmp.kind === g.kind ? cmp : null;
   const d = (v: number, w: number | undefined, lowerBetter = false) => { if (w == null || Math.abs(v - w) < 0.05) return ""; const up = lowerBetter ? v < w : v > w; return ` <span class="${up ? "up" : "down"}">${v > w ? "+" : ""}${+(v - w).toFixed(1)}</span>`; };
   return `<div class="card gdcard" style="--c:${col}">${title ? `<span class="vs">${title}</span>` : ""}
-    <span class="rar">${t(`rarity.${g.rarity}`)} · ${t("gd.title1")}</span>
+    <img class="thumb gdthumb" data-gadgetthumb="${g.kind}" alt=""><span class="rar">${t(`rarity.${g.rarity}`)} · ${t("gd.title1")}</span>
     <span class="nm">${t(`gd.${g.kind}`)}</span><span class="meta">${t(`gd.d.${g.kind}`)}</span>
     <div class="gdstats"><span class="k">${t("gr.k.charges")}</span><span class="v">${g.charges}${d(g.charges, c?.charges)}</span>
       <span class="k">${t("gr.k.recharge")}</span><span class="v">${g.recharge} s${d(g.recharge, c?.recharge, true)}</span>
       ${g.duration ? `<span class="k">${t("gd.k.duration")}</span><span class="v">${g.duration} s${d(g.duration, c?.duration)}</span>` : ""}
       ${g.radius ? `<span class="k">${t("gr.k.radius")}</span><span class="v">${g.radius} m${d(g.radius, c?.radius)}</span>` : ""}</div>
   </div>`;
+}
+
+/** Ficha de equipamiento para la mochila y la ranura de Gear: misma forma que las de granada, con foto 2D. */
+export function gadgetTile(g: GadgetSpec, o: { sel?: boolean; slot?: string; attrs?: string } = {}) {
+  return `<button type="button" class="tile ${o.sel ? "sel" : ""} r-${g.rarity}" style="--c:${GADGET_RARITY[g.rarity].color}" ${o.attrs ?? ""} data-nav>
+    ${o.slot ? `<span class="slotno">${o.slot}</span>` : ""}<img class="thumb" data-gadgetthumb="${g.kind}" alt="">
+    <span class="lbl">${t("gd.title1")} · ${t(`rarity.${g.rarity}`)}</span><span class="nm">${t(`gd.${g.kind}`)}</span>
+    <span class="dm">${g.charges} <span class="ty">${t("gr.k.charges")}</span></span></button>`;
 }

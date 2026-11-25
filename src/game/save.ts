@@ -6,8 +6,10 @@ import type { AccItem } from "../weapons/accbank";
 import type { RarityId, WeaponSpec } from "../weapons/types";
 import type { Purchase, ShopState } from "./shop";
 import type { SaveStorage } from "./storage";
+import { GRENADE_KINDS, isGadgetGrenade, setGrenadeUid, type GrenadeKind, type GrenadeRarity, type GrenadeSpec } from "./grenades";
+import type { GadgetSpec } from "./gadgets";
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const SLOTS = ["slot1", "slot2", "slot3"] as const;
 export const AUTO = "auto";
 export type SlotId = (typeof SLOTS)[number] | typeof AUTO;
@@ -54,6 +56,35 @@ const MIGRATIONS: Record<number, (d: Raw) => Raw> = {
       credits: typeof d.scrap === "number" ? d.scrap : 0, weapons, active: d.active ?? 0, bank: [],
       shop: { spent: 0, history: [] }, settings: d.settings ?? {}, lang: d.lang ?? "en", pixelLevel: d.pixelLevel ?? 64,
     };
+  },
+  /**
+   * v2: orb, knife, mine, chain y harpoon eran equipamiento. Pasan a granadas: se mueven de `gadgets` a `grenades`
+   * con uid nuevo (setGrenadeUid), conservando rareza, semilla, potencia, radio y cargas; se reasignan los activos.
+   */
+  2: (d) => {
+    const gadgets = (Array.isArray(d.gadgets) ? d.gadgets : []) as GadgetSpec[];
+    const moved = gadgets.filter((g) => isObj(g) && isGadgetGrenade(g.kind));
+    if (!moved.length) return { ...d, version: 3 };
+    const kept = gadgets.filter((g) => !(isObj(g) && isGadgetGrenade(g.kind)));
+    const grenades = (Array.isArray(d.grenades) ? [...(d.grenades as GrenadeSpec[])] : []) as GrenadeSpec[];
+    const activeBefore = typeof d.gadgetActive === "number" ? gadgets[d.gadgetActive] : null;
+    let uid = Math.max(0, ...grenades.map((g) => Number(g?.uid) || 0), ...gadgets.map((g) => Number(g?.uid) || 0)) + 1;
+    const movedTo = new Map<GadgetSpec, GrenadeSpec>();
+    for (const g of moved) {
+      const kind = g.kind as GrenadeKind;
+      const ng: GrenadeSpec = {
+        uid: uid++, kind, rarity: (g.rarity as GrenadeRarity) ?? "comun", seed: Number(g.seed) || 1,
+        damage: Number(g.power) || 1, radius: Number(g.radius) || 1,
+        charges: Number(g.charges) || 1, recharge: Number(g.recharge) || 1, fuse: GRENADE_KINDS[kind].fuse,
+      };
+      grenades.push(ng); movedTo.set(g, ng);
+    }
+    setGrenadeUid(uid);
+    const movedActive = activeBefore ? movedTo.get(activeBefore) : undefined;
+    const gadgetActive = activeBefore ? kept.indexOf(activeBefore) : -1;
+    let grenadeActive = typeof d.grenadeActive === "number" ? d.grenadeActive : -1;
+    if (movedActive && grenadeActive < 0) grenadeActive = grenades.indexOf(movedActive);
+    return { ...d, version: 3, gadgets: kept, grenades, gadgetActive, grenadeActive };
   },
 };
 

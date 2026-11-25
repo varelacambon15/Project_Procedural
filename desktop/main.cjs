@@ -40,6 +40,13 @@ ipcMain.handle("save:write", async (_e, key, data) => {
 ipcMain.handle("save:list", async () => (await fs.readdir(savesDir()).catch(() => [])).filter((n) => n.endsWith(".json")).map((n) => n.slice(0, -5)));
 ipcMain.handle("save:remove", async (_e, key) => { await fs.rm(fileOf(key), { force: true }); await fs.rm(fileOf(key) + ".tmp", { force: true }); });
 ipcMain.handle("app:quit", () => app.quit());
+// Registro de sesión: solo rutas del tipo «carpeta/archivo» con caracteres seguros, dentro de Documentos/ProvingGrounds/sesiones.
+ipcMain.handle("session:write", async (_e, rel, b64) => {
+  if (typeof rel !== "string" || !/^[0-9A-Za-z_-]{1,40}\/[0-9A-Za-z._-]{1,80}$/.test(rel)) throw new Error("bad path");
+  const f = path.join(app.getPath("documents"), "ProvingGrounds", "sesiones", rel);
+  await fs.mkdir(path.dirname(f), { recursive: true });
+  await fs.writeFile(f, Buffer.from(String(b64), "base64"));
+});
 
 app.whenReady().then(() => {
   const root = path.join(__dirname, "..", "dist");

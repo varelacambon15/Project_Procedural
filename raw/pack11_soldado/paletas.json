@@ -1,0 +1,11 @@
+{
+  "basic": { "traje": "#d2702e", "oscuro": "#3a3f45", "chaleco": "#5c5e4a", "visor": "#ff3a1e" },
+  "gunner": { "traje": "#5b6f8a", "oscuro": "#2c3036", "chaleco": "#4a4f58", "visor": "#ff3a1e" },
+  "sniper": { "traje": "#3c4a54", "oscuro": "#24282c", "chaleco": "#3d4a3a", "visor": "#ff2a1a" },
+  "medic": { "traje": "#e8ecef", "oscuro": "#2f6b4a", "chaleco": "#3fbf7a", "visor": "#4aff9a" },
+  "commander": { "traje": "#2e3440", "oscuro": "#14171c", "chaleco": "#c99a2e", "visor": "#ffb040" },
+  "glitch": { "traje": "#1a2a3a", "oscuro": "#0a0f14", "chaleco": "#3fd0d8", "visor": "#3fd0ff" },
+  "caster": { "traje": "#23304a", "oscuro": "#0a0a0a", "chaleco": "#23304a", "visor": "#8fd8ff" },
+  "elite": { "traje": "#8a4a4a", "oscuro": "#24282c", "chaleco": "#4a4f58", "visor": "#ff2a6a" },
+  "guardian": { "traje": "#3c4a54", "oscuro": "#23262a", "chaleco": "#4a525c", "visor": "#ff3a1e" }
+}

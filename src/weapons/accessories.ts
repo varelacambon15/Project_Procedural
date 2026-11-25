@@ -13,8 +13,11 @@ export const ACCESSORIES: AccessoryDef[] = [
   { id: "acc:brake", kind: "muzzle", mods: { manejo: 8, precision: 1 } },
   { id: "acc:flashhider", kind: "muzzle", mods: { precision: 3, manejo: 2 } },
   { id: "acc:reddot", kind: "optic", mods: { precision: 4 }, zoom: 1.25 },
-  { id: "acc:holo", kind: "optic", mods: { precision: 5, alcance: 3 }, zoom: 1.35, for: ["rifle", "bullpup", "lmg", "smg", "shotgun"] },
-  { id: "acc:acog", kind: "optic", mods: { precision: 8, alcance: 12, manejo: -3 }, zoom: 3, for: ["rifle", "bullpup", "lmg", "smg"] },
+  { id: "acc:holo", kind: "optic", mods: { precision: 5, alcance: 3 }, zoom: 1.35, for: ["rifle", "bullpup", "lmg", "smg", "shotgun", "sniper"] },
+  { id: "acc:acog", kind: "optic", mods: { precision: 8, alcance: 12, manejo: -3 }, zoom: 3, for: ["rifle", "bullpup", "lmg", "smg", "sniper"] },
+  // Ópticas compactas para revólver (un cañón corto no admite la ACOG ni la mira de 6 aumentos de un fusil): menos zoom y algo de peso
+  { id: "acc:acog-c", kind: "optic", mods: { precision: 5, alcance: 8, manejo: -4 }, zoom: 2.5, for: ["revolver"] },
+  { id: "acc:scope2", kind: "optic", mods: { precision: 6, alcance: 12, manejo: -5 }, zoom: 2, for: ["revolver"] },
   { id: "acc:scope6", kind: "optic", mods: { precision: 12, alcance: 20, manejo: -6 }, zoom: 5, for: ["rifle", "bullpup", "sniper"] },
   // Miras de hierro desmontables (iron:<juego>): estadísticas comunes; zoom pequeño. `for: []` = no sale entre las
   // miras por código (se ofrecen aparte, por juego y por arma)
@@ -138,9 +141,9 @@ export function buildOptic(id: string, rail: number, L: number): { group: THREE.
     const dot = new THREE.Mesh(new THREE.RingGeometry(0.0025, 0.0035, 16), redDot()); dot.rotation.y = Math.PI / 2; dot.position.set(-0.003, 0.047, 0); g.add(dot);
     h = 0.047;
   } else {
-    const long = id === "acc:scope6";
-    const len = Math.min(Math.max(0.14, L * (long ? 0.36 : 0.18)), rail * 1.6 + 0.08);
-    const R = long ? 0.017 : 0.016;
+    const long = id === "acc:scope6", compact = id === "acc:acog-c" || id === "acc:scope2";
+    const len = compact ? Math.min(Math.max(0.09, L * 0.13), rail * 1.6 + 0.05) : Math.min(Math.max(0.14, L * (long ? 0.36 : 0.18)), rail * 1.6 + 0.08);
+    const R = long ? 0.017 : compact ? 0.013 : 0.016;
     for (const x of [-len * 0.25, len * 0.22]) { const ring = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.03, 0.026), steel); ring.position.set(x, 0.015, 0); g.add(ring); }
     const main = tube(R, len * 0.62, steel, -len * 0.31, 20); main.position.y = 0.03 + R; g.add(main);
     const obj = tube(R * (long ? 1.55 : 1.3), len * 0.24, steel, len * 0.26, 24); obj.position.y = 0.03 + R; g.add(obj);

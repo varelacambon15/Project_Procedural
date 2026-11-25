@@ -6,6 +6,7 @@ import type { Dummy, Element } from "./dummies";
 import type { HandPose } from "./arms";
 import { SUPERS, sampleHand, track, type SuperId } from "./supers";
 import { falloff } from "./grenades";
+import { buildSentryFallback, loadSentryModel, preloadSentryModel, sentryModelNow } from "./sentrymodel";
 
 export interface SuperHooks {
   dummies(): Dummy[];
@@ -30,6 +31,13 @@ export interface SuperHooks {
 type VfxKind = "ring" | "flash" | "bolt" | "mark" | "beam" | "spin";
 interface Vfx { mesh: THREE.Mesh; t: number; dur: number; r: number; kind: VfxKind }
 interface Missile { mesh: THREE.Mesh; v: THREE.Vector3; target: Dummy | null; t: number; delay: number }
+/** Estado de animación de la torreta centinela (vive en `sentry.userData.sentry`). */
+interface SentryState {
+  /** Segundos desde que se plantó (despliegue de ~0,4 s). */ deploy: number;
+  /** Altura del suelo donde se plantó (para la elevación breve del despliegue). */ groundY: number;
+  barrels: THREE.Object3D[]; barrelBase: THREE.Vector3[]; barrelNext: number;
+  antenna: THREE.Object3D | null; legs: THREE.Object3D | null; legsBase: number;
+}
 
 const add = (color: number, side: THREE.Side = THREE.FrontSide) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side });
 const ringGeo = new THREE.RingGeometry(0.86, 1, 48).rotateX(-Math.PI / 2), sphereGeo = new THREE.SphereGeometry(1, 20, 14), boltGeo = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true);
@@ -60,7 +68,10 @@ export class SuperFx {
   private active: { id: SuperId; t: number; next: number; at: THREE.Vector3 } | null = null;
   /** Multiplicadores del árbol de habilidades: daño de los súperes y duración de los efectos. */
   power = 1; span = 1;
-  constructor(private scene: THREE.Scene, private hooks: SuperHooks) {}
+  constructor(private scene: THREE.Scene, private hooks: SuperHooks) {
+    // La torreta de la super se carga en segundo plano al arrancar (si falla, queda la de cajas).
+    preloadSentryModel();
+  }
 
   get casting() { return this.cast_ != null; }
   /** Id de la invocación en curso (o null). */
@@ -257,16 +268,9 @@ export class SuperFx {
         this.spawn(new THREE.Mesh(ringGeo, add(col)), at, 0.45, 4, "ring");
         this.hooks.sound("zap"); break;
       case "sentry": {
-        // Torreta centinela: se planta delante y dispara sola al enemigo más cercano
+        // Torreta centinela: se planta delante y dispara sola al enemigo más cercano (GLB si está; si no, cajas)
         const p = this.aimAt(6, o).setY(0); const g = new THREE.Group(); g.position.copy(p);
-        const metal = new THREE.MeshStandardMaterial({ color: 0x4a5058, metalness: 0.6, roughness: 0.45 }), dark = new THREE.MeshStandardMaterial({ color: 0x23272c, metalness: 0.5, roughness: 0.6 });
-        for (let i = 0; i < 3; i++) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.7), dark); const a = (i / 3) * Math.PI * 2; leg.position.set(Math.sin(a) * 0.25, 0.18, Math.cos(a) * 0.25); leg.rotation.y = a; leg.rotation.x = 0.5; g.add(leg); }
-        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.7, 10), metal); post.position.y = 0.55; g.add(post);
-        const head = new THREE.Group(); head.name = "head"; head.position.y = 0.95; g.add(head);
-        const hb = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.24, 0.44), metal); head.add(hb);
-        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.5, 8).rotateX(Math.PI / 2), dark); barrel.position.set(0, 0.02, -0.42); head.add(barrel);
-        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.02), new THREE.MeshBasicMaterial({ color: col })); eye.position.set(0, 0.06, -0.225); head.add(eye);
-        const tip = new THREE.Object3D(); tip.name = "tip"; tip.position.set(0, 0.02, -0.7); head.add(tip);
+        this.plantSentry(g, col);
         this.scene.add(g); this.sentry = g; this.spawn(new THREE.Mesh(ringGeo, add(col)), p.clone().setY(0.05), 0.5, 2, "ring");
         this.hooks.sound("zap"); break;
       }
@@ -479,15 +483,60 @@ export class SuperFx {
     }
   }
 
+  private plantSentry(g: THREE.Group, col: number) {
+    const model = sentryModelNow();
+    if (model) { g.add(model); this.armSentry(g, true); return; }
+    g.add(buildSentryFallback(col));
+    this.armSentry(g, false);
+    // El GLB puede llegar un poco tarde: se cambia la primitiva sin mover la torreta ni reiniciar el despliegue.
+    void loadSentryModel().then((m) => { if (!m || this.sentry !== g) return; g.clear(); g.add(m); this.armSentry(g, true); });
+  }
+  /** Guarda las anclas y el estado de animación de la torreta (head, tip, cañones, antena y patas). */
+  private armSentry(g: THREE.Group, glb: boolean) {
+    const barrels = [g.getObjectByName("mov_cañon_l"), g.getObjectByName("mov_cañon_r")].filter((b): b is THREE.Object3D => !!b);
+    const antenna = g.getObjectByName("mov_antena") ?? null, legs = g.getObjectByName("mov_patas") ?? null;
+    const prev = g.userData.sentry as SentryState | undefined;
+    g.userData.pitchAxis = glb ? "z" : "x";
+    g.userData.sentry = { deploy: prev?.deploy ?? 0, groundY: g.position.y, barrels, barrelBase: barrels.map((b) => b.position.clone()), barrelNext: prev?.barrelNext ?? 0, antenna, legs, legsBase: legs?.position.y ?? 0 } satisfies SentryState;
+  }
   private sentryTick(a: NonNullable<SuperFx["active"]>, dt: number) {
-    const g = this.sentry; if (!g) return; const tl = SUPERS.sentry, head = g.getObjectByName("head")!, tip = g.getObjectByName("tip")!;
+    const g = this.sentry; if (!g) return;
+    const tl = SUPERS.sentry, head = g.getObjectByName("head"), tip = g.getObjectByName("tip");
+    const st = g.userData.sentry as SentryState | undefined;
+    if (!head || !tip || !st) return;
+    // Despliegue (~0,4 s): la torreta se estira desde el suelo y las patas se asientan.
+    if (st.deploy < 0.4) {
+      st.deploy = Math.min(0.4, st.deploy + dt);
+      const k = st.deploy / 0.4, e = 1 - Math.pow(1 - k, 3);
+      g.scale.set(1, 0.78 + 0.22 * e, 1);
+      g.position.y = st.groundY + 0.1 * (1 - e);
+      if (st.legs) st.legs.position.y = st.legsBase + 0.08 * (1 - e);
+    } else if (g.scale.y !== 1) { g.scale.set(1, 1, 1); g.position.y = st.groundY; if (st.legs) st.legs.position.y = st.legsBase; }
+    // Antena: vaivén leve.
+    if (st.antenna) st.antenna.rotation.z = 0.06 * Math.sin(a.t * 2.1) + 0.025 * Math.sin(a.t * 5.3);
+    // Retroceso de los cañones: se alternan y vuelven solos a su sitio.
+    for (let i = 0; i < st.barrels.length; i++) {
+      const b = st.barrels[i], r = (b.userData.recoil as number) ?? 0;
+      if (r <= 0) continue;
+      const n = Math.max(0, r - dt * 9);
+      b.userData.recoil = n; b.position.x = st.barrelBase[i].x - 0.055 * n;
+    }
     const from = g.position.clone().setY(0.95);
     const target = this.alive().filter((d) => d.center.distanceTo(from) < (tl.range ?? 35)).sort((x, y) => x.center.distanceToSquared(from) - y.center.distanceToSquared(from))[0];
-    if (!target) { head.rotation.y += dt * 0.8; return; }
-    const to = target.center.sub(from), want = Math.atan2(-to.x, -to.z);
+    const pitchAxis = g.userData.pitchAxis === "z" ? "z" : "x";
+    if (!target) {
+      head.rotation.y += dt * 0.8;
+      head.rotation[pitchAxis] += (0 - head.rotation[pitchAxis]) * Math.min(1, dt * 6);
+      return;
+    }
+    const to = target.center.clone().sub(from), want = Math.atan2(-to.x, -to.z);
     let dy = want - head.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); head.rotation.y += dy * Math.min(1, dt * 10);
-    if (a.t >= a.next && Math.abs(dy) < 0.25) {
+    // Inclinación suave hacia el objetivo (el eje depende de si el modelo está girado: GLB Z, cajas X).
+    const pitch = THREE.MathUtils.clamp(Math.atan2(to.y, Math.max(0.001, Math.hypot(to.x, to.z))), -0.35, 0.45);
+    head.rotation[pitchAxis] += (pitch - head.rotation[pitchAxis]) * Math.min(1, dt * 6);
+    if (a.t >= a.next && st.deploy >= 0.4 && Math.abs(dy) < 0.25) {
       a.next = a.t + (tl.interval ?? 0.14);
+      if (st.barrels.length) st.barrels[st.barrelNext++ % st.barrels.length].userData.recoil = 1;
       const m0 = tip.getWorldPosition(new THREE.Vector3()), c = target.center, len = m0.distanceTo(c);
       const b = new THREE.Mesh(boltGeo, add(COLOR.sentry)); b.scale.set(0.025, len, 0.025); b.position.copy(m0).lerp(c, 0.5); b.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), c.clone().sub(m0).normalize());
       this.scene.add(b); this.vfx.push({ mesh: b, t: 0, dur: 0.06, r: 1, kind: "bolt" });

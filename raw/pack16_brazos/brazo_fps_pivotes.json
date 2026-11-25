@@ -1,0 +1,121 @@
+{
+  "formato": "glTF Y-up, metros, mano derecha",
+  "convencion_mano": "dedos -Z, dorso +Y, pulgar -X, muneca z=+0.06, antebrazo/brazo hacia +Z",
+  "mapeo_codigo": "la longitud de antebrazo/brazo va en +Y en el codigo; en este GLB el conjunto esta alineado en +Z. Rotar -90 grados sobre X para llevar la mano al marco del codigo.",
+  "pose_exportada": "dedos extendidos (rectos) para que los pivotes coincidan con la referencia; aplicar la pose relajada en tiempo de ejecucion.",
+  "pivotes": {
+    "mano": [
+      0.0,
+      0.132,
+      -0.0
+    ],
+    "muneca": [
+      0.0,
+      0.192,
+      -0.0
+    ],
+    "codo": [
+      0.0,
+      0.542,
+      -0.0
+    ],
+    "hombro": [
+      0.0,
+      0.912,
+      -0.0
+    ],
+    "dedos": {
+      "dedo_1": {
+        "f1": [
+          -0.0255,
+          0.092,
+          0.002
+        ],
+        "f2": [
+          -0.0255,
+          0.052,
+          0.002
+        ],
+        "f3": [
+          -0.0255,
+          0.027,
+          0.002
+        ]
+      },
+      "dedo_2": {
+        "f1": [
+          -0.0085,
+          0.092,
+          0.002
+        ],
+        "f2": [
+          -0.0085,
+          0.048,
+          0.002
+        ],
+        "f3": [
+          -0.0085,
+          0.021,
+          0.002
+        ]
+      },
+      "dedo_3": {
+        "f1": [
+          0.0085,
+          0.092,
+          0.002
+        ],
+        "f2": [
+          0.0085,
+          0.051,
+          0.002
+        ],
+        "f3": [
+          0.0085,
+          0.026,
+          0.002
+        ]
+      },
+      "dedo_4": {
+        "f1": [
+          0.0245,
+          0.092,
+          0.002
+        ],
+        "f2": [
+          0.0245,
+          0.06,
+          0.002
+        ],
+        "f3": [
+          0.0245,
+          0.039,
+          0.002
+        ]
+      }
+    },
+    "pulgar": {
+      "f1": [
+        -0.026,
+        0.146,
+        0.012
+      ],
+      "f2": [
+        -0.04903,
+        0.11124,
+        0.01703
+      ],
+      "f3": [
+        -0.06243,
+        0.08253,
+        0.02149
+      ]
+    }
+  },
+  "jerarquia": "brazo > antebrazo > (palma > dorso/almohadilla/costuras, munequera); palma > dedo_i_f1 > dedo_i_f2 > dedo_i_f3; palma > pulgar_f1 > pulgar_f2 > pulgar_f3",
+  "tris": {
+    "mano": 1480,
+    "antebrazo": 612,
+    "brazo": 336
+  }
+}

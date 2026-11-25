@@ -15,7 +15,7 @@ import { contactAO, contactAOAsync } from "./ao";
 import { ADDON_ROLE, buildAddon } from "./addons";
 import { buildPistol } from "./pistolmesh";
 import { buildLong } from "./longmesh";
-import type { Support } from "./grip";
+import { gripTraits, type Support } from "./grip";
 /** Despiece de las pistolas generadas por código. */
 const PP_EXPLODE: Record<string, [number, number, number]> = { slide: [0, 1.2, 0], barrel: [1.4, 0.6, 0], frame: [0, 0, 0], grip: [-0.3, -0.8, 0], magazine: [0, -1.6, 0], trigger: [-0.8, 0.4, 0] };
 
@@ -85,6 +85,7 @@ export interface AssembledWeapon {
   /** Altura de la línea de mira (centro de la mira, si la lleva), en coordenadas del grupo. */ sightY: number | null;
   /** Con miras de hierro: posición (X, hacia la boca) del alza respecto al centro; el ojo se pone justo detrás. */ sightX?: number;
   /** Sin mira montada: la de serie del modelo (alza, punto rojo, visor…) con la que se apunta. */ ownSight?: { kind: string; zoom: number };
+  /** Con óptica (montada o propia del modelo) y sin alza: X de su lente trasera (coordenadas del grupo); el ojo se coloca por ella al apuntar. */ opticX?: number;
   /** Aumentos de la mira (1 = sin mira). */ zoom: number;
   /** Puntos de agarre (coordenadas del grupo): mano derecha en la empuñadura, izquierda en el guardamanos,
    *  pozo del cargador y palanca de carga. Los usan los brazos (IK) y las animaciones de recarga. */
@@ -788,6 +789,13 @@ export class WeaponAssembler {
       for (const p of parts) if (p.role === "scope" && p.from.id !== "rail" && p.from.id !== "riser") { const bb = new THREE.Box3().setFromObject(p.object); if (!bb.isEmpty() && bb.min.x > ironRearX + 0.08 && bb.max.x > bx) { bx = bb.max.x; best = bb; } }
       if (best && Math.abs(best.max.y - 0.0015 - sight) < 0.006) sight = best.max.y - 0.0015;
     }
+    // X de la lente trasera de la óptica visible (montada o propia del modelo), sin contar miras de hierro, raíles ni bases
+    let opticX: number | undefined;
+    if (ironRearX === null) {
+      group.updateMatrixWorld(true); const ob = new THREE.Box3();
+      for (const p of parts) if (p.role === "scope" && p.object.visible !== false && p.from.pack !== "iron" && p.from.id !== "rail" && p.from.id !== "riser" && !/^k-ironsight/.test(p.from.id)) ob.expandByObject(p.object);
+      if (!ob.isEmpty()) opticX = ob.min.x;
+    }
     const center = box.getCenter(new THREE.Vector3());
     center.z = 0; // el eje del arma (cañón, mira) está en z = 0: así al apuntar la mira queda centrada
     const length = box.max.x - box.min.x;
@@ -795,36 +803,52 @@ export class WeaponAssembler {
     const muzzleOut = (muzzle ?? new THREE.Vector3(box.max.x, center.y, 0)).clone().sub(center);
     group.updateMatrixWorld(true);
     const handles = this.handles(spec, parts, new THREE.Box3().setFromObject(group));
-    return { ao, height: raw.max.y - raw.min.y, group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, sightX: ironRearX === null ? undefined : ironRearX - center.x, ownSight, zoom, handles };
+    return { ao, height: raw.max.y - raw.min.y, group, parts, length, muzzle: muzzleOut, sightY: sight === null ? null : sight - center.y, sightX: ironRearX === null ? undefined : ironRearX - center.x, opticX: opticX === undefined ? undefined : opticX - center.x, ownSight, zoom, handles };
   }
 
   /** Estima dónde agarran las manos: empuñadura (junta o detrás del cargador), guardamanos, pozo y palanca. */
   private handles(spec: WeaponSpec, parts: AssembledPart[], box: THREE.Box3) {
     const L = box.max.x - box.min.x, H = box.max.y - box.min.y;
     const part = (role: PartRole) => parts.find((p) => p.role === role);
-    const boxOf = (o: THREE.Object3D) => new THREE.Box3().setFromObject(o);
+    /** Caja de la pieza, o null si no aporta malla (caja vacía) o algún extremo no es finito: sus cuentas daban NaN. */
+    const boxOf = (o: THREE.Object3D): THREE.Box3 | null => {
+      const b = new THREE.Box3().setFromObject(o);
+      return b.isEmpty() || ![b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z].every(Number.isFinite) ? null : b;
+    };
     const handgun = spec.type === "pistol" || spec.type === "revolver";
+    // Pistola o revólver con culata de hombro: se sujeta a dos manos (la de apoyo nunca sobre la empuñadura)
+    const stockPistol = handgun && gripTraits(spec).stock;
     const mag = part("magazine"); const magBox = mag ? boxOf(mag.object) : null;
-    let grip: THREE.Vector3;
+    // Por defecto, bajo el cajón junto a su parte trasera (si la pieza de la empuñadura no da una caja válida)
+    let grip = new THREE.Vector3(box.min.x + L * (handgun ? 0.35 : 0.38), box.min.y + H * 0.3, 0);
     const gp = part("grip") ?? part("frame");
     const gpart = part("grip");
     const whole = gp ?? part("body");
     if (!gpart && spec.type === "revolver" && whole) {
       // Revólver: el armazón (o el modelo entero) es todo el arma (cañón, tambor y culata); la empuñadura es su parte baja trasera
-      const b = boxOf(whole.object), w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
-      grip = new THREE.Vector3(b.min.x + w * 0.13, b.min.y + hh * 0.3, 0);
-    } else if (gp) { const b = boxOf(gp.object); grip = new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - (b.max.y - b.min.y) * 0.35, 0); }
+      const b = boxOf(whole.object);
+      if (b) { const w = b.max.x - b.min.x, hh = b.max.y - b.min.y; grip = new THREE.Vector3(b.min.x + w * 0.13, b.min.y + hh * 0.3, 0); }
+    } else if (gp) { const b = boxOf(gp.object); if (b) grip = new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - (b.max.y - b.min.y) * 0.35, 0); }
     else if (handgun && magBox) grip = new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.3, 0);
     // Cargador en la empuñadura (MP7, Uzi, MP9…: subfusil con el cargador en la mitad trasera): se agarra el cargador
     else if (magBox && spec.type === "smg" && (magBox.min.x + magBox.max.x) / 2 < box.min.x + L * 0.5) grip = new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.25, 0);
     else if (magBox) grip = new THREE.Vector3(magBox.min.x - L * 0.09, box.min.y + H * 0.32, 0);
-    else grip = (spec.type === "smg" ? gripFromShape(parts, box) : null) ?? new THREE.Vector3(box.min.x + L * (handgun ? 0.35 : 0.38), box.min.y + H * 0.3, 0);
+    else if (spec.type === "smg") grip = gripFromShape(parts, box) ?? grip;
     // Largo de tiro: en un arma de hombro la mano de disparo está a ≥ 30 cm del talón de la culata (si sale menos, el
     // punto estaba en la culata: «disparar con la culata»)
     if (!handgun && spec.type !== "bullpup" && spec.type !== "smg" && grip.x < box.min.x + 0.3 && L > 0.8) grip.x = box.min.x + Math.min(0.36, L * 0.3);
+    // Ninguna coordenada puede salir NaN/Infinity (una pieza sin malla daba cajas vacías y la empuñadura se perdía)
+    if (![grip.x, grip.y, grip.z].every(Number.isFinite)) grip = new THREE.Vector3(box.min.x + L * (handgun ? 0.35 : 0.38), box.min.y + H * 0.3, 0);
     const fp = part("pump") ?? part("front");
     const fb = fp ? boxOf(fp.object) : null;
-    const support = handgun ? grip.clone().add(new THREE.Vector3(0.01, -0.01, 0))
+    // Piezas del cuerpo, el armazón, el agarre delantero y la corredera de bombeo (también para los anclajes)
+    const dev = part("device"), db = dev ? boxOf(dev.object) : null;
+    const fr = part("frame") ?? part("body"), frb = fr ? boxOf(fr.object) : null;
+    const pump = part("pump"), pb = pump ? boxOf(pump.object) : null;
+    const front = part("front"), fb2 = front ? boxOf(front.object) : null;
+    let support = handgun
+      // Pistola o revólver con culata: la mano de apoyo va delante, bajo el armazón (nunca encima de la otra mano)
+      ? stockPistol && frb ? new THREE.Vector3(frb.min.x + (frb.max.x - frb.min.x) * 0.6, Math.max(frb.min.y + 0.004, grip.y - 0.012), 0) : grip.clone().add(new THREE.Vector3(0.01, -0.01, 0))
       : fb ? new THREE.Vector3(fb.min.x + (fb.max.x - fb.min.x) * 0.35, fb.min.y + (fb.max.y - fb.min.y) * 0.15, 0)
       // Sin guardamanos aparte (armas de una pieza): justo delante del cargador, bajo el cajón; nunca a media altura del
       // largo total (con la culata incluida caía sobre el cañón)
@@ -833,18 +857,15 @@ export class WeaponAssembler {
       : spec.type !== "smg" ? new THREE.Vector3(grip.x + Math.min(0.4, Math.max(0.24, (box.max.x - grip.x) * 0.4)), Math.max(box.min.y + H * 0.35, grip.y), 0)
       : magBox && magBox.max.x > grip.x ? new THREE.Vector3(Math.max(magBox.max.x + 0.035, grip.x + 0.1), Math.max(grip.y, magBox.max.y - 0.005), 0)
       : new THREE.Vector3(Math.min(box.min.x + L * 0.68, grip.x + 0.16), Math.max(box.min.y + H * 0.35, grip.y), 0);
+    if (![support.x, support.y, support.z].every(Number.isFinite)) support = grip.clone();
     const magwell = magBox ? new THREE.Vector3((magBox.min.x + magBox.max.x) / 2, magBox.min.y + (magBox.max.y - magBox.min.y) * 0.2, 0) : grip.clone().add(new THREE.Vector3(L * 0.1, -H * 0.1, 0));
     const charge = new THREE.Vector3(handgun ? box.min.x + L * 0.25 : box.min.x + L * 0.5, box.max.y - H * 0.15, 0);
     // Anclajes de la mano de apoyo por soporte (perfil de agarre): cada uno sobre su pieza
-    const dev = part("device"), db = dev ? boxOf(dev.object) : null;
-    const fr = part("frame") ?? part("body"), frb = fr ? boxOf(fr.object) : null;
-    const pump = part("pump"), pb = pump ? boxOf(pump.object) : null;
-    const front = part("front"), fb2 = front ? boxOf(front.object) : null;
     const anchors: Record<Support, THREE.Vector3 | null> = {
       none: null,
       // Dos manos en la empuñadura: la de apoyo envuelve a la principal, algo por delante y por debajo
       grip: grip.clone().add(new THREE.Vector3(0.012, -0.018, 0)),
-      front: fb2 ? new THREE.Vector3(fb2.min.x + (fb2.max.x - fb2.min.x) * 0.35, fb2.min.y + (fb2.max.y - fb2.min.y) * 0.2, 0) : handgun ? null : support.clone(),
+      front: fb2 ? new THREE.Vector3(fb2.min.x + (fb2.max.x - fb2.min.x) * 0.35, fb2.min.y + (fb2.max.y - fb2.min.y) * 0.2, 0) : handgun && !stockPistol ? null : support.clone(),
       vgrip: vgripAnchor(parts) ?? (db ? new THREE.Vector3((db.min.x + db.max.x) / 2, db.min.y + (db.max.y - db.min.y) * 0.45, 0) : null),
       mag: magBox ? new THREE.Vector3(magBox.max.x - (magBox.max.x - magBox.min.x) * 0.3, magBox.max.y - (magBox.max.y - magBox.min.y) * 0.4, 0) : null,
       frame: frb ? new THREE.Vector3(frb.min.x + (frb.max.x - frb.min.x) * 0.72, frb.min.y + 0.004, 0) : null,
@@ -870,6 +891,21 @@ export class WeaponAssembler {
     // (si en ese punto cuelga el cargador, la mano va justo delante de él, no encima del arma)
     if (!handgun) for (const a of [support, anchors.front]) if (a) { for (let i = 0; i < 8; i++) { const b = colBottom(parts, a.x); if (b === null || b > a.y - 0.09) break; a.x += 0.012; } }
     if (!handgun) for (const a of [support, anchors.front]) if (a) { const b = colBottom(parts, a.x); if (b !== null && b - a.y < 0.14 && a.y - b < 0.12) a.y = b + 0.004; }
+    // Anclajes que faltan (pieza ausente o sin caja válida) o con coordenadas no finitas: la mano de apoyo va al
+    // guardamanos (`front`) o al soporte calculado; nunca a la empuñadura en armas largas ni en pistolas con culata,
+    // donde la mano izquierda quedaba encima de la derecha, como si el arma fuese a una mano
+    if (!handgun || stockPistol) {
+      const fb3 = anchors.front ?? support;
+      for (const k of ["frame", "pump", "vgrip", "mag"] as const) {
+        const a = anchors[k];
+        if (!a || ![a.x, a.y, a.z].every(Number.isFinite)) anchors[k] = fb3.clone();
+      }
+    }
+    // Ningún anclaje puede salir con NaN/Infinity: se descarta (la mano cae al soporte al usarlo)
+    for (const k of Object.keys(anchors) as Support[]) {
+      const a = anchors[k];
+      if (a && ![a.x, a.y, a.z].every(Number.isFinite)) anchors[k] = null;
+    }
     return { grip, support, magwell, charge, anchors };
   }
 }

@@ -17,6 +17,7 @@ export interface Settings {
   /** Calidad gráfica del postprocesado (Bajo/Medio/Alto), ver `Quality`. */ quality: Quality;
   /** Contador de fotogramas por segundo en pantalla. */ showFps: boolean;        // resplandor del neón y de los fogonazos (postproceso)
   mapV: number;          // versión del mapa (migración de ajustes)
+  /** Registro de sesión (solo con el modo desarrollador): capturas y notas para revisar después. */ sessionLog: boolean;
   dev: boolean;          // modo desarrollador: todos los súperes y su carga, y atajos para probar
   sprintToggle: boolean; // correr: pulsar para activar/desactivar (si no, mantener)
   aimToggle: boolean;    // apuntar: pulsar para activar/desactivar
@@ -38,7 +39,7 @@ function defaultQuality(): Quality {
     return bodyTouch || coarse ? "low" : "medium";
   } catch { return "medium"; }
 }
-const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: false, bloom: true, renderScale: 1, quality: defaultQuality(), showFps: false, mapV: 2, dev: false, sprintToggle: false, aimToggle: false, crouchToggle: false, invertY: false, adsSens: 1, padSens: 1, playerName: "", botVoice: true, binds: {}, padBinds: {} };
+const DEFAULTS: Settings = { sensitivity: 1, fov: 75, damageNumbers: true, screenShake: true, impactFx: true, volume: 0.8, music: 0.5, arms: true, night: false, bloom: true, renderScale: 1, quality: defaultQuality(), showFps: false, mapV: 2, dev: false, sessionLog: false, sprintToggle: false, aimToggle: false, crouchToggle: false, invertY: false, adsSens: 1, padSens: 1, playerName: "", botVoice: true, binds: {}, padBinds: {} };
 const listeners = new Set<(s: Settings) => void>();
 
 function load(): Settings {

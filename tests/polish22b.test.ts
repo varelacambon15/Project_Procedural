@@ -68,7 +68,7 @@ describe("pistolas del kit", () => {
   const gen = new WeaponGenerator(manifest);
   it("siguen saliendo y ninguna es una copia de su base", () => {
     const kit = Array.from({ length: 120 }, (_, s) => gen.generate(s, "pistol")).filter((w) => w.layout === "kit");
-    expect(kit.length).toBeGreaterThan(10);
+    expect(kit.length).toBeGreaterThan(2); // (cuota del kit baja a propósito: ~4 % de las pistolas)
     for (const w of kit) expect(w.lineage!.similarity).toBeLessThanOrEqual(0.92);
   });
 });

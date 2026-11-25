@@ -105,7 +105,7 @@ export class EffectRunner<T, V> {
   // Recetas: bonus temporales (con pilas), enfriamientos, contador de disparos, último contexto, furia y calor
   private recipes: { id: string; r: Recipe }[] = [];
   private buffs = new Map<string, { t: number; stacks: number }>(); private cds = new Map<string, number>();
-  private shotN = 0; private ctx = { aiming: false, moving: 0, near: 0, ammoFrac: 1 };
+  private shotN = 0; private killN = 0; private hitN = 0; private ctx = { aiming: false, moving: 0, near: 0, ammoFrac: 1 };
   private furyT = 0; private furyAfter = false;
 
   constructor(readonly spec: WeaponSpec) {
@@ -129,6 +129,8 @@ export class EffectRunner<T, V> {
       case "lowammo": return c.ammoFrac <= 0.3;
       case "big": return big;
       case "nth": return this.shotN % (r.n ?? 4) === 0;
+      case "killnth": return this.killN > 0 && this.killN % (r.n ?? 5) === 0; // cada N bajas (el contador sube en kill())
+      case "hitnth": return this.hitN > 0 && this.hitN % (r.n ?? 8) === 0;   // cada N impactos (el contador sube en afterHit())
       case "chance": return Math.random() * 100 < (r.chance ?? 30);
       case "afterkill": case "afterreload": return false; // son bonus temporales (buffs)
     }
@@ -256,6 +258,7 @@ export class EffectRunner<T, V> {
   /** Acciones tras un impacto a un enemigo. */
   afterHit(h: { target: T; point: V; dmg: number; crit: boolean; baseDmg: number; now: number }): FxAction<T, V>[] {
     const out: FxAction<T, V>[] = [];
+    this.hitN++;
     const el = this.element();
     if (el === "explosive" && !this.has("timedpayload") && !this.has("unstable")) out.push({ type: "explode", at: h.point, dmg: h.dmg * 0.4, element: "explosive", except: h.target });
     if (this.has("timedpayload")) out.push({ type: "later", delay: P("timedpayload", "delay", 0.6), action: { type: "explode", at: h.point, dmg: h.dmg * 0.55, element: "explosive" } });
@@ -284,6 +287,7 @@ export class EffectRunner<T, V> {
   /** Acciones al matar. */
   kill(k: { target: T; point: V; baseDmg: number; mag: number }): FxAction<T, V>[] {
     const out: FxAction<T, V>[] = [];
+    this.killN++;
     this.killT = 3;
     if (this.has("scavenger")) out.push({ type: "ammo", n: 1 });
     if (this.has("frenzy")) this.frenzyT = P("frenzy", "seconds", 5);
@@ -299,7 +303,7 @@ export class EffectRunner<T, V> {
       if (r.trigger !== "onKill") continue;
       if (r.action === "buff") { this.startBuff(id, r); continue; }
       if (r.action === "fury") { if (this.ready(id, r)) this.furyT = r.value; continue; }
-      if (!this.ready(id, r)) continue;
+      if (!this.condOk(r) || !this.ready(id, r)) continue;
       out.push(...this.act(r, k.point, k.target, k.baseDmg, k.target));
     }
     return out;

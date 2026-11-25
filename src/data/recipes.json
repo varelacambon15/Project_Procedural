@@ -798,6 +798,128 @@
         "en": "Cinder Crown"
       },
       "icon": "★"
+    },
+    {
+      "id": "rc-l-hunterkiller",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onKill",
+      "cond": "always",
+      "action": "shards",
+      "n": 4,
+      "value": 0.5,
+      "tradeoff": {
+        "kind": "rate",
+        "value": 20
+      },
+      "cost": 25,
+      "name": {
+        "es": "Cazador-asesino",
+        "en": "Hunter-Killer"
+      },
+      "icon": "★"
+    },
+    {
+      "id": "rc-l-glassstorm",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onCrit",
+      "cond": "always",
+      "action": "shards",
+      "n": 4,
+      "value": 0.45,
+      "tradeoff": {
+        "kind": "rate",
+        "value": 20
+      },
+      "cost": 25,
+      "name": {
+        "es": "Tormenta de cristal",
+        "en": "Glass Storm"
+      },
+      "icon": "★"
+    },
+    {
+      "id": "rc-l-critricochet",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onCrit",
+      "cond": "always",
+      "action": "chain",
+      "n": 3,
+      "value": 0.6,
+      "tradeoff": {
+        "kind": "ads",
+        "value": 15
+      },
+      "cost": 25,
+      "name": {
+        "es": "Rebote crítico",
+        "en": "Crit Ricochet"
+      },
+      "icon": "★"
+    },
+    {
+      "id": "rc-l-orbital",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onKill",
+      "cond": "killnth",
+      "action": "strike",
+      "n": 25,
+      "radius": 9,
+      "value": 3,
+      "tradeoff": {
+        "kind": "rate",
+        "value": 15
+      },
+      "cost": 25,
+      "name": {
+        "es": "Ataque orbital",
+        "en": "Orbital Strike"
+      },
+      "icon": "★"
+    },
+    {
+      "id": "rc-l-symphony",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onKill",
+      "cond": "killnth",
+      "action": "shards",
+      "n": 5,
+      "n2": 10,
+      "value": 0.4,
+      "tradeoff": {
+        "kind": "reload",
+        "value": 30
+      },
+      "cost": 25,
+      "name": {
+        "es": "Sinfonía de plomo",
+        "en": "Lead Symphony"
+      },
+      "icon": "★"
+    },
+    {
+      "id": "rc-l-resonance",
+      "tier": "L",
+      "family": "sig",
+      "trigger": "onHit",
+      "cond": "hitnth",
+      "action": "explode",
+      "n": 8,
+      "value": 1.4,
+      "tradeoff": {
+        "kind": "range",
+        "value": 20
+      },
+      "cost": 25,
+      "name": {
+        "es": "Resonancia",
+        "en": "Resonance"
+      },
+      "icon": "★"
     }
   ],
   "controlStates": {
