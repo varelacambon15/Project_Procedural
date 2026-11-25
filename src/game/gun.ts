@@ -453,6 +453,16 @@ export class Gun {
     m.group.rotation.y = Math.PI / 2; // +X (boca) hacia -Z de la cámara
     m.group.updateMatrix();
     // Pivote del encogido de silueta: la empuñadura (la mano no se mueve al reducir el arma)
+    // Tarea 13: armas sin pieza de empuñadura (culata recta, como muchas escopetas): el punto de agarre del ensamblador
+    // quedaba bajo el arma, en el aire, y la mano derecha flotaba; se sube a la cara inferior real del arma en esa
+    // columna (la garganta de la culata), un poco por dentro.
+    if (!m.parts.some((p) => p.role === "grip") && !m.group.userData.gripFixed) {
+      m.group.updateMatrixWorld(true);
+      const inv = m.group.matrixWorld.clone().invert(), v = new THREE.Vector3(); let low = Infinity;
+      for (const p of m.parts) { if (["magazine", "scope", "accessory", "device", "muzzle"].includes(p.role)) continue; p.object.traverse((o) => { const me = o as THREE.Mesh; if (!me.isMesh) return; const pos = me.geometry.attributes.position; for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(me.matrixWorld).applyMatrix4(inv); if (Math.abs(v.x - m.handles.grip.x) < 0.025) low = Math.min(low, v.y); } }); }
+      if (Number.isFinite(low) && low > m.handles.grip.y + 0.01) m.handles.grip.y = low + 0.012;
+      m.group.userData.gripFixed = true;
+    }
     this.gripOffset.set(m.handles.grip.x, m.handles.grip.y, m.handles.grip.z).applyMatrix4(m.group.matrix);
     this.muzzleOffset.set(m.muzzle.x, m.muzzle.y, m.muzzle.z).applyMatrix4(m.group.matrix);
     this.sightY = m.sightY ?? new THREE.Box3().setFromObject(m.group).max.y;
@@ -1153,8 +1163,8 @@ export class Gun {
       } else if (this.punchT > 0) pos = base.clone().add(new THREE.Vector3(0, 0.01 * ext, 0.05 * ext)); // la otra se recoge
       // Dedos en puño (falanges cerradas) y pulgar cruzado sobre ellos; nudillos arriba y al frente.
       // (nudillos hacia delante, algo arriba y hacia dentro; puño bien cerrado y muñeca casi recta)
-      const fingersDir = new THREE.Vector3(-side * 0.3, 0.88, -0.36).lerp(new THREE.Vector3(-side * 0.72, 0.4, -0.57), hitting ? ext : 0); // (al golpear, el puño gira hacia el centro y se ven los dedos cerrados: de punta, la muñequera lo tapaba)
-      return { pos, orient: handBasis(fingersDir, back), curl: { fingers: [1.55, 1.6, 1.6, 1.6], thumb: 0.85 }, thumbTurn: 0.8, fore: new THREE.Vector3(side * 0.5, -0.78, 0.38).lerp(new THREE.Vector3(side * 0.32, -0.94, 0.12), hitting ? ext : 0) };
+      const fingersDir = new THREE.Vector3(-side * 0.3, 0.97, -0.05).lerp(new THREE.Vector3(-side * 0.72, 0.4, -0.57), hitting ? ext : 0); // (al golpear, el puño gira hacia el centro y se ven los dedos cerrados: de punta, la muñequera lo tapaba)
+      return { pos, orient: handBasis(fingersDir, back), curl: { fingers: [1.75, 1.75, 1.75, 1.75], thumb: 1.25 }, thumbTurn: 1.35, fore: new THREE.Vector3(side * 0.5, -0.78, 0.38).lerp(new THREE.Vector3(side * 0.32, -0.94, 0.12), hitting ? ext : 0) };
     };
     // Gesto de equipamiento/granada sobre la mano libre (también sin arma equipada)
     const gk = this.gesture.kind, gc = this.gesture.curve(), fl = fist(-1), fr = fist(1);
@@ -1392,7 +1402,7 @@ export class Gun {
     if (!hold && !base) base = h.support.clone();
     // La mano de apoyo no se estira más allá de un brazo cómodo (en armas largas se iba a la punta del guardamanos)
     // (y nunca más allá del 55 % del tramo empuñadura→boca: en armas cortas como la MP5K agarraba el cañón)
-    const sReach = this.spec?.type === "bullpup" ? Math.min(0.17, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.4)) : this.spec?.type === "smg" ? Math.min(0.24, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5)) : Math.min(0.3, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5));
+    const sReach = this.spec?.type === "bullpup" ? Math.min(0.17, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.4)) : this.spec?.type === "smg" ? Math.min(0.24, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5)) : Math.min(this.spec?.type === "shotgun" ? 0.24 : 0.3, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5)); // (escopetas: la mano se iba a la punta del tubo)
     // (tarea 13: salvo en la empuñadura vertical o el cargador, que son piezas concretas: recortarla dejaba la mano
     //  7 cm por detrás de la empuñadura vertical, agarrando el aire)
     const sNow = (k > 0.5 ? hold?.ads : hipS) ?? "front";
