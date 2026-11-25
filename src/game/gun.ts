@@ -1402,7 +1402,7 @@ export class Gun {
     if (!hold && !base) base = h.support.clone();
     // La mano de apoyo no se estira más allá de un brazo cómodo (en armas largas se iba a la punta del guardamanos)
     // (y nunca más allá del 55 % del tramo empuñadura→boca: en armas cortas como la MP5K agarraba el cañón)
-    const sReach = this.spec?.type === "bullpup" ? Math.min(0.17, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.4)) : this.spec?.type === "smg" ? Math.min(0.24, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5)) : Math.min(this.spec?.type === "shotgun" ? 0.24 : 0.3, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5)); // (escopetas: la mano se iba a la punta del tubo)
+    const sReach = this.spec?.type === "bullpup" ? Math.min(0.17, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.4)) : this.spec?.type === "smg" ? Math.min(0.24, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5)) : Math.min(0.22, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.4)); // (tarea 13: a ~20 cm de la empuñadura, a media altura del guardamanos; más lejos la mano acababa en la punta y el antebrazo cruzaba la pantalla)
     // (tarea 13: salvo en la empuñadura vertical o el cargador, que son piezas concretas: recortarla dejaba la mano
     //  7 cm por detrás de la empuñadura vertical, agarrando el aire)
     const sNow = (k > 0.5 ? hold?.ads : hipS) ?? "front";
@@ -1411,7 +1411,7 @@ export class Gun {
     // la empuñadura y la mano izquierda quedaba encima de la derecha, como con una pistola)
     const sup0 = (k > 0.5 ? hold?.ads : hipS) ?? "front";
     if (base && (sup0 === "front" || sup0 === "pump" || sup0 === "frame") && this.spec?.type !== "pistol" && this.spec?.type !== "revolver") {
-      const sMin = Math.min(sReach, this.spec?.type === "bullpup" ? 0.1 : this.spec?.type === "smg" ? Math.max(0.14, (m.muzzle.x - h.grip.x) * 0.35) : Math.max(0.2, (m.muzzle.x - h.grip.x) * 0.32));
+      const sMin = Math.min(sReach, this.spec?.type === "bullpup" ? 0.1 : this.spec?.type === "smg" ? Math.max(0.14, (m.muzzle.x - h.grip.x) * 0.35) : Math.max(0.16, (m.muzzle.x - h.grip.x) * 0.26));
       if (base.x - h.grip.x < sMin) base.x = h.grip.x + sMin;
     }
     const sup = base ?? (fin(A.grip) ? A.grip!.clone() : fin(h.support) ? h.support.clone() : h.grip.clone()); // a dónde vuelve la mano tras recargar
@@ -1953,7 +1953,7 @@ const GRIPS: Record<HandKind | "right" | "rightHandgun", HandGrip> = {
   // (tarea 13: algo más abajo —la palma atravesaba el guardamanos— y los dedos más cerrados: agarraba «sin fuerza»)
   // (tarea 13: como en los tácticos modernos, la mano va en el COSTADO izquierdo del guardamanos, con los dedos
   //  rodeándolo por encima y el dorso hacia la cámara: debajo, palma arriba, solo se veía la manga)
-  under: { q: handBasis(V(0.45, 0.78, -0.43), V(-0.88, 0.25, 0.4)), off: V(-0.03, -0.006, 0.006), curl: C(1.25, 0.6) },
+  under: { q: handBasis(V(0.5, 0.75, -0.43), V(-0.82, 0.05, 0.55)), off: V(-0.028, -0.022, 0.006), curl: C(1.3, 0.65) },
   // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
   // (agarre en C: la izquierda queda debajo de la derecha y la envuelve, pulgares hacia delante)
   wrap: { q: rx(-0.25).multiply(handBasis(V(0.45, -0.25, -0.86), V(-0.9, -0.15, 0.1))), off: V(-0.026, -0.022, -0.004), curl: C(1.3, 0.5) },
