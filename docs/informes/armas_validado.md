@@ -23,12 +23,12 @@ pantalla, que en armas largas tendía a «torcer» el arma), `bulk`/`depthMax` (
 | Fusil (cadera) | ✅ VALIDADO | «A mejor, más cerca y se ve bien». Sigue con `muzzle` (sin `aim`). No tocar. |
 | Bullpup (cadera) | ✅ VALIDADO | «Muchísimo mejor así» (cañón al frente con `aim`). |
 | Francotirador (cadera) | 🟡 casi | «Mejor, más centrado y cercano»; falta corregir el agarre del guardamanos. |
-| Puños en reposo | 🟡 casi | Referencia del usuario: puños bajos y separados tipo Source/Apex. «Muy buena pinta». Último cambio: pulgares cerrados y dedos que ya no miran abajo (sin validar aún). La animación del golpe NO es necesaria («ignora la guardia»). |
+| Puños en reposo | 🟡 casi | Referencia del usuario: puños bajos y separados tipo Source/Apex. «Muy buena pinta». Rechazado: puños con la cara interior/dedos hacia la cámara («parece que me miran») y pulgares salientes («feísimos»). Último: se ve el DORSO con los nudillos al frente, pulgar plegado (`thumb 0.6`, `thumbTurn 1.5`), antebrazos casi verticales (sin validar). Para probar orientaciones de mano aisladas, montar una página con `Arms` y `handBasis` (ver historial). La animación del golpe NO es necesaria («ignora la guardia»). |
 | Dedos (agarre) | 🟡 mejorando | «Los dedos de agarre han mejorado». Pulgar con `thumbTurn` para rodear la empuñadura. |
 | Revólver | 🔧 en curso | Pidió más cerca, centrado y un poco más grande (último: `depth 0.27`, sin validar). El índice de la izquierda asoma. |
 | Subfusil | 🔧 en curso | Distancia: término medio entre la primera versión nueva (más cerca) y la original (último: `depth 0.37`). La mano izquierda debe agarrar «donde debe» (guardamanos/empuñadura vertical). |
 | Ametralladora | 🔧 en curso | NO girarla: alejarla y CENTRARLA. Último: `aim [0.02,0.02]`, `grip [0.68,0.86]`, `depth 0.56` (sin validar). |
-| Escopetas | ❌ hay que trabajarlas mucho | Mano izquierda atravesando el guardamanos o en la punta del tubo; posición que no convence. Hecho: sin pieza de empuñadura, la derecha va a la garganta de la culata (antes flotaba); la izquierda no pasa de 24 cm. |
+| Escopetas (notas 2.ª ronda: `shotgun:31` ✅ le gusta; `shotgun:17` y `:304` mano izquierda en la punta y pose rara; fusil `rifle:24`: el antebrazo izquierdo choca con el tambor y la mano derecha no agarra bien) | ❌ hay que trabajarlas mucho | Mano izquierda atravesando el guardamanos o en la punta del tubo; posición que no convence. Hecho: sin pieza de empuñadura, la derecha va a la garganta de la culata (antes flotaba); la izquierda no pasa de 24 cm. |
 | Recargas, inspección, sacar | ⏳ sin revisar | Hojas en `docs/informes/img/armas_*`. |
 | Tiempos de manejo (`gunfeel.ts`) | ⏳ sin revisar | |
 

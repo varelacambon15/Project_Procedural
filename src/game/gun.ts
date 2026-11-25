@@ -1153,7 +1153,7 @@ export class Gun {
       const base = new THREE.Vector3(side * 0.135, -0.105 + breathe - 0.3 * (1 - raise) + (side > 0 ? 0.006 : 0), -0.32);
       base.y -= 0.06 * sp; base.z += Math.sin(tm * 9 + (side > 0 ? 0 : Math.PI)) * 0.07 * sp;
       const hitting = this.punchT > 0 && side === this.punchSide;
-      let pos = base, back = new THREE.Vector3(side * 0.45, 0.25, -0.86); // dorso al frente y afuera: se ven los dedos cerrados y el pulgar, como en la referencia
+      let pos = base, back = new THREE.Vector3(side * 0.4, 0.75, 0.5); // dorso hacia fuera y arriba: nudillos al frente, como en la referencia (de frente se veían los dedos «mirando a la cámara»)
       if (hitting) {
         // Recto al centro de la pantalla con giro de muñeca; el fuerte, más largo
         // (tarea 13: más cerca y algo más bajo: al fondo del centro el antebrazo se veía de punta, como un tubo, y tapaba el puño)
@@ -1163,8 +1163,8 @@ export class Gun {
       } else if (this.punchT > 0) pos = base.clone().add(new THREE.Vector3(0, 0.01 * ext, 0.05 * ext)); // la otra se recoge
       // Dedos en puño (falanges cerradas) y pulgar cruzado sobre ellos; nudillos arriba y al frente.
       // (nudillos hacia delante, algo arriba y hacia dentro; puño bien cerrado y muñeca casi recta)
-      const fingersDir = new THREE.Vector3(-side * 0.3, 0.97, -0.05).lerp(new THREE.Vector3(-side * 0.72, 0.4, -0.57), hitting ? ext : 0); // (al golpear, el puño gira hacia el centro y se ven los dedos cerrados: de punta, la muñequera lo tapaba)
-      return { pos, orient: handBasis(fingersDir, back), curl: { fingers: [1.75, 1.75, 1.75, 1.75], thumb: 1.25 }, thumbTurn: 1.35, fore: new THREE.Vector3(side * 0.5, -0.78, 0.38).lerp(new THREE.Vector3(side * 0.32, -0.94, 0.12), hitting ? ext : 0) };
+      const fingersDir = new THREE.Vector3(-side * 0.1, 0.5, -0.86).lerp(new THREE.Vector3(-side * 0.72, 0.4, -0.57), hitting ? ext : 0); // (al golpear, el puño gira hacia el centro y se ven los dedos cerrados: de punta, la muñequera lo tapaba)
+      return { pos, orient: handBasis(fingersDir, back), curl: { fingers: [1.75, 1.75, 1.75, 1.75], thumb: 0.6 }, thumbTurn: 1.5, fore: new THREE.Vector3(side * 0.35, -0.9, 0.2).lerp(new THREE.Vector3(side * 0.32, -0.94, 0.12), hitting ? ext : 0) };
     };
     // Gesto de equipamiento/granada sobre la mano libre (también sin arma equipada)
     const gk = this.gesture.kind, gc = this.gesture.curve(), fl = fist(-1), fr = fist(1);

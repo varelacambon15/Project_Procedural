@@ -30,7 +30,7 @@ export const ARM_DATA = {
 
 /** Cierre de la mano: índice, corazón, anular, meñique (0 abierta … 1 puño) y pulgar. */
 export interface Curl { fingers: [number, number, number, number]; thumb: number }
-export interface HandPose { pos: THREE.Vector3; orient: THREE.Quaternion; curl: Curl; /** Muñeca recta: el antebrazo sigue el eje de la mano (0 = no, 1 = del todo; pistolas). */ straight?: number; /** Abre el codo de la mano de apoyo hacia fuera (0 = el de siempre): el antebrazo sale en diagonal por el borde inferior, sin quedar como un poste vertical (cerrojos, ametralladoras y bullpup). */ flare?: number; /** Grosor del antebrazo (1 = el de siempre; <1 lo afina): el francotirador lo lleva más fino para que el tubo de la manga no domine la vista. */ girth?: number; /** Giro del pulgar en el plano de la palma (rad; 0 = el del modelo): los puños lo cruzan sobre los dedos. */ thumbTurn?: number; /** Dirección del antebrazo desde la muñeca hacia el codo (cámara), si la pose la fija (puños en guardia: hacia la esquina de su lado). */ fore?: THREE.Vector3 }
+export interface HandPose { pos: THREE.Vector3; orient: THREE.Quaternion; curl: Curl; /** Muñeca recta: el antebrazo sigue el eje de la mano (0 = no, 1 = del todo; pistolas). */ straight?: number; /** Abre el codo de la mano de apoyo hacia fuera (0 = el de siempre): el antebrazo sale en diagonal por el borde inferior, sin quedar como un poste vertical (cerrojos, ametralladoras y bullpup). */ flare?: number; /** Grosor del antebrazo (1 = el de siempre; <1 lo afina): el francotirador lo lleva más fino para que el tubo de la manga no domine la vista. */ girth?: number; /** Giro del pulgar en el plano de la palma (rad; 0 = el del modelo): los puños lo cruzan sobre los dedos. */ thumbTurn?: number; /** Giro del pulgar hacia la palma (rad, eje Y de su base en el GLB): lo pliega sobre los dedos del puño. */ thumbSwing?: number; /** Dirección del antebrazo desde la muñeca hacia el codo (cámara), si la pose la fija (puños en guardia: hacia la esquina de su lado). */ fore?: THREE.Vector3 }
 export interface HandTargets { right: HandPose; left: HandPose | null; dt?: number; /** Desplazamiento de los hombros (movimientos rápidos del arma). */ shoulder?: THREE.Vector3 }
 
 /** IK de dos huesos: devuelve la posición del codo. */
@@ -204,7 +204,7 @@ class Hand {
       for (let k = 0; k < ch.length; k++) ch[k].rotation.x = -c * this.fk[k];
     }
     // (giro del pulgar sobre los dedos: los puños del modelo lo cruzan por delante; el resto de poses lo dejan en 0)
-    if (this.fromModel && this.thumb[0]) this.thumb[0].rotation.z = p.thumbTurn ?? 0;
+    if (this.fromModel && this.thumb[0]) { this.thumb[0].rotation.z = p.thumbTurn ?? 0; this.thumb[0].rotation.y = p.thumbSwing ?? 0; }
     for (let k = 0; k < this.thumb.length; k++) this.thumb[k].rotation.x = -this.cur.thumb * this.tk[k];
   }
   snap(p: HandPose) { this.g.quaternion.copy(p.orient); this.set(p, 1); }
