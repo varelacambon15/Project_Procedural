@@ -1153,7 +1153,7 @@ export class Gun {
       const base = new THREE.Vector3(side * 0.135, -0.105 + breathe - 0.3 * (1 - raise) + (side > 0 ? 0.006 : 0), -0.32);
       base.y -= 0.06 * sp; base.z += Math.sin(tm * 9 + (side > 0 ? 0 : Math.PI)) * 0.07 * sp;
       const hitting = this.punchT > 0 && side === this.punchSide;
-      let pos = base, back = new THREE.Vector3(side * 0.4, 0.75, 0.5); // dorso hacia fuera y arriba: nudillos al frente, como en la referencia (de frente se veían los dedos «mirando a la cámara»)
+      let pos = base, back = new THREE.Vector3(side * 0.62, 0.58, 0.52); // dorso hacia fuera y arriba: nudillos al frente, como en la referencia (de frente se veían los dedos «mirando a la cámara»)
       if (hitting) {
         // Recto al centro de la pantalla con giro de muñeca; el fuerte, más largo
         // (tarea 13: más cerca y algo más bajo: al fondo del centro el antebrazo se veía de punta, como un tubo, y tapaba el puño)
