@@ -1393,7 +1393,10 @@ export class Gun {
     // La mano de apoyo no se estira más allá de un brazo cómodo (en armas largas se iba a la punta del guardamanos)
     // (y nunca más allá del 55 % del tramo empuñadura→boca: en armas cortas como la MP5K agarraba el cañón)
     const sReach = this.spec?.type === "bullpup" ? Math.min(0.17, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.4)) : this.spec?.type === "smg" ? Math.min(0.24, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5)) : Math.min(0.3, Math.max(0.06, (m.muzzle.x - h.grip.x) * 0.5));
-    if (base && base.x - h.grip.x > sReach) base.x = h.grip.x + sReach;
+    // (tarea 13: salvo en la empuñadura vertical o el cargador, que son piezas concretas: recortarla dejaba la mano
+    //  7 cm por detrás de la empuñadura vertical, agarrando el aire)
+    const sNow = (k > 0.5 ? hold?.ads : hipS) ?? "front";
+    if (base && sNow !== "vgrip" && sNow !== "mag" && base.x - h.grip.x > sReach) base.x = h.grip.x + sReach;
     // …y nunca pegada a la empuñadura cuando agarra el guardamanos (en armas por código el guardamanos empezaba junto a
     // la empuñadura y la mano izquierda quedaba encima de la derecha, como con una pistola)
     const sup0 = (k > 0.5 ? hold?.ads : hipS) ?? "front";
@@ -1665,6 +1668,12 @@ export class Gun {
         leftPose = { ...leftPose, pos: new THREE.Vector3(leftPose.pos.x * k, leftPose.pos.y * k, z + dz) };
       }
     }
+    // (tarea 13: armas largas en reposo/apuntando: el antebrazo de apoyo baja casi en vertical hacia el borde inferior
+    //  izquierdo y algo más fino; si subía hacia la cámara, en línea con la vista, tapaba la propia mano y se veía como
+    //  un tubo enorme)
+    if (leftPose && !this.keyed && !leftPose.fore && tipo !== "pistol" && tipo !== "revolver") {
+      leftPose = { ...leftPose, fore: kind === "vgrip" ? new THREE.Vector3(-0.42, -0.88, 0.2) : new THREE.Vector3(-0.55, -0.78, 0.3), girth: leftPose.girth ?? 0.86 };
+    }
     // (mano izquierda: el pulgar rodea lo que agarra en proporción a lo cerrada que está la mano; abierta, no se mete)
     if (leftPose && leftPose.thumbTurn === undefined) {
       const avg = leftPose.curl.fingers.reduce((a, f) => a + f, 0) / 4;
@@ -1932,12 +1941,15 @@ const GRIPS: Record<HandKind | "right" | "rightHandgun", HandGrip> = {
   rightHandgun: { q: rx(-0.22).multiply(handBasis(V(-0.1, -0.1, -0.99), V(0.99, 0.12, 0))), off: V(0.014, 0.002, 0.012), curl: C(1.1, 0.75) },
   // Bajo el guardamanos: palma arriba, dedos hacia la derecha envolviéndolo
   // (tarea 13: algo más abajo —la palma atravesaba el guardamanos— y los dedos más cerrados: agarraba «sin fuerza»)
-  under: { q: handBasis(V(1, 0.2, -0.45), V(-0.4, -1, 0)), off: V(-0.016, -0.026, 0.004), curl: C(1.45, 0.85) },
+  // (tarea 13: como en los tácticos modernos, la mano va en el COSTADO izquierdo del guardamanos, con los dedos
+  //  rodeándolo por encima y el dorso hacia la cámara: debajo, palma arriba, solo se veía la manga)
+  under: { q: handBasis(V(0.45, 0.78, -0.43), V(-0.88, 0.25, 0.4)), off: V(-0.03, -0.006, 0.006), curl: C(1.25, 0.6) },
   // Segunda mano en la empuñadura: por la izquierda, envolviendo los dedos de la derecha
   // (agarre en C: la izquierda queda debajo de la derecha y la envuelve, pulgares hacia delante)
   wrap: { q: rx(-0.25).multiply(handBasis(V(0.45, -0.25, -0.86), V(-0.9, -0.15, 0.1))), off: V(-0.026, -0.022, -0.004), curl: C(1.3, 0.5) },
   // Empuñadura vertical o cargador: mano cerrada alrededor, dorso a la izquierda
-  vgrip: { q: rx(-0.1).multiply(handBasis(V(0.35, -0.05, -1), V(-1, 0.2, 0))), off: V(-0.022, 0, 0.026), curl: C(1.45, 0.8) },
+  // (tarea 13: dorso hacia la cámara y algo arriba: la mano se ve rodeando la empuñadura desde la izquierda)
+  vgrip: { q: handBasis(V(0.75, -0.25, -0.62), V(-0.6, 0.45, 0.66)), off: V(-0.024, 0.004, 0.018), curl: C(1.5, 0.85) },
   // Coger el cargador o la palanca: mano semiabierta que llega desde la izquierda
   grab: { q: handBasis(V(0.45, -0.25, -0.85), V(-0.85, 0.3, 0.2)), off: V(-0.02, 0, 0), curl: C(0.55, 0.35) },
 };
