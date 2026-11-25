@@ -1578,12 +1578,14 @@ export class Gun {
     // (armas cortas: el índice va cerrado sobre el gatillo y el pulgar pegado al armazón; recto, el índice se veía
     //  larguísimo y el pulgar asomaba hacia arriba —«dedos deformes y demasiado largos»—)
     const shortGun = this.spec?.type === "pistol" || this.spec?.type === "revolver";
-    let right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? Math.max(shortGun ? 1.2 : 0.85, fc[0] - 0.12) + 0.15 * this.trigT - 0.1 * sp : trig, Math.max(1.7, fc?.[1] ?? 1.02) - 0.1 * sp, Math.max(1.7, fc?.[2] ?? 1.06) - 0.1 * sp, Math.max(1.7, fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (shortGun ? 0.55 : fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
+    let right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? Math.max(shortGun ? 1.5 : 0.85, fc[0] - 0.12) + 0.15 * this.trigT - 0.1 * sp : trig, Math.max(1.7, fc?.[1] ?? 1.02) - 0.1 * sp, Math.max(1.7, fc?.[2] ?? 1.06) - 0.1 * sp, Math.max(1.7, fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (shortGun ? 0.55 : fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
     // (tarea 13: muñeca casi recta pero sin seguir del todo el eje de la mano: con 1 el antebrazo venía hacia la cámara y
     //  se veía como un bloque enorme abajo a la derecha)
     if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right.straight = 0.35;
     // (el pulgar del modelo, aun cerrado, salía hacia fuera a 45°: con su giro pasa por delante y rodea la empuñadura)
     if (reach <= 0.3) right.thumbTurn = 0.75;
+    // (revólver: el pulgar plegado junto al martillo; recto salía hacia la izquierda como un dedo «asomando»)
+    if (reach <= 0.3 && this.spec?.type === "revolver") { right.thumbTurn = 1.0; right.curl = { ...right.curl, thumb: 0.75 }; }
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
     // Hombros: siguen la mitad de los movimientos rápidos del arma (retroceso, balanceo) respecto a su media lenta
@@ -1623,7 +1625,8 @@ export class Gun {
       leftPose = {
         pos: right.pos.clone().add(new THREE.Vector3(go[0], go[1], go[2]).applyQuaternion(hq)),
         orient: hq.clone().multiply(rx(-0.2).multiply(handBasis(V(0.7, 0.2, -0.68), V(-0.55, 0.15, -0.82)))),
-        curl: gdat ? gdat.curl : { fingers: [1.05, 1.15, 1.2, 1.25], thumb: 0.25 }, straight: 1,
+        // (tarea 13: los cuatro dedos cerrados sobre la mano derecha; el índice de la referencia quedaba estirado, «asomando»)
+        curl: { fingers: (gdat ? gdat.curl.fingers : [1.05, 1.15, 1.2, 1.25]).map((f) => Math.max(1.3, f)) as Curl["fingers"], thumb: 0.35 }, thumbTurn: 0.9, straight: 1,
       };
     }
     else if (leftPose) leftPose.straight = tipo === "sniper" ? 0.55 : tipo === "lmg" || tipo === "bullpup" ? 0.32 : 0.4; // (armas largas: el antebrazo de apoyo baja en diagonal desde el borde, sin cruzar la pantalla; francotirador: más recto de muñeca, en escorzo)

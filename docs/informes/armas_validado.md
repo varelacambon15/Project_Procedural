@@ -38,3 +38,9 @@ pantalla, que en armas largas tendía a «torcer» el arma), `bulk`/`depthMax` (
 - Para que se vea más arma: alejar y centrar, sin aumentar la convergencia (si no, «se tuerce»).
 - Antes de enseñar nada: capturar a 1280×720 y MIRAR. Las capturas en las que la primera arma sale negra son un fallo
   del script (primer fotograma), no del juego: repetir.
+
+## Ronda 3 (pendiente de validar)
+- Armas largas: la mano izquierda va a ~20 cm de la empuñadura (`sReach` 0,22 en `gun.ts`), bajo y al costado del
+  guardamanos (`GRIPS.under`); antes acababa en la punta y encima del cañón con el antebrazo cruzando la pantalla.
+- Revólver: índice y pulgar derechos más plegados; `revolver:10` bien, en `revolver:59` aún asoma un dedo bajo el
+  gatillo (pendiente).
