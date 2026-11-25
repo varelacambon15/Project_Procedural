@@ -1164,7 +1164,7 @@ export class Gun {
       // Dedos en puño (falanges cerradas) y pulgar cruzado sobre ellos; nudillos arriba y al frente.
       // (nudillos hacia delante, algo arriba y hacia dentro; puño bien cerrado y muñeca casi recta)
       const fingersDir = new THREE.Vector3(-side * 0.1, 0.5, -0.86).lerp(new THREE.Vector3(-side * 0.72, 0.4, -0.57), hitting ? ext : 0); // (al golpear, el puño gira hacia el centro y se ven los dedos cerrados: de punta, la muñequera lo tapaba)
-      return { pos, orient: handBasis(fingersDir, back), curl: { fingers: [1.75, 1.75, 1.75, 1.75], thumb: 0.6 }, thumbTurn: 1.5, fore: new THREE.Vector3(side * 0.35, -0.9, 0.2).lerp(new THREE.Vector3(side * 0.32, -0.94, 0.12), hitting ? ext : 0) };
+      return { pos, orient: handBasis(fingersDir, back), curl: { fingers: [1.75, 1.75, 1.75, 1.75], thumb: 0.6 }, thumbTurn: 1.5, girth: 0.84, handScale: 1.15, fore: new THREE.Vector3(side * 0.35, -0.9, 0.2).lerp(new THREE.Vector3(side * 0.32, -0.94, 0.12), hitting ? ext : 0) };
     };
     // Gesto de equipamiento/granada sobre la mano libre (también sin arma equipada)
     const gk = this.gesture.kind, gc = this.gesture.curve(), fl = fist(-1), fr = fist(1);

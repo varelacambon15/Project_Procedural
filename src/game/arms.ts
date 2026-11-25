@@ -30,7 +30,7 @@ export const ARM_DATA = {
 
 /** Cierre de la mano: índice, corazón, anular, meñique (0 abierta … 1 puño) y pulgar. */
 export interface Curl { fingers: [number, number, number, number]; thumb: number }
-export interface HandPose { pos: THREE.Vector3; orient: THREE.Quaternion; curl: Curl; /** Muñeca recta: el antebrazo sigue el eje de la mano (0 = no, 1 = del todo; pistolas). */ straight?: number; /** Abre el codo de la mano de apoyo hacia fuera (0 = el de siempre): el antebrazo sale en diagonal por el borde inferior, sin quedar como un poste vertical (cerrojos, ametralladoras y bullpup). */ flare?: number; /** Grosor del antebrazo (1 = el de siempre; <1 lo afina): el francotirador lo lleva más fino para que el tubo de la manga no domine la vista. */ girth?: number; /** Giro del pulgar en el plano de la palma (rad; 0 = el del modelo): los puños lo cruzan sobre los dedos. */ thumbTurn?: number; /** Giro del pulgar hacia la palma (rad, eje Y de su base en el GLB): lo pliega sobre los dedos del puño. */ thumbSwing?: number; /** Dirección del antebrazo desde la muñeca hacia el codo (cámara), si la pose la fija (puños en guardia: hacia la esquina de su lado). */ fore?: THREE.Vector3 }
+export interface HandPose { pos: THREE.Vector3; orient: THREE.Quaternion; curl: Curl; /** Muñeca recta: el antebrazo sigue el eje de la mano (0 = no, 1 = del todo; pistolas). */ straight?: number; /** Abre el codo de la mano de apoyo hacia fuera (0 = el de siempre): el antebrazo sale en diagonal por el borde inferior, sin quedar como un poste vertical (cerrojos, ametralladoras y bullpup). */ flare?: number; /** Grosor del antebrazo (1 = el de siempre; <1 lo afina): el francotirador lo lleva más fino para que el tubo de la manga no domine la vista. */ girth?: number; /** Giro del pulgar en el plano de la palma (rad; 0 = el del modelo): los puños lo cruzan sobre los dedos. */ thumbTurn?: number; /** Giro del pulgar hacia la palma (rad, eje Y de su base en el GLB): lo pliega sobre los dedos del puño. */ thumbSwing?: number; /** Escala de la mano (1 = la de siempre): los puños la llevan algo mayor. */ handScale?: number; /** Dirección del antebrazo desde la muñeca hacia el codo (cámara), si la pose la fija (puños en guardia: hacia la esquina de su lado). */ fore?: THREE.Vector3 }
 export interface HandTargets { right: HandPose; left: HandPose | null; dt?: number; /** Desplazamiento de los hombros (movimientos rápidos del arma). */ shoulder?: THREE.Vector3 }
 
 /** IK de dos huesos: devuelve la posición del codo. */
@@ -141,8 +141,8 @@ class Hand {
       if (withWatch) {
         // Reloj en la muñeca izquierda, encima de la muñequera (esfera ámbar: nada de verde en los brazos)
         // (correa como aro fino y no un cilindro con tapas: de frente era el disco negro que tapaba la muñeca)
-        const band = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.007, 4, 16), strap); band.position.z = 0.075; this.g.add(band);
-        const face = new THREE.Mesh(new RoundedBoxGeometry(0.034, 0.01, 0.034, 1, 0.003), watchFace); face.position.set(0, 0.056, 0.075); this.g.add(face);
+        const band = new THREE.Mesh(new THREE.TorusGeometry(0.039, 0.006, 4, 16), strap); band.position.z = 0.075; this.g.add(band); // (ceñida a la muñeca: más ancha sobresalía como un aro)
+        const face = new THREE.Mesh(new RoundedBoxGeometry(0.034, 0.01, 0.034, 1, 0.003), watchFace); face.position.set(0, 0.045, 0.075); this.g.add(face);
       }
     } else {
       this.tk = [0.6, 1.0];
@@ -193,7 +193,10 @@ class Hand {
     for (const o of this.g.children) o.traverse((m) => { (m as THREE.Mesh).renderOrder = 9; });
     parent.add(this.g);
   }
+  private baseScale: THREE.Vector3 | null = null;
   set(p: HandPose, k: number) {
+    this.baseScale ??= this.g.scale.clone();
+    this.g.scale.copy(this.baseScale).multiplyScalar(p.handScale ?? 1);
     this.g.position.copy(p.pos);
     this.g.quaternion.copy(p.orient);
     for (let f = 0; f < 4; f++) this.cur.fingers[f] += (p.curl.fingers[f] - this.cur.fingers[f]) * k;
@@ -309,7 +312,7 @@ class Arm {
     this.upper.set(sh, elbow); this.elbowM.position.copy(elbow);
     this.fore.set(elbow, wrist);
     // (grosor del antebrazo: el francotirador lo lleva más fino; el resto, el de siempre)
-    const g = p.girth ?? 1; this.fore.g.scale.set(g, 1, g); this.elbowM.scale.setScalar(g);
+    const g = p.girth ?? 1; this.fore.g.scale.set(g, 1, g); this.elbowM.scale.setScalar(g); this.upper.g.scale.set(g, 1, g); // (también el brazo: si no, al afinar el antebrazo el codo quedaba como un escalón)
   }
 }
 
