@@ -20,7 +20,7 @@ const POUCH: LeftKey = { at: "cam", off: [-0.2, -0.46, -0.32], hand: "grab" };
 const pistolGun: Key<Gun6>[] = [
   { t: 0, v: Z },
   { t: 0.1, v: [0.004, -0.008, 0, -0.05, 0, 0.03], e: "o" },              // anticipación: cae un poco
-  { t: 0.26, v: [-0.05, 0.025, 0.015, 0.32, -0.12, -0.55], e: "s" },      // sube hacia el centro, lomo a la derecha:
+  { t: 0.26, v: [-0.05, 0.025, 0.015, 0.32, -0.12, -0.55], e: "o" },      // sube hacia el centro, lomo a la derecha:
   { t: 0.6, v: [-0.054, 0.028, 0.015, 0.34, -0.13, -0.58], e: "io" },     //   el brocal mira a la mano izquierda (pausa)
   { t: 0.68, v: [-0.05, 0.04, 0.012, 0.42, -0.12, -0.55], e: "s" },       // palmada: sacudida arriba
   { t: 0.76, v: [-0.045, 0.026, 0.015, 0.3, -0.1, -0.48], e: "o" },
@@ -74,7 +74,7 @@ const pistolInspect: Key<Gun6>[] = [
 const leftAway: Key<LeftKey>[] = [{ t: 0, v: { at: "rest" } }, { t: 0.12, v: POUCH, e: "io" }, { t: 0.86, v: POUCH }, { t: 1, v: { at: "rest" }, e: "io" }];
 // Sacar (0,3–0,6 s): sube desde abajo a la derecha, rolada y con la boca baja; llega con un rebote corto.
 const pistolDraw: Key<Gun6>[] = [
-  { t: 0, v: [0.05, -0.26, 0.04, -0.7, -0.05, -0.55] },
+  { t: 0, v: [0.05, -0.24, 0.04, -0.5, -0.04, -0.4] },
   { t: 0.62, v: [-0.002, 0.008, 0, 0.07, 0.01, 0.05], e: "o" },
   { t: 0.82, v: [0, -0.003, 0, -0.02, 0, -0.01], e: "io" },
   { t: 1, v: Z, e: "io" },
@@ -223,3 +223,44 @@ for (const c of ["shotgun", "launcher", "flamethrower"]) TRACKS[c] = { inspect: 
 export function trackFor(type: string, action: VmAction): Track | null {
   return TRACKS[type]?.[action] ?? null;
 }
+
+// ---------------------------------------------------------------- Escopeta de tubo: cartucho a cartucho
+/** Ventana de carga (bajo el cajón, justo delante de la empuñadura), en el arma: el «brocal» de una escopeta de tubo es
+ *  el propio tubo, muy por delante, y la mano cargaba en la punta. */
+const PORT: Pick<LeftKey, "at" | "offW"> = { at: "grip", offW: [0.085, 0.05, 0] };
+/** Pista de la recarga cartucho a cartucho con las MISMAS fases que el sonido (`tilt`, n × `shell`, `rack`, `settle`):
+ *  inclinar el arma para enseñar la ventana, y por cada cartucho la mano lo trae desde abajo, lo empuja dentro (con un
+ *  pequeño golpe del arma) y vuelve; si estaba vacía, bombea al final. */
+export function shotgunShells(phases: [string, number][]): Track {
+  const gun: Key<Gun6>[] = [{ t: 0, v: Z }];
+  const left: Key<LeftKey>[] = [{ t: 0, v: { at: "rest" } }];
+  const slide: Key<number>[] = [{ t: 0, v: 0 }];
+  const TILT: Gun6 = [-0.025, 0.012, 0, 0.1, 0.1, -0.55];
+  const PICK: LeftKey = { ...PORT, off: [-0.05, -0.1, 0.01], dir: [0.6, 0.75, -0.25], up: [-0.8, 0.0, 0.6], hand: "pinch" };
+  const IN: LeftKey = { ...PORT, off: [-0.012, -0.022, 0], dir: [0.6, 0.75, -0.25], up: [-0.8, 0.0, 0.6], hand: "pinch" };
+  const PUSH: LeftKey = { at: "grip", offW: [0.07, 0.05, 0], off: [-0.006, -0.012, 0], dir: [0.7, 0.65, -0.2], up: [-0.8, 0.0, 0.6], hand: "palm" };
+  let acc = 0;
+  for (const [id, w] of phases) {
+    const a = acc, b = acc + w; acc = b;
+    if (id === "tilt") {
+      gun.push({ t: a + w * 0.25, v: [0.004, -0.008, 0, -0.03, 0, 0.03], e: "o" }, { t: b, v: TILT, e: "io" });
+      left.push({ t: a + w * 0.3, v: { at: "rest" } }, { t: b, v: PICK, e: "io" });
+    } else if (id === "shell") {
+      // (el cartucho entra al 55 % de la fase, que es cuando suena)
+      left.push({ t: a + w * 0.45, v: IN, e: "io" }, { t: a + w * 0.58, v: PUSH, e: "s" }, { t: b, v: PICK, e: "io" });
+      gun.push({ t: a + w * 0.55, v: TILT }, { t: a + w * 0.6, v: [TILT[0], TILT[1] + 0.006, TILT[2], TILT[3] + 0.035, TILT[4], TILT[5]], e: "s" }, { t: b, v: TILT, e: "o" });
+    } else if (id === "rack") {
+      // bombeo: la mano vuelve al guardamanos, tira atrás y empuja adelante (golpe seco)
+      left.push({ t: a + w * 0.3, v: { at: "rest" }, e: "io" }, { t: a + w * 0.55, v: { at: "rest", offW: [-0.085, 0, 0] }, e: "s" }, { t: a + w * 0.8, v: { at: "rest" }, e: "s" });
+      slide.push({ t: a + w * 0.3, v: 0 }, { t: a + w * 0.55, v: 1, e: "s" }, { t: a + w * 0.8, v: 0, e: "s" });
+      gun.push({ t: a + w * 0.3, v: [-0.01, 0.006, 0, 0.05, 0.05, -0.25], e: "io" }, { t: a + w * 0.55, v: [-0.01, 0.0, 0.02, 0.09, 0.05, -0.2], e: "s" }, { t: a + w * 0.8, v: [-0.01, 0.008, -0.01, 0.02, 0.04, -0.2], e: "s" });
+    } else if (id === "settle") {
+      if (left[left.length - 1].v.at !== "rest") left.push({ t: a + w * 0.5, v: { at: "rest" }, e: "io" });
+      gun.push({ t: a + w * 0.75, v: [0.002, -0.006, 0, -0.025, 0, 0.02], e: "io" });
+    }
+  }
+  gun.push({ t: 1, v: Z, e: "o" }); left.push({ t: 1, v: { at: "rest" } }); slide.push({ t: 1, v: 0 });
+  return { dur: 3, gun, left, slide };
+}
+TRACKS.shotgun.reload = longMag({ roll: 0.38, lift: 0.02, pitch: 0.1 }, false); // (escopetas con cargador de caja)
+TRACKS.shotgun.reloadEmpty = longMag({ roll: 0.38, lift: 0.02, pitch: 0.1 }, true);

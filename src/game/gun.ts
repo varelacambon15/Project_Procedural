@@ -28,10 +28,10 @@ const sequenceOrientAt: typeof sequenceOrientAtRaw = (c, ...r) => (realOff(c) ? 
 const sequencePathAt: typeof sequencePathAtRaw = (c, ...r) => (realOff(c) ? null : sequencePathAtRaw(c, ...r));
 import { solveHipFit, type HipSolution } from "./hipframe";
 import { sampleLeft, sampleMag, sampleNum, sampleVec, type Gun6, type HandShape, type LeftKey, type MagMode, type Track } from "./vmpose";
-import { trackFor, type VmAction } from "./vmtracks";
+import { shotgunShells, trackFor, type VmAction } from "./vmtracks";
+import { adsRate, adsTime, drawTime, reloadTime } from "./gunfeel";
 import { VM_BACK, HIP_H_MAX, HIP_H_TALL, HIP_W_MAX, HIP_W_MIN, VM_SCALE_MIN, VM_SCALE_FLOOR, aimScale, hipScale, projectPoint, projectedSize } from "./vmfit";
 
-const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3, smg: 1.8, rifle: 2.2, bullpup: 2.4, shotgun: 2.6, sniper: 2.9, launcher: 3.2, lmg: 4.4, flamethrower: 2.8 };
 /** Clases cuyo cargador se cambia y que tienen `reload_empty` con recorrido propio en poses.json. */
 const EMPTY_RELOAD: WeaponType[] = ["pistol", "revolver", "smg", "sniper", "lmg", "bullpup"];
 
@@ -131,6 +131,7 @@ export class Gun {
   /** Tarea 13: acción animada ahora por una pista de poses clave (vmtracks.ts), su progreso y la pista. */
   keyed: { action: VmAction; t: number; track: Track } | null = null;
   /** Estado del cargador en la pista del fotograma anterior (para soltar el viejo al pasar del brocal a «oculto»). */
+  /** Pista de la recarga cartucho a cartucho de esta vez (depende de cuántos cartuchos faltan). */ private shellTrack: Track | null = null;
   private keyMagPrev: MagMode = "seat"; private keyMagOut = 0; private keyMagHand = false; private keyEjected = false;
   private moving: Partial<Record<MovingPart, AssembledPart>> = {};
   private holsterT = 0; private pending: { item: Item | null; rebuild: boolean } | null = null;
@@ -412,7 +413,7 @@ export class Gun {
     this.item = item; this.reloadT = 0; this.burstLeft = 0; this.inspectT = 0;
     this.fx = item ? new EffectRunner<Dummy, THREE.Vector3>(item.spec) : null;
     if (item && this.fx) { const now = performance.now() / 1000; this.fx.equip([...this.lastDealt].some(([uid, t]) => uid !== item.uid && now - t < 4)); }
-    this.equipDur = item && this.fx?.equipFast() ? 0.22 : 0.3 + (1 - (item?.spec.stats.manejo ?? 60) / 100) * 0.35;
+    this.equipDur = item && this.fx?.equipFast() ? 0.22 : item ? drawTime(item.spec.type, item.spec.stats.manejo) : 0.4;
     this.equipT = this.equipDur;
     // Vaciar la mano del todo (no solo el modelo conocido): si dos cargas se cruzaban, quedaban dos armas apiladas
     for (const c of [...this.holder.children]) if (c !== this.flash && c !== this.flashLight && c !== this.anchor) this.holder.remove(c);
@@ -593,7 +594,8 @@ export class Gun {
 
   startReload() {
     const s = this.spec; if (!s || !this.item || this.reloadT > 0 || this.item.ammo >= s.stats.cargador || this.equipT > 0) return;
-    let time = (RELOAD[s.type] ?? 2) * (1.35 - s.stats.manejo / 200);
+    // (tarea 13: tiempos por clase en gunfeel.ts; la de vacío dura algo más: hay que soltar la corredera o el cerrojo)
+    let time = reloadTime(s.type, s.stats.manejo, this.item.ammo === 0);
     const missing = Math.max(1, s.stats.cargador - this.item.ammo);
     // Escopetas: con cargador (cuelga bajo el cajón), cambio de cargador; con tubo, cartucho a cartucho los que falten
     // (antes siempre 4) y solo se bombea si estaba vacía
@@ -674,7 +676,8 @@ export class Gun {
     this.pulls = this.pulls.filter((pl) => pl.t > 0);
     const busy = this.equipT > 0 || this.reloadT > 0 || c.sprinting || this.pending !== null || this.overheatT > 0;
     const canAim = !!s && !c.sprinting && this.reloadT <= 0;
-    const adsSpeed = (6 + (s?.stats.manejo ?? 50) / 9 + (this.fx?.equipFast() ? 6 : 0)) * (this.fx?.adsMult() ?? 1);
+    // (tarea 13: el tiempo de apuntar depende de la clase —0,15 s pistolas … 0,45 s ametralladoras— y del manejo)
+    const adsSpeed = adsRate(adsTime(s?.type ?? "rifle", s?.stats.manejo ?? 50)) * (this.fx?.equipFast() ? 1.5 : 1) * (this.fx?.adsMult() ?? 1);
     this.aimT += ((c.aim && canAim ? 1 : 0) - this.aimT) * Math.min(1, dt * adsSpeed);
     if (c.aim || c.fire) this.inspectT = 0;
 
@@ -1235,10 +1238,12 @@ export class Gun {
     if (this.reloadT > 0 || this.poseOverride?.reload != null) {
       // (recargas especiales con su propio estilo —escopetas de cartuchos, basculantes, portilla— siguen como estaban)
       const st = this.anim.reloadOverride?.style;
-      if ((st && st !== "mag") || s.type === "shotgun") return null;
+      if (st === "shells") { this.shellTrack ??= shotgunShells(this.anim.reloadOverride!.phases!); return { action: "reload", t: this.reloadProg, track: this.shellTrack }; }
+      if (st && st !== "mag") return null;
       const tr = (!this.tacReload ? trackFor(s.type, "reloadEmpty") : null) ?? trackFor(s.type, "reload");
       return tr ? { action: "reload", t: this.reloadProg, track: tr } : null;
     }
+    this.shellTrack = null;
     if (this.inspectIn !== null) { const tr = trackFor(s.type, "inspect"); return tr ? { action: "inspect", t: this.inspectIn, track: tr } : null; }
     if (this.drawIn > 0) { const tr = trackFor(s.type, "draw"); return tr ? { action: "draw", t: 1 - this.drawIn, track: tr } : null; }
     return null;
@@ -1256,7 +1261,7 @@ export class Gun {
     }
     if (ks.track.slide) {
       const v = sampleNum(ks.track.slide, ks.t), p = this.anim.p;
-      if (this.spec?.type === "pistol" && p.cycle.part) pose.parts[p.cycle.part] = p.cycle.travel * v;
+      if ((this.spec?.type === "pistol" || p.cycle.part === "pump") && p.cycle.part) pose.parts[p.cycle.part] = p.cycle.travel * v;
       else if (p.reload.rackPart) pose.parts[p.reload.rackPart] = Math.max(pose.parts[p.reload.rackPart], p.reload.rackTravel * v);
     }
   }
@@ -1304,7 +1309,7 @@ export class Gun {
     };
     const resolve = (L: LeftKey): HandPose => {
       let pos: THREE.Vector3;
-      if (L.at === "rest") pos = restP.pos.clone();
+      if (L.at === "rest") { pos = restP.pos.clone(); if (L.offW) pos.add(V(...L.offW).applyQuaternion(hq)); }
       else if (L.at === "cam") pos = new THREE.Vector3();
       else { const a = anchor(L.at)!; if (L.offW) a.add(V(...L.offW)); pos = toCam(a); }
       if (L.off) pos.add(V(...L.off));
@@ -1325,6 +1330,12 @@ export class Gun {
       const p = out.pos.clone().add(V(0, 0.02, -0.03).applyQuaternion(out.orient));
       const local = m.group.worldToLocal(this.camera.localToWorld(p));
       this.mag.object.position.copy(this.mag.base).add(local.sub(h.magwell)); this.mag.object.visible = true;
+    }
+    // Escopeta: el cartucho va en los dedos mientras la mano lo lleva a la ventana
+    if (this.inHand && this.anim.reloadOverride?.style === "shells" && ks.action === "reload") {
+      const show = sl.b.hand === "pinch" && sl.b.at === "grip" && sl.a.hand === "pinch" && sl.k < 0.98 && !!sl.b.off && sl.b.off[1] > -0.05;
+      this.inHand.shell.visible = show;
+      if (show) this.inHand.shell.position.copy(m.group.worldToLocal(this.camera.localToWorld(out.pos.clone().add(V(0, 0.012, -0.04).applyQuaternion(out.orient)))));
     }
     // Revólver: el cargador rápido va en la mano izquierda mientras viene y se mete
     if (this.inHand && this.spec?.type === "revolver" && ks.action === "reload") {
