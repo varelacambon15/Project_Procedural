@@ -21,7 +21,7 @@ export const ARM_DATA = {
   // no llegaba al guardamanos y el brazo quedaba recto, con el arma «sostenida» desde abajo)
   upper: 0.37, fore: 0.35,
   shoulderR: new THREE.Vector3(0.22, -0.38, 0.08),
-  shoulderL: new THREE.Vector3(-0.12, -0.38, 0.0),
+  shoulderL: new THREE.Vector3(-0.2, -0.4, 0.04),
   poleR: new THREE.Vector3(0.7, -1, 0.1),   // el codo derecho apunta hacia abajo y afuera
   poleL: new THREE.Vector3(-0.6, -1, 0.2),
   /** 0 = el antebrazo va hacia el hombro (muñeca doblada); 1 = sigue la mano (muñeca recta). */
@@ -292,7 +292,10 @@ class Arm {
     // `flare` abre el codo de la mano izquierda hacia fuera: el antebrazo baja en diagonal (referencias) en vez de caer
     // como un poste vertical cuando la mano queda baja en el encuadre.
     const fl = this.side < 0 ? (p.flare ?? 0) : 0;
-    const natural = this.side < 0 ? new THREE.Vector3(-0.45 - 0.37 * fl, -0.88 + 0.26 * fl, -0.12).normalize() : new THREE.Vector3(0.3, -0.72, 0.62).normalize();
+    // (tarea 13: los dos antebrazos entran en DIAGONAL por el borde inferior, como en las referencias: el izquierdo
+    //  desde abajo a la izquierda, sin quedar como un poste vertical; el derecho desde abajo a la derecha, más hacia
+    //  abajo que hacia atrás, porque hacia atrás pasaba junto a la cámara y se veía como una caja horizontal)
+    const natural = this.side < 0 ? new THREE.Vector3(-0.62 - 0.2 * fl, -0.66 + 0.1 * fl, 0.34).normalize() : new THREE.Vector3(0.3, -0.9, 0.3).normalize();
     // (con `straight`, el antebrazo continúa el eje de la mano, un poco hacia abajo: muñeca sin quebrar)
     const handAxis = new THREE.Vector3(0, 0, 1).applyQuaternion(this.hand.g.quaternion).multiply(new THREE.Vector3(0.25, 1, 1)).add(new THREE.Vector3(0, -1.8, 0)).normalize();
     const along = p.straight ? natural.clone().lerp(handAxis, p.straight).normalize() : natural;
@@ -300,7 +303,9 @@ class Arm {
     const elbow = wrist.clone().addScaledVector(dir, ARM_DATA.fore);
     // (pistolas: el brazo superior sigue hacia abajo, fuera de cuadro; desde el hombro fijo pasaba pegado a la cámara
     // y en perspectiva se veía como un tubo enorme hacia el lado)
-    const sh = p.straight ? elbow.clone().addScaledVector(dir.clone().add(new THREE.Vector3(0.1 * this.side, -0.6, 0)).normalize(), ARM_DATA.upper) : shoulder;
+    // (tarea 13: el brazo derecho siempre cuelga del codo hacia abajo y fuera de cuadro; desde el hombro fijo el brazo
+    //  superior pasaba junto a la cámara y se veía como un bloque enorme abajo a la derecha)
+    const sh = p.straight || this.side > 0 ? elbow.clone().addScaledVector(dir.clone().add(new THREE.Vector3(0.1 * this.side, -0.6, 0)).normalize(), ARM_DATA.upper) : shoulder;
     this.upper.set(sh, elbow); this.elbowM.position.copy(elbow);
     this.fore.set(elbow, wrist);
     // (grosor del antebrazo: el francotirador lo lleva más fino; el resto, el de siempre)

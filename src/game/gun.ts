@@ -26,6 +26,7 @@ const realOff = (c: string) => REAL_PATHS_OFF && c !== 'rifle';
 const hasSequence = (c: string, s: HandSequence) => !realOff(c) && hasSequenceRaw(c, s);
 const sequenceOrientAt: typeof sequenceOrientAtRaw = (c, ...r) => (realOff(c) ? null : sequenceOrientAtRaw(c, ...r));
 const sequencePathAt: typeof sequencePathAtRaw = (c, ...r) => (realOff(c) ? null : sequencePathAtRaw(c, ...r));
+import { solveHipFit, type HipSolution } from "./hipframe";
 import { VM_BACK, HIP_H_MAX, HIP_H_TALL, HIP_W_MAX, HIP_W_MIN, VM_SCALE_MIN, VM_SCALE_FLOOR, aimScale, hipScale, projectPoint, projectedSize } from "./vmfit";
 
 const RELOAD: Partial<Record<WeaponType, number>> = { pistol: 1.4, revolver: 2.3, smg: 1.8, rifle: 2.2, bullpup: 2.4, shotgun: 2.6, sniper: 2.9, launcher: 3.2, lmg: 4.4, flamethrower: 2.8 };
@@ -122,6 +123,9 @@ export class Gun {
   private vmPosePos = new THREE.Vector3(); private vmPoseQ = new THREE.Quaternion(); private vmPoseE = new THREE.Euler();
   /** Última silueta medida (fracción de pantalla; `raw` sin el encogido) y escala aplicada; para capturas y pruebas. */
   readonly vmFit = { w: 0, h: 0, rawW: 0, rawH: 0, scale: 1 };
+  /** Tarea 13: pose de cadera de esta arma resuelta por objetivos en pantalla (hipframe.ts) y el aspecto con que se
+   *  resolvió (se rehace al cambiar el tamaño de la ventana). Sin objetivos en la clase, la cadera de siempre. */
+  hipSol: HipSolution | null = null; private hipAspect = 0;
   private moving: Partial<Record<MovingPart, AssembledPart>> = {};
   private holsterT = 0; private pending: { item: Item | null; rebuild: boolean } | null = null;
   /** Para capturas: coloca el arma en su pose al instante, sin suavizado. */
@@ -466,7 +470,7 @@ export class Gun {
     }
     // Shaders del arma compilados en segundo plano mientras se saca (sin tirón al aparecer)
     if (this.prewarm) { await this.prewarm(m.group).catch(() => undefined); if (this.item !== item || seq !== this.equipSeq) return; }
-    this.model = m; this.fitCurl = null; this.fit = null; this.fitTune = 0; this.fitAimed = false; this.fitAtypical = false;
+    this.model = m; this.fitCurl = null; this.fit = null; this.fitTune = 0; this.fitAimed = false; this.fitAtypical = false; this.hipSol = null;
     this.buildDeviceFx(m);
     if (soundManifest) void loadSamples([...filesOfType(soundManifest, item.spec.type), ...(soundManifest.efectos.casquillo ?? [])]); this.fitWait = 12;
     // Rendimiento: dentro de cada pieza (que se anima entera) se fusionan sus mallas por material
@@ -702,9 +706,13 @@ export class Gun {
     this.reloadProg = this.poseOverride?.reload ?? reloadIn ?? 1;
     this.drawIn = this.poseOverride?.draw ?? (this.equipT > 0 ? this.equipT / this.equipDur : 0);
     this.inspectIn = this.poseOverride?.inspect !== undefined ? this.poseOverride.inspect : this.inspectT > 0 ? 1 - this.inspectT / 2.6 : null;
+    const frame = this.anim.p.frame;
+    if (this.model && frame && (!this.hipSol || Math.abs(this.hipAspect - this.camera.aspect) > 0.005)) {
+      this.hipSol = solveHipFit(this.model.height ?? 0, this.gripOffset, this.muzzleOffset, frame, frame, VM_FOV, this.camera.aspect, VM_BACK); this.hipAspect = this.camera.aspect;
+    }
     const pose = this.anim.update({
       dt, time: performance.now() / 1000, ads: this.aimT, moving: c.moving, sprinting: c.sprinting, grounded: c.grounded, vy: c.vy,
-      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, bulk: this.model?.height, sightY: this.sightY, sightX: this.sight === "irons" ? this.model?.sightX : undefined, opticX: this.sight !== "irons" ? this.model?.opticX : undefined, gripX: this.model?.handles.grip.x, gripY: this.model?.handles.grip.y, fit: this.fit ?? undefined, iron: this.sight === "iron",
+      lookX: c.lookX, lookY: c.lookY, length: this.model?.length ?? 0.3, bulk: this.model?.height, sightY: this.sightY, sightX: this.sight === "irons" ? this.model?.sightX : undefined, opticX: this.sight !== "irons" ? this.model?.opticX : undefined, gripX: this.model?.handles.grip.x, gripY: this.model?.handles.grip.y, fit: this.fit ?? undefined, hip: this.hipSol ?? undefined, iron: this.sight === "iron",
       reload: this.reloadT > 0 && s ? 1 - this.reloadT / this.reloadDur : null,
       draw: this.equipT > 0 ? this.equipT / this.equipDur : 0,
       holster: this.pending ? 1 - Math.max(0, this.holsterT) / Math.max(0.01, this.anim.p.holster) : 0,
@@ -840,12 +848,12 @@ export class Gun {
       }
       const raw = projectedSize(this.vmPts, VM_FOV, this.camera.aspect, true);
       rawW = raw.w; rawH = raw.h;
-      target = this.fitScale(raw);
+      target = this.hipSol ? 1 : this.fitScale(raw); // (el encuadre por objetivos ya decide el tamaño: sin encoger)
     }
     this.vmScale = this.snap ? target : this.vmScale + (target - this.vmScale) * Math.min(1, dt * 8);
     // Encargo 54: la clase puede pedir una silueta mayor en cadera (subfusiles, que salían pequeños); `aimScale` la
     // deshace al apuntar, así que ADS no cambia.
-    const s = aimScale(this.vmScale * (this.anim.p.hipScale ?? 1), this.aimT);
+    const s = aimScale(this.vmScale * (this.hipSol ? 1 : this.anim.p.hipScale ?? 1), this.aimT);
     // Encogido anclado en la empuñadura: escala `s` alrededor del pivote (la mano de la empuñadura no se mueve)
     this.anchor.scale.setScalar(s);
     this.anchor.position.copy(this.gripOffset).multiplyScalar(1 - s);
@@ -933,7 +941,7 @@ export class Gun {
    * Se calcula una vez por arma, en cadera, y se aplica con `AnimInput.fit` (se desvanece al apuntar: ADS no cambia).
    */
   private planAtypicalFit(pose: Pose) {
-    if (!this.model || !this.vmLocal.length) return;
+    if (!this.model || !this.vmLocal.length || this.hipSol) return; // (con encuadre por objetivos no hace falta)
     if (this.fitAimed) return;
     if (this.aimT > 0.02 || this.drawIn > 0.02 || this.reloadT > 0 || this.holsterT > 0 || this.sprintT >= 0.05 || this.inspectT > 0 || Math.abs(this.anim.kick) > 0.05) return;
     this.fitAimed = true;
@@ -1418,7 +1426,9 @@ export class Gun {
     const fc = this.fitCurl;
     const trig = 0.85 + 0.25 * this.trigT - 0.1 * sp;
     let right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? Math.max(0.85, fc[0] - 0.12) + 0.15 * this.trigT - 0.1 * sp : trig, Math.max(1.6, fc?.[1] ?? 1.02) - 0.1 * sp, Math.max(1.35, fc?.[2] ?? 1.06) - 0.1 * sp, Math.max(1.4, fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (this.spec?.type === "revolver" || this.spec?.type === "pistol" ? 1.05 : fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
-    if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right.straight = 1;
+    // (tarea 13: muñeca casi recta pero sin seguir del todo el eje de la mano: con 1 el antebrazo venía hacia la cámara y
+    //  se veía como un bloque enorme abajo a la derecha)
+    if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right.straight = 0.35;
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
     // Hombros: siguen la mitad de los movimientos rápidos del arma (retroceso, balanceo) respecto a su media lenta

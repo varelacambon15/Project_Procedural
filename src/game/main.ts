@@ -1392,13 +1392,17 @@ async function boot() {
   // ---------- Bucle ----------
   const clock = new THREE.Clock();
   let shownPickup: object | null = null;
-  const debug = { fire: false, aim: false }; // usado por las pruebas automáticas
+  // usado por las pruebas automáticas; `manual`: el bucle se detiene y solo avanza con `__game.step(dt)` (capturas
+  // fotograma a fotograma con un paso fijo, tools/capture/)
+  const debug = { fire: false, aim: false, manual: false, noDraw: false };
+  const loop = () => frame();
   let frameNo = 0;
   sessionCtx = () => ({ modo: hack.active ? "hack" : dmode.active ? "defensa" : raid.active ? "incursion" : waves.active ? "supervivencia" : "hall", arma: inv.current ? displayName(inv.current.spec) : "puños", nivel: inv.progress.level });
-  function frame() {
-    const dt = Math.min(clock.getDelta(), 0.05);
+  function frame(manualDt?: number) {
+    if (debug.manual && manualDt === undefined) { clock.getDelta(); requestAnimationFrame(loop); return; }
+    const dt = manualDt ?? Math.min(clock.getDelta(), 0.05);
     if (settings.sessionLog && inGame && !session.active) session.start(); else if (session.active && (!settings.sessionLog || !inGame)) session.stop();
-    if (session.noteOpen) { requestAnimationFrame(frame); return; } // escribiendo una nota: el juego espera
+    if (session.noteOpen) { if (manualDt === undefined) requestAnimationFrame(loop); return; } // escribiendo una nota: el juego espera
     session.tick(dt);
     const edges = input.padEdges();
     if (session.active && edges[8]) session.mark(); // botón Atrás del mando = marca
@@ -1600,8 +1604,8 @@ async function boot() {
     frameNo++; fpsTick();
     // Sombras: solo en el complejo (la luz que las proyecta no llega a la incursión) y cada 2 fotogramas
     renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = !raid.active && frameNo % 2 === 0;
-    if (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0) draw(dt);
-    requestAnimationFrame(frame);
+    if (!debug.noDraw && (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0)) draw(dt);
+    if (manualDt === undefined) requestAnimationFrame(loop);
   }
   player.applyCamera(camera, 0);
   await refreshLatest();
@@ -1628,7 +1632,7 @@ async function boot() {
   }, 1500);
   frame();
   (window as unknown as Record<string, unknown>).__game = { hallBot, deathFx, hallProps,
-    debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
+    debug, step: (dt = 1 / 60) => frame(dt), gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
     makeGadget, gadgets, loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, startDefense, defense, dmode, returnHub, mobs, openRaidMenu, arena, mutateArena,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };
