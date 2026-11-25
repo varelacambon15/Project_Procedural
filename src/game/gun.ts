@@ -1557,10 +1557,15 @@ export class Gun {
     }
     const fc = this.fitCurl;
     const trig = 0.85 + 0.25 * this.trigT - 0.1 * sp;
-    let right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? Math.max(0.85, fc[0] - 0.12) + 0.15 * this.trigT - 0.1 * sp : trig, Math.max(1.6, fc?.[1] ?? 1.02) - 0.1 * sp, Math.max(1.35, fc?.[2] ?? 1.06) - 0.1 * sp, Math.max(1.4, fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (this.spec?.type === "revolver" || this.spec?.type === "pistol" ? 1.05 : fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
+    // (armas cortas: el índice va cerrado sobre el gatillo y el pulgar pegado al armazón; recto, el índice se veía
+    //  larguísimo y el pulgar asomaba hacia arriba —«dedos deformes y demasiado largos»—)
+    const shortGun = this.spec?.type === "pistol" || this.spec?.type === "revolver";
+    let right = pose(rightAt, R, reach > 0.3 ? { fingers: [0.5, 0.55, 0.6, 0.65], thumb: 0.55 } : { fingers: [fc ? Math.max(shortGun ? 1.2 : 0.85, fc[0] - 0.12) + 0.15 * this.trigT - 0.1 * sp : trig, Math.max(1.6, fc?.[1] ?? 1.02) - 0.1 * sp, Math.max(1.35, fc?.[2] ?? 1.06) - 0.1 * sp, Math.max(1.4, fc?.[3] ?? 1.1) - 0.1 * sp], thumb: (shortGun ? 0.55 : fc ? Math.min(0.62, fc[4]) : 0.62) - 0.15 * sp });
     // (tarea 13: muñeca casi recta pero sin seguir del todo el eje de la mano: con 1 el antebrazo venía hacia la cámara y
     //  se veía como un bloque enorme abajo a la derecha)
     if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right.straight = 0.35;
+    // (el pulgar del modelo, aun cerrado, salía hacia fuera a 45°: con su giro pasa por delante y rodea la empuñadura)
+    if (reach <= 0.3) right.thumbTurn = 0.75;
     const L = GRIPS[kind], lc = L.curl;
     const loose: Curl = { fingers: lc.fingers.map((f) => f - 0.2 * sp) as Curl["fingers"], thumb: lc.thumb - 0.15 * sp };
     // Hombros: siguen la mitad de los movimientos rápidos del arma (retroceso, balanceo) respecto a su media lenta
@@ -1654,6 +1659,11 @@ export class Gun {
         const dz = 0.12 * near, z = leftPose.pos.z, k = (z + dz) / z;
         leftPose = { ...leftPose, pos: new THREE.Vector3(leftPose.pos.x * k, leftPose.pos.y * k, z + dz) };
       }
+    }
+    // (mano izquierda: el pulgar rodea lo que agarra en proporción a lo cerrada que está la mano; abierta, no se mete)
+    if (leftPose && leftPose.thumbTurn === undefined) {
+      const avg = leftPose.curl.fingers.reduce((a, f) => a + f, 0) / 4;
+      leftPose = { ...leftPose, thumbTurn: 0.7 * Math.min(1, Math.max(0, (avg - 0.4) / 0.6)) };
     }
     this.arms.update({ right, left: this.helmetLeft(leftPose), dt, shoulder });
   }

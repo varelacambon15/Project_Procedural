@@ -119,7 +119,7 @@
   },
   "classes": {
     "pistol": {
-      "frame": {"aim": [0.33, 0.12], "bulk": 0.17, "depthMax": 0.5, "grip": [0.66, 0.84], "muzzle": [0.6, 0.56], "depth": 0.36},
+      "frame": {"aim": [0.06, 0.16], "bulk": 0.17, "depthMax": 0.5, "grip": [0.68, 0.85], "muzzle": [0.6, 0.56], "depth": 0.36},
       "gripZ": 0.19, "adsGrip": 0.2, "rest": [0, 0, 0.1],
       "hip": [0.106, -0.0925, 0.2], "hipYaw": 0.209, "hipPitch": 0.069,
       "aimZ": 0.24,
@@ -202,7 +202,7 @@
       "gripAnchor": true
     },
     "revolver": {
-      "frame": {"aim": [0.33, 0.12], "bulk": 0.17, "depthMax": 0.5, "grip": [0.66, 0.84], "muzzle": [0.595, 0.555], "depth": 0.36},
+      "frame": {"aim": [0.05, 0.16], "bulk": 0.17, "depthMax": 0.5, "grip": [0.68, 0.85], "muzzle": [0.595, 0.555], "depth": 0.36},
       "gripZ": 0.19, "rest": [0, 0, 0.1],
       "hip": [0.106, -0.0925, 0.2], "hipYaw": 0.209, "hipPitch": 0.069,
       "aimZ": 0.24,
@@ -444,7 +444,7 @@
       "rest": [0, 0, 0]
     },
     "lmg": {
-      "frame": {"bulk": 0.24, "depthMax": 0.65, "grip": [0.81, 0.92], "muzzle": [0.56, 0.57], "depth": 0.38},
+      "frame": {"bulk": 0.24, "depthMax": 0.85, "grip": [0.78, 0.88], "muzzle": [0.56, 0.57], "depth": 0.6},
       "gripZ": 0.24,
       "hip": [0.110, -0.005, 0.08], "hipYaw": 0.1425, "hipPitch": 0.035,
       "adsHip": [0.14, -0.14],
