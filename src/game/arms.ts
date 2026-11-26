@@ -310,6 +310,9 @@ class Arm {
     //  superior pasaba junto a la cámara y se veía como un bloque enorme abajo a la derecha)
     const sh = p.straight || p.fore || this.side > 0 ? elbow.clone().addScaledVector(dir.clone().add(new THREE.Vector3(0.1 * this.side, -0.6, 0)).normalize(), ARM_DATA.upper) : shoulder;
     this.upper.set(sh, elbow); this.elbowM.position.copy(elbow);
+    // (tarea 13: con la dirección del antebrazo fijada —armas cortas, puños—, el brazo superior queda pegado a la cámara
+    //  y se veía su boca abierta como un aro; no hace falta verlo)
+    this.upper.g.visible = !p.fore; this.elbowM.visible = !p.fore;
     this.fore.set(elbow, wrist);
     // (grosor del antebrazo: el francotirador lo lleva más fino; el resto, el de siempre)
     const g = p.girth ?? 1; this.fore.g.scale.set(g, 1, g); this.elbowM.scale.setScalar(g); this.upper.g.scale.set(g, 1, g); // (también el brazo: si no, al afinar el antebrazo el codo quedaba como un escalón)

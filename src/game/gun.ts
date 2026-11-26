@@ -1163,8 +1163,8 @@ export class Gun {
       } else if (this.punchT > 0) pos = base.clone().add(new THREE.Vector3(0, 0.01 * ext, 0.05 * ext)); // la otra se recoge
       // Dedos en puño (falanges cerradas) y pulgar cruzado sobre ellos; nudillos arriba y al frente.
       // (nudillos hacia delante, algo arriba y hacia dentro; puño bien cerrado y muñeca casi recta)
-      const fingersDir = new THREE.Vector3(-side * 0.1, 0.5, -0.86).lerp(new THREE.Vector3(-side * 0.72, 0.4, -0.57), hitting ? ext : 0); // (al golpear, el puño gira hacia el centro y se ven los dedos cerrados: de punta, la muñequera lo tapaba)
-      return { pos, orient: handBasis(fingersDir, back), curl: { fingers: [1.75, 1.75, 1.75, 1.75], thumb: 0.6 }, thumbTurn: 1.5, girth: 0.84, handScale: 1.15, fore: new THREE.Vector3(side * 0.35, -0.9, 0.2).lerp(new THREE.Vector3(side * 0.32, -0.94, 0.12), hitting ? ext : 0) };
+      const fingersDir = new THREE.Vector3(-side * FIST_DIR[0], FIST_DIR[1], FIST_DIR[2]).lerp(new THREE.Vector3(-side * 0.72, 0.4, -0.57), hitting ? ext : 0); // (al golpear, el puño gira hacia el centro y se ven los dedos cerrados: de punta, la muñequera lo tapaba)
+      return { pos, orient: handBasis(fingersDir, back), curl: { fingers: [1.75, 1.75, 1.75, 1.75], thumb: 0.55 }, thumbTurn: 0.75, thumbSwing: 1.2, girth: 0.84, handScale: 1.15, fore: new THREE.Vector3(side * FIST_FORE[0], FIST_FORE[1], FIST_FORE[2]).lerp(new THREE.Vector3(side * 0.32, -0.94, 0.12), hitting ? ext : 0) };
     };
     // Gesto de equipamiento/granada sobre la mano libre (también sin arma equipada)
     const gk = this.gesture.kind, gc = this.gesture.curve(), fl = fist(-1), fr = fist(1);
@@ -1582,6 +1582,9 @@ export class Gun {
     // (tarea 13: muñeca casi recta pero sin seguir del todo el eje de la mano: con 1 el antebrazo venía hacia la cámara y
     //  se veía como un bloque enorme abajo a la derecha)
     if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right.straight = 0.35;
+    // (tarea 13: el antebrazo derecho baja en diagonal hacia la esquina inferior derecha, como en las referencias; si
+    //  venía hacia la cámara se veía la manga cortada como un bloque)
+    if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right = { ...right, fore: HG_FORE.clone(), girth: 0.8 };
     // (el pulgar del modelo, aun cerrado, salía hacia fuera a 45°: con su giro pasa por delante y rodea la empuñadura)
     if (reach <= 0.3) right.thumbTurn = 0.75;
     // (tarea 13, validado por el usuario en el revólver: el pulgar girado hacia dentro rodea la empuñadura sin asomar)
@@ -1688,6 +1691,9 @@ export class Gun {
     if (leftPose && !this.keyed && !leftPose.fore && tipo !== "pistol" && tipo !== "revolver") {
       leftPose = { ...leftPose, fore: kind === "vgrip" ? new THREE.Vector3(-0.42, -0.88, 0.2) : new THREE.Vector3(-0.55, -0.78, 0.3), girth: leftPose.girth ?? 0.86 };
     }
+    // (tarea 13: pistolas y revólveres a dos manos: el antebrazo izquierdo, en espejo del derecho, baja hacia la esquina
+    //  inferior izquierda, más fino; antes era un bloque de manga junto a la pistola)
+    if (leftPose && !this.keyed && (tipo === "pistol" || tipo === "revolver")) leftPose = { ...leftPose, fore: new THREE.Vector3(-HG_FORE.x, HG_FORE.y, HG_FORE.z), girth: 0.8 };
     // (mano izquierda: el pulgar rodea lo que agarra en proporción a lo cerrada que está la mano; abierta, no se mete)
     if (leftPose && leftPose.thumbTurn === undefined) {
       const avg = leftPose.curl.fingers.reduce((a, f) => a + f, 0) / 4;
@@ -1931,6 +1937,9 @@ export class Gun {
 }
 
 // ---------- Agarres de las manos (05-E / 08) ----------
+/** Puños en guardia: dirección de los nudillos y del antebrazo (lado derecho; el izquierdo, en espejo). */
+const HG_FORE = new THREE.Vector3(0.3, -0.88, 0.38);
+const FIST_DIR = [0.1, 0.35, -0.93] as const, FIST_FORE = [0.32, -0.72, 0.6] as const;
 type HandKind = "under" | "wrap" | "vgrip" | "grab";
 /** Cierres de la mano izquierda que usan las pistas de poses clave. */
 const SHAPES: Record<HandShape, Curl> = {

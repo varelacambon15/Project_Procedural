@@ -45,3 +45,17 @@ pantalla, que en armas largas tendía a «torcer» el arma), `bulk`/`depthMax` (
 - ✅ VALIDADO: pulgar derecho girado hacia dentro (`thumbSwing 1.2`, eje Y de la base del pulgar en `arms.ts`) en el
   revólver («muchísimo mejor»). Rechazado: el pulgar recto o cruzado hacia abajo («feísimo»). Extendido a todas las
   armas salvo la pistola (validada aparte); sin validar en las largas.
+
+## Ronda 4 (26/11) — referencias nuevas del usuario (14 capturas: CoD BO2/Ghosts/MW2019, Destiny, System Shock)
+Conclusión: en las referencias el arma es MUCHO más grande y centrada (de x≈0,45 a la esquina inferior derecha), la
+boca cerca del centro y la mano derecha en el borde inferior. Cambios (sin validar):
+- Fusil, subfusil, escopeta y francotirador: `grip [0.72,1.0]`, `depth 0.26`, `muzzle [0.53,0.53]`. El usuario:
+  «muchísimo mejor las posiciones de algunas armas».
+- Ametralladora y bullpup: al acercarlas eran una losa negra; se quedan como en la ronda 3.
+- Revólver: más cerca y grande (`depth 0.21`, `grip [0.6,0.93]`); pistola `depth 0.28`, `grip [0.6,0.9]`.
+- Pistola/revólver: el usuario rechazó los brazos («muy feos»: se veía la manga cortada, como un bloque). Ahora los
+  antebrazos bajan en diagonal hacia las esquinas (`HG_FORE` en `gun.ts`, dirección fija `fore` en `arms.ts`), más finos
+  (`girth 0.8`), y el brazo superior se oculta cuando la pose fija el antebrazo (pasaba pegado a la cámara).
+  Lección: si el antebrazo apunta hacia la cámara se ve su boca abierta; debe salir por el borde inferior.
+- Puños: muñeca menos levantada (antebrazo más hacia la cámara, `FIST_DIR`/`FIST_FORE`) y el pulgar del revólver
+  (`thumbSwing 1.2`). Pendiente de validar.
