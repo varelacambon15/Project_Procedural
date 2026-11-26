@@ -28,7 +28,7 @@ export interface Placed { profile: Profile; scale?: V3; offset?: V3; stretch?: S
 /** Caja simple (accesorios añadidos: raíl, tambor, linterna, mira…). */
 export interface Box2 { x0: number; x1: number; y0: number; y1: number }
 
-const W = 160, H = 56, TOL = 2;
+const W = 160, H = 56; // (tolerancia de ±2 celdas: fija en `dilInto`)
 /** Silueta en una rejilla común: lista de columnas [x, yLow, yHigh]. */
 export function spans(parts: Placed[], boxes: Box2[] = []): [number, number, number][] {
   const out: [number, number, number][] = [];
@@ -48,35 +48,52 @@ export function spans(parts: Placed[], boxes: Box2[] = []): [number, number, num
 }
 
 /** Parecido de dos siluetas en una rejilla que cubre ambas (coincidencia con tolerancia). 1 = idénticas. */
+// (tarea 8: mismo cálculo que antes, celda a celda, pero con búferes reutilizados y sin listas por columna: era la
+//  mitad del tiempo de generar un arma —~22 ms— y lo que hacía lentísimos los tests del generador)
+const RA = new Uint8Array(W * H), RB = new Uint8Array(W * H), DA = new Uint8Array(W * H), DB = new Uint8Array(W * H), DH = new Uint8Array(W * H);
+const HAS = new Uint8Array(W);
+function rasterInto(g: Uint8Array, sp: [number, number, number][], xmin: number, xmax: number, ymin: number, ymax: number) {
+  g.fill(0); HAS.fill(0);
+  const dx = xmax - xmin || 1, dy = ymax - ymin || 1;
+  for (let i = 0; i < sp.length; i++) {
+    const s = sp[i];
+    const c = Math.min(W - 1, Math.max(0, Math.floor(((s[0] - xmin) / dx) * W)));
+    HAS[c] = 1;
+    const r0 = Math.max(0, Math.floor(((s[1] - ymin) / dy) * H)), r1 = Math.min(H - 1, Math.floor(((s[2] - ymin) / dy) * H));
+    for (let r = r0; r <= r1; r++) g[r * W + c] = 1;
+  }
+  // Rellena huecos entre columnas con datos (las piezas son continuas a lo largo de X)
+  for (let c = 1; c < W - 1; c++) if (!HAS[c]) for (let r = 0; r < H; r++) if (g[r * W + c - 1] && g[r * W + c + 1]) g[r * W + c] = 1;
+}
+// Dilatación cuadrada (±TOL = 2) en dos pasadas separables: cada celda es el OR de sus vecinas en la fila y luego en
+// la columna (lo mismo que recorrer la ventana, sin bucles internos)
+function dilInto(o: Uint8Array, g: Uint8Array) {
+  const h = DH;
+  for (let r = 0; r < H; r++) {
+    const row = r * W;
+    for (let c = 0; c < W; c++) {
+      const i = row + c;
+      h[i] = g[i] | (c > 0 ? g[i - 1] : 0) | (c > 1 ? g[i - 2] : 0) | (c < W - 1 ? g[i + 1] : 0) | (c < W - 2 ? g[i + 2] : 0);
+    }
+  }
+  for (let r = 0; r < H; r++) {
+    const i0 = r * W;
+    for (let c = 0; c < W; c++) {
+      const i = i0 + c;
+      o[i] = h[i] | (r > 0 ? h[i - W] : 0) | (r > 1 ? h[i - 2 * W] : 0) | (r < H - 1 ? h[i + W] : 0) | (r < H - 2 ? h[i + 2 * W] : 0);
+    }
+  }
+}
 export function similarity(a: [number, number, number][], b: [number, number, number][]): number {
   if (!a.length || !b.length) return 0;
   let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
   for (const sp of [a, b]) for (const s of sp) { if (s[0] < xmin) xmin = s[0]; if (s[0] > xmax) xmax = s[0]; if (s[1] < ymin) ymin = s[1]; if (s[2] > ymax) ymax = s[2]; }
-  const raster = (sp: [number, number, number][]) => {
-    const g = new Uint8Array(W * H);
-    const cols: [number, number][][] = Array.from({ length: W }, () => []);
-    for (const [x, y0, y1] of sp) { const c = Math.min(W - 1, Math.max(0, Math.floor(((x - xmin) / (xmax - xmin || 1)) * W))); cols[c].push([y0, y1]); }
-    // Rellena huecos entre columnas con datos (las piezas son continuas a lo largo de X)
-    for (let c = 0; c < W; c++) for (const [y0, y1] of cols[c]) {
-      const r0 = Math.max(0, Math.floor(((y0 - ymin) / (ymax - ymin || 1)) * H)), r1 = Math.min(H - 1, Math.floor(((y1 - ymin) / (ymax - ymin || 1)) * H));
-      for (let r = r0; r <= r1; r++) g[r * W + c] = 1;
-    }
-    for (let c = 1; c < W - 1; c++) if (!cols[c].length) for (let r = 0; r < H; r++) if (g[r * W + c - 1] && g[r * W + c + 1]) g[r * W + c] = 1;
-    return g;
-  };
-  const A = raster(a), B = raster(b);
+  rasterInto(RA, a, xmin, xmax, ymin, ymax); rasterInto(RB, b, xmin, xmax, ymin, ymax);
   // Coincidencia con tolerancia (±TOL celdas): cuenta qué parte de cada silueta cae cerca de la otra. Es más fiel a lo
   // que ve el ojo que la intersección exacta, que castiga mucho los desplazamientos pequeños en piezas finas.
-  // Dilatación cuadrada (±TOL) en dos pasadas separables: mismo resultado, mucho más rápida
-  const dil = (g: Uint8Array) => {
-    const h = new Uint8Array(W * H), o = new Uint8Array(W * H);
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (g[r * W + c]) for (let cc = Math.max(0, c - TOL); cc <= Math.min(W - 1, c + TOL); cc++) h[r * W + cc] = 1;
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (h[r * W + c]) for (let rr = Math.max(0, r - TOL); rr <= Math.min(H - 1, r + TOL); rr++) o[rr * W + c] = 1;
-    return o;
-  };
-  const Ad = dil(A), Bd = dil(B);
+  dilInto(DA, RA); dilInto(DB, RB);
   let na = 0, nb = 0, ab = 0, ba = 0;
-  for (let i = 0; i < A.length; i++) { if (A[i]) { na++; if (Bd[i]) ab++; } if (B[i]) { nb++; if (Ad[i]) ba++; } }
+  for (let i = 0; i < RA.length; i++) { if (RA[i]) { na++; if (DB[i]) ab++; } if (RB[i]) { nb++; if (DA[i]) ba++; } }
   return na + nb ? (ab + ba) / (na + nb) : 0;
 }
 

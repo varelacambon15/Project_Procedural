@@ -352,12 +352,15 @@ export function designPolys(d: PistolDesign): PartPoly[] {
 
 /** Corte vertical de un polígono en x: [abajo, arriba] o null. */
 function cutAt(poly: Pt[], x: number): [number, number] | null {
+  // (tarea 8: sin arrays temporales por arista —mismas operaciones en el mismo orden, mismo resultado—; era de lo más
+  //  caro al generar armas)
   let lo = Infinity, hi = -Infinity;
-  for (let i = 0; i < poly.length; i++) {
-    const [x1, y1] = poly[i], [x2, y2] = poly[(i + 1) % poly.length];
-    if ((x < Math.min(x1, x2)) || (x > Math.max(x1, x2))) continue;
-    const y = x1 === x2 ? null : y1 + ((x - x1) / (x2 - x1)) * (y2 - y1);
-    for (const v of y === null ? [y1, y2] : [y]) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  const n = poly.length;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i], b = poly[i + 1 === n ? 0 : i + 1], x1 = a[0], y1 = a[1], x2 = b[0], y2 = b[1];
+    if (x < Math.min(x1, x2) || x > Math.max(x1, x2)) continue;
+    if (x1 === x2) { lo = Math.min(lo, y1); hi = Math.max(hi, y1); lo = Math.min(lo, y2); hi = Math.max(hi, y2); }
+    else { const v = y1 + ((x - x1) / (x2 - x1)) * (y2 - y1); lo = Math.min(lo, v); hi = Math.max(hi, v); }
   }
   return lo <= hi ? [lo, hi] : null;
 }
