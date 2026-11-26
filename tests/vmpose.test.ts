@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { checkTrack, easeBy, maxAngularSpeed, sampleLeft, sampleMag, sampleNum, sampleVec, type Gun6 } from "../src/game/vmpose";
-import { TRACKS, shotgunShells } from "../src/game/vmtracks";
+import { TRACKS, breakAction, shotgunShells } from "../src/game/vmtracks";
 import { GUNFEEL, adsRate, adsTime, drawTime, reloadTime } from "../src/game/gunfeel";
 
 const Z6: Gun6 = [0, 0, 0, 0, 0, 0];
@@ -49,6 +49,18 @@ describe("poses clave (tarea 13)", () => {
       expect(checkTrack(tr)).toEqual([]);
       expect(tr.left!.filter((k) => k.v.hand === "palm").length).toBe(n);
       expect(tr.slide!.some((k) => k.v === 1)).toBe(true); // (bombea al final)
+    }
+  });
+});
+
+describe("escopeta basculante (tarea 13)", () => {
+  it("pista válida, un empujón por cartucho y sin giros violentos", () => {
+    for (const n of [1, 2]) {
+      const ph: [string, number][] = [["tilt", 0.5], ["open", 0.55], ["eject", 0.45], ...Array.from({ length: n }, () => ["load", 1] as [string, number]), ["close", 0.5], ["settle", 0.45]];
+      const tot = ph.reduce((a, x) => a + x[1], 0), tr = breakAction(ph.map(([id, w]) => [id, w / tot] as [string, number]));
+      expect(checkTrack(tr)).toEqual([]);
+      expect(tr.left!.filter((k) => k.v.hand === "palm").length).toBe(n);
+      expect(maxAngularSpeed(tr, 0.95 + 0.4 * n)).toBeLessThan(14);
     }
   });
 });

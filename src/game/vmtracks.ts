@@ -264,3 +264,36 @@ export function shotgunShells(phases: [string, number][]): Track {
 }
 TRACKS.shotgun.reload = longMag({ roll: 0.38, lift: 0.02, pitch: 0.1 }, false); // (escopetas con cargador de caja)
 TRACKS.shotgun.reloadEmpty = longMag({ roll: 0.38, lift: 0.02, pitch: 0.1 }, true);
+
+// ---------------------------------------------------------------- Escopeta basculante (dos cañones)
+/** Recarga de la basculante con las MISMAS fases que su sonido y su bisagra (`tilt`, `open`, `eject`, n × `load`,
+ *  `close`, `settle`): el arma sube un poco y gira la recámara hacia la cámara; la izquierda baja los cañones, se
+ *  aparta mientras saltan las vainas, mete cada cartucho en la recámara (abajo-izquierda → recámara) y cierra los
+ *  cañones con un golpe hacia arriba. La derecha no suelta la empuñadura. */
+export function breakAction(phases: [string, number][]): Track {
+  const OPEN: Gun6 = [-0.02, 0.025, 0, 0.16, 0.16, -0.32];
+  const gun: Key<Gun6>[] = [{ t: 0, v: Z }];
+  const left: Key<LeftKey>[] = [{ t: 0, v: { at: "rest" } }];
+  const BREECH: LeftKey = { at: "grip", offW: [0.09, 0.03, 0], off: [-0.01, -0.02, 0], dir: [0.55, 0.8, -0.25], up: [-0.8, 0.0, 0.6], hand: "pinch" };
+  const PICK: LeftKey = { ...BREECH, off: [-0.08, -0.12, 0.02] };
+  let acc = 0;
+  for (const [id, w] of phases) {
+    const a = acc, b = acc + w; acc = b;
+    if (id === "tilt") gun.push({ t: a + w * 0.3, v: [0.004, -0.008, 0, -0.03, 0, 0.03], e: "o" }, { t: b, v: OPEN, e: "io" });
+    else if (id === "open") {
+      left.push({ t: a + w * 0.5, v: { at: "rest", offW: [0, 0.02, 0] }, e: "io" }, { t: b, v: { at: "rest", offW: [0, -0.05, 0] }, e: "s" });
+      gun.push({ t: b, v: [OPEN[0], OPEN[1] + 0.01, OPEN[2], OPEN[3] + 0.06, OPEN[4], OPEN[5]], e: "s" });
+    } else if (id === "eject") {
+      // sacudida hacia arriba: saltan las vainas
+      gun.push({ t: a + w * 0.3, v: [OPEN[0], OPEN[1] + 0.03, OPEN[2], OPEN[3] + 0.2, OPEN[4], OPEN[5]], e: "s" }, { t: b, v: OPEN, e: "io" });
+      left.push({ t: b, v: PICK, e: "io" });
+    } else if (id === "load") {
+      left.push({ t: a + w * 0.55, v: BREECH, e: "io" }, { t: a + w * 0.7, v: { ...BREECH, hand: "palm", off: [-0.004, -0.012, 0] }, e: "s" }, { t: b, v: PICK, e: "io" });
+    } else if (id === "close") {
+      left.push({ t: a + w * 0.4, v: { at: "rest", offW: [0, -0.05, 0] }, e: "io" }, { t: a + w * 0.6, v: { at: "rest" }, e: "s" });
+      gun.push({ t: a + w * 0.6, v: [OPEN[0], OPEN[1] + 0.02, OPEN[2], OPEN[3] + 0.12, OPEN[4], OPEN[5]], e: "s" });
+    } else if (id === "settle") gun.push({ t: a + w * 0.6, v: [0.002, -0.006, 0, -0.025, 0, 0.02], e: "io" });
+  }
+  gun.push({ t: 1, v: Z, e: "o" }); left.push({ t: 1, v: { at: "rest" } });
+  return { dur: 2.2, gun, left };
+}

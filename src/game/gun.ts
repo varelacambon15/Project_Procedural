@@ -28,7 +28,7 @@ const sequenceOrientAt: typeof sequenceOrientAtRaw = (c, ...r) => (realOff(c) ? 
 const sequencePathAt: typeof sequencePathAtRaw = (c, ...r) => (realOff(c) ? null : sequencePathAtRaw(c, ...r));
 import { solveHipFit, type HipSolution } from "./hipframe";
 import { sampleLeft, sampleMag, sampleNum, sampleVec, type Gun6, type HandShape, type LeftKey, type MagMode, type Track } from "./vmpose";
-import { shotgunShells, trackFor, type VmAction } from "./vmtracks";
+import { breakAction, shotgunShells, trackFor, type VmAction } from "./vmtracks";
 import { adsRate, adsTime, drawTime, reloadTime } from "./gunfeel";
 import { VM_BACK, HIP_H_MAX, HIP_H_TALL, HIP_W_MAX, HIP_W_MIN, VM_SCALE_MIN, VM_SCALE_FLOOR, aimScale, hipScale, projectPoint, projectedSize } from "./vmfit";
 
@@ -1254,6 +1254,7 @@ export class Gun {
       // (recargas especiales con su propio estilo —escopetas de cartuchos, basculantes, portilla— siguen como estaban)
       const st = this.anim.reloadOverride?.style;
       if (st === "shells") { this.shellTrack ??= shotgunShells(this.anim.reloadOverride!.phases!); return { action: "reload", t: this.reloadProg, track: this.shellTrack }; }
+      if (st === "break") { this.shellTrack ??= breakAction(this.anim.reloadOverride!.phases!); return { action: "reload", t: this.reloadProg, track: this.shellTrack }; }
       if (st && st !== "mag") return null;
       const tr = (!this.tacReload ? trackFor(s.type, "reloadEmpty") : null) ?? trackFor(s.type, "reload");
       return tr ? { action: "reload", t: this.reloadProg, track: tr } : null;

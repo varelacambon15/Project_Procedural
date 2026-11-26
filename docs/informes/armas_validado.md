@@ -59,3 +59,11 @@ boca cerca del centro y la mano derecha en el borde inferior. Cambios (sin valid
   Lección: si el antebrazo apunta hacia la cámara se ve su boca abierta; debe salir por el borde inferior.
 - Puños: muñeca menos levantada (antebrazo más hacia la cámara, `FIST_DIR`/`FIST_FORE`) y el pulgar del revólver
   (`thumbSwing 1.2`). Pendiente de validar.
+
+## Ronda 5 (26/11, sin validar)
+- Recargas revisadas con el encuadre nuevo (`tools/capture/vmcap.mjs --actions reload,reloadEmpty --crop 0,0,1,1`):
+  pistola y fusil bien; revólver: ya no se tumba tanto (como en Destiny) y el antebrazo acompaña a medias el giro
+  (`handgunFore` en `gun.ts`), antes la manga tapaba media pantalla.
+- Escopeta basculante (`shotgun:304`, Old Dog): pista de poses clave nueva (`breakAction` en `vmtracks.ts`) con las
+  mismas fases que su bisagra y sonido; antes usaba la animación antigua (brazo cruzando la pantalla). Pendiente: al
+  abrir, la mano izquierda queda encima de los cañones (el ancla `rest` no gira con ellos).
