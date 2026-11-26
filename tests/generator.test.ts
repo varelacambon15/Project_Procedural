@@ -6,7 +6,16 @@ import { similarity } from "../src/weapons/variation";
 
 const manifest: Manifest = JSON.parse(readFileSync(new URL("../assets/weapons/manifest.json", import.meta.url), "utf8"));
 const gen = new WeaponGenerator(manifest);
-const many = (n: number, type?: Parameters<typeof gen.generate>[1]) => Array.from({ length: n }, (_, s) => gen.generate(s, type));
+// (tarea 8: las armas son deterministas por semilla y ningún test las modifica: se generan una vez por tipo y se
+//  reutilizan; `many(n)` devuelve exactamente las mismas armas que antes —semillas 0..n-1—, pero el fichero ya no
+//  genera ~60 000 armas, sino las ~10 000 del mayor lote)
+const pool = new Map<string, WeaponSpec[]>();
+const many = (n: number, type?: Parameters<typeof gen.generate>[1]) => {
+  const k = type ?? "*", l = pool.get(k) ?? [];
+  for (let s = l.length; s < n; s++) l.push(gen.generate(s, type));
+  pool.set(k, l);
+  return l.slice(0, n);
+};
 const avg = (ws: WeaponSpec[], k: keyof WeaponSpec["stats"]) => ws.reduce((a, w) => a + w.stats[k], 0) / ws.length;
 
 describe("WeaponGenerator", () => {
