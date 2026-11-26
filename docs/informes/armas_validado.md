@@ -46,7 +46,7 @@ pantalla, que en armas largas tendía a «torcer» el arma), `bulk`/`depthMax` (
   revólver («muchísimo mejor»). Rechazado: el pulgar recto o cruzado hacia abajo («feísimo»). Extendido a todas las
   armas salvo la pistola (validada aparte); sin validar en las largas.
 
-## Ronda 4 (26/11) — referencias nuevas del usuario (14 capturas: CoD BO2/Ghosts/MW2019, Destiny, System Shock)
+## Ronda 4 (26/11) — ✅ VALIDADA («me parece perfecto»): referencias nuevas del usuario (14 capturas: CoD BO2/Ghosts/MW2019, Destiny, System Shock)
 Conclusión: en las referencias el arma es MUCHO más grande y centrada (de x≈0,45 a la esquina inferior derecha), la
 boca cerca del centro y la mano derecha en el borde inferior. Cambios (sin validar):
 - Fusil, subfusil, escopeta y francotirador: `grip [0.72,1.0]`, `depth 0.26`, `muzzle [0.53,0.53]`. El usuario:
