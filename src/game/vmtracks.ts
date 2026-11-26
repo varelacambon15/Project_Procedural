@@ -281,7 +281,7 @@ export function breakAction(phases: [string, number][]): Track {
     const a = acc, b = acc + w; acc = b;
     if (id === "tilt") gun.push({ t: a + w * 0.3, v: [0.004, -0.008, 0, -0.03, 0, 0.03], e: "o" }, { t: b, v: OPEN, e: "io" });
     else if (id === "open") {
-      left.push({ t: a + w * 0.5, v: { at: "rest", offW: [0, 0.02, 0] }, e: "io" }, { t: b, v: { at: "rest", offW: [0, -0.05, 0] }, e: "s" });
+      left.push({ t: a + w * 0.5, v: { at: "support", offW: [0, -0.02, 0], off: [-0.03, 0, 0], dir: [0.5, 0.75, -0.43], up: [-0.82, 0.05, 0.55], hand: "grab" }, e: "io" }, { t: b, v: { at: "support", offW: [0, -0.035, 0], off: [-0.03, 0, 0], dir: [0.5, 0.75, -0.43], up: [-0.82, 0.05, 0.55], hand: "grab" }, e: "s" });
       gun.push({ t: b, v: [OPEN[0], OPEN[1] + 0.01, OPEN[2], OPEN[3] + 0.06, OPEN[4], OPEN[5]], e: "s" });
     } else if (id === "eject") {
       // sacudida hacia arriba: saltan las vainas
@@ -290,7 +290,7 @@ export function breakAction(phases: [string, number][]): Track {
     } else if (id === "load") {
       left.push({ t: a + w * 0.55, v: BREECH, e: "io" }, { t: a + w * 0.7, v: { ...BREECH, hand: "palm", off: [-0.004, -0.012, 0] }, e: "s" }, { t: b, v: PICK, e: "io" });
     } else if (id === "close") {
-      left.push({ t: a + w * 0.4, v: { at: "rest", offW: [0, -0.05, 0] }, e: "io" }, { t: a + w * 0.6, v: { at: "rest" }, e: "s" });
+      left.push({ t: a + w * 0.4, v: { at: "support", offW: [0, -0.035, 0], off: [-0.03, 0, 0], dir: [0.5, 0.75, -0.43], up: [-0.82, 0.05, 0.55], hand: "grab" }, e: "io" }, { t: a + w * 0.6, v: { at: "rest" }, e: "s" });
       gun.push({ t: a + w * 0.6, v: [OPEN[0], OPEN[1] + 0.02, OPEN[2], OPEN[3] + 0.12, OPEN[4], OPEN[5]], e: "s" });
     } else if (id === "settle") gun.push({ t: a + w * 0.6, v: [0.002, -0.006, 0, -0.025, 0, 0.02], e: "io" });
   }

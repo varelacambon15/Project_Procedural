@@ -132,6 +132,7 @@ export class Gun {
   keyed: { action: VmAction; t: number; track: Track } | null = null;
   /** Estado del cargador en la pista del fotograma anterior (para soltar el viejo al pasar del brocal a «oculto»). */
   /** Pista de la recarga cartucho a cartucho de esta vez (depende de cuántos cartuchos faltan). */ private shellTrack: Track | null = null;
+  /** Giro actual de los cañones de la basculante (rad): la mano de apoyo los acompaña. */ private breakAng = 0;
   private keyMagPrev: MagMode = "seat"; private keyMagOut = 0; private keyMagHand = false; private keyEjected = false;
   private moving: Partial<Record<MovingPart, AssembledPart>> = {};
   private holsterT = 0; private pending: { item: Item | null; rebuild: boolean } | null = null;
@@ -759,7 +760,7 @@ export class Gun {
     if (this.breakParts.length) {
       const ph = pose.phase, st = this.anim.reloadOverride?.style;
       const ang = st === "break" && ph ? (ph.id === "open" ? ease(ph.t) : ph.id === "eject" || ph.id === "load" ? 1 : ph.id === "close" ? 1 - ease(Math.min(1, ph.t * 1.6)) : 0) : 0;
-      const a = -0.55 * ang, c = Math.cos(a), sn = Math.sin(a);
+      const a = -0.55 * ang, c = Math.cos(a), sn = Math.sin(a); this.breakAng = a;
       for (const { p, rz } of this.breakParts) {
         const d = p.base.clone().sub(this.hinge);
         p.object.position.set(this.hinge.x + d.x * c - d.y * sn, this.hinge.y + d.x * sn + d.y * c, p.base.z);
@@ -1316,7 +1317,12 @@ export class Gun {
       switch (a) {
         case "magwell": return h.magwell.clone();
         case "mag": case "cyl": return h.magwell.clone().add(magOff);
-        case "support": return sup.clone();
+        case "support": {
+          // (basculante: el guardamanos gira con los cañones sobre la bisagra, y la mano con él)
+          if (!this.breakParts.length || !this.breakAng) return sup.clone();
+          const d = sup.clone().sub(this.hinge), c = Math.cos(this.breakAng), sn = Math.sin(this.breakAng);
+          return new THREE.Vector3(this.hinge.x + d.x * c - d.y * sn, this.hinge.y + d.x * sn + d.y * c, sup.z);
+        }
         case "charge": case "slide": return h.charge.clone();
         case "grip": return h.grip.clone();
         case "muzzle": return m.muzzle.clone();
