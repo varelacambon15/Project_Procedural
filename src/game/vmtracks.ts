@@ -235,7 +235,7 @@ export function shotgunShells(phases: [string, number][]): Track {
   const gun: Key<Gun6>[] = [{ t: 0, v: Z }];
   const left: Key<LeftKey>[] = [{ t: 0, v: { at: "rest" } }];
   const slide: Key<number>[] = [{ t: 0, v: 0 }];
-  const TILT: Gun6 = [-0.025, 0.012, 0, 0.1, 0.1, -0.55];
+  const TILT: Gun6 = [-0.05, 0.04, 0, 0.12, 0.14, -0.95]; // (rolada de verdad: la ventana de carga, debajo, mira a la cámara)
   const PICK: LeftKey = { ...PORT, off: [-0.05, -0.1, 0.01], dir: [0.6, 0.75, -0.25], up: [-0.8, 0.0, 0.6], hand: "pinch" };
   const IN: LeftKey = { ...PORT, off: [-0.012, -0.022, 0], dir: [0.6, 0.75, -0.25], up: [-0.8, 0.0, 0.6], hand: "pinch" };
   const PUSH: LeftKey = { at: "grip", offW: [0.07, 0.05, 0], off: [-0.006, -0.012, 0], dir: [0.7, 0.65, -0.2], up: [-0.8, 0.0, 0.6], hand: "palm" };

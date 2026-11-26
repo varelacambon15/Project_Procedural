@@ -1703,7 +1703,7 @@ export class Gun {
     // (tarea 13: armas largas en reposo/apuntando: el antebrazo de apoyo baja casi en vertical hacia el borde inferior
     //  izquierdo y algo más fino; si subía hacia la cámara, en línea con la vista, tapaba la propia mano y se veía como
     //  un tubo enorme)
-    if (leftPose && !this.keyed && !leftPose.fore && tipo !== "pistol" && tipo !== "revolver") {
+    if (leftPose && !leftPose.fore && tipo !== "pistol" && tipo !== "revolver") {
       leftPose = { ...leftPose, fore: kind === "vgrip" ? new THREE.Vector3(-0.42, -0.88, 0.2) : new THREE.Vector3(-0.55, -0.78, 0.3), girth: leftPose.girth ?? 0.86 };
     }
     // (tarea 13: pistolas y revólveres a dos manos: el antebrazo izquierdo, en espejo del derecho, baja hacia la esquina
