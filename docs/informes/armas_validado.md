@@ -76,3 +76,7 @@ boca cerca del centro y la mano derecha en el borde inferior. Cambios (sin valid
 - ADS de pistola y revólver (sin validar): al apuntar las mangas eran bloques (manos a 20 cm del ojo y antebrazos
   hacia la cámara). Ahora `adsGrip 0.3` (el arma algo más lejos) y los antebrazos en «V» desde las esquinas inferiores
   (`handgunFore` mezcla con `aimT`). ADS del fusil y transición cadera→mira comprobados: bien.
+- ADS de pistola y revólver (sin validar): el usuario quería las miras «más grandes». Acercar el arma agrandaba más
+  los brazos, así que al apuntar el arma se agranda sobre su línea de mira (`adsBig` en `anim.json`: pistola 1,6,
+  revólver 1,8; pivote = punto de mira, la mira no se mueve) y las manos con ella (`handScale`). Correa y esfera del
+  reloj ocultas (en escorzo eran un aro y un bloque flotando).

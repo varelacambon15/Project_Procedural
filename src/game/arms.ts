@@ -141,8 +141,8 @@ class Hand {
       if (withWatch) {
         // Reloj en la muñeca izquierda, encima de la muñequera (esfera ámbar: nada de verde en los brazos)
         // (correa como aro fino y no un cilindro con tapas: de frente era el disco negro que tapaba la muñeca)
-        const band = new THREE.Mesh(new THREE.TorusGeometry(0.039, 0.006, 4, 16), strap); band.position.z = 0.075; this.g.add(band); // (ceñida a la muñeca: más ancha sobresalía como un aro)
-        const face = new THREE.Mesh(new RoundedBoxGeometry(0.034, 0.01, 0.034, 1, 0.003), watchFace); face.position.set(0, 0.045, 0.075); this.g.add(face);
+        const band = new THREE.Mesh(new THREE.TorusGeometry(0.039, 0.006, 4, 16), strap); band.position.z = 0.075; band.visible = false; this.g.add(band); // (tarea 13: oculta; en escorzo se veía como un aro suelto alrededor de la muñeca; queda la esfera sobre la muñequera)
+        const face = new THREE.Mesh(new RoundedBoxGeometry(0.034, 0.01, 0.034, 1, 0.003), watchFace); face.position.set(0, 0.045, 0.075); face.visible = false; // (sin la correa, la esfera quedaba flotando) this.g.add(face);
       }
     } else {
       this.tk = [0.6, 1.0];

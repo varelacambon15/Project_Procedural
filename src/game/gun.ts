@@ -87,6 +87,8 @@ export class Gun {
   private gripOffset = new THREE.Vector3();
   /** Boca en coordenadas del holder (para que el fogonazo siga al encogido anclado en la empuñadura). */
   private muzzleOffset = new THREE.Vector3();
+  /** Punto de mira (alza u óptica) en coordenadas del holder: pivote del agrandado al apuntar. */
+  private sightOffset = new THREE.Vector3();
   private model: AssembledWeapon | null = null;
   /** Encuadre en cadera de esta arma (referencias: abajo a la derecha, 24–40 % del ancho, mira bajo la mitad). */
   private fit: [number, number, number, number] | null = null; private fitAspect = 0; private fitTune = 0;
@@ -466,6 +468,7 @@ export class Gun {
     }
     this.gripOffset.set(m.handles.grip.x, m.handles.grip.y, m.handles.grip.z).applyMatrix4(m.group.matrix);
     this.muzzleOffset.set(m.muzzle.x, m.muzzle.y, m.muzzle.z).applyMatrix4(m.group.matrix);
+    this.sightOffset.set(m.sightX ?? m.opticX ?? m.handles.grip.x, m.sightY ?? m.handles.grip.y, 0).applyMatrix4(m.group.matrix);
     this.sightY = m.sightY ?? new THREE.Box3().setFromObject(m.group).max.y;
     // Visor integrado en el modelo (sin óptica añadida): solo si de verdad hay una pieza de mira con aumentos
     // (solo francotiradores: en otras armas esa pieza suele ser un asa con alza, que apunta como mira de hierro)
@@ -881,12 +884,16 @@ export class Gun {
     this.vmScale = this.snap ? target : this.vmScale + (target - this.vmScale) * Math.min(1, dt * 8);
     // Encargo 54: la clase puede pedir una silueta mayor en cadera (subfusiles, que salían pequeños); `aimScale` la
     // deshace al apuntar, así que ADS no cambia.
-    const s = aimScale(this.vmScale * (this.hipSol ? 1 : this.anim.p.hipScale ?? 1), this.aimT);
+    const big = 1 + ((this.anim.p.adsBig ?? 1) - 1) * ease(this.aimT);
+    const s = aimScale(this.vmScale * (this.hipSol ? 1 : this.anim.p.hipScale ?? 1), this.aimT) * big;
+    // (al apuntar, el pivote del escalado pasa de la empuñadura al punto de mira: sobre la línea de vista, así la mira
+    //  no se mueve al agrandar el arma)
+    const pivot = this.gripOffset.clone().lerp(this.sightOffset, ease(this.aimT));
     // Encogido anclado en la empuñadura: escala `s` alrededor del pivote (la mano de la empuñadura no se mueve)
     this.anchor.scale.setScalar(s);
-    this.anchor.position.copy(this.gripOffset).multiplyScalar(1 - s);
+    this.anchor.position.copy(pivot).multiplyScalar(1 - s);
     // El fogonazo sigue a la boca con el mismo encogido anclado en la empuñadura
-    this.flash.position.copy(this.gripOffset).multiplyScalar(1 - s).addScaledVector(this.muzzleOffset, s);
+    this.flash.position.copy(pivot).multiplyScalar(1 - s).addScaledVector(this.muzzleOffset, s);
     this.flashLight.position.copy(this.flash.position);
     // Medida final (la que se ve): la misma silueta con la escala aplicada, para capturas y pruebas
     const fin = m && this.vmPts.length ? this.measureAt(s) : { w: 0, h: 0 };
@@ -1370,6 +1377,8 @@ export class Gun {
 
   /** Dirección del antebrazo de las armas cortas: la de reposo (cámara) se lleva al marco del arma en cadera y sigue al
    *  arma cuando se mueve (recargas, inspección): si se quedaba fija, al tumbar el revólver la manga tapaba la vista. */
+  /** Agrandado actual del arma al apuntar (las manos lo siguen para no quedar pequeñas en la empuñadura). */
+  private adsBigNow() { return 1 + ((this.anim.p.adsBig ?? 1) - 1) * ease(this.aimT); }
   private handgunFore(rest: THREE.Vector3, hq: THREE.Quaternion): THREE.Vector3 {
     const h = this.hipSol; if (!h) return rest.clone();
     const hipQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(h.rot[0], h.rot[1], h.rot[2]));
@@ -1377,7 +1386,7 @@ export class Gun {
     const hip = rest.clone().lerp(rest.clone().applyQuaternion(hipQ.invert()).applyQuaternion(hq), 0.5).normalize();
     // (apuntando: los dos antebrazos en «V» desde el borde inferior, como en las referencias; si seguían al arma,
     //  apuntaban a la cámara y se veían las mangas como bloques)
-    const ads = new THREE.Vector3(Math.sign(rest.x) * 0.68, -0.7, 0.2).normalize();
+    const ads = new THREE.Vector3(Math.sign(rest.x) * 0.85, -0.45, 0.28).normalize();
     return hip.lerp(ads, ease(Math.min(1, Math.max(0, this.aimT)))).normalize();
   }
   private updateHands(dt: number) {
@@ -1603,7 +1612,7 @@ export class Gun {
     if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right.straight = 0.35;
     // (tarea 13: el antebrazo derecho baja en diagonal hacia la esquina inferior derecha, como en las referencias; si
     //  venía hacia la cámara se veía la manga cortada como un bloque)
-    if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right = { ...right, fore: this.handgunFore(HG_FORE, hq), girth: 0.8 };
+    if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right = { ...right, fore: this.handgunFore(HG_FORE, hq), girth: 0.8 - 0.22 * ease(this.aimT), handScale: this.adsBigNow() };
     // (el pulgar del modelo, aun cerrado, salía hacia fuera a 45°: con su giro pasa por delante y rodea la empuñadura)
     if (reach <= 0.3) right.thumbTurn = 0.75;
     // (tarea 13, validado por el usuario en el revólver: el pulgar girado hacia dentro rodea la empuñadura sin asomar)
@@ -1712,7 +1721,7 @@ export class Gun {
     }
     // (tarea 13: pistolas y revólveres a dos manos: el antebrazo izquierdo, en espejo del derecho, baja hacia la esquina
     //  inferior izquierda, más fino; antes era un bloque de manga junto a la pistola)
-    if (leftPose && (tipo === "pistol" || tipo === "revolver")) leftPose = { ...leftPose, fore: this.handgunFore(new THREE.Vector3(-HG_FORE.x, HG_FORE.y, HG_FORE.z), hq), girth: 0.8 };
+    if (leftPose && (tipo === "pistol" || tipo === "revolver")) leftPose = { ...leftPose, fore: this.handgunFore(new THREE.Vector3(-HG_FORE.x, HG_FORE.y, HG_FORE.z), hq), girth: 0.8 - 0.22 * ease(this.aimT), handScale: this.adsBigNow() };
     // (mano izquierda: el pulgar rodea lo que agarra en proporción a lo cerrada que está la mano; abierta, no se mete)
     if (leftPose && leftPose.thumbTurn === undefined) {
       const avg = leftPose.curl.fingers.reduce((a, f) => a + f, 0) / 4;
