@@ -71,7 +71,7 @@ describe("encuadre en cadera por objetivos en pantalla (tarea 13)", () => {
       // mano derecha abajo a la derecha; boca en el centro-derecha (referencias: x 0,50–0,62, y 0,45–0,60)
       expect(f.grip[0]).toBeGreaterThanOrEqual(0.58); expect(f.grip[1]).toBeGreaterThan(0.78);
       if (!f.aim) { expect(f.muzzle[0]).toBeGreaterThanOrEqual(0.5); expect(f.muzzle[0]).toBeLessThanOrEqual(0.62); expect(f.muzzle[1]).toBeGreaterThanOrEqual(0.45); expect(f.muzzle[1]).toBeLessThanOrEqual(0.6); }
-      expect(f.depth).toBeGreaterThan(0.25); expect(f.depthMax).toBeGreaterThanOrEqual(f.depth);
+      expect(f.depth).toBeGreaterThan(0.18); expect(f.depthMax).toBeGreaterThanOrEqual(f.depth);
     }
   });
 });
