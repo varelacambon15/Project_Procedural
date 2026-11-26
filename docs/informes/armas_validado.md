@@ -67,3 +67,9 @@ boca cerca del centro y la mano derecha en el borde inferior. Cambios (sin valid
 - Escopeta basculante (`shotgun:304`, Old Dog): pista de poses clave nueva (`breakAction` en `vmtracks.ts`) con las
   mismas fases que su bisagra y sonido; antes usaba la animación antigua (brazo cruzando la pantalla). Pendiente: al
   abrir, la mano izquierda queda encima de los cañones (el ancla `rest` no gira con ellos).
+- Basculante: la mano de apoyo acompaña al guardamanos al girar los cañones (ancla `support` girada en `gun.ts`).
+- Escopeta de bombeo: se rola de verdad (`TILT` en `shotgunShells`) para cargar por la ventana; el antebrazo de apoyo
+  va en diagonal también durante las recargas (antes era un poste delante del arma).
+- Revisadas con el encuadre nuevo: recargas de subfusil y francotirador (bien; en el francotirador la mano queda
+  bastante tapada por el arma), inspección de pistola y fusil, y sacar el arma de pistola y subfusil (bien). En la
+  inspección de la pistola el giro la lleva hacia el centro con el brazo estirado: aceptable, pendiente de opinión.
