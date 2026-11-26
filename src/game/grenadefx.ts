@@ -40,7 +40,13 @@ export class GrenadeFx {
         f.v.y -= 18 * dt; f.mesh.position.addScaledVector(f.v, dt); f.mesh.rotation.x += dt * 12;
         if (f.mesh.position.y < 0.07) {
           f.mesh.position.y = 0.07;
-          if (Math.abs(f.v.y) > 1.5) { f.v.y *= -0.35; f.v.x *= 0.6; f.v.z *= 0.6; const l = soundManifest?.efectos.rebote_granada; if (l?.length) playSample(sample(l[0]), 0.3); }
+          if (Math.abs(f.v.y) > 1.5) {
+            // (tarea 7: el rebote suena según la fuerza del golpe: duro, medio o suave, con algo de variación de tono)
+            const sp = Math.abs(f.v.y), key = sp > 6 ? "rebote_duro" : sp > 3 ? "rebote_medio" : "rebote_granada";
+            const l = soundManifest?.efectos[key] ?? soundManifest?.efectos.rebote_granada;
+            if (l?.length) playSample(sample(l[Math.floor(Math.random() * l.length)]), Math.min(0.45, 0.12 + sp * 0.04), 0.94 + Math.random() * 0.12);
+            f.v.y *= -0.35; f.v.x *= 0.6; f.v.z *= 0.6;
+          }
           else { f.v.set(f.v.x * 0.9, 0, f.v.z * 0.9); }
         }
         // Adhesiva: se pega al primer enemigo que toca

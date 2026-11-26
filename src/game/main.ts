@@ -45,6 +45,7 @@ import { VM_FOV } from "./anim";
 import { VM_BACK } from "./vmfit";
 import { RETICLES, reticleFor } from "./reticles";
 import { Inventory, makeItem, type Item } from "./inventory";
+import { NoRepeat, pitchVar, stepKey, strideLength, surfaceOf } from "./surfaces";
 import { Pickups, type Pickup } from "./pickups";
 import { LOOT, LootDirector, type LootSource } from "../weapons/loot";
 import { lootChime } from "./audio";
@@ -126,7 +127,9 @@ const fpsTick = () => { if (!settings.showFps) { fpsEl.hidden = true; return; } 
 applyScale(); onSettings(applyScale);
 startMusic("./music/ambient-03.ogg");
 // Pack de sonidos (assets/sonidos): manifest ahora; las muestras de cada arma se cargan al equiparla
-void initSounds("./sonidos/").then((m) => { if (m) void loadSamples(["melee_cuchillo_swing", "melee_cuchillo_golpe", "melee_culatazo", "recoger_arma", "explosion"].flatMap((k) => m.efectos[k] ?? [])); });
+void initSounds("./sonidos/").then((m) => { if (m) void loadSamples(["melee_cuchillo_swing", "melee_cuchillo_golpe", "melee_culatazo", "recoger_arma", "explosion",
+  // (tarea 7: impactos por material, pasos por suelo, salto, sprint, puñetazos, patada y rebotes)
+  ...Object.keys(m.efectos).filter((k) => /^(bala_|paso_|punos_|rebote_)/.test(k)), "salto", "sprint_equipo", "patada", "rodillazo", "codazo"].flatMap((k) => m.efectos[k] ?? [])); });
 // ---------- Registro de sesión (modo desarrollador): capturas, notas y registro para revisar después ----------
 const grabShot = async (): Promise<string | null> => {
   try {
@@ -1395,6 +1398,31 @@ async function boot() {
   const debug = { fire: false, aim: false }; // usado por las pruebas automáticas
   let frameNo = 0;
   sessionCtx = () => ({ modo: hack.active ? "hack" : dmode.active ? "defensa" : raid.active ? "incursion" : waves.active ? "supervivencia" : "hall", arma: inv.current ? displayName(inv.current.spec) : "puños", nivel: inv.progress.level });
+  // ---------- Tarea 7: pasos según el suelo, salto, aterrizaje y equipo al esprintar ----------
+  const stepRay = new THREE.Raycaster(), stepPick = new NoRepeat(), stepDown = new THREE.Vector3(0, -1, 0);
+  let stepDist = 0, wasGround = true, sprintGearT = 0;
+  const playKey = (key: string, gain: number, rate = 1) => { const f = stepPick.pick(key, soundManifest?.efectos[key]); if (f) playSample(sample(f), gain, rate * pitchVar()); };
+  /** Superficie bajo los pies: lo primero que toca un rayo hacia abajo (malla etiquetada o por su material). */
+  function floorSurface() {
+    stepRay.set(new THREE.Vector3(player.pos.x, player.pos.y + 0.5, player.pos.z), stepDown); stepRay.far = 1.2;
+    const hit = stepRay.intersectObjects(world.shootables, false)[0];
+    if (!hit) return surfaceOf({});
+    const m = (Array.isArray((hit.object as THREE.Mesh).material) ? ((hit.object as THREE.Mesh).material as THREE.Material[])[0] : (hit.object as THREE.Mesh).material) as THREE.MeshStandardMaterial | undefined;
+    return surfaceOf({ tag: hit.object.userData.surface, metalness: m?.metalness, roughness: m?.roughness, transparent: m?.transparent, opacity: m?.opacity, color: m?.color?.getHex() });
+  }
+  function moveSounds(dt: number) {
+    const sp = Math.hypot(player.vel.x, player.vel.z), ground = player.onGround;
+    if (!ground && wasGround && player.vel.y > 1) playKey("salto", 0.45);
+    if (ground && !wasGround) playKey(stepKey(floorSurface()), 0.55, 0.9); // (aterrizaje: un paso fuerte y grave)
+    wasGround = ground;
+    if (ground && sp > 0.6) {
+      stepDist += sp * dt;
+      const stride = strideLength(player.sprinting, player.crouchK > 0.5);
+      if (stepDist >= stride) { stepDist -= stride; playKey(stepKey(floorSurface()), player.sprinting ? 0.42 : player.crouchK > 0.5 ? 0.16 : 0.3); }
+    } else stepDist = Math.min(stepDist, 0.5);
+    // (al esprintar, el equipo suena cada poco; al empezar, enseguida)
+    if (player.sprinting && ground) { sprintGearT -= dt; if (sprintGearT <= 0) { playKey("sprint_equipo", 0.22); sprintGearT = 1.3 + Math.random() * 0.4; } } else sprintGearT = 0.15;
+  }
   function frame() {
     const dt = Math.min(clock.getDelta(), 0.05);
     if (settings.sessionLog && inGame && !session.active) session.start(); else if (session.active && (!settings.sessionLog || !inGame)) session.stop();
@@ -1499,6 +1527,7 @@ async function boot() {
         for (const d of dummies) { if (!d.alive) continue; const to = d.center.sub(camera.position); const dist = to.length(); if (fwd.angleTo(to) < Math.max(0.03, 0.6 / dist)) { input.assist = 0.45; break; } }
       }
       player.update(dt, f, gun.aimT > 0.5, (1 - gun.aimT * (1 - 1 / Math.max(1.5, gun.zoom))) * (1 + (settings.adsSens - 1) * gun.aimT));
+      moveSounds(dt);
       if (f.light) { const on = gun.toggleDevice(); if (on !== null) toast(t(on ? "ui.lightOn" : "ui.lightOff")); }
       gun.update(dt, { kick: f.kick && !sfx.casting, fire: f.fire && !sfx.casting, aim: f.aim && !sfx.casting, moving: Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 5), sprinting: player.sprinting, lookX: f.lookX, lookY: f.lookY, vy: player.vel.y, grounded: player.onGround, inspect: f.inspect });
       const base = settings.fov, aimFov = gun.sight === "scope" || gun.sight === "irons" ? base / gun.zoom : gun.sight === "iron" ? base / 1.35 : base / 1.6;

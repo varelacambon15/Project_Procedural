@@ -121,7 +121,7 @@ export function buildRange(scene: THREE.Scene): World {
 
   // ---------- Hall (zona de inicio): sala cerrada; detrás, la puerta al campo de tiro ----------
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(W, BACK), floor);
-  fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, BACK / 2); fl.receiveShadow = true; scene.add(fl); shootables.push(fl);
+  fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, BACK / 2); fl.receiveShadow = true; fl.userData.surface = "baldosa"; scene.add(fl); shootables.push(fl); // (tarea 7: suelo de baldosas: pasos e impactos)
   // Pared izquierda con la puerta sellada (4 m, de z = 20 a 24): se abrirá con 4 piezas
   const LD0 = 20, LD1 = 24;
   box(1, H, LD0, -W / 2 - 0.5, H / 2, LD0 / 2, wall);
@@ -229,7 +229,7 @@ export function buildRange(scene: THREE.Scene): World {
     // ---------- Suelo: pasarela de rejilla metálica desde la entrada hasta la puerta del campo de tiro ----------
     {
       const grate = pixelTexture(64, 64, (g) => { g.fillStyle = "#4a5058"; g.fillRect(0, 0, 64, 64); g.fillStyle = "#2a2e34"; for (let i = 0; i < 64; i += 8) { g.fillRect(i, 0, 3, 64); g.fillRect(0, i, 64, 3); } g.fillStyle = "#6a727c"; for (let i = 0; i < 64; i += 8) g.fillRect(i + 3, 0, 1, 64); }, [4, 28]);
-      const walk = new THREE.Mesh(new THREE.PlaneGeometry(3.6, BACK - 4), new THREE.MeshStandardMaterial({ map: grate, roughness: 0.5, metalness: 0.6 }));
+      const walk = new THREE.Mesh(new THREE.PlaneGeometry(3.6, BACK - 4), new THREE.MeshStandardMaterial({ map: grate, roughness: 0.5, metalness: 0.6 })); walk.userData.surface = "rejilla";
       walk.rotation.x = -Math.PI / 2; walk.position.set(0, 0.007, 4 + (BACK - 4) / 2); walk.receiveShadow = true; scene.add(walk);
       for (const sx of [-1.85, 1.85]) box(0.1, 0.02, BACK - 4, sx, 0.01, 4 + (BACK - 4) / 2, strip, false, false);
     }
@@ -520,7 +520,7 @@ export function buildRange(scene: THREE.Scene): World {
     for (let z = NZ0 + 9; z < NZ1; z += 9) box(NW, 0.35, 0.3, NX0 + NW / 2, NH - 0.17, z, steel, false, false);
     // Pasarela de rejilla desde la puerta hasta el estrado
     const grate = pixelTexture(64, 64, (gg) => { gg.fillStyle = "#4a5058"; gg.fillRect(0, 0, 64, 64); gg.fillStyle = "#2a2e34"; for (let i = 0; i < 64; i += 8) { gg.fillRect(i, 0, 3, 64); gg.fillRect(0, i, 64, 3); } }, [26, 4]);
-    const walk = new THREE.Mesh(new THREE.PlaneGeometry(HX - 6 - NX0, 4), new THREE.MeshStandardMaterial({ map: grate, roughness: 0.5, metalness: 0.6 })); walk.rotation.x = -Math.PI / 2; walk.position.set(NX0 + (HX - 6 - NX0) / 2, 0.007, HZ); walk.receiveShadow = true; scene.add(walk);
+    const walk = new THREE.Mesh(new THREE.PlaneGeometry(HX - 6 - NX0, 4), new THREE.MeshStandardMaterial({ map: grate, roughness: 0.5, metalness: 0.6 })); walk.rotation.x = -Math.PI / 2; walk.position.set(NX0 + (HX - 6 - NX0) / 2, 0.007, HZ); walk.receiveShadow = true; walk.userData.surface = "rejilla"; scene.add(walk); shootables.push(walk); // (tarea 7: pasarela de rejilla: suena a rejilla)
   }
   // Ordenadores de modos (sala B, frente a la puerta): uno por modo, cada uno con su pantalla y su rótulo
   const modePcs: { id: Interactable["id"]; z: number; label: string; color: string; icon: (g: CanvasRenderingContext2D, c: string) => void }[] = [

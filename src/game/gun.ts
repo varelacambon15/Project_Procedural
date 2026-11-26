@@ -17,6 +17,7 @@ import { Arms, handBasis, type Curl, type HandPose } from "./arms";
 import { audio, fadeOut, loadSamples, out, out as masterOut, playSample, sample, soundManifest } from "./audio";
 import { cycleKind, cycleSounds, filesOfType, pickReload, pickShot, type RecargaVariante } from "./sounds";
 import { settings } from "./settings";
+import { NoRepeat, impactKey, pitchVar, surfaceOf } from "./surfaces";
 import { CYCLE_TIME, GadgetGesture, ViewAnimator, VM_FOV, animParams, boltCurve, ease, phaseAt, pumpCurve, tri, type AnimInput, type GestureCurve, type GestureKind, type MovingPart, type Phase, type Pose } from "./anim";
 import { gripAt, hasSequence as hasSequenceRaw, sequenceOrientAt as sequenceOrientAtRaw, sequencePathAt as sequencePathAtRaw, type HandSequence, type V4 } from "./handpath";
 // Interruptor del 24/11/2026: los recorridos reales de las tandas A, B y C del encargo 49 se ven antinaturales.
@@ -519,6 +520,20 @@ export class Gun {
 
   /** Ruido blanco con envolvente, filtrado. */
   /** Barrido de aire de un puño o una patada que no da en nada: ruido grave filtrado, sin el silbido metálico. */
+  /** Tarea 7: efectos del pack sin repetir la misma muestra seguida y con un poco de variación de tono. */
+  private fxPick = new NoRepeat();
+  private playFx(key: string, gain: number, rate = 1, when = 0) {
+    const f = this.fxPick.pick(key, soundManifest?.efectos[key]);
+    return f ? playSample(sample(f), gain, rate * pitchVar(), when) : null;
+  }
+  /** Impacto de bala en el escenario según su material (etiqueta `userData.surface` o rasgos del material). */
+  private impactSound(hit: THREE.Intersection) {
+    const m = (Array.isArray((hit.object as THREE.Mesh).material) ? ((hit.object as THREE.Mesh).material as THREE.Material[])[0] : (hit.object as THREE.Mesh).material) as THREE.MeshStandardMaterial | undefined;
+    const surf = surfaceOf({ tag: hit.object.userData.surface, metalness: m?.metalness, roughness: m?.roughness, transparent: m?.transparent, opacity: m?.opacity, color: m?.color?.getHex() });
+    // (a distancia suena menos; a partir de ~25 m apenas se oye)
+    const far = Math.max(0, 1 - hit.distance / 28);
+    if (far > 0.05) this.playFx(impactKey(surf), 0.32 * far);
+  }
   private airWhoosh(k: number) {
     try { const a = audio(), t0 = a.currentTime; this.noise(a, 0.16 + 0.06 * k, 2.2, "bandpass", 380 + Math.random() * 120, 0.16 * k, t0, 0.9 + Math.random() * 0.1); this.noise(a, 0.1, 3, "lowpass", 250, 0.1 * k, t0 + 0.02); } catch { /* sin audio */ }
   }
@@ -1066,7 +1081,8 @@ export class Gun {
       this.hooks.onHit(d, zone, hit.point, dmg, null, false);
       d.push(dir.clone().setY(0).normalize(), push);
       this.spark(hit.point, dir.clone().negate(), 10, 0xcff6f8); this.hitmarker = 0.15;
-      { const l = soundManifest?.efectos.melee_culatazo; if (l?.length) playSample(sample(l[0]), 0.7, kick ? 0.8 : 1); }
+      // (tarea 7: patada del pack; con arma, el culatazo de siempre)
+      if (kick) this.playFx("patada", 0.7); else { const l = soundManifest?.efectos.melee_culatazo; if (l?.length) playSample(sample(l[0]), 0.7, 1); }
       if (alive && !d.alive) { this.killmarker = 0.35; this.hitSound("kill"); this.hooks.onKill?.(d); } else this.hitSound("body");
       this.recoil += 0.03; return;
     }
@@ -1095,12 +1111,15 @@ export class Gun {
       this.spark(hit.point, dir.clone().negate(), this.punchHeavy ? 10 : 5, crit ? 0xffe08a : 0xcff6f8);
       if (crit) this.critmarker = 0.15; else this.hitmarker = 0.12;
       // (puñetazo: golpe sordo, no el de cuchillo; el fuerte, más grave)
-      { const l = soundManifest?.efectos.melee_culatazo; if (l?.length) playSample(sample(l[0]), this.punchHeavy ? 0.65 : 0.5, this.punchHeavy ? 0.85 : 1.15 + Math.random() * 0.1); }
+      // (tarea 7: puñetazos del pack: gancho de su lado, uppercut el fuerte, y el golpe en carne)
+      this.playFx(this.punchHeavy ? "punos_uppercut" : this.punchSide > 0 ? "punos_gancho_der" : "punos_gancho_izq", this.punchHeavy ? 0.6 : 0.5);
+      this.playFx("punos_golpe_carne", this.punchHeavy ? 0.5 : 0.4);
       if (alive && !d.alive) { this.killmarker = 0.35; this.hitSound("kill"); this.hooks.onKill?.(d); } else this.hitSound(zone === "head" ? "head" : "body");
       this.recoil += this.punchHeavy ? 0.03 : 0.014; this.recoilYaw += (Math.random() - 0.5) * 0.01; // sacudida de impacto
       return;
     }
     this.airWhoosh(this.punchHeavy ? 1 : 0.75); // golpe al aire: barrido de aire (no el filo de un cuchillo)
+    this.playFx("punos_golpe", 0.25, 1.1);
   }
   /** Pose de los puños en guardia (espacio de la cámara) y animación del golpe, del esprint y de sacarlos. */
   private updateFists(dt: number) {
@@ -1687,6 +1706,8 @@ export class Gun {
       if (un != null && performance.now() / 1000 < un) this.explode(d.center, s.stats.dano * 1.2, "explosive", d);
       if (this.fx) this.runFx(this.fx.kill({ target: d, point: d.center, baseDmg: s.stats.dano, mag: s.stats.cargador }), 0);
     } else if (sound) this.hitSound(zone === "head" ? (d.helmeted ? "metal" : "head") : zone === "shield" || (zone === "body" && d.armored) ? "metal" : "body");
+    // (tarea 7: el impacto de la bala en el enemigo: metal en blindaje, escudo y casco; carne en el resto)
+    if (sound) { const metal = zone === "shield" || (zone === "head" && d.helmeted) || (zone === "body" && d.armored); this.playFx(metal ? "bala_metal" : "bala_carne", 0.28); }
   }
   private nearest(from: Dummy, at: THREE.Vector3, max: number, skip: Dummy[] = []) {
     return this.hooks.dummies().filter((d) => d !== from && d.alive && !skip.includes(d) && d.center.distanceTo(at) < max)
@@ -1721,7 +1742,10 @@ export class Gun {
     this.scene.add(line); this.tracers.push({ line, t: life, max: life });
   }
   /** Impacto en la sala: agujero cuadrado oscuro (se desvanece), marca de rejilla que destella y chispas de datos. */
+  private lastImpactT = 0;
   private decal(hit: THREE.Intersection, scorch = false) {
+    // (tarea 7: sonido del impacto según el material; los perdigones de un mismo disparo suenan una vez)
+    { const now = performance.now(); if (now - this.lastImpactT > 40) { this.lastImpactT = now; this.impactSound(hit); } }
     if (!settings.impactFx) return; // ajuste: marcas y chispas de impacto
     if (!hit.face) return;
     const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
