@@ -78,6 +78,7 @@ export interface PartPick { role: PartRole; from: string }
 export interface WeaponSpec {
   seed: number;
   /** Bajas con esta arma (contador de bajas del accesorio). */ kills?: number;
+  /** Tarea 5: retícula elegida en el taller (id del catálogo) y su color; sin ellos, la de la óptica en rojo. */ reticle?: string; reticleColor?: string;
   type: WeaponType;
   /** Variante del tipo (p. ej. pistola automática, subfusil táctico). */
   archetype: string;

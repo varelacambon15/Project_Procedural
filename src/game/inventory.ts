@@ -27,6 +27,7 @@ export class Inventory {
   /** Súper elegido en la pestaña Habilidades. */ superId: import("./supers").SuperId = "shockwave";
   /** Súperes desbloqueados con módulos (y modo desarrollador: todos). */ supersOwned: import("./supers").SuperId[] = []; devUnlock = false;
   /** Incursiones completadas (la primera da un módulo seguro). */ raidsDone = 0;
+  /** Tarea 5: bajas por familia de óptica y retículas desbloqueadas. */ reticles: import("./reticlecustom").ReticleProgress = { kills: {}, unlocked: ["dot", "ring-dot", "cross"] };
   hasSuper(id: import("./supers").SuperId) { return this.devUnlock || this.supersOwned.includes(id); }
   /** Nivel, experiencia y árbol de habilidades del jugador. */ progress: import("./progress").ProgressState = { level: 1, xp: 0, skills: {} };
   get grenade() { return this.grenades[this.grenadeActive] ?? null; }
@@ -79,5 +80,5 @@ export class Inventory {
   /** Todas, también las del almacén. */
   get all(): Item[] { return [...this.equip, ...this.pack, ...this.storage].filter((x): x is Item => !!x); }
   /** Vacía todo (nueva partida o carga). */
-  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; this.grenades = []; this.grenadeActive = -1; this.gadgets = []; this.gadgetActive = -1; this.furniture = []; this.progress = { level: 1, xp: 0, skills: {} }; this.supersOwned = []; this.raidsDone = 0; this.armors = []; this.worn = { head: null, torso: null, legs: null }; }
+  clear() { this.equip.fill(null); this.pack.fill(null); this.storage.fill(null); this.bank = []; this.credits = 0; this.active = 0; this.grenades = []; this.grenadeActive = -1; this.gadgets = []; this.gadgetActive = -1; this.furniture = []; this.progress = { level: 1, xp: 0, skills: {} }; this.supersOwned = []; this.raidsDone = 0; this.reticles = { kills: {}, unlocked: ["dot", "ring-dot", "cross"] }; this.armors = []; this.worn = { head: null, torso: null, legs: null }; }
 }

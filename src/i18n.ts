@@ -96,6 +96,8 @@ const en: Dict = {
   "hint.kbm": "<kbd>Click</kbd>fire <kbd>RMB</kbd>aim <kbd>R</kbd>reload <kbd>1</kbd><kbd>2</kbd>weapons <kbd>F</kbd>inspect <kbd>E</kbd>use <kbd>Tab</kbd>inventory",
   "hint.pad": "<kbd>RT</kbd>fire <kbd>LT</kbd>aim <kbd>Ⓧ</kbd>reload/use <kbd>Ⓨ</kbd>switch <kbd>RB</kbd>grenade <kbd>LB</kbd>super <kbd>View</kbd>inventory",
   "ui.loadError": "The game could not load: {e}",
+  // Tarea 5: retículas personalizables
+  "rt.title": "Reticle", "rt.shape": "Shape", "rt.color": "Colour", "rt.unlocked": "New reticle unlocked: {n}", "rt.locked": "Locked: {k} kills with a {f} optic ({h}/{k})", "rt.noOptic": "Mount an optic to choose its reticle", "rt.next": "Next: {n} — {h}/{k} kills with a {f} optic", "rt.n.dot": "Dot", "rt.n.ring": "Ring", "rt.n.ring-dot": "Ring and dot", "rt.n.chevron": "Chevron", "rt.n.chevron-bdc": "Chevron BDC", "rt.n.cross": "Cross", "rt.n.cross-dot": "Cross and dot", "rt.n.mildot": "Mil-dot", "rt.n.triangle": "Triangle", "rt.n.crosshair-gap": "Open crosshair", "rt.n.dot-ring-ticks": "Ticked ring", "rt.n.t-dot": "T and dot", "rt.n.circle-cross": "Circle cross", "rt.n.bracket": "Brackets", "rt.n.triangle-dot": "Triangle and dot", "rt.n.diamond": "Diamond", "rt.n.horseshoe": "Horseshoe", "rt.n.crosshair-dot": "Crosshair and dot", "rt.n.chevron-dot": "Open chevron", "rt.n.dots-vertical": "Drop dots", "rt.c.rojo": "Red", "rt.c.verde": "Green", "rt.c.azul": "Blue", "rt.c.blanco": "White", "rt.c.amarillo": "Yellow", "rt.c.cian": "Cyan", "rt.f.punto": "red dot", "rt.f.holo": "holographic", "rt.f.aumentos": "magnified", "rt.f.visor": "scope",
 };
 
 const es: Dict = {
@@ -185,6 +187,8 @@ const es: Dict = {
   "hint.kbm": "<kbd>Clic</kbd>disparar <kbd>Clic der.</kbd>apuntar <kbd>R</kbd>recargar <kbd>1</kbd><kbd>2</kbd>armas <kbd>F</kbd>inspeccionar <kbd>E</kbd>usar <kbd>Tab</kbd>inventario",
   "hint.pad": "<kbd>RT</kbd>disparar <kbd>LT</kbd>apuntar <kbd>Ⓧ</kbd>recargar/usar <kbd>Ⓨ</kbd>cambiar <kbd>RB</kbd>granada <kbd>LB</kbd>súper <kbd>View</kbd>inventario",
   "ui.loadError": "No se pudo cargar el juego: {e}",
+  // Tarea 5: retículas personalizables
+  "rt.title": "Retícula", "rt.shape": "Forma", "rt.color": "Color", "rt.unlocked": "Nueva retícula desbloqueada: {n}", "rt.locked": "Bloqueada: {k} bajas con óptica {f} ({h}/{k})", "rt.noOptic": "Monta una óptica para elegir su retícula", "rt.next": "Siguiente: {n} — {h}/{k} bajas con óptica {f}", "rt.n.dot": "Punto", "rt.n.ring": "Aro", "rt.n.ring-dot": "Aro y punto", "rt.n.chevron": "Chevrón", "rt.n.chevron-bdc": "Chevrón con caída", "rt.n.cross": "Cruz", "rt.n.cross-dot": "Cruz y punto", "rt.n.mildot": "Mil-dot", "rt.n.triangle": "Triángulo", "rt.n.crosshair-gap": "Cruz abierta", "rt.n.dot-ring-ticks": "Aro con marcas", "rt.n.t-dot": "T y punto", "rt.n.circle-cross": "Círculo y cruz", "rt.n.bracket": "Corchetes", "rt.n.triangle-dot": "Triángulo y punto", "rt.n.diamond": "Rombo", "rt.n.horseshoe": "Herradura", "rt.n.crosshair-dot": "Cruz fina y punto", "rt.n.chevron-dot": "Chevrón abierto", "rt.n.dots-vertical": "Puntos de caída", "rt.c.rojo": "Rojo", "rt.c.verde": "Verde", "rt.c.azul": "Azul", "rt.c.blanco": "Blanco", "rt.c.amarillo": "Amarillo", "rt.c.cian": "Cian", "rt.f.punto": "punto rojo", "rt.f.holo": "holográfica", "rt.f.aumentos": "de aumentos", "rt.f.visor": "visor",
 };
 
 import { MENUS_EN, MENUS_ES } from "./i18n-menus";
