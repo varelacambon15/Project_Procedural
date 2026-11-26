@@ -19,7 +19,7 @@ Looter-shooter FPS procedural. TypeScript + Three.js r160 + Vite + Vitest; Elect
 - Motor: no migrar por ahora; probar Rapier y según el informe valorar Godot/Unity/Babylon.
 - Brazos: sin verde. Manga gris pizarra `#4b5462`, guante coyote `#43392f`, parche naranja.
 - El balanceo de armas al andar y la respiración actuales GUSTAN: no tocar.
-- Animaciones de armas: los recorridos remapeados de otros juegos (`poses.json`, `handpath.ts`) se vieron antinaturales; hay un interruptor `REAL_PATHS_OFF` en `gun.ts`. El director está rehaciendo los brazos y las animaciones por poses clave simples. **No toques** `arms.ts`, `armmodel.ts`, `gun.ts`, `anim.ts`, `handpath.ts`, `vmfit.ts`, `poses.json`, `anim.json`, `superfx.ts`, `sentrymodel.ts`, `tools/build-poses.mjs`.
+- Animaciones de armas: los recorridos remapeados de otros juegos (`poses.json`, `handpath.ts`) se vieron antinaturales (el usuario: «terribles e inaturales, peores que las de antes»); hay un interruptor `REAL_PATHS_OFF` en `gun.ts`. **El área «posición de las armas, animaciones y gunplay» (`arms.ts`, `armmodel.ts`, `gun.ts`, `anim.ts`, `handpath.ts`, `vmfit.ts`, `poses.json`, `anim.json`) es ahora tuya (tarea 13 de `docs/BRIEFS_OPUS.md`) y es la PRIORIDAD de la semana.** Solo `superfx.ts` y `sentrymodel.ts` (torreta de la super) siguen siendo del director.
 
 ## Reglas duras
 - No cambies valores esperados de tests existentes sin avisar. `npx tsc --noEmit` limpio. Tests por fichero (`npx vitest run tests/<fichero>`); la suite completa es lenta (la tarea 8 de `docs/BRIEFS_OPUS.md` la arregla).
@@ -31,5 +31,5 @@ Looter-shooter FPS procedural. TypeScript + Three.js r160 + Vite + Vitest; Elect
 - `src/game/` juego (dummies = enemigos, gun = arma en primera persona, arms = brazos, raidgen/hackgen/arenagen = niveles, save = guardado, ui/ = menús y taller).
 - `src/weapons/` generador procedural de armas. `src/data/` datos. `tests/` tests. `raw/pack*` modelos GLB propios y donantes. `assets/` recursos del juego.
 - `.delegaciones/` notas de trabajo: `PROGRESO.md`, `TRASPASO_COMPLETO_24-11.md`, `PLAN_ENEMIGOS.md`, `PLAN_COMBATE_Y_CAMPANA.md`, `LISTA_PENDIENTES.md`, `encargos/` (47–59), tablas de poses, referencias. `docs/` documentación (`ESTADO.md`, `DISENO.md`, `ECONOMIA.md`).
-- Trabajo asignado a esta sesión: `docs/BRIEFS_OPUS.md` (12 tareas con orden recomendado).
+- Trabajo asignado a esta sesión: `docs/BRIEFS_OPUS.md`. **Empieza por la tarea 13 (posición de armas, animaciones y gunplay)**; el resto de tareas (1–12) van después, en el orden recomendado.
 - El juego expone `window.__game` (en `src/game/main.ts`) para pruebas con Playwright; dev server `npm run dev` (puerto 5199).
