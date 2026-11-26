@@ -1361,6 +1361,14 @@ export class Gun {
     return out;
   }
 
+  /** Dirección del antebrazo de las armas cortas: la de reposo (cámara) se lleva al marco del arma en cadera y sigue al
+   *  arma cuando se mueve (recargas, inspección): si se quedaba fija, al tumbar el revólver la manga tapaba la vista. */
+  private handgunFore(rest: THREE.Vector3, hq: THREE.Quaternion): THREE.Vector3 {
+    const h = this.hipSol; if (!h) return rest.clone();
+    const hipQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(h.rot[0], h.rot[1], h.rot[2]));
+    // (a medias: el antebrazo acompaña el giro del arma pero sigue saliendo por abajo, sin cruzar la pantalla)
+    return rest.clone().lerp(rest.clone().applyQuaternion(hipQ.invert()).applyQuaternion(hq), 0.5).normalize();
+  }
   private updateHands(dt: number) {
     const m = this.model!; const h = m.handles;
     // La cámara primero: si no, el arma se calculaba con la rotación de la cámara del fotograma anterior y las manos
@@ -1584,7 +1592,7 @@ export class Gun {
     if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right.straight = 0.35;
     // (tarea 13: el antebrazo derecho baja en diagonal hacia la esquina inferior derecha, como en las referencias; si
     //  venía hacia la cámara se veía la manga cortada como un bloque)
-    if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right = { ...right, fore: HG_FORE.clone(), girth: 0.8 };
+    if (this.spec?.type === "pistol" || this.spec?.type === "revolver") right = { ...right, fore: this.handgunFore(HG_FORE, hq), girth: 0.8 };
     // (el pulgar del modelo, aun cerrado, salía hacia fuera a 45°: con su giro pasa por delante y rodea la empuñadura)
     if (reach <= 0.3) right.thumbTurn = 0.75;
     // (tarea 13, validado por el usuario en el revólver: el pulgar girado hacia dentro rodea la empuñadura sin asomar)
@@ -1693,7 +1701,7 @@ export class Gun {
     }
     // (tarea 13: pistolas y revólveres a dos manos: el antebrazo izquierdo, en espejo del derecho, baja hacia la esquina
     //  inferior izquierda, más fino; antes era un bloque de manga junto a la pistola)
-    if (leftPose && !this.keyed && (tipo === "pistol" || tipo === "revolver")) leftPose = { ...leftPose, fore: new THREE.Vector3(-HG_FORE.x, HG_FORE.y, HG_FORE.z), girth: 0.8 };
+    if (leftPose && (tipo === "pistol" || tipo === "revolver")) leftPose = { ...leftPose, fore: this.handgunFore(new THREE.Vector3(-HG_FORE.x, HG_FORE.y, HG_FORE.z), hq), girth: 0.8 };
     // (mano izquierda: el pulgar rodea lo que agarra en proporción a lo cerrada que está la mano; abierta, no se mete)
     if (leftPose && leftPose.thumbTurn === undefined) {
       const avg = leftPose.curl.fingers.reduce((a, f) => a + f, 0) / 4;

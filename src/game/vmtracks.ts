@@ -91,8 +91,8 @@ const revolverGun: Key<Gun6>[] = [
   { t: 0.18, v: [-0.012, 0.02, -0.02, 0.3, 0.12, 0.7], e: "io" },        // rola a la izquierda: tambor a la vista
   { t: 0.3, v: [-0.015, 0.04, -0.03, 0.72, 0.05, 0.5], e: "io" },         // boca arriba (sin irse al centro ni acercarse)
   { t: 0.33, v: [-0.015, 0.05, -0.03, 0.8, 0.05, 0.5], e: "s" },          // sacudida: caen las vainas
-  { t: 0.42, v: [-0.03, 0.012, -0.02, 0.0, 0.22, 1.2], e: "io" },         // se tumba (boca a la izquierda)
-  { t: 0.7, v: [-0.032, 0.014, -0.02, 0.02, 0.24, 1.24], e: "io" },       // (pausa: carga)
+  { t: 0.42, v: [-0.012, 0.03, -0.02, 0.35, 0.18, 0.72], e: "io" },         // se tumba (boca a la izquierda)
+  { t: 0.7, v: [-0.014, 0.032, -0.02, 0.37, 0.2, 0.75], e: "io" },       // (pausa: carga)
   { t: 0.8, v: [-0.015, 0.02, -0.02, 0.22, 0.14, 0.65], e: "io" },        // se endereza
   { t: 0.84, v: [-0.013, 0.028, -0.02, 0.27, 0.12, 0.56], e: "s" },       // cierre seco
   { t: 0.95, v: [0.002, -0.006, 0, -0.03, 0, 0.03], e: "io" },
