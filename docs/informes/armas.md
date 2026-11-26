@@ -1,5 +1,11 @@
 # Tarea 13 — Posición de las armas, animaciones y gunplay (`opus/armas`)
 
+> **Estado al 26/11:** revisada ronda a ronda con el usuario. Lo validado, lo rechazado y lo pendiente está en
+> `docs/informes/armas_validado.md` (léelo primero). Desde este informe inicial cambiaron: el encuadre (armas
+> más grandes y centradas según 14 referencias del usuario), los brazos de pistola y revólver, el pulgar, los puños
+> (guardia tipo Source), el ADS de armas cortas (`adsBig`), y las recargas de escopeta de bombeo y basculante.
+> Retroceso: sin tocar (la propuesta sigue abajo, a decisión del usuario).
+
 Por petición del usuario se ha trabajado **todo el apartado y todas las clases de una vez** (no por categorías), con
 la herramienta de validación primero. Las hojas de contactos de cada clase y acción están en `docs/informes/img/`
 (prefijo `armas_`), a 960×470 y 1280×720, con armas reales del generador.
