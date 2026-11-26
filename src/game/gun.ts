@@ -1374,7 +1374,11 @@ export class Gun {
     const h = this.hipSol; if (!h) return rest.clone();
     const hipQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(h.rot[0], h.rot[1], h.rot[2]));
     // (a medias: el antebrazo acompaña el giro del arma pero sigue saliendo por abajo, sin cruzar la pantalla)
-    return rest.clone().lerp(rest.clone().applyQuaternion(hipQ.invert()).applyQuaternion(hq), 0.5).normalize();
+    const hip = rest.clone().lerp(rest.clone().applyQuaternion(hipQ.invert()).applyQuaternion(hq), 0.5).normalize();
+    // (apuntando: los dos antebrazos en «V» desde el borde inferior, como en las referencias; si seguían al arma,
+    //  apuntaban a la cámara y se veían las mangas como bloques)
+    const ads = new THREE.Vector3(Math.sign(rest.x) * 0.68, -0.7, 0.2).normalize();
+    return hip.lerp(ads, ease(Math.min(1, Math.max(0, this.aimT)))).normalize();
   }
   private updateHands(dt: number) {
     const m = this.model!; const h = m.handles;

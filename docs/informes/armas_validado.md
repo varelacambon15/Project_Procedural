@@ -73,3 +73,6 @@ boca cerca del centro y la mano derecha en el borde inferior. Cambios (sin valid
 - Revisadas con el encuadre nuevo: recargas de subfusil y francotirador (bien; en el francotirador la mano queda
   bastante tapada por el arma), inspección de pistola y fusil, y sacar el arma de pistola y subfusil (bien). En la
   inspección de la pistola el giro la lleva hacia el centro con el brazo estirado: aceptable, pendiente de opinión.
+- ADS de pistola y revólver (sin validar): al apuntar las mangas eran bloques (manos a 20 cm del ojo y antebrazos
+  hacia la cámara). Ahora `adsGrip 0.3` (el arma algo más lejos) y los antebrazos en «V» desde las esquinas inferiores
+  (`handgunFore` mezcla con `aimT`). ADS del fusil y transición cadera→mira comprobados: bien.

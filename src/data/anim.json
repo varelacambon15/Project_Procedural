@@ -120,7 +120,7 @@
   "classes": {
     "pistol": {
       "frame": {"aim": [0.05, 0.13], "bulk": 0.17, "depthMax": 0.36, "grip": [0.6, 0.9], "muzzle": [0.6, 0.56], "depth": 0.28},
-      "gripZ": 0.19, "adsGrip": 0.2, "rest": [0, 0, 0.1],
+      "gripZ": 0.19, "adsGrip": 0.3, "rest": [0, 0, 0.1],
       "hip": [0.106, -0.0925, 0.2], "hipYaw": 0.209, "hipPitch": 0.069,
       "aimZ": 0.24,
       "adsRoll": 0.03,
@@ -203,7 +203,7 @@
     },
     "revolver": {
       "frame": {"aim": [0.04, 0.12], "bulk": 0.17, "depthMax": 0.3, "grip": [0.6, 0.93], "muzzle": [0.595, 0.555], "depth": 0.21},
-      "gripZ": 0.19, "rest": [0, 0, 0.1],
+      "gripZ": 0.19, "adsGrip": 0.3, "rest": [0, 0, 0.1],
       "hip": [0.106, -0.0925, 0.2], "hipYaw": 0.209, "hipPitch": 0.069,
       "aimZ": 0.24,
       "adsRoll": 0.03,
