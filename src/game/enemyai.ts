@@ -57,3 +57,20 @@ export function pounceState(t: number, wind = 0.32, leap = 0.38): { phase: "crou
   return { phase: "none", k: 0 };
 }
 
+
+/**
+ * Puntos de impacto de una andanada (misiles del mech, bombas): el primero en `center` y el resto repartidos en un
+ * anillo de radio `spread` (con un giro al azar), para que quedarse quieto no sirva y moverse sí.
+ */
+export function strikePattern(center: P2, n: number, spread: number, rnd: () => number = Math.random): P2[] {
+  const out: P2[] = [{ x: center.x, z: center.z }], a0 = rnd() * Math.PI * 2;
+  for (let i = 1; i < n; i++) { const a = a0 + (i / (n - 1)) * Math.PI * 2, r = spread * (0.75 + 0.25 * rnd()); out.push({ x: center.x + Math.cos(a) * r, z: center.z + Math.sin(a) * r }); }
+  return out;
+}
+
+/** Daño de una explosión a `d` m de su centro (radio `r`): entero en el tercio central y luego cae hasta el 30 % en el borde; 0 fuera. */
+export function blastDamage(d: number, r: number, dmg: number): number {
+  if (d >= r || r <= 0) return 0;
+  const k = d / r;
+  return k <= 1 / 3 ? dmg : dmg * (1 - 0.7 * (k - 1 / 3) / (2 / 3));
+}

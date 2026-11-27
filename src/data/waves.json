@@ -22,7 +22,11 @@
     "glitch": 3.0,
     "hound": 5.6,
     "repairer": 3.0,
-    "sentinel": 1.1
+    "sentinel": 1.1,
+    "gunroller": 3.2,
+    "bomber": 3.6,
+    "swarmling": 6.2,
+    "mech": 1.2
   },
   "damage": {
     "small": 6,
@@ -44,7 +48,11 @@
     "glitch": 14,
     "hound": 10,
     "repairer": 4,
-    "sentinel": 9
+    "sentinel": 9,
+    "gunroller": 5,
+    "bomber": 22,
+    "swarmling": 4,
+    "mech": 30
   },
   "healthScale": 1,
   "attackRange": 1.6,
@@ -137,6 +145,24 @@
       "interval": 2.6,
       "orbSpeed": 14,
       "orbDamage": 11
+    },
+    "gunroller": {
+      "range": 14,
+      "interval": 2.2,
+      "orbSpeed": 36,
+      "orbDamage": 5
+    },
+    "bomber": {
+      "range": 2.5,
+      "interval": 3.4,
+      "orbSpeed": 0,
+      "orbDamage": 22
+    },
+    "mech": {
+      "range": 18,
+      "interval": 2.8,
+      "orbSpeed": 40,
+      "orbDamage": 4
     }
   },
   "bossEvery": 5

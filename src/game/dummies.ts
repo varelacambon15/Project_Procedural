@@ -11,7 +11,7 @@ export type Zone = "head" | "body" | "limb" | "shield";
 /** Capa de protección. Por ahora solo existe "health". */
 export interface Layer { id: "health"; value: number; max: number }
 /** Forma del enemigo: humanoide (por defecto) o robots de la simulación. */
-export type Shape = "humanoid" | "drone" | "spider" | "roller" | "turret" | "hound" | "repairer" | "sentinel";
+export type Shape = "humanoid" | "drone" | "spider" | "roller" | "turret" | "hound" | "repairer" | "sentinel" | "gunroller" | "bomber" | "swarmling" | "mech";
 interface Kind {
   key: string; health: number; level: number; scale?: number; boss?: boolean;
   shape?: Shape; /** Altura a la que vuela (drones). */ fly?: number;
@@ -39,6 +39,12 @@ export const KINDS: Record<string, Kind> = {
   hound: { key: "hound", health: 340, level: 12, shape: "hound", cy: 0.75, top: 1.05 },
   repairer: { key: "repairer", health: 240, level: 12, shape: "repairer", fly: 2.4, cy: 0, top: 0.55 },
   sentinel: { key: "sentinel", health: 900, level: 14, shape: "sentinel", fly: 0.22, cy: 1.15, top: 1.75 },
+  // Fase 2: rodante artillero (ráfagas a media distancia), bombardero (bombas de área con aviso en el suelo),
+  // arañitas (enjambre de poca vida) y mech pesado (mini-jefe: ametralladora y andanadas de misiles)
+  gunroller: { key: "gunroller", health: 420, level: 12, shape: "gunroller", cy: 0.75, top: 1.2 },
+  bomber: { key: "bomber", health: 380, level: 13, shape: "bomber", fly: 4.2, cy: 0, top: 0.65 },
+  swarmling: { key: "swarmling", health: 45, level: 9, shape: "swarmling", cy: 0.27, top: 0.55 },
+  mech: { key: "mech", health: 6500, level: 18, shape: "mech", boss: true, cy: 2.3, top: 3.4 },
   // Pesados y tiradores
   guardian: { key: "guardian", health: 1800, level: 14, scale: 1.25, shield: true },
   gunner: { key: "gunner", health: 360, level: 11, gun: "rifle" },
@@ -408,7 +414,9 @@ export class Dummy {
   /** Materiales que brillan (ojos, luces): se avivan para avisar de un ataque. */ private lights: { m: THREE.MeshStandardMaterial; base: number }[] | null = null;
   /** Lado por el que rodea el sabueso (±1) y reloj de su salto (-1: sin saltar). */ private flankSide = Math.random() < 0.5 ? -1 : 1; private leapClock = -1;
   /** Rayo de reparación en curso (lo pone `Waves` al curar) y hacia dónde. */ beamT = 0; readonly beamTo = new THREE.Vector3();
-  /** Carga del disparo del centinela (0..1, aviso). */ charge = 0;
+  /** Carga del disparo (0..1, aviso: centinela, rodante, bombardero, mech). */ charge = 0;
+  /** Hacia dónde está su objetivo (rad, en el mundo): torretas y torso del mech. */ aimYaw = 0;
+  /** Bombardero: bahía vacía tras soltar (s). Mech: ráfaga en curso (s) y aviso de andanada (0..1); los pone `Waves`. */ dropT = 0; fireT = 0; salvoK = 0;
   /**
    * Pone el modelo: sus mallas son las cajas de impacto (zona según el nombre de la pieza). `late` = después del
    * constructor (el GLB ha llegado tarde): clona aquí los materiales con el plano de recorte.
@@ -469,6 +477,37 @@ export class Dummy {
       for (const n of ["haz_soldadura", "halo_soldadura", "chispa_haz"]) { const o = rig.get(n); if (o) o.visible = on && (n !== "chispa_haz" || Math.random() < 0.7); }
       P.lean = 0.2 * moving + (on ? 0.12 : 0);
       glow(on ? 0.6 + Math.random() * 0.4 : 0);
+    } else if (sh === "gunroller") {
+      // Monociclo: la rueda gira con el avance, el cuerpo se inclina para equilibrarse y la torreta apunta
+      const wh = rig.get("mov_rueda"); if (wh) wh.rotation.z -= dt * moving * 3.2 / 0.35;
+      const tu = rig.get("mov_torreta"); if (tu) tu.rotation.y = rest(tu).r.y + Math.atan2(Math.sin(this.aimYaw - this.group.rotation.y), Math.cos(this.aimYaw - this.group.rotation.y));
+      P.lean = 0.14 * moving + Math.sin(this.walkT * 2.3) * 0.03 - 0.1 * a;
+      glow(this.charge * 2.5);
+    } else if (sh === "bomber") {
+      for (let i = 1; i <= 4; i++) { const r = rig.get(`mov_rotor_${i}`); if (r) r.rotation.y += dt * (i % 2 ? 50 : -50); }
+      // (tras soltar la carga, la bahía queda vacía hasta que «recarga»)
+      this.dropT = Math.max(0, this.dropT - dt);
+      for (const [n, o] of rig) if (n.startsWith("carga_")) o.visible = this.dropT <= 0;
+      P.lean = 0.18 * moving; P.roll = Math.sin(this.walkT * 0.9) * 0.06;
+      glow(this.charge * 2.5);
+    } else if (sh === "swarmling") {
+      // Trípode alterno muy rápido: las patas barren adelante y atrás; el cuerpo vibra
+      const w = this.walkT * 6;
+      for (let i = 0; i < 6; i++) { const l = rig.get(`mov_pata_${i + 1}`); if (l) l.rotation.y = rest(l).r.y + Math.sin(w + (i % 2 ? Math.PI : 0) + Math.floor(i / 2) * 0.4) * 0.45 * moving; }
+      P.dip = -Math.abs(Math.sin(w)) * 0.02 * moving; P.lean = -0.2 * a;
+    } else if (sh === "mech") {
+      // Pasos pesados: piernas alternas, el cuerpo cae en cada pisada; el torso gira hacia ti (con retraso) y el brazo
+      // de la ametralladora tiembla al disparar
+      const w = this.walkT * 1.6, A = 0.32 * moving;
+      const lr = rig.get("mov_pierna_der"), ll = rig.get("mov_pierna_izq");
+      if (lr) lr.rotation.z = rest(lr).r.z + Math.sin(w) * A; if (ll) ll.rotation.z = rest(ll).r.z - Math.sin(w) * A;
+      P.dip = Math.abs(Math.cos(w)) * 0.09 * moving; P.roll = Math.sin(w) * 0.025 * moving;
+      const to = rig.get("mov_torso");
+      if (to) { const want = Math.atan2(Math.sin(this.aimYaw - this.group.rotation.y), Math.cos(this.aimYaw - this.group.rotation.y)); to.rotation.y = turnToward(to.rotation.y, rest(to).r.y + Math.max(-0.9, Math.min(0.9, want)), dt * 1.6); }
+      this.fireT = Math.max(0, this.fireT - dt);
+      const gun = rig.get("mov_brazo_der"); if (gun) { const R = rest(gun); gun.position.x = R.p.x - (this.fireT > 0 ? 0.04 * Math.abs(Math.sin(this.walkT * 60)) : 0); gun.rotation.z = R.r.z + this.charge * 0.05; }
+      const sh2 = rig.get("mov_brazo_izq"); if (sh2) sh2.rotation.z = rest(sh2).r.z + this.salvoK * 0.35;
+      glow(this.charge * 2 + this.salvoK * 2);
     } else if (sh === "sentinel") {
       const ring = rig.get("mov_anillo"); if (ring) ring.rotation.y += dt * (1.6 + 6 * this.charge);
       const can = rig.get("mov_canon"); if (can) can.position.x = rest(can).p.x - 0.06 * a + 0.01 * this.charge * Math.sin(this.walkT * 40);
@@ -765,12 +804,13 @@ export class Dummy {
         // A distancia (dron): se mueve de lado mientras dispara, para no ser un blanco fijo
         if (this.kind.shape === "drone" || this.kind.gun === "rifle") { const side = new THREE.Vector3(to.z, 0, -to.x).normalize(); this.group.position.addScaledVector(side, Math.sin(this.walkT * 0.6) * c.speed * 0.6 * dt); moving = 0.5; }
         // (el centinela solo dispara cuando ya mira al jugador: gira despacio y se le puede rodear)
-        const aimed = this.kind.shape !== "sentinel" || Math.abs(Math.atan2(Math.sin(Math.atan2(to.x, to.z) - this.group.rotation.y), Math.cos(Math.atan2(to.x, to.z) - this.group.rotation.y))) < 0.3;
+        const aimed = (this.kind.shape !== "sentinel" && this.kind.shape !== "mech") || Math.abs(Math.atan2(Math.sin(Math.atan2(to.x, to.z) - this.group.rotation.y), Math.cos(Math.atan2(to.x, to.z) - this.group.rotation.y))) < 0.3;
         if (c.cd <= 0 && aimed) { c.cd = c.interval; c.onAttack(c.damage * (this.buffT > 0 ? 1.3 : 1)); this.flash = 0.1; this.attackT = 0.4; }
       }
-      if (this.kind.shape === "sentinel") this.charge = d <= c.range ? chargeLevel(c.cd, 0.75) : 0;
+      this.aimYaw = Math.atan2(to.x, to.z);
+      if (this.kind.shape === "sentinel" || this.kind.shape === "gunroller" || this.kind.shape === "bomber" || this.kind.shape === "mech") this.charge = d <= c.range ? chargeLevel(c.cd, this.kind.shape === "sentinel" ? 0.75 : 0.5) : 0;
       if (this.turretHead) this.turretHead.rotation.y = Math.atan2(to.x, to.z) - this.group.rotation.y;
-      else if (this.kind.shape === "sentinel") this.group.rotation.y = turnToward(this.group.rotation.y, Math.atan2(to.x, to.z), dt * 0.9);
+      else if (this.kind.shape === "sentinel" || this.kind.shape === "mech") this.group.rotation.y = turnToward(this.group.rotation.y, Math.atan2(goal.x, goal.z), dt * (this.kind.shape === "mech" ? 0.8 : 0.9));
       else this.group.rotation.y = Math.atan2(goal.x, goal.z);
       // Andar: las piernas se balancean (más rápido cuanto más rápido avanza)
       if (this.legs.length && d > c.range) {

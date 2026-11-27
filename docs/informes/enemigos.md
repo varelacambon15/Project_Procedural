@@ -1,4 +1,4 @@
-# Tarea 2 — Enemigos nuevos, fase 1 (`opus/enemigos`, sale de `opus/rapier`)
+# Tarea 2 — Enemigos nuevos, fases 1 y 2 (`opus/enemigos`, sale de `opus/rapier`)
 
 ## Qué se ha hecho
 Tres enemigos completos de `PLAN_ENEMIGOS.md` con los modelos de Blender del pack 13 (copiados a `assets/enemigos/`):
@@ -37,5 +37,30 @@ Siguen en verde waves, raid, hack, defense, i18n y physics. `npx tsc --noEmit` l
 - Aún no salen en incursiones ni en el Hack (`raidgen`/`hackgen`): lo meto con la campaña (tarea 3).
 - El respaldo procedural está probado solo por código (sin captura): con el GLB presente no se ve nunca.
 
-## Siguiente (fase 2)
-Rodante artillero, dron bombardero, arañitas en enjambre, mech pesado y asesino; luego invocador y berserker.
+## Fase 2 (27/11): cuatro robots más
+| | Modelo | Comportamiento | Aviso |
+|---|---|---|---|
+| **Rodante artillero** (420 PV) | `enemigo_rodante.glb` ×1,25 (pack 10) | Monociclo: rueda hasta 14 m y dispara ráfagas de 4 balas; la torreta te sigue | Luces naranjas 0,5 s antes de la ráfaga |
+| **Dron bombardero** (380 PV, vuela a 4,2 m) | `enemigo_dron_bombardero.glb` ×1,5 | Se pone sobre ti y suelta una bomba (22 de daño en 2,6 m) cada 3,4 s; la bahía queda vacía y «recarga» | Círculo rojo en el suelo que se llena 1,2 s y la bomba que cae |
+| **Arañitas** (45 PV) | `enemigo_aranita.glb` ×1,6 | Enjambre de 6+ que corre a 6,2 m/s y muerde flojo (4) | — (mueren de un tiro) |
+| **Mech pesado** (6.500 PV, mini-jefe con barra de jefe) | `enemigo_mech_pesado.glb` ×1,25 (3,3 m) | Anda despacio, gira con retraso; ametralladora de 9 balas y cada 7,5 s andanada de 4 misiles: uno donde estás y tres en anillo | Lanzamisiles que sube y brilla 0,8 s; círculos rojos 1,4–1,85 s |
+
+- Explosiones enemigas genéricas en `Waves.strike` (círculo de aviso, proyectil que cae y daño con caída
+  `blastDamage`); el efecto lo pinta `gun.explode(..., fxOnly)` y no hiere a otros enemigos.
+- Aparición en oleadas generadas: rodante desde la 1.ª, arañitas desde la 2.ª, bombardero desde la 3.ª, mech en la
+  4.ª, 6.ª, 8.ª… (no coincide con el jefe de cada 5).
+- Tests: `strikePattern` y `blastDamage` en `tests/enemyai.test.ts` (6 tests en total).
+- Triángulos: el rodante del pack 10 tiene **3.956** (pasa de 3.500 para robots: habría que recortarlo en Blender);
+  mech 5.824 (≤ 6.000 de jefe); bombardero 3.464; arañita 1.404.
+
+![fase 2, modelos: mech, bombardero, rodante, arañita](img/enemigos_fase2_modelos.jpg)
+![fase 2: ráfaga, círculos de misiles, bomba cayendo, enjambre](img/enemigos_fase2_pelea.jpg)
+
+Fase 2, honesto: el mech no tiene cabina como punto débil (el GLB tiene solo 5 mallas: torso, brazos y piernas);
+los círculos de aviso, desde dentro, se ven como arcos rojos en el suelo (se entienden, pero un sonido de alarma
+ayudaría); las arañitas no saltan.
+
+## Siguiente
+Humanoides especiales del pack 14 (asesino, invocador, berserker; granadero e incinerador se quedan como están):
+usan el cuerpo base del soldado en GLB, que hoy no está integrado (los humanoides son procedurales); conviene
+decidirlo con la tarea 3. Jefes nuevos (Colosus, Reina araña, Núcleo) solo si hay tiempo.
