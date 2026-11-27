@@ -80,3 +80,7 @@ boca cerca del centro y la mano derecha en el borde inferior. Cambios (sin valid
   los brazos, así que al apuntar el arma se agranda sobre su línea de mira (`adsBig` en `anim.json`: pistola 1,6,
   revólver 1,8; pivote = punto de mira, la mira no se mueve) y las manos con ella (`handScale`). Correa y esfera del
   reloj ocultas (en escorzo eran un aro y un bloque flotando).
+
+## Prueba del usuario en el .exe v0.20.1 (27/11)
+- ✅ «Las animaciones las he probado, han mejorado muchísimo» (recargas, sacar, inspeccionar por poses clave).
+- ✅ «Las posiciones de algunas armas también» (encuadre de la ronda 4).
