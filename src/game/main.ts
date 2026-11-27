@@ -58,6 +58,7 @@ import { StartScreen } from "./ui/start";
 import { TextDialog } from "./ui/dialog";
 import { AUTO, SLOTS, SAVE_VERSION, SaveManager, type SaveData, type SlotId } from "./save";
 import { platformStorage } from "./storage";
+import { preloadEnemyModels } from "./enemymodels";
 import { SHOP, newShopState, type ShopState } from "./shop";
 
 const ASSETS = "./weapons/";
@@ -901,6 +902,7 @@ async function boot() {
   // ---------- Oleadas de prueba y vida del jugador ----------
   const php = new PlayerHealth();
   let waveHurt = false;
+  preloadEnemyModels(); // (sabueso, reparador y centinela: GLB de assets/enemigos)
   const waves = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
     onWaveStart: (_i, mod) => { php.noRegen = mod === "noregen"; if (mod) toast(t("wm.start", { m: t(`wm.${mod}`), d: t(`wm.d.${mod}`) })); },
     onWaveEnd: (i, last, reward) => {

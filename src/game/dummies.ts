@@ -3,13 +3,15 @@
 // para añadir escudo o armadura más adelante.
 import * as THREE from "three";
 import { t } from "../i18n";
+import { enemyModelNow, isModelShape, loadEnemyModel, type EnemyModel } from "./enemymodels";
+import { chargeLevel, flankPoint, pounceState, turnToward } from "./enemyai";
 
 export type Element = "fuego" | "electrico" | "explosive" | null;
 export type Zone = "head" | "body" | "limb" | "shield";
 /** Capa de protección. Por ahora solo existe "health". */
 export interface Layer { id: "health"; value: number; max: number }
 /** Forma del enemigo: humanoide (por defecto) o robots de la simulación. */
-export type Shape = "humanoid" | "drone" | "spider" | "roller" | "turret";
+export type Shape = "humanoid" | "drone" | "spider" | "roller" | "turret" | "hound" | "repairer" | "sentinel";
 interface Kind {
   key: string; health: number; level: number; scale?: number; boss?: boolean;
   shape?: Shape; /** Altura a la que vuela (drones). */ fly?: number;
@@ -33,6 +35,10 @@ export const KINDS: Record<string, Kind> = {
   spider: { key: "spider", health: 380, level: 12, shape: "spider", cy: 0.55, top: 1.2 },
   roller: { key: "roller", health: 120, level: 9, shape: "roller", cy: 0.4, top: 1.0 },
   turret: { key: "turret", health: 600, level: 12, shape: "turret", cy: 1.15, top: 1.9 },
+  // Robots nuevos con modelo de Blender (tarea 2, PLAN_ENEMIGOS.md): sabueso en jauría, dron que repara y centinela con escudo
+  hound: { key: "hound", health: 340, level: 12, shape: "hound", cy: 0.75, top: 1.05 },
+  repairer: { key: "repairer", health: 240, level: 12, shape: "repairer", fly: 2.4, cy: 0, top: 0.55 },
+  sentinel: { key: "sentinel", health: 900, level: 14, shape: "sentinel", fly: 0.22, cy: 1.15, top: 1.75 },
   // Pesados y tiradores
   guardian: { key: "guardian", health: 1800, level: 14, scale: 1.25, shield: true },
   gunner: { key: "gunner", health: 360, level: 11, gun: "rifle" },
@@ -260,7 +266,9 @@ export class Dummy {
     for (const m of cache.values()) if ((m as THREE.MeshStandardMaterial).emissive) this.mats.push(m as THREE.MeshStandardMaterial);
     if (this.blink) this.blink = (cache.get(this.blink) as THREE.MeshStandardMaterial) ?? this.blink;
     this.glowSkip = new Set(this.mats.filter((m) => m.emissiveIntensity > 1)); this.baseEm = this.mats.map((m) => m.emissive.clone());
-    this.body.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && m.userData.zone === "head") this.heads.push({ m, z: m.position.z }); });
+    if (!this.model) this.body.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && m.userData.zone === "head") this.heads.push({ m, z: m.position.z }); });
+    // (modelo procedural de respaldo: cuando llegue el GLB, se cambia por él)
+    if (this.model && !this.model.fromGlb && isModelShape(kind.shape)) void loadEnemyModel(kind.shape).then((m) => { if (m && !this.gone) this.useModel(m, true); });
     this.scan = new THREE.Mesh(new THREE.RingGeometry(0.36 * (kind.scale ?? 1), 0.42 * (kind.scale ?? 1), 32), new THREE.MeshBasicMaterial({ color: 0x9fe8ee, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
     this.scan.rotation.x = -Math.PI / 2; this.group.add(this.scan);
     this.bar = document.createElement("div");
@@ -395,7 +403,80 @@ export class Dummy {
   private add(o: THREE.Object3D, parent: THREE.Object3D, zone: Zone | null) {
     parent.add(o); o.traverse((x) => { const m = x as THREE.Mesh; if (m.isMesh) { m.castShadow = true; if (zone) { m.userData = { dummy: this, zone }; this.hitboxes.push(m); } } }); return o;
   }
+  // ---------- Robots con modelo (sabueso, dron reparador, centinela) ----------
+  /** Modelo GLB (o su respaldo procedural) y sus pivotes `mov_*`. */ private model: EnemyModel | null = null;
+  /** Materiales que brillan (ojos, luces): se avivan para avisar de un ataque. */ private lights: { m: THREE.MeshStandardMaterial; base: number }[] | null = null;
+  /** Lado por el que rodea el sabueso (±1) y reloj de su salto (-1: sin saltar). */ private flankSide = Math.random() < 0.5 ? -1 : 1; private leapClock = -1;
+  /** Rayo de reparación en curso (lo pone `Waves` al curar) y hacia dónde. */ beamT = 0; readonly beamTo = new THREE.Vector3();
+  /** Carga del disparo del centinela (0..1, aviso). */ charge = 0;
+  /**
+   * Pone el modelo: sus mallas son las cajas de impacto (zona según el nombre de la pieza). `late` = después del
+   * constructor (el GLB ha llegado tarde): clona aquí los materiales con el plano de recorte.
+   */
+  private useModel(m: EnemyModel, late: boolean) {
+    if (this.model) {
+      const old = new Set<THREE.Object3D>(); this.model.root.traverse((o) => old.add(o));
+      for (let i = this.hitboxes.length - 1; i >= 0; i--) if (old.has(this.hitboxes[i])) this.hitboxes.splice(i, 1);
+      this.body.remove(this.model.root);
+    }
+    this.model = m; this.lights = null; this.body.add(m.root);
+    const cache = new Map<THREE.Material, THREE.Material>();
+    m.root.traverse((o) => {
+      const mesh = o as THREE.Mesh; if (!mesh.isMesh) return;
+      mesh.userData = { dummy: this, zone: mesh.userData.zone ?? "body" }; this.hitboxes.push(mesh);
+      if (!late) return;
+      const src = mesh.material as THREE.Material;
+      if (!cache.has(src)) { const c = src.clone(); c.clippingPlanes = [this.clip]; cache.set(src, c); }
+      mesh.material = cache.get(src)!;
+    });
+    for (const c of cache.values()) { const sm = c as THREE.MeshStandardMaterial; if (!sm.emissive) continue; this.mats.push(sm); this.baseEm.push(sm.emissive.clone()); if (sm.emissiveIntensity > 1) this.glowSkip.add(sm); }
+  }
+  /** Animación de los robots con modelo: patas al galope y mordisco, rotores y brazo soldador, anillo y cañón. */
+  private animModel(dt: number, moving: number) {
+    const m = this.model!, rig = m.rig, P = this.pose, a = this.attackT > 0 ? Math.sin((1 - this.attackT / 0.4) * Math.PI) : 0;
+    const rest = (o: THREE.Object3D) => o.userData.rest as { p: THREE.Vector3; r: THREE.Euler };
+    if (!this.lights) {
+      const ls: { m: THREE.MeshStandardMaterial; base: number }[] = [], seen = new Set<THREE.Material>();
+      // (ojos, focos y franjas de luz: los materiales con nombre de luz o que ya brillan)
+      m.root.traverse((o) => { const mt = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined; if (mt?.emissive && !seen.has(mt) && (/luz|lente/.test(mt.name) || mt.emissiveIntensity > 1)) { seen.add(mt); ls.push({ m: mt, base: mt.emissiveIntensity }); } });
+      this.lights = ls;
+    }
+    const glow = (k: number) => { for (const l of this.lights!) l.m.emissiveIntensity = this.alive ? l.base * (1 + k) : 0; };
+    const sh = this.kind.shape;
+    if (sh === "hound") {
+      // Galope: las patas de delante van juntas (algo desfasadas) y las de detrás, en contra; el lomo cabecea
+      const ps = pounceState(this.leapClock), w = this.walkT * 3.1, A = 0.6 * moving;
+      const legs = [0, 0.35, Math.PI, Math.PI + 0.35];
+      for (let i = 0; i < 4; i++) {
+        const leg = rig.get(`mov_pata_${i + 1}`); if (!leg) continue;
+        let r = Math.sin(w + legs[i]) * A;
+        if (ps.phase === "crouch") r = (i < 2 ? -0.35 : 0.45) * ps.k; // (agachado: patas recogidas)
+        else if (ps.phase === "leap") r = i < 2 ? 0.9 : -0.8; // (en el aire: estirado, delante y detrás)
+        leg.rotation.z = rest(leg).r.z + r;
+      }
+      const jaw = rig.get("mov_mandibula");
+      if (jaw) jaw.rotation.z = rest(jaw).r.z - (ps.phase !== "none" ? 0.55 : 0.6 * a + 0.05 * Math.sin(this.walkT * 7) * moving);
+      P.lean = Math.sin(w * 2) * 0.05 * moving;
+      if (ps.phase === "crouch") { P.dip = 0.12 * ps.k; P.lean = 0.12 * ps.k; }
+      else if (ps.phase === "leap") { P.dip = -Math.sin(ps.k * Math.PI) * 0.45; P.lean = -0.25 + 0.5 * ps.k; }
+      glow(ps.phase === "crouch" ? 2.5 * ps.k : ps.phase === "leap" ? 2 : 0);
+    } else if (sh === "repairer") {
+      for (let i = 1; i <= 4; i++) { const r = rig.get(`mov_rotor_${i}`); if (r) r.rotation.y += dt * (i % 2 ? 46 : -46); }
+      this.beamT = Math.max(0, this.beamT - dt);
+      const arm = rig.get("mov_brazo"), on = this.beamT > 0 && this.alive;
+      // (curando: el brazo baja hacia el aliado y tiembla al soldar)
+      if (arm) { const R = rest(arm).r; arm.rotation.z += ((on ? -0.55 + Math.sin(this.walkT * 30) * 0.05 : R.z) - arm.rotation.z) * Math.min(1, dt * 8); arm.rotation.y = R.y + (on ? Math.sin(this.walkT * 9) * 0.12 : 0); }
+      for (const n of ["haz_soldadura", "halo_soldadura", "chispa_haz"]) { const o = rig.get(n); if (o) o.visible = on && (n !== "chispa_haz" || Math.random() < 0.7); }
+      P.lean = 0.2 * moving + (on ? 0.12 : 0);
+      glow(on ? 0.6 + Math.random() * 0.4 : 0);
+    } else if (sh === "sentinel") {
+      const ring = rig.get("mov_anillo"); if (ring) ring.rotation.y += dt * (1.6 + 6 * this.charge);
+      const can = rig.get("mov_canon"); if (can) can.position.x = rest(can).p.x - 0.06 * a + 0.01 * this.charge * Math.sin(this.walkT * 40);
+      glow(this.charge * 3);
+    }
+  }
   private buildRobot(shape: Shape) {
+    if (isModelShape(shape)) { this.useModel(enemyModelNow(shape), false); return; }
     const B = this.body, box = (w: number, h: number, d: number, m: THREE.Material) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
     const cyl = (r0: number, r1: number, h: number, m: THREE.Material, n = 12) => new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, h, n), m);
     const at = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number) => { o.position.set(x, y, z); return o; };
@@ -670,14 +751,27 @@ export class Dummy {
       // Araña: se abalanza cuando está cerca (salto rápido)
       this.pounceCd -= dt; if (this.kind.shape === "spider" && d < 7 && d > c.range && this.pounceCd <= 0) { this.pounceT = 0.35; this.pounceCd = 3 + Math.random() * 2; }
       this.pounceT = Math.max(0, this.pounceT - dt);
-      const sp = c.speed * (this.pounceT > 0 ? 4 : 1) * (this.buffT > 0 ? 1.25 : 1) * (this.slowT > 0 ? this.slowF : 1);
-      if (d > c.range) { this.group.position.addScaledVector(to.clone().normalize(), Math.min(d - c.range, sp * dt)); moving = 1; }
+      // Sabueso: de lejos corre abierto hacia un flanco; cerca se agacha (aviso: ojos encendidos) y salta
+      let goal = to, leapK = 1;
+      if (this.kind.shape === "hound") {
+        const p = this.group.position, tg = c.target(), f = flankPoint({ x: p.x, z: p.z }, { x: tg.x, z: tg.z }, this.flankSide);
+        goal = new THREE.Vector3(f.x - p.x, 0, f.z - p.z);
+        if (this.leapClock < 0 && d < 7.5 && d > c.range + 1.5 && this.pounceCd <= 0) { this.leapClock = 0; this.pounceCd = 3.2 + Math.random() * 1.6; }
+        if (this.leapClock >= 0) { this.leapClock += dt; const ps = pounceState(this.leapClock); leapK = ps.phase === "crouch" ? 0.1 : ps.phase === "leap" ? 4.2 : 1; if (ps.phase === "none") this.leapClock = -1; }
+      }
+      const sp = c.speed * (this.pounceT > 0 ? 4 : 1) * leapK * (this.buffT > 0 ? 1.25 : 1) * (this.slowT > 0 ? this.slowF : 1);
+      if (d > c.range) { this.group.position.addScaledVector(goal.clone().normalize(), Math.min(d - c.range, sp * dt)); moving = this.leapClock >= 0 && leapK < 1 ? 0.2 : 1; }
       else {
         // A distancia (dron): se mueve de lado mientras dispara, para no ser un blanco fijo
         if (this.kind.shape === "drone" || this.kind.gun === "rifle") { const side = new THREE.Vector3(to.z, 0, -to.x).normalize(); this.group.position.addScaledVector(side, Math.sin(this.walkT * 0.6) * c.speed * 0.6 * dt); moving = 0.5; }
-        if (c.cd <= 0) { c.cd = c.interval; c.onAttack(c.damage * (this.buffT > 0 ? 1.3 : 1)); this.flash = 0.1; this.attackT = 0.4; }
+        // (el centinela solo dispara cuando ya mira al jugador: gira despacio y se le puede rodear)
+        const aimed = this.kind.shape !== "sentinel" || Math.abs(Math.atan2(Math.sin(Math.atan2(to.x, to.z) - this.group.rotation.y), Math.cos(Math.atan2(to.x, to.z) - this.group.rotation.y))) < 0.3;
+        if (c.cd <= 0 && aimed) { c.cd = c.interval; c.onAttack(c.damage * (this.buffT > 0 ? 1.3 : 1)); this.flash = 0.1; this.attackT = 0.4; }
       }
-      if (this.turretHead) this.turretHead.rotation.y = Math.atan2(to.x, to.z) - this.group.rotation.y; else this.group.rotation.y = Math.atan2(to.x, to.z);
+      if (this.kind.shape === "sentinel") this.charge = d <= c.range ? chargeLevel(c.cd, 0.75) : 0;
+      if (this.turretHead) this.turretHead.rotation.y = Math.atan2(to.x, to.z) - this.group.rotation.y;
+      else if (this.kind.shape === "sentinel") this.group.rotation.y = turnToward(this.group.rotation.y, Math.atan2(to.x, to.z), dt * 0.9);
+      else this.group.rotation.y = Math.atan2(goal.x, goal.z);
       // Andar: las piernas se balancean (más rápido cuanto más rápido avanza)
       if (this.legs.length && d > c.range) {
         // Paso: la cadera adelanta y atrasa la pierna; la rodilla se dobla mientras la pierna va hacia delante (el pie
@@ -694,6 +788,7 @@ export class Dummy {
     if (this.kind.shape && this.kind.shape !== "humanoid") { this.walkT += dt * (1 + moving * 4); this.animRobot(dt, moving, toTarget); }
     this.buffT = Math.max(0, this.buffT - dt); this.slowT = Math.max(0, this.slowT - dt);
     this.animStyle(dt, moving);
+    if (this.model && this.alive) this.animModel(dt, moving);
     // Fallo de código: parpadea y cada pocos segundos salta a otro sitio cerca del jugador (intocable durante el salto)
     if (this.kind.glitch && this.alive) {
       this.glitchT -= dt; this.phaseT = Math.max(0, this.phaseT - dt);

@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import data from "../data/waves.json";
 import { Dummy, KINDS, randomLook } from "./dummies";
+import { pickHealTarget } from "./enemyai";
 import { enemyDamageMult, enemyHealthMult, enemyLevel } from "./progress";
 
 export interface WaveEvents {
@@ -33,6 +34,10 @@ function extraWave(n: number, wave: number): Record<string, number> {
   if (n >= 2) w.medic = 1 + Math.floor(n / 4);
   if (n >= 3) w.glitch = Math.floor(n / 3);
   if (n >= 5) w.commander = 1;
+  // Robots nuevos (tarea 2): sabuesos en jaurías de 2–3, un reparador que cura a los suyos y el centinela con escudo
+  w.hound = 2 + Math.floor(n / 2);
+  if (n >= 2) w.repairer = 1 + Math.floor(n / 5);
+  if (n >= 3) w.sentinel = Math.floor((n - 1) / 3);
   if (n >= 2) w.sturdy = 1 + Math.floor(n / 3);
   if (n >= 4) w.elite = Math.floor(n / 4);
   return w;
@@ -115,11 +120,16 @@ export class Waves {
     const toCore = !!this.core && this.core.targets(kind);
     (d as unknown as { toCore: boolean }).toCore = toCore;
     const hitP = (x: number, k?: "melee" | "orb" | "explosive") => { if (toCore && this.core) this.core.hit(x); else this.ev.onPlayerHit(x, k); };
-    d.chase = { target: () => this.decoy?.() ?? (toCore && this.core ? this.core.pos : null) ?? this.player(), speed: sp, range: rg?.range ?? (k.shape === "roller" ? 1.4 : data.attackRange), interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
+    const foe = () => this.decoy?.() ?? (toCore && this.core ? this.core.pos : null) ?? this.player();
+    // (el reparador va a por el aliado más herido y se queda cerca; si no hay ninguno, flota a distancia del jugador)
+    const target = kind === "repairer" ? () => { const a = this.healTarget(d, 30); d.chase!.range = a ? 5 : rg?.range ?? 12; return a ? a.group.position : foe(); } : foe;
+    d.chase = { target, speed: sp, range: rg?.range ?? (k.shape === "roller" ? 1.4 : k.shape === "hound" ? 2.1 : data.attackRange), interval: rg?.interval ?? data.attackInterval, damage: dmg, cd: 0.8,
       onAttack: (x) => {
         if (k.shape === "roller") { hitP(x, "explosive"); this.ev.onSelfDestruct?.(d); return; } // (el kamikaze explota al llegar)
         const od = (rg?.orbDamage ?? 0) * (M ? M.dmg : 1) * dm;
         if (kind === "medic") { this.healBeam(d); return; }
+        if (kind === "repairer") { this.healBeam(d, 0.05, 9); return; }
+        if (kind === "sentinel" && rg) { for (const s of [-0.07, 0, 0.07]) this.orb(d, rg.orbSpeed, od, s); return; } // (tres esferas en abanico)
         if (k.gun === "rifle" && rg) { this.bursts.push({ d, n: 3, t: 0, speed: rg.orbSpeed, dmg: od }); return; }
         if (k.gun === "sniper" && rg) { this.aimAt(d, rg.orbSpeed, od); return; }
         if (rg && !k.boss) this.orb(d, rg.orbSpeed, od); else hitP(x);
@@ -150,12 +160,19 @@ export class Waves {
   }
 
   /** Médico: cura al aliado más herido cerca (rayo verde visible). */
-  private healBeam(d: Dummy) {
-    const t = this.alive.filter((x) => x !== d && x.alive && x.hurt > 0.02 && x.center.distanceTo(d.center) < 11).sort((a, b) => b.hurt - a.hurt)[0];
+  /** Aliado vivo más herido a menos de `reach` m (médico y reparador). */
+  private healTarget(d: Dummy, reach = 11): Dummy | null {
+    const p = d.group.position, i = pickHealTarget({ x: p.x, z: p.z }, this.alive.map((x) => ({ x: x.group.position.x, z: x.group.position.z, hurt: x.hurt, alive: x.alive, self: x === d })), reach);
+    return i >= 0 ? this.alive[i] : null;
+  }
+  /** Médico y reparador: curan un `frac` de la vida máxima al aliado más herido cerca (rayo verde visible). */
+  private healBeam(d: Dummy, frac = 0.06, reach = 11) {
+    const t = this.healTarget(d, reach);
     if (!t) return;
-    t.heal(t.layers[t.layers.length - 1].max * 0.06);
+    t.heal(t.layers[t.layers.length - 1].max * frac);
     const line = new THREE.Mesh(laserGeo, new THREE.MeshBasicMaterial({ color: 0x4aff9a, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }));
-    const a = d.center, b = t.center; line.scale.set(4, 4, a.distanceTo(b)); line.position.copy(a).lerp(b, 0.5); line.lookAt(b);
+    const a = d.center, b = t.center;
+    d.beamT = 0.5; d.beamTo.copy(b); line.scale.set(4, 4, a.distanceTo(b)); line.position.copy(a).lerp(b, 0.5); line.lookAt(b);
     this.scene.add(line); this.beams.push({ m: line, t: 0.3 });
   }
   private beams: { m: THREE.Mesh; t: number }[] = [];
