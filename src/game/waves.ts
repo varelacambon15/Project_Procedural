@@ -3,7 +3,7 @@
 import * as THREE from "three";
 import data from "../data/waves.json";
 import { Dummy, KINDS, randomLook } from "./dummies";
-import { pickHealTarget } from "./enemyai";
+import { blastDamage, pickHealTarget, strikePattern } from "./enemyai";
 import { enemyDamageMult, enemyHealthMult, enemyLevel } from "./progress";
 
 export interface WaveEvents {
@@ -15,6 +15,8 @@ export interface WaveEvents {
   onPlayerHit(dmg: number, kind?: "melee" | "orb" | "explosive"): void;
   /** Un kamikaze ha llegado al jugador y explota (efecto y daño a los de alrededor). */
   onSelfDestruct?(d: Dummy): void;
+  /** Explosión enemiga (bomba, misil) en `at` con radio `r`: solo el efecto; el daño al jugador ya lo pone `Waves`. */
+  onBlast?(at: THREE.Vector3, r: number): void;
 }
 
 import { WAVE_MODIFIERS, type WaveModifier } from "./wavemods";
@@ -38,6 +40,10 @@ function extraWave(n: number, wave: number): Record<string, number> {
   w.hound = 2 + Math.floor(n / 2);
   if (n >= 2) w.repairer = 1 + Math.floor(n / 5);
   if (n >= 3) w.sentinel = Math.floor((n - 1) / 3);
+  w.gunroller = 1 + Math.floor(n / 3);
+  if (n >= 2) w.swarmling = 6 + n; // (enjambre: muchas y frágiles)
+  if (n >= 3) w.bomber = 1 + Math.floor(n / 5);
+  if (n >= 4 && n % 2 === 0) w.mech = 1; // (mini-jefe cada dos oleadas a partir de la 4.ª generada)
   if (n >= 2) w.sturdy = 1 + Math.floor(n / 3);
   if (n >= 4) w.elite = Math.floor(n / 4);
   return w;
@@ -46,6 +52,7 @@ function extraWave(n: number, wave: number): Record<string, number> {
 /** Esfera de energía lanzada por un enemigo: va en línea recta hacia donde estaba el jugador; se puede esquivar. */
 interface Orb { mesh: THREE.Mesh; v: THREE.Vector3; t: number; dmg: number; core?: boolean }
 const orbGeo = new THREE.SphereGeometry(0.22, 12, 8), orbHalo = new THREE.SphereGeometry(0.38, 10, 6);
+const shellGeo = new THREE.CylinderGeometry(0.09, 0.12, 0.42, 8);
 const bulletGeo = new THREE.BoxGeometry(0.04, 0.04, 0.5), laserGeo = new THREE.BoxGeometry(0.012, 0.012, 1);
 
 /** Cada cuántas oleadas sale el jefe (y la arena cambia al vencerlo). */
@@ -88,6 +95,7 @@ export class Waves {
     this.volleys = []; // (si no, el jefe ya retirado seguía lanzando ráfagas)
     this.bursts = []; for (const a of this.aims) this.scene.remove(a.line); this.aims = [];
     for (const b of this.beams) this.scene.remove(b.m); this.beams = [];
+    for (const s of this.strikes) { this.scene.remove(s.ring); this.scene.remove(s.fill); if (s.shell) this.scene.remove(s.shell.m); } this.strikes = []; this.salvos = [];
   }
 
   private next() {
@@ -131,10 +139,14 @@ export class Waves {
         if (kind === "repairer") { this.healBeam(d, 0.05, 9); return; }
         if (kind === "sentinel" && rg) { for (const s of [-0.07, 0, 0.07]) this.orb(d, rg.orbSpeed, od, s); return; } // (tres esferas en abanico)
         if (k.gun === "rifle" && rg) { this.bursts.push({ d, n: 3, t: 0, speed: rg.orbSpeed, dmg: od }); return; }
+        if (kind === "gunroller" && rg) { this.bursts.push({ d, n: 4, t: 0, speed: rg.orbSpeed, dmg: od }); return; }
+        if (kind === "bomber") { this.bomb(d, x); return; }
+        if (kind === "mech" && rg) { this.bursts.push({ d, n: 9, t: 0, speed: rg.orbSpeed, dmg: od }); d.fireT = 1.2; return; }
         if (k.gun === "sniper" && rg) { this.aimAt(d, rg.orbSpeed, od); return; }
         if (rg && !k.boss) this.orb(d, rg.orbSpeed, od); else hitP(x);
       } };
     if (kind === "commander") { const ring = new THREE.Mesh(new THREE.RingGeometry(9.6, 10, 48), new THREE.MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; d.group.add(ring); }
+    if (kind === "mech") this.salvos.push({ d, t: 4, dmg: dmg * 0.6 });
     if (k.boss) { d.alwaysBar = true; if (rg?.volleyEvery) this.volleys.push({ d, every: rg.volleyEvery, t: 2, speed: rg.orbSpeed, dmg: rg.orbDamage * dm }); }
     this.scene.add(d.group); this.dummies.push(d); this.alive.push(d);
     return d;
@@ -176,6 +188,23 @@ export class Waves {
     this.scene.add(line); this.beams.push({ m: line, t: 0.3 });
   }
   private beams: { m: THREE.Mesh; t: number }[] = [];
+  /** Impactos anunciados: un círculo rojo en el suelo que se llena; al acabar, explosión con daño de área al jugador. */
+  private strikes: { at: THREE.Vector3; r: number; t: number; max: number; dmg: number; ring: THREE.Mesh; fill: THREE.Mesh; shell?: { m: THREE.Mesh; from: THREE.Vector3 } }[] = [];
+  /** Mech: cuenta atrás hasta su próxima andanada de misiles. */ private salvos: { d: Dummy; t: number; dmg: number }[] = [];
+  private strike(at: THREE.Vector3, r: number, t: number, dmg: number, from?: THREE.Vector3) {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(r - 0.12, r, 40), new THREE.MeshBasicMaterial({ color: 0xff3a1e, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide }));
+    const fill = new THREE.Mesh(new THREE.CircleGeometry(r, 40), new THREE.MeshBasicMaterial({ color: 0xff3a1e, transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide }));
+    for (const m of [ring, fill]) { m.rotation.x = -Math.PI / 2; m.position.set(at.x, 0.04, at.z); this.scene.add(m); }
+    fill.scale.setScalar(0.01);
+    let shell: { m: THREE.Mesh; from: THREE.Vector3 } | undefined;
+    if (from) { const m = new THREE.Mesh(shellGeo, new THREE.MeshStandardMaterial({ color: 0x2a2620, emissive: 0xff6a1a, emissiveIntensity: 0.6, metalness: 0.6, roughness: 0.4 })); m.position.copy(from); this.scene.add(m); shell = { m, from: from.clone() }; }
+    this.strikes.push({ at: at.clone().setY(0), r, t, max: t, dmg, ring, fill, shell });
+  }
+  /** Bombardero: suelta una bomba sobre donde estás; el círculo avisa 1,2 s antes. */
+  private bomb(d: Dummy, dmg: number) {
+    const p = (this.decoy?.() ?? this.player()).clone();
+    this.strike(p, 2.6, 1.2, dmg, d.group.position.clone().add(new THREE.Vector3(0, -0.4, 0))); d.dropT = 2.4;
+  }
   /** Francotirador: un láser rojo te sigue 1,2 s y luego dispara una bala muy rápida (moverse la esquiva). */
   private aimAt(d: Dummy, speed: number, dmg: number) {
     if (this.aims.some((a) => a.d === d)) return;
@@ -213,6 +242,25 @@ export class Waves {
       a.line.scale.set(1, 1, len); a.line.position.copy(from).lerp(to, 0.5); a.line.lookAt(to);
       (a.line.material as THREE.MeshBasicMaterial).opacity = 0.25 + 0.5 * (1 - a.t / 1.2) * (Math.sin(a.t * 40) > -0.3 ? 1 : 0.4);
       if (a.t <= 0 || !a.d.alive) { this.scene.remove(a.line); this.aims.splice(this.aims.indexOf(a), 1); if (a.d.alive) this.orb(a.d, a.speed, a.dmg, 0, true); }
+    }
+    for (const s of [...this.strikes]) {
+      s.t -= dt; const k = 1 - Math.max(0, s.t) / s.max;
+      s.fill.scale.setScalar(Math.max(0.01, k)); (s.ring.material as THREE.MeshBasicMaterial).opacity = 0.5 + 0.5 * Math.abs(Math.sin(k * k * 30));
+      if (s.shell) s.shell.m.position.lerpVectors(s.shell.from, s.at, k * k); // (cae acelerando)
+      if (s.t > 0) continue;
+      for (const m of [s.ring, s.fill]) this.scene.remove(m); if (s.shell) this.scene.remove(s.shell.m);
+      this.strikes.splice(this.strikes.indexOf(s), 1);
+      this.ev.onBlast?.(s.at.clone().setY(0.3), s.r);
+      const pl = this.decoy?.() ?? this.player(), hurt = blastDamage(Math.hypot(pl.x - s.at.x, pl.z - s.at.z), s.r, s.dmg);
+      if (hurt > 0) this.ev.onPlayerHit(hurt, "explosive");
+    }
+    for (const m of [...this.salvos]) {
+      if (!m.d.alive || !this.alive.includes(m.d)) { this.salvos.splice(this.salvos.indexOf(m), 1); continue; }
+      m.t -= dt; m.d.salvoK = Math.max(0, 1 - m.t / 0.8); // (el lanzamisiles se levanta y brilla antes)
+      if (m.t > 0) continue;
+      m.t = 7.5; m.d.salvoK = 0;
+      const p = this.decoy?.() ?? this.player(), from = m.d.center.add(new THREE.Vector3(0, 0.9, 0));
+      strikePattern({ x: p.x, z: p.z }, 4, 3.2).forEach((q, i) => this.strike(new THREE.Vector3(q.x, 0, q.z), 2.1, 1.4 + i * 0.15, m.dmg, from));
     }
     for (const v of [...this.volleys]) {
       if (!v.d.alive || !this.alive.includes(v.d)) { this.volleys.splice(this.volleys.indexOf(v), 1); continue; }

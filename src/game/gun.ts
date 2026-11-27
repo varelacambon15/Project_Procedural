@@ -1940,13 +1940,15 @@ export class Gun {
       this.applyHit(n, "body", n.center, dmg, null, false, false); n.applyStatus("electrico", dmg); src = n.center;
     }
   }
-  explode(at: THREE.Vector3, dmg: number, element: Element, except?: Dummy, color = 0xffb060) {
+  /** Explosión: destello, onda y daño a los enemigos cercanos (`fxOnly`: solo el efecto, p. ej. bombas enemigas). */
+  explode(at: THREE.Vector3, dmg: number, element: Element, except?: Dummy, color = 0xffb060, fxOnly = false) {
     const m = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 8), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1, depthWrite: false }));
     m.position.copy(at); this.scene.add(m); this.bursts.push({ mesh: m, t: 0.35 });
     // Onda de choque: anillo que se abre a ras de suelo
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.42, 32), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide }));
     ring.rotation.x = -Math.PI / 2; ring.position.set(at.x, 0.05, at.z); this.scene.add(ring); this.bursts.push({ mesh: ring, t: 0.35 });
     this.sfx("boom");
+    if (fxOnly) return;
     for (const d of this.hooks.dummies()) if (d !== except && d.alive && d.center.distanceTo(at) < 2.2) {
       this.applyHit(d, "body", d.center, dmg, element === "explosive" ? null : element, false, false);
       d.push(d.center.clone().sub(at).setY(0).normalize(), 0.35); // empuje corto

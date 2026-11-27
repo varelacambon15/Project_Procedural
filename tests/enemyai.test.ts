@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chargeLevel, flankPoint, pickHealTarget, pounceState, turnToward } from "../src/game/enemyai";
+import { blastDamage, chargeLevel, flankPoint, pickHealTarget, pounceState, strikePattern, turnToward } from "../src/game/enemyai";
 import { MODEL_SHAPES, zoneOf } from "../src/game/enemymodels";
 
 describe("enemigos nuevos: lógica pura (tarea 2)", () => {
@@ -38,9 +38,18 @@ describe("enemigos nuevos: lógica pura (tarea 2)", () => {
     expect(chargeLevel(2, 0.75)).toBe(0); expect(chargeLevel(0.375, 0.75)).toBeCloseTo(0.5, 6); expect(chargeLevel(0, 0.75)).toBe(1);
   });
   it("zonas de impacto por nombre de pieza", () => {
-    expect(MODEL_SHAPES).toHaveLength(3);
+    expect(MODEL_SHAPES).toHaveLength(7);
     expect(zoneOf("hound", "visor")).toBe("head"); expect(zoneOf("hound", "mov_pata_3")).toBe("limb"); expect(zoneOf("hound", "lomo")).toBe("body");
     expect(zoneOf("repairer", "camara_lente")).toBe("head"); expect(zoneOf("repairer", "mov_rotor_2")).toBe("limb");
+    expect(zoneOf("gunroller", "mov_rueda")).toBe("limb"); expect(zoneOf("bomber", "ojo_lente")).toBe("head"); expect(zoneOf("bomber", "carga_2")).toBe("body");
+    expect(zoneOf("swarmling", "visor")).toBe("head"); expect(zoneOf("mech", "mov_pierna_der")).toBe("limb"); expect(zoneOf("mech", "mov_torso")).toBe("body");
     expect(zoneOf("sentinel", "escudo_panel_1")).toBe("shield"); expect(zoneOf("sentinel", "sensor_lente")).toBe("head"); expect(zoneOf("sentinel", "casco")).toBe("body");
+  });
+  it("andanadas: uno en el centro y el resto en anillo; daño con caída hasta el borde", () => {
+    const pts = strikePattern({ x: 10, z: 5 }, 4, 3, () => 0.5);
+    expect(pts).toHaveLength(4); expect(pts[0]).toEqual({ x: 10, z: 5 });
+    for (const p of pts.slice(1)) { const d = Math.hypot(p.x - 10, p.z - 5); expect(d).toBeGreaterThanOrEqual(2.25 - 1e-9); expect(d).toBeLessThanOrEqual(3 + 1e-9); }
+    expect(blastDamage(0, 3, 20)).toBe(20); expect(blastDamage(1, 3, 20)).toBe(20);
+    expect(blastDamage(2.999, 3, 20)).toBeCloseTo(6, 1); expect(blastDamage(3, 3, 20)).toBe(0);
   });
 });

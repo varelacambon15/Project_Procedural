@@ -915,7 +915,7 @@ async function boot() {
       contractEvent({ type: "wave", reached: i + 1, clean: !waveHurt }); waveHurt = false; toast(t("ui.waveDone", { n: i + 1 })); earn(Math.round(SHOP.income.waveEnd * reward * curPerks.fortune)); gainXp(waveXp(i + 1, inv.progress.level) * reward); windUsed = false; hooksWaveEnd(i, last);
       if ((i + 1) % BOSS_EVERY === 0 && arena.layout) { arena.set(mutateArena(arena.layout, arena.bounds), true, player.pos); toast(t("ui.arenaShift")); } },
     onAllDone: () => { toast(t("ui.wavesDone")); autosave(); },
-    onSelfDestruct: (d) => selfDestruct(d),
+    onSelfDestruct: (d) => selfDestruct(d), onBlast: (at) => { gun.explode(at, 0, "explosive", undefined, 0xff7a3a, true); if (settings.screenShake) shake = Math.min(0.6, shake + 0.12); },
     onPlayerHit: (dmg, kind) => {
       waveHurt = true;
       if (settings.screenShake) shake = Math.min(0.5, shake + 0.18);
@@ -950,7 +950,7 @@ async function boot() {
   }
   // ---------- Incursiones (ordenador de la sala B) ----------
   const mobs = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
-    onWaveEnd() {}, onAllDone() {}, onSelfDestruct: (d) => selfDestruct(d),
+    onWaveEnd() {}, onAllDone() {}, onSelfDestruct: (d) => selfDestruct(d), onBlast: (at) => { gun.explode(at, 0, "explosive", undefined, 0xff7a3a, true); if (settings.screenShake) shake = Math.min(0.6, shake + 0.12); },
     onPlayerHit: (dmg, kind) => { if (settings.screenShake) shake = Math.min(0.5, shake + 0.18); hurtPlayer(dmg, kind); $("dmgflash").classList.remove("on"); void $("dmgflash").offsetWidth; $("dmgflash").classList.add("on"); },
   });
   mobs.playerLevel = () => inv.progress.level;
@@ -1442,7 +1442,7 @@ async function boot() {
         phys = new PhysicsLayer(scene, world.shootables, camera);
         // Explosiones: se engancha a las de las armas y las granadas sin tocar su código (envolviendo el método)
         const gx = gun.explode.bind(gun);
-        gun.explode = (at, dmg, el, except, color) => { phys?.explode(at, 5, 6); return gx(at, dmg, el, except, color); };
+        gun.explode = (at, dmg, el, except, color, fxOnly) => { phys?.explode(at, 5, 6); return gx(at, dmg, el, except, color, fxOnly); };
         const nx = (nades as unknown as { explode: (g: { radius: number }, at: THREE.Vector3, scale: number) => void });
         const ng = nx.explode.bind(nades);
         nx.explode = (g, at, scale) => { phys?.explode(at, g.radius * 1.3, 7 * scale); return ng(g, at, scale); };

@@ -6,13 +6,14 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { Zone } from "./dummies";
 
-export type ModelShape = "hound" | "repairer" | "sentinel";
-export const MODEL_SHAPES: readonly ModelShape[] = ["hound", "repairer", "sentinel"];
+export type ModelShape = "hound" | "repairer" | "sentinel" | "gunroller" | "bomber" | "swarmling" | "mech";
+export const MODEL_SHAPES: readonly ModelShape[] = ["hound", "repairer", "sentinel", "gunroller", "bomber", "swarmling", "mech"];
 export const isModelShape = (s: unknown): s is ModelShape => typeof s === "string" && (MODEL_SHAPES as readonly string[]).includes(s);
 
-const FILE: Record<ModelShape, string> = { hound: "enemigo_sabueso", repairer: "enemigo_dron_reparador", sentinel: "enemigo_centinela_flotante" };
+const FILE: Record<ModelShape, string> = { hound: "enemigo_sabueso", repairer: "enemigo_dron_reparador", sentinel: "enemigo_centinela_flotante", gunroller: "enemigo_rodante", bomber: "enemigo_dron_bombardero", swarmling: "enemigo_aranita", mech: "enemigo_mech_pesado" };
 /** Escala del modelo en el juego (el centinela del pack mide 0,76 m: se agranda para que imponga). */
-export const MODEL_SCALE: Record<ModelShape, number> = { hound: 1.2, repairer: 1.15, sentinel: 2.1 };
+// (mech: 2,62 m del pack → 3,3 m, un mini-jefe que imponga; arañita: 0,32 → 0,51 m)
+export const MODEL_SCALE: Record<ModelShape, number> = { hound: 1.2, repairer: 1.15, sentinel: 2.1, gunroller: 1.25, bomber: 1.5, swarmling: 1.6, mech: 1.25 };
 export const enemyModelUrl = (s: ModelShape) => `./enemigos/${FILE[s]}.glb`;
 
 /**
@@ -31,6 +32,22 @@ export function zoneOf(shape: ModelShape, name: string): Zone {
     if (/rotor|guarda|tirante|mov_brazo|haz_|halo_|chispa|electrodo/.test(n)) return "limb";
     return "body";
   }
+  if (shape === "gunroller") {
+    if (/proa|faro|lente|luz_carenado/.test(n)) return "head";
+    if (/mov_rueda|guardabarros/.test(n)) return "limb";
+    return "body";
+  }
+  if (shape === "bomber") {
+    if (/^ojo_|morro|aro_morro/.test(n)) return "head";
+    if (/rotor|brazo|hombro|botalon|deriva|ducto|banda_brazo|montante/.test(n)) return "limb";
+    return "body";
+  }
+  if (shape === "swarmling") {
+    if (/casco|visor|ojo|ceja|colmillo|antena/.test(n)) return "head";
+    if (/^mov_pata|hombrera/.test(n)) return "limb";
+    return "body";
+  }
+  if (shape === "mech") return /^mov_(pierna|brazo)/.test(n) ? "limb" : "body";
   if (/^escudo_/.test(n)) return "shield";
   if (/sensor|domo/.test(n)) return "head";
   return "body";
@@ -43,9 +60,12 @@ function wrap(inner: THREE.Object3D, shape: ModelShape, fromGlb: boolean): Enemy
   const root = new THREE.Group(); root.name = `modelo_${shape}`;
   inner.rotation.y = -Math.PI / 2; // (+X del GLB → +Z del juego)
   root.add(inner); root.scale.setScalar(MODEL_SCALE[shape]);
+  // (mech: los brazos cuelgan del torso para girar con él al apuntar; en el GLB están sueltos)
+  const torso = inner.getObjectByName("mov_torso");
+  if (torso) { root.updateMatrixWorld(true); for (const n of ["mov_brazo_der", "mov_brazo_izq"]) { const a = inner.getObjectByName(n); if (a) torso.attach(a); } }
   const rig = new Map<string, THREE.Object3D>();
   root.traverse((o) => {
-    if (/^mov_|^haz_|^halo_|^chispa|^cian_|^columna_/.test(o.name)) rig.set(o.name, o);
+    if (/^mov_|^haz_|^halo_|^chispa|^cian_|^columna_|^carga_/.test(o.name)) rig.set(o.name, o);
     const m = o as THREE.Mesh;
     if (m.isMesh) { m.castShadow = true; m.userData.zone = zoneOf(shape, m.name || m.parent?.name || ""); }
   });
@@ -103,6 +123,28 @@ function buildProcedural(s: ModelShape): THREE.Group {
       const p = pivot(`mov_rotor_${i + 1}`, x, y, z); box(`mov_rotor_${i + 1}_m`, 0.34, 0.012, 0.04, 0, 0, 0, M(0x111111, 0.3, 0.6), p);
     });
     const arm = pivot("mov_brazo", 0.088, 0.076, 0.17); box("mov_brazo_m", 0.3, 0.04, 0.04, 0.15, 0, 0, steel, arm);
+  } else if (s === "gunroller") {
+    const paint = M(0x1a1d22, 0.5, 0.5), steel = M(0x525e6e, 0.8, 0.35), orange = M(0x301000, 0.2, 0.4, 0xff7a1a, 2.5);
+    const wheel = pivot("mov_rueda", 0, 0.28, 0); wheel.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.16, 16), M(0x0a0a0a, 0.1, 0.9)), { name: "mov_rueda_m", rotation: new THREE.Euler(Math.PI / 2, 0, 0) }));
+    box("chasis", 0.5, 0.3, 0.34, 0.02, 0.56, 0, paint); box("proa", 0.06, 0.12, 0.24, 0.29, 0.58, 0, orange);
+    const tur = pivot("mov_torreta", 0, 0.74, 0); box("mov_torreta_m", 0.34, 0.12, 0.2, 0.08, 0.04, 0, steel, tur); box("canon_m", 0.3, 0.04, 0.04, 0.3, 0.05, 0, steel, tur);
+  } else if (s === "bomber") {
+    const paint = M(0x1a1d22, 0.5, 0.5), steel = M(0x525e6e, 0.8, 0.35), orange = M(0x301000, 0.2, 0.4, 0xff7a1a, 2.5);
+    box("casco", 0.62, 0.24, 0.44, 0, 0, 0, paint); box("ojo_lente", 0.06, 0.1, 0.12, 0.33, 0, 0, orange);
+    [[0.42, 0.17, -0.4], [0.42, 0.17, 0.4], [-0.37, 0.17, -0.4], [-0.37, 0.17, 0.4]].forEach(([x, y, z], i) => {
+      box(`brazo_${i + 1}`, 0.05, 0.04, Math.abs(z), x * 0.8, 0.1, z / 2, steel);
+      const p = pivot(`mov_rotor_${i + 1}`, x, y, z); box(`mov_rotor_${i + 1}_m`, 0.4, 0.012, 0.05, 0, 0, 0, M(0x111111, 0.3, 0.6), p);
+    });
+    for (let i = 0; i < 4; i++) box(`carga_${i + 1}`, 0.16, 0.08, 0.08, (i < 2 ? 0.1 : -0.12), -0.18, (i % 2 ? 0.1 : -0.1), M(0x3a3020, 0.4, 0.5));
+  } else if (s === "swarmling") {
+    const paint = M(0x1a1416, 0.5, 0.5), steel = M(0x525e6e, 0.8, 0.35), red = M(0x200404, 0.2, 0.4, 0xff1a0a, 3);
+    box("lomo", 0.24, 0.12, 0.22, -0.02, 0.18, 0, paint); box("visor", 0.03, 0.04, 0.12, 0.12, 0.2, 0, red);
+    for (let i = 0; i < 6; i++) { const side = i % 2 ? 1 : -1, k = Math.floor(i / 2); const p = pivot(`mov_pata_${i + 1}`, 0.08 - k * 0.08, 0.17, side * 0.1); box(`mov_pata_${i + 1}_m`, 0.03, 0.03, 0.2, 0, -0.07, side * 0.1, steel, p).rotation.x = side * 0.7; }
+  } else if (s === "mech") {
+    const paint = M(0x2a2620, 0.5, 0.5), steel = M(0x525e6e, 0.8, 0.35), amber = M(0x301800, 0.2, 0.4, 0xffaa2a, 2.5);
+    const torso = pivot("mov_torso", 0, 1.498, 0); box("mov_torso_m", 0.9, 0.8, 1.0, 0, 0.35, 0, paint, torso); box("visor_m", 0.05, 0.12, 0.4, 0.46, 0.45, 0, amber, torso);
+    for (const [n, z] of [["der", 0.38], ["izq", -0.38]] as const) { const leg = pivot(`mov_pierna_${n}`, 0, 1.448, z); box(`mov_pierna_${n}_m`, 0.3, 1.45, 0.3, 0, -0.72, 0, steel, leg); }
+    for (const [n, z] of [["der", 0.6], ["izq", -0.6]] as const) { const arm = new THREE.Group(); arm.name = `mov_brazo_${n}`; arm.position.set(0, 2.098 - 1.498, z); torso.add(arm); box(`mov_brazo_${n}_m`, 0.9, 0.3, 0.3, 0.35, -0.15, 0, steel, arm); }
   } else {
     const paint = M(0x0b1015, 0.5, 0.5), steel = M(0x525e6e, 0.8, 0.35), cyan = M(0x042a34, 0.2, 0.4, 0x2ad8ff, 2.5);
     const shield = new THREE.MeshStandardMaterial({ color: 0x46b8ff, emissive: 0x1a80e6, emissiveIntensity: 1, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });

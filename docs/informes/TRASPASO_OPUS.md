@@ -22,15 +22,15 @@ está **en su propia rama**. Se actualiza al cerrar cada tarea o cuando el usuar
 | 3.º | 7 Sonidos | `opus/sonidos` (75dd8a7) | ✅ Hecha (sin verificar de oído: el contenedor no tiene audio) | `sonidos.md` |
 | 4.º | 5 Retículas | `opus/reticulas` (02ce5f8) | ✅ Hecha | `reticulas.md` |
 | 5.º | 1 Físicas Rapier | `opus/rapier` (af8ac4b) | ✅ Prototipo hecho, desactivable (sin fijar: solo en modo desarrollador) | `rapier.md` |
-| 6.º | 2 Enemigos | `opus/enemigos` (sale de `opus/rapier`) | 🔧 **Fase 1 hecha**: sabueso, dron reparador, centinela. **Fase 2 pendiente** | `enemigos.md` |
+| 6.º | 2 Enemigos | `opus/enemigos` (sale de `opus/rapier`) | 🔧 **Fases 1 y 2 hechas**: sabueso, dron reparador, centinela, rodante artillero, bombardero, arañitas, mech pesado. Falta: humanoides del pack 14 (asesino, invocador, berserker) | `enemigos.md` |
 | — | 3 Campaña Hack, 4 Ritmo, 6 Miras de hierro, 9 Props, 10 Rendimiento, 11 Auditoría del taller (solo documento), 12 Súperes | — | ⏳ Sin empezar, en ese orden | — |
 
 Releases de prueba: **v0.20.1** (desde `opus/armas`) y **v0.21.0** (desde `opus/integracion`, todo junto); .exe, AppImage y APK, con
 `.github/workflows/release.yml` (lanzamiento manual sobre una rama; usa la versión de `package.json`).
 
 ## 3. Siguiente paso concreto
-**Tarea 2, fase 2** en `opus/enemigos`: rodante artillero, dron bombardero, arañitas en enjambre, mech pesado y asesino;
-luego invocador y berserker (diseños en `.delegaciones/PLAN_ENEMIGOS.md`; incinerador y granadero se quedan como
+**Tarea 2, resto** en `opus/enemigos` (fases 1 y 2 hechas y unidas en `opus/integracion`; la v0.21.0 lleva solo la fase 1): asesino,
+invocador y berserker (diseños en `.delegaciones/PLAN_ENEMIGOS.md`; incinerador y granadero se quedan como
 están; rodante explosivo = kamikaze actual). Modelos en `raw/pack13_robots/` (bombardero, arañita, mech pesado, con
 `LEEME`) y `raw/pack14_humanoides/` (asesino…). Patrón a seguir (ya funciona con los tres primeros):
 1. Copiar el GLB a `assets/enemigos/` y añadirlo a `FILE`/`MODEL_SCALE`/`zoneOf`/`buildProcedural` en
