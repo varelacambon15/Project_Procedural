@@ -1,5 +1,3 @@
-> **Copia.** La versión viva de este traspaso está en la rama `opus/enemigos` (la más reciente): consúltala allí.
-
 # Traspaso — trabajo de Opus sobre `docs/BRIEFS_OPUS.md` (actualizado 27/11/2026)
 
 **Léelo entero antes de tocar nada.** Resume qué está hecho, en qué rama, qué ha validado el usuario, qué decisiones

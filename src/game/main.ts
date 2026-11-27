@@ -47,6 +47,7 @@ import { isReticleColor, isReticleId, reticleGlow, reticleShown, reticleSvg } fr
 import { addReticleKill, migrateReticles, opticFamily } from "./reticlecustom";
 import { Inventory, makeItem, type Item } from "./inventory";
 import { NoRepeat, pitchVar, stepKey, strideLength, surfaceOf } from "./surfaces";
+import type { PhysicsLayer } from "./physworld";
 import { Pickups, type Pickup } from "./pickups";
 import { LOOT, LootDirector, type LootSource } from "../weapons/loot";
 import { lootChime } from "./audio";
@@ -59,6 +60,7 @@ import { StartScreen } from "./ui/start";
 import { TextDialog } from "./ui/dialog";
 import { AUTO, SLOTS, SAVE_VERSION, SaveManager, type SaveData, type SlotId } from "./save";
 import { platformStorage } from "./storage";
+import { preloadEnemyModels } from "./enemymodels";
 import { SHOP, newShopState, type ShopState } from "./shop";
 
 const ASSETS = "./weapons/";
@@ -906,6 +908,7 @@ async function boot() {
   // ---------- Oleadas de prueba y vida del jugador ----------
   const php = new PlayerHealth();
   let waveHurt = false;
+  preloadEnemyModels(); // (sabueso, reparador y centinela: GLB de assets/enemigos)
   const waves = new Waves(scene, dummies, $("bars"), () => player.pos, onDummyDamage, {
     onWaveStart: (_i, mod) => { php.noRegen = mod === "noregen"; if (mod) toast(t("wm.start", { m: t(`wm.${mod}`), d: t(`wm.d.${mod}`) })); },
     onWaveEnd: (i, last, reward) => {
@@ -1429,6 +1432,25 @@ async function boot() {
     // (al esprintar, el equipo suena cada poco; al empezar, enseguida)
     if (player.sprinting && ground) { sprintGearT -= dt; if (sprintGearT <= 0) { playKey("sprint_equipo", 0.22); sprintGearT = 1.3 + Math.random() * 0.4; } } else sprintGearT = 0.15;
   }
+  // ---------- Tarea 1: física con Rapier (prototipo; solo si está activa: por defecto, en modo desarrollador) ----------
+  let phys: PhysicsLayer | null = null, physLoading = false;
+  function physicsTick(dt: number) {
+    if (!phys && !physLoading && (settings.physics ?? settings.dev)) {
+      physLoading = true;
+      // (carga perezosa: Rapier y la capa solo se descargan al activar la física)
+      void import("./physworld").then(({ PhysicsLayer }) => {
+        phys = new PhysicsLayer(scene, world.shootables, camera);
+        // Explosiones: se engancha a las de las armas y las granadas sin tocar su código (envolviendo el método)
+        const gx = gun.explode.bind(gun);
+        gun.explode = (at, dmg, el, except, color) => { phys?.explode(at, 5, 6); return gx(at, dmg, el, except, color); };
+        const nx = (nades as unknown as { explode: (g: { radius: number }, at: THREE.Vector3, scale: number) => void });
+        const ng = nx.explode.bind(nades);
+        nx.explode = (g, at, scale) => { phys?.explode(at, g.radius * 1.3, 7 * scale); return ng(g, at, scale); };
+        (window as unknown as Record<string, unknown>).__phys = phys;
+      });
+    }
+    phys?.update(dt, [...dummies, ...waves.list, ...mobs.list]);
+  }
   function frame(manualDt?: number) {
     if (debug.manual && manualDt === undefined) { clock.getDelta(); requestAnimationFrame(loop); return; }
     const dt = manualDt ?? Math.min(clock.getDelta(), 0.05);
@@ -1603,6 +1625,7 @@ async function boot() {
         if (inZone && !wasInZone) toast(t("ui.testZone")); wasInZone = inZone; }
       syncGadget(); gpouch.update(dt); gadgets.update(state === "play" ? dt : 0); gadgetHud();
       if (injectT > 0 && (injectT -= dt) <= 0) applyPerks();
+      physicsTick(dt);
       pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); updateGadgetDrops(dt); updateFlyers(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
     healthHud(); xpHud(dt);

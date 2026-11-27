@@ -19,7 +19,10 @@
     "sniper": 2.2,
     "medic": 2.6,
     "commander": 2.4,
-    "glitch": 3.0
+    "glitch": 3.0,
+    "hound": 5.6,
+    "repairer": 3.0,
+    "sentinel": 1.1
   },
   "damage": {
     "small": 6,
@@ -38,7 +41,10 @@
     "sniper": 28,
     "medic": 6,
     "commander": 20,
-    "glitch": 14
+    "glitch": 14,
+    "hound": 10,
+    "repairer": 4,
+    "sentinel": 9
   },
   "healthScale": 1,
   "attackRange": 1.6,
@@ -119,6 +125,18 @@
       "interval": 0.5,
       "orbSpeed": 0,
       "orbDamage": 0
+    },
+    "repairer": {
+      "range": 12,
+      "interval": 0.6,
+      "orbSpeed": 0,
+      "orbDamage": 0
+    },
+    "sentinel": {
+      "range": 24,
+      "interval": 2.6,
+      "orbSpeed": 14,
+      "orbDamage": 11
     }
   },
   "bossEvery": 5
