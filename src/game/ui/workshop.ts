@@ -12,6 +12,8 @@ import { RARITIES } from "../../weapons/generator";
 import { t } from "../../i18n";
 import type { Inventory, Item } from "../inventory";
 import { $, keyHint, tileHTML, weaponCard, type ModelView, type Thumbnails } from "./common";
+import { RETICLE_COLORS, isReticleColor, isReticleId, reticleFor, reticleSvg, type ReticleColor } from "../reticles";
+import { RETICLE_UNLOCKS, nextUnlock, opticFamily, selectorOrder } from "../reticlecustom";
 
 const ORDER = RARITIES.map((r) => r.id);
 const color = (r: RarityId) => RARITIES.find((x) => x.id === r)!.color;
@@ -120,6 +122,7 @@ export class WorkshopScreen {
       <h2>${t("ui.hold")} <small>${holdName(s)}</small></h2>
       <div class="chips">${gripChoices(s).map((g) => `<button type="button" class="chip ${s.hold?.variant === g.variant ? "on" : ""}" data-hold="${g.variant}" ${p ? "disabled" : ""}>${t(`hold.${g.variant}`)}</button>`).join("")}</div>
       ${s.hold?.variant === "custom" ? `<label class="holdat">${t("ui.holdAt")} <input type="range" min="0" max="100" step="5" value="${Math.round((s.hold.at ?? 0.5) * 100)}" data-holdat="1" ${p ? "disabled" : ""}></label>` : ""}
+      ${this.reticleHTML(s, !!p)}
       <h2>${t("ui.finish")} <small>${paintName(s.paint)}</small></h2>
       <div class="swatches">${paints().map((pt, i) => `<button type="button" class="swatch ${pt.id === s.paint.id ? "on" : ""}" title="${paintName(pt)}" data-paint="${i}" ${p ? "disabled" : ""} style="background:${pt.color ? `rgb(${pt.color.map((c) => Math.round(c * 255)).join(",")})` : "linear-gradient(135deg,#555,#222)"}"></button>`).join("")}</div>`;
   }
@@ -165,6 +168,25 @@ export class WorkshopScreen {
     }
   }
 
+  /** Tarea 5: selector de retícula (forma desbloqueada y color) con vista previa; se aplica al instante y se guarda. */
+  private reticleHTML(s: WeaponSpec, busy: boolean): string {
+    const fam = opticFamily(s.optic, ""), base = reticleFor(s.optic, "");
+    if (!fam || !base) return `<h2>${t("rt.title")}</h2><p class="why">${t("rt.noOptic")}</p>`;
+    const prog = this.inv.reticles, cur = isReticleId(s.reticle) && prog.unlocked.includes(s.reticle) ? s.reticle : base;
+    const col: ReticleColor = isReticleColor(s.reticleColor) ? s.reticleColor : "rojo";
+    const nx = nextUnlock(prog, fam);
+    const shapes = selectorOrder(prog).map(({ id, locked }) => {
+      const u = RETICLE_UNLOCKS.find((x) => x.id === id);
+      const tip = locked && u ? t("rt.locked", { k: u.kills, f: t(`rt.f.${u.family}`), h: prog.kills[u.family] ?? 0 }) : t(`rt.n.${id}`);
+      return `<button type="button" class="reticle ${id === cur ? "on" : ""} ${locked ? "locked" : ""}" data-reticle="${id}" title="${tip}" aria-label="${tip}" ${locked || busy ? "disabled" : ""}>${reticleSvg(id, locked ? "blanco" : col)}</button>`;
+    }).join("");
+    const cols = (Object.keys(RETICLE_COLORS) as ReticleColor[]).map((c) => `<button type="button" class="swatch ${c === col ? "on" : ""}" title="${t(`rt.c.${c}`)}" aria-label="${t(`rt.c.${c}`)}" data-rcolor="${c}" ${busy ? "disabled" : ""} style="background:${RETICLE_COLORS[c]}"></button>`).join("");
+    return `<h2>${t("rt.title")} <small>${t(`rt.n.${cur}`)}</small></h2>
+      <div class="reticle-prev" aria-hidden="true">${reticleSvg(cur, col)}</div>
+      <div class="reticles">${shapes}</div>
+      <div class="swatches">${cols}</div>
+      ${nx ? `<p class="why">${t("rt.next", { n: t(`rt.n.${nx.id}`), h: nx.have, k: nx.need, f: t(`rt.f.${fam}`) })}</p>` : ""}`;
+  }
   private click(e: Event) {
     const target = e.target as HTMLElement;
     if (target.closest("[data-close]")) return this.back();
@@ -188,6 +210,16 @@ export class WorkshopScreen {
     const bk = target.closest<HTMLElement>("[data-bk]"); if (bk) { this.bankKind = bk.dataset.bk as AccKind | "all"; this.render(); this.el.querySelector<HTMLElement>(`[data-bk="${this.bankKind}"]`)?.focus({ preventScroll: true }); return; }
     const sw = target.closest<HTMLElement>("[data-paint]");
     if (sw && !this.pending) return this.stage(t("ui.paintLabel", { p: paintName(paints()[Number(sw.dataset.paint)]) }), (spec) => repaint(this.gen, spec, paints()[Number(sw.dataset.paint)]));
+    const rb = target.closest<HTMLElement>("[data-reticle]");
+    if (rb && this.sel && !this.pending && isReticleId(rb.dataset.reticle) && this.inv.reticles.unlocked.includes(rb.dataset.reticle)) {
+      this.sel.spec.reticle = rb.dataset.reticle; this.hooks.changed(this.sel); this.render();
+      this.el.querySelector<HTMLElement>(`[data-reticle="${rb.dataset.reticle}"]`)?.focus({ preventScroll: true }); return;
+    }
+    const rc = target.closest<HTMLElement>("[data-rcolor]");
+    if (rc && this.sel && !this.pending && isReticleColor(rc.dataset.rcolor)) {
+      this.sel.spec.reticleColor = rc.dataset.rcolor; this.hooks.changed(this.sel); this.render();
+      this.el.querySelector<HTMLElement>(`[data-rcolor="${rc.dataset.rcolor}"]`)?.focus({ preventScroll: true }); return;
+    }
     const hb = target.closest<HTMLElement>("[data-hold]");
     if (hb && this.sel && !this.pending) {
       const g = gripChoices(this.sel.spec).find((x) => x.variant === hb.dataset.hold);

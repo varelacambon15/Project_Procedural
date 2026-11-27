@@ -1,0 +1,23 @@
+{
+  "_doc": "Tarea 5: retículas coleccionables. 'start' = desbloqueadas desde el principio. 'unlocks' = hitos: N bajas con un arma que lleve una óptica de esa familia desbloquean la forma. Familias: punto (punto rojo y reflex), holo (holográfica), aumentos (ACOG y prismas), visor (visores de francotirador).",
+  "start": ["dot", "ring-dot", "cross"],
+  "unlocks": [
+    { "id": "ring", "family": "punto", "kills": 50 },
+    { "id": "crosshair-gap", "family": "punto", "kills": 120 },
+    { "id": "t-dot", "family": "punto", "kills": 250 },
+    { "id": "dot-ring-ticks", "family": "holo", "kills": 50 },
+    { "id": "bracket", "family": "holo", "kills": 120 },
+    { "id": "diamond", "family": "holo", "kills": 250 },
+    { "id": "chevron", "family": "aumentos", "kills": 40 },
+    { "id": "chevron-bdc", "family": "aumentos", "kills": 100 },
+    { "id": "chevron-dot", "family": "aumentos", "kills": 180 },
+    { "id": "triangle", "family": "aumentos", "kills": 260 },
+    { "id": "cross-dot", "family": "visor", "kills": 30 },
+    { "id": "mildot", "family": "visor", "kills": 100 },
+    { "id": "dots-vertical", "family": "visor", "kills": 180 },
+    { "id": "crosshair-dot", "family": "visor", "kills": 260 },
+    { "id": "circle-cross", "family": "visor", "kills": 350 },
+    { "id": "triangle-dot", "family": "punto", "kills": 400 },
+    { "id": "horseshoe", "family": "holo", "kills": 400 }
+  ]
+}

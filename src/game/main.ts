@@ -43,7 +43,8 @@ import { Player } from "./player";
 import { Gun } from "./gun";
 import { VM_FOV } from "./anim";
 import { VM_BACK } from "./vmfit";
-import { RETICLES, reticleFor } from "./reticles";
+import { isReticleColor, isReticleId, reticleGlow, reticleShown, reticleSvg } from "./reticles";
+import { addReticleKill, migrateReticles, opticFamily } from "./reticlecustom";
 import { Inventory, makeItem, type Item } from "./inventory";
 import { NoRepeat, pitchVar, stepKey, strideLength, surfaceOf } from "./surfaces";
 import { Pickups, type Pickup } from "./pickups";
@@ -294,6 +295,8 @@ async function boot() {
       // Contador de bajas del arma (accesorio): solo las bajas hechas con ella, no con granadas ni súperes
       if (dmode.active && !d.respawn) dmode.credits += killReward(d.kind.key ?? "", !!d.kind.boss);
       if (!notGun && gun.item && !d.respawn) { gun.item.spec.kills = (gun.item.spec.kills ?? 0) + 1; gun.refreshCounter(); }
+      // (tarea 5: bajas con óptica: desbloquean retículas)
+      if (!notGun && gun.item && !d.respawn) for (const id of addReticleKill(inv.reticles, opticFamily(gun.item.spec.optic, gun.sight))) toast(t("rt.unlocked", { n: t(`rt.n.${id}`) }));
       { const h = lastHit.get(d); contractEvent({ type: "kill", weapon: h?.weapon ?? null, head: !!h?.head, dist: h?.dist ?? 0, boss: !!d.kind.boss }); }
       if (d.kind.boss) toast(t("ui.bossDown"));
       if (d.kind.key === "roller") gun.explode(d.center, 220, "explosive", d); // (el kamikaze revienta sobre los suyos)
@@ -640,7 +643,7 @@ async function boot() {
     const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i })), ...inv.storage.map((it, i) => ({ it, area: "storage" as const, index: i }))]
       .filter((x) => x.it).map((x) => ({ spec: x.it!.spec, ammo: x.it!.ammo, area: x.area, index: x.index }));
     return { version: SAVE_VERSION, savedAt: "", name, playSeconds: Math.round(playSeconds), credits: inv.credits, weapons, active: inv.active, bank: inv.bank, shop: shopState,
-      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, gadgets: inv.gadgets, gadgetActive: inv.gadgetActive, furniture: inv.furniture, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone, armors: inv.armors, worn: inv.worn };
+      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, gadgets: inv.gadgets, gadgetActive: inv.gadgetActive, furniture: inv.furniture, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone, reticles: inv.reticles, armors: inv.armors, worn: inv.worn };
   }
   function apply(d: SaveData) {
     rouletteCancel();
@@ -664,7 +667,7 @@ async function boot() {
     if (d.superId === "chrono") d.superId = "timestop";
     inv.superId = (SUPER_IDS as string[]).includes(d.superId ?? "") ? (d.superId as SuperId) : "shockwave"; meter.charge = 0;
     // Súperes: las partidas de antes de los módulos conservan el que tenían elegido
-    inv.supersOwned = (d.supersOwned ?? (d.superId ? [d.superId] : [])).map((x) => (x === "chrono" ? "timestop" : x)).filter((x): x is SuperId => (SUPER_IDS as string[]).includes(x)); inv.raidsDone = d.raidsDone ?? 0;
+    inv.supersOwned = (d.supersOwned ?? (d.superId ? [d.superId] : [])).map((x) => (x === "chrono" ? "timestop" : x)).filter((x): x is SuperId => (SUPER_IDS as string[]).includes(x)); inv.raidsDone = d.raidsDone ?? 0; inv.reticles = migrateReticles(d.reticles);
     inv.progress = migrateProgress(d.progress, inv.all.map((it) => it.spec.level)); applyPerks();
     replaceSettings(d.settings as Partial<Settings>); if (d.lang === "es" || d.lang === "en") setLang(d.lang as Lang); setPixelLevel(d.pixelLevel);
     inGame = true; php.reset(); inv.changed();
@@ -1614,8 +1617,11 @@ async function boot() {
     const scopeOn = state === "play" && gun.sight === "scope" && gun.aimT > 0.9;
     $("scope").classList.toggle("on", scopeOn);
     const rd = $("reddot");
-    const reticle = reticleFor(gun.item?.spec.optic ?? null, gun.sight);
-    if (rd.dataset.reticle !== reticle) { rd.dataset.reticle = reticle; rd.innerHTML = reticle ? RETICLES[reticle] : ""; }
+    // (tarea 5: la retícula elegida en el taller y su color, si está desbloqueada; si no, la de la óptica)
+    const sp = gun.item?.spec, rcol = isReticleColor(sp?.reticleColor) ? sp!.reticleColor : "rojo";
+    const reticle = reticleShown(sp?.optic ?? null, gun.sight, isReticleId(sp?.reticle) ? sp!.reticle : undefined, new Set(inv.reticles.unlocked));
+    const rkey = `${reticle}:${rcol}`;
+    if (rd.dataset.reticle !== rkey) { rd.dataset.reticle = rkey; rd.innerHTML = reticle ? reticleSvg(reticle, rcol) : ""; rd.style.filter = reticleGlow(rcol); }
     rd.style.opacity = state === "play" && (gun.sight === "dot" || gun.sight === "holo") ? String(Math.max(0, (gun.aimT - 0.6) / 0.4)) : "0";
     // (pausa, inventario y demás menús paran el mundo: los enemigos no se mueven ni atacan)
     const stop = (state === "play" && hitstop > 0) || state !== "play"; hitstop = Math.max(0, hitstop - dt);

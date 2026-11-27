@@ -35,6 +35,7 @@ export interface SaveData {
   /** Nivel, experiencia y habilidades (opcional: las partidas antiguas empiezan al nivel de su mejor arma). */
   progress?: import("./progress").ProgressState;
   /** Súperes desbloqueados con módulos e incursiones completadas (opcional). */ supersOwned?: string[]; raidsDone?: number;
+  /** Tarea 5: progreso de retículas (bajas por familia de óptica y formas desbloqueadas; opcional). */ reticles?: unknown;
   /** Armaduras guardadas y las puestas por ranura (opcional). */ armors?: import("./armor").ArmorSpec[]; worn?: Partial<Record<import("./armor").ArmorSlot, number | null>>;
 }
 
