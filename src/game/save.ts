@@ -140,6 +140,14 @@ export function parseSave(text: string | null): LoadResult {
     furniture: Array.isArray(raw.furniture) ? (raw.furniture as unknown[]).filter((x): x is string => typeof x === "string") : undefined,
     superId: typeof raw.superId === "string" ? raw.superId : undefined,
     contracts: isObj(raw.contracts) && Array.isArray((raw.contracts as Raw).list) ? (raw.contracts as unknown as SaveData["contracts"]) : undefined,
+    // (nivel, súperes, incursiones, retículas y armaduras: se añadieron al formato pero no se copiaban al cargar, así que
+    //  al recargar una partida se perdían; quien los usa los valida al aplicarlos: migrateProgress, migrateReticles…)
+    progress: isObj(raw.progress) ? (raw.progress as unknown as SaveData["progress"]) : undefined,
+    supersOwned: Array.isArray(raw.supersOwned) ? (raw.supersOwned as unknown[]).filter((x): x is string => typeof x === "string") : undefined,
+    raidsDone: typeof raw.raidsDone === "number" && Number.isFinite(raw.raidsDone) ? Math.max(0, Math.floor(raw.raidsDone)) : undefined,
+    reticles: raw.reticles !== undefined ? raw.reticles : undefined,
+    armors: Array.isArray(raw.armors) ? (raw.armors as unknown[]).filter((a) => isObj(a) && typeof (a as Raw).slot === "string") as SaveData["armors"] : undefined,
+    worn: isObj(raw.worn) ? (raw.worn as SaveData["worn"]) : undefined,
   };
   return { ok: true, data, dropped: raw.weapons.length - weapons.length + ((raw.bank as unknown[] | undefined)?.length ?? 0) - bank.length };
 }

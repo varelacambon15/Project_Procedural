@@ -116,3 +116,19 @@ describe("máquina expendedora", () => {
     expect(st.history.length).toBe(SHOP.historySize); expect(st.history[0].name).toBe("x19");
   });
 });
+
+describe("guardado: lo que se añadió después también sobrevive a la carga", () => {
+  it("nivel, súperes, incursiones, retículas y armaduras no se pierden al recargar", () => {
+    const src = { version: SAVE_VERSION, weapons: [], progress: { level: 7, xp: 30, points: 1, skills: {} }, supersOwned: ["nova", 3], raidsDone: 2.7,
+      reticles: { unlocked: ["diamond"], kills: { holo: 4 } }, armors: [{ uid: 1, slot: "head" }, { uid: 2 }], worn: { head: 1 } };
+    const r = parseSave(JSON.stringify(src));
+    expect(r.ok).toBe(true); if (!r.ok) return;
+    expect(r.data.progress).toEqual(src.progress);
+    expect(r.data.supersOwned).toEqual(["nova"]); expect(r.data.raidsDone).toBe(2);
+    expect(r.data.reticles).toEqual(src.reticles);
+    expect(r.data.armors).toHaveLength(1); expect(r.data.worn).toEqual({ head: 1 });
+    // y una partida sin esos campos sigue cargando igual (quedan sin definir)
+    const old = parseSave(JSON.stringify({ version: SAVE_VERSION, weapons: [] }));
+    expect(old.ok && old.data.progress).toBeUndefined();
+  });
+});
