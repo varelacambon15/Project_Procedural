@@ -25,7 +25,7 @@ está **en su propia rama**. Se actualiza al cerrar cada tarea o cuando el usuar
 | 6.º | 2 Enemigos | `opus/enemigos` (sale de `opus/rapier`) | 🔧 **Fases 1 y 2 hechas**: sabueso, dron reparador, centinela, rodante artillero, bombardero, arañitas, mech pesado. Falta: humanoides del pack 14 (asesino, invocador, berserker) | `enemigos.md` |
 | — | 3 Campaña Hack, 4 Ritmo, 6 Miras de hierro, 9 Props, 10 Rendimiento, 11 Auditoría del taller (solo documento), 12 Súperes | — | ⏳ Sin empezar, en ese orden | — |
 
-Releases de prueba: **v0.20.1** (desde `opus/armas`) y **v0.21.0** (desde `opus/integracion`, todo junto); .exe, AppImage y APK, con
+Releases de prueba: **v0.20.1** (desde `opus/armas`) **v0.21.0** (desde `opus/integracion`, todo junto con la fase 1 de enemigos) y **v0.21.1** (más la fase 2 de enemigos y el arreglo del guardado); .exe, AppImage y APK, con
 `.github/workflows/release.yml` (lanzamiento manual sobre una rama; usa la versión de `package.json`).
 
 ## 3. Siguiente paso concreto
@@ -56,6 +56,11 @@ Choques previsibles: **`src/game/main.ts`** (todas menos `tests`: son añadidos 
 (`sonidos` y `armas`), `src/i18n.ts` (`reticulas` y `enemigos`), `dummies.ts` (solo `rapier`/`enemigos`).
 `opus/armas` y `opus/rapier` añaden **el mismo** modo de paso manual a `main.ts` (`debug.manual`, `__game.step`): al
 unir, quedarse con uno. Tras unir: `npx tsc --noEmit` y los tests de cada rama.
+
+## 4 ter. Arreglos fuera de tarea (en `opus/integracion`)
+- **Guardado (27/11)**: `parseSave` no copiaba `progress`, `supersOwned`, `raidsDone`, `reticles`, `armors` ni `worn`
+  (se añadieron al formato desde el 20/11): al recargar se perdían nivel, súperes, armaduras y retículas. Arreglado
+  con test en `tests/save.test.ts`. **Cualquier campo nuevo del guardado hay que copiarlo también en `parseSave`.**
 
 ## 5. Decisiones que esperan al usuario
 - **Físicas**: ¿activadas por defecto para todos? ¿Se quedan las 6 cajas y 3 barriles del hall o solo para pruebas?
