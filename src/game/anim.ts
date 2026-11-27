@@ -8,7 +8,7 @@ export type MovingPart = "slide" | "pump" | "charging";
 export interface Phase { id: string; t: number; index: number }
 
 export interface AnimParams {
-  hip: V3; /** Giro de cadera de la clase (rad): cabeceo hacia arriba, guiñada hacia el centro y alabeo; al apuntar se anula. */ hipYaw?: number; hipPitch?: number; hipRoll?: number; /** Encargo 54: escala de la silueta en cadera para la clase (1 = sin cambiar; los subfusiles salían pequeños). Se desvanece al apuntar. */ hipScale?: number; /** Encargo 54: alto máximo de la silueta en cadera para la clase (subfusiles: 0,55; por defecto el de vmfit). */ hipMaxH?: number; /** Base de la pose al apuntar con armas sin mira (`iron`): se fija aparte para que reencuadrar la cadera no la mueva. */ adsHip?: [number, number]; aimZ: number; adsRoll: number; gripZ?: number; /** Al apuntar, distancia mínima del ojo por detrás de la empuñadura (m; pistolas: brazo extendido). */ adsGrip?: number; /** Hasta dónde puede quedar la culata detrás del ojo (m; bullpups: el cuerpo va detrás de la empuñadura). */ rearMax?: number;
+  hip: V3; /** Tarea 13: objetivos de encuadre en cadera (hipframe.ts): empuñadura y boca en pantalla, distancia y alabeo. */ frame?: { grip: [number, number]; muzzle: [number, number]; aim?: [number, number]; depth: number; roll?: number; bulk: number; depthMax: number }; /** Giro de cadera de la clase (rad): cabeceo hacia arriba, guiñada hacia el centro y alabeo; al apuntar se anula. */ hipYaw?: number; hipPitch?: number; hipRoll?: number; /** Encargo 54: escala de la silueta en cadera para la clase (1 = sin cambiar; los subfusiles salían pequeños). Se desvanece al apuntar. */ hipScale?: number; /** Encargo 54: alto máximo de la silueta en cadera para la clase (subfusiles: 0,55; por defecto el de vmfit). */ hipMaxH?: number; /** Base de la pose al apuntar con armas sin mira (`iron`): se fija aparte para que reencuadrar la cadera no la mueva. */ adsHip?: [number, number]; aimZ: number; adsRoll: number; gripZ?: number; /** Al apuntar, distancia mínima del ojo por detrás de la empuñadura (m; pistolas: brazo extendido). */ adsGrip?: number; /** Tarea 13: al apuntar, el arma se ve este factor más grande (escalada sobre su línea de mira: la mira sigue centrada y los brazos no se acercan). */ adsBig?: number; /** Hasta dónde puede quedar la culata detrás del ojo (m; bullpups: el cuerpo va detrás de la empuñadura). */ rearMax?: number;
   kick: { k: number; zeta: number; peak: number; back: number; up: number; pitch: number; roll: number };
   recoil: { power: number; vertical: number; horizontal: number };
   sway: { gain: number; maxX: number; maxY: number; lag: number; adsKeep: number };
@@ -88,6 +88,8 @@ export interface AnimInput {
   /** Largo del modelo y altura de la línea de mira (para la posición de apuntado). */ length: number; sightY: number;
   /** X local de la empuñadura respecto al centro del modelo (la boca está en +X). */ gripX?: number;
   /** Ajuste de encuadre en cadera propio de cada arma (dx, dy, dz, giro hacia el centro); se desvanece al apuntar. */ fit?: [number, number, number, number];
+  /** Tarea 13: pose de cadera resuelta para esta arma por objetivos en pantalla (hipframe.ts). Sustituye a la cadera
+   *  de la clase (posición, giro en reposo y convergencia); se desvanece al apuntar igual que ella. */ hip?: { pos: V3; rot: V3 };
   /** Y local de la empuñadura (las armas cortas se colocan por ella: igual altura de mano en todas). */ gripY?: number;
   /** Sin óptica: al apuntar no se alinea la mira de hierro; el arma se acerca y se centra un poco (estilo Black). */ iron?: boolean;
   /** Miras de hierro montadas: X del alza respecto al centro del arma (el ojo queda a 2,5 cm detrás de ella (los cuerpos de las alzas no pasan de 1,5 cm detrás de su lente), como en un shooter moderno: la mirilla llena la vista). */ sightX?: number;
@@ -100,6 +102,7 @@ export interface AnimInput {
   /** Acción manual en curso (cerrojo o bombeo): elige la curva del gesto. */ cycleKind?: "bolt" | "pump";
   /** Amartillar (revólver de acción simple), 0..1, o null. */ cock?: number | null;
   /** Recarga táctica (quedaban balas): sin montar la palanca o la corredera. */ tactical?: boolean;
+  /** Tarea 13: acciones que anima una pista de poses clave (vmtracks.ts): aquí no se les suma la animación procedural. */ keyed?: { reload?: boolean; inspect?: boolean; draw?: boolean };
 }
 export interface Pose {
   pos: V3; rot: V3;
@@ -176,13 +179,16 @@ export class ViewAnimator {
     const tgt: V3 = i.iron ? ironPos : [0, -i.sightY, adsZ];
     // (armas cortas: la empuñadura siempre a la misma altura; un cargador largo o un tambor ya no suben el arma entera)
     const hipY = p.gripAnchor && i.gripY !== undefined ? p.hip[1] - i.gripY : p.hip[1];
-    const pos: V3 = [lerp(p.hip[0], tgt[0], e), lerp(hipY, tgt[1], e), lerp(hipZ, tgt[2], e)];
-    if (i.fit) { const f = 1 - e; pos[0] += i.fit[0] * f; pos[1] += i.fit[1] * f; pos[2] += i.fit[2] * f; }
+    const h0: V3 = i.hip ? i.hip.pos : [p.hip[0], hipY, hipZ];
+    const pos: V3 = [lerp(h0[0], tgt[0], e), lerp(h0[1], tgt[1], e), lerp(h0[2], tgt[2], e)];
+    if (i.fit && !i.hip) { const f = 1 - e; pos[0] += i.fit[0] * f; pos[1] += i.fit[1] * f; pos[2] += i.fit[2] * f; }
     const rest = p.rest ?? [0, 0, 0];
     // Convergencia de cadera de la clase (encargo 51): la boca gira hacia el centro y el arma cabecea un poco, con el
     // perfil y la cara superior a la vista. Se suma al giro en reposo y se desvanece al apuntar (ADS no cambia).
     const ha = hipAngles(p, ads);
-    const rot: V3 = [rest[0] * (1 - e) + ha[0], (rest[1] + (i.fit?.[3] ?? 0)) * (1 - e) + ha[1], rest[2] * (1 - e) + ha[2] - p.adsRoll * tri(ads, 0, 1)];
+    const rot: V3 = i.hip
+      ? [i.hip.rot[0] * (1 - e), i.hip.rot[1] * (1 - e), i.hip.rot[2] * (1 - e) - p.adsRoll * tri(ads, 0, 1)]
+      : [rest[0] * (1 - e) + ha[0], (rest[1] + (i.fit?.[3] ?? 0)) * (1 - e) + ha[1], rest[2] * (1 - e) + ha[2] - p.adsRoll * tri(ads, 0, 1)];
     // Sprint
     this.sprint = lerp(this.sprint, i.sprinting && i.reload === null ? 1 : 0, Math.min(1, dt * p.sprint.speed));
     for (let a = 0; a < 3; a++) { pos[a] += p.sprint.pos[a] * this.sprint; rot[a] += p.sprint.rot[a] * this.sprint; }
@@ -230,6 +236,7 @@ export class ViewAnimator {
       const r = this.reloadOverride ? { ...p.reload, ...this.reloadOverride } : p.reload;
       phase = phaseAt(r.phases, i.reload);
       const { id, t } = phase;
+      if (!i.keyed?.reload) {
       const first = r.phases[0][0], last = r.phases[r.phases.length - 1][0];
       const tilt = id === first ? ease(t) : id === last ? 1 - ease(t) : 1;
       for (let a = 0; a < 3; a++) { rot[a] += r.tilt[a] * tilt; pos[a] += r.drop[a] * tilt; }
@@ -260,13 +267,14 @@ export class ViewAnimator {
         const kk = tri(t, 0, 1); parts[r.rackPart] = Math.max(parts[r.rackPart], r.rackTravel * kk);
         pos[2] += 0.035 * kk; rot[0] -= 0.12 * kk;
       }
+      }
     }
     // Inspección: mostrar el lateral del arma. La mano se mantenía «muy pegada» a la cámara: en vez de acercarla, se
     // separa un poco (el giro es lo que enseña el lateral).
-    if (i.inspect !== null) { const kk = tri(i.inspect, 0, 1); rot[1] += -1.1 * ease(Math.min(1, kk * 1.4)); rot[2] += 0.45 * kk; pos[0] -= 0.06 * kk; pos[2] -= 0.015 * kk; pos[1] += 0.03 * kk; }
+    if (i.inspect !== null && !i.keyed?.inspect) { const kk = tri(i.inspect, 0, 1); rot[1] += -1.1 * ease(Math.min(1, kk * 1.4)); rot[2] += 0.45 * kk; pos[0] -= 0.06 * kk; pos[2] -= 0.015 * kk; pos[1] += 0.03 * kk; }
     // Sacar (de abajo, girada) y guardar (el gesto inverso, más rápido)
-    const away = Math.max(ease(i.draw), ease(i.holster));
-    if (away > 0) { pos[1] -= p.draw.drop * away; rot[0] -= p.draw.pitch * away; rot[2] += p.draw.roll * Math.max(i.draw, i.holster); }
+    const dIn = i.keyed?.draw ? 0 : i.draw, away = Math.max(ease(dIn), ease(i.holster));
+    if (away > 0) { pos[1] -= p.draw.drop * away; rot[0] -= p.draw.pitch * away; rot[2] += p.draw.roll * Math.max(dIn, i.holster); }
 
     // Inercia al girar la cámara: el arma se queda un poco atrás
     const keep = lerp(1, p.sway.adsKeep, ads);

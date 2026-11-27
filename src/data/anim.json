@@ -119,7 +119,8 @@
   },
   "classes": {
     "pistol": {
-      "gripZ": 0.19, "adsGrip": 0.2, "rest": [0, 0, 0.1],
+      "frame": {"aim": [0.05, 0.13], "bulk": 0.17, "depthMax": 0.36, "grip": [0.6, 0.9], "muzzle": [0.6, 0.56], "depth": 0.28},
+      "gripZ": 0.19, "adsGrip": 0.3, "adsBig": 1.6, "rest": [0, 0, 0.1],
       "hip": [0.106, -0.0925, 0.2], "hipYaw": 0.209, "hipPitch": 0.069,
       "aimZ": 0.24,
       "adsRoll": 0.03,
@@ -201,7 +202,8 @@
       "gripAnchor": true
     },
     "revolver": {
-      "gripZ": 0.19, "rest": [0, 0, 0.1],
+      "frame": {"aim": [0.04, 0.12], "bulk": 0.17, "depthMax": 0.3, "grip": [0.6, 0.93], "muzzle": [0.595, 0.555], "depth": 0.21},
+      "gripZ": 0.19, "adsGrip": 0.3, "adsBig": 1.8, "rest": [0, 0, 0.1],
       "hip": [0.106, -0.0925, 0.2], "hipYaw": 0.209, "hipPitch": 0.069,
       "aimZ": 0.24,
       "adsRoll": 0.03,
@@ -272,6 +274,7 @@
       "gripAnchor": true
     },
     "smg": {
+      "frame": {"aim": [0.03, 0.05], "bulk": 0.26, "depthMax": 0.36, "grip": [0.72, 1.0], "muzzle": [0.53, 0.53], "depth": 0.26},
       "hip": [0.187, -0.201, 0.06], "hipYaw": 0.209, "hipPitch": 0.069,
       "hipScale": 1.3, "hipMaxH": 0.55,
       "adsHip": [0.14, -0.14],
@@ -296,6 +299,7 @@
       "rest": [0, 0, 0]
     },
     "rifle": {
+      "frame": {"bulk": 0.22, "depthMax": 0.36, "grip": [0.72, 1.0], "muzzle": [0.53, 0.53], "depth": 0.26},
       "cycle": {
         "part": "charging",
         "travel": 0.01,
@@ -307,6 +311,7 @@
       "rest": [0, 0, 0]
     },
     "bullpup": {
+      "frame": {"aim": [0.04, 0.08], "bulk": 0.3, "depthMax": 0.55, "grip": [0.73, 0.86], "muzzle": [0.555, 0.56], "depth": 0.42},
       "gripZ": 0.32, "rearMax": 0.02,
       "hip": [0.145, -0.045, 0.02], "hipYaw": 0.209, "hipPitch": 0.069,
       "reload": {
@@ -329,6 +334,7 @@
       "rest": [0, 0, 0]
     },
     "shotgun": {
+      "frame": {"aim": [0.015, 0.05], "bulk": 0.24, "depthMax": 0.36, "grip": [0.72, 1.0], "muzzle": [0.53, 0.53], "depth": 0.26},
       "kick": {
         "k": 220,
         "zeta": 0.6,
@@ -392,6 +398,7 @@
       "rest": [0, 0, 0]
     },
     "sniper": {
+      "frame": {"bulk": 0.24, "depthMax": 0.36, "grip": [0.72, 1.0], "muzzle": [0.53, 0.53], "depth": 0.26},
       "hip": [0.15, -0.13, 0.08], "hipYaw": 0.185, "hipPitch": 0.045,
       "hipScale": 0.82, "adsHip": [0.14, -0.14],
       "kick": {
@@ -437,6 +444,7 @@
       "rest": [0, 0, 0]
     },
     "lmg": {
+      "frame": {"aim": [0.02, 0.02], "bulk": 0.3, "depthMax": 0.7, "grip": [0.68, 0.86], "muzzle": [0.56, 0.57], "depth": 0.56},
       "gripZ": 0.24,
       "hip": [0.110, -0.005, 0.08], "hipYaw": 0.1425, "hipPitch": 0.035,
       "adsHip": [0.14, -0.14],
@@ -512,6 +520,7 @@
       "rest": [0, 0, 0]
     },
     "launcher": {
+      "frame": {"bulk": 0.26, "depthMax": 0.65, "grip": [0.8, 0.9], "muzzle": [0.56, 0.56], "depth": 0.38},
       "hip": [
         0.16,
         -0.11,
@@ -533,6 +542,7 @@
       }
     },
     "flamethrower": {
+      "frame": {"bulk": 0.26, "depthMax": 0.65, "grip": [0.8, 0.9], "muzzle": [0.56, 0.56], "depth": 0.38},
       "hip": [
         0.16,
         -0.12,
