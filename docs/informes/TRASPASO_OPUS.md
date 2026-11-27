@@ -25,7 +25,7 @@ está **en su propia rama**. Se actualiza al cerrar cada tarea o cuando el usuar
 | 6.º | 2 Enemigos | `opus/enemigos` (sale de `opus/rapier`) | 🔧 **Fase 1 hecha**: sabueso, dron reparador, centinela. **Fase 2 pendiente** | `enemigos.md` |
 | — | 3 Campaña Hack, 4 Ritmo, 6 Miras de hierro, 9 Props, 10 Rendimiento, 11 Auditoría del taller (solo documento), 12 Súperes | — | ⏳ Sin empezar, en ese orden | — |
 
-Release de prueba publicada: **v0.20.1** (desde `opus/armas`; .exe, AppImage y APK) con
+Releases de prueba: **v0.20.1** (desde `opus/armas`) y **v0.21.0** (desde `opus/integracion`, todo junto); .exe, AppImage y APK, con
 `.github/workflows/release.yml` (lanzamiento manual sobre una rama; usa la versión de `package.json`).
 
 ## 3. Siguiente paso concreto
@@ -42,7 +42,14 @@ están; rodante explosivo = kamikaze actual). Modelos en `raw/pack13_robots/` (b
 5. Textos `dummy.<tipo>` ES/EN en `src/i18n.ts`. Capturas con `tools/capture/enemigos*.mjs` y mirarlas.
 Pendiente de la fase 1: meter los enemigos nuevos en `raidgen.ts`/`hackgen.ts` (mejor con la tarea 3).
 
-## 4. Cómo unir las ramas (nadie lo ha hecho aún)
+## 4. Rama de integración `opus/integracion` (27/11) y release v0.21.0
+Une, sobre `trabajo-24-11`, por este orden: `tests` → `sonidos` → `reticulas` → `armas` → `enemigos` (trae `rapier`).
+De ella sale la release **v0.21.0** para que el usuario pruebe todo junto. Conflictos resueltos a mano solo en
+`src/game/main.ts`: se quedan los pasos por superficie (sonidos), el paso manual de capturas (uno solo) y la carga
+perezosa de la física. Las tareas siguientes pueden partir de `opus/integracion` para no arrastrar conflictos;
+si se arregla algo en una rama de tarea, volver a unirla aquí.
+
+## 4 bis. Cómo se unieron las ramas
 Todas salen de `trabajo-24-11` (6558c66) salvo `opus/enemigos`, que contiene `opus/rapier`. Orden sugerido para quien
 integre (lo decide el usuario): `tests` → `sonidos` → `reticulas` → `armas` → `enemigos` (trae `rapier`).
 Choques previsibles: **`src/game/main.ts`** (todas menos `tests`: son añadidos en zonas distintas, a mano), `gun.ts`
