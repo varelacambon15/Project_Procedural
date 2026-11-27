@@ -1,5 +1,8 @@
 # Traspaso — trabajo de Opus sobre `docs/BRIEFS_OPUS.md` (actualizado 27/11/2026)
 
+> **Versión viva: rama `opus/integracion`** (las copias de otras ramas pueden ir atrasadas). El trabajo más
+> reciente está en `opus/campana`, que sale de `opus/integracion`.
+
 **Léelo entero antes de tocar nada.** Resume qué está hecho, en qué rama, qué ha validado el usuario, qué decisiones
 siguen abiertas y cómo comprobar. El detalle de cada tarea está en su informe (`docs/informes/<tarea>.md`), que
 está **en su propia rama**. Se actualiza al cerrar cada tarea o cuando el usuario valida algo.
@@ -29,7 +32,29 @@ está **en su propia rama**. Se actualiza al cerrar cada tarea o cuando el usuar
 Releases de prueba: **v0.20.1** (desde `opus/armas`) **v0.21.0** (desde `opus/integracion`, todo junto con la fase 1 de enemigos) y **v0.21.1** (más la fase 2 de enemigos y el arreglo del guardado); .exe, AppImage y APK, con
 `.github/workflows/release.yml` (lanzamiento manual sobre una rama; usa la versión de `package.json`).
 
+## 2 bis. Reparto con G3G3AI (ayudante opcional, puede que nunca participe)
+El usuario puede encargar algunas tareas a su propio agente, **G3G3AI** (instrucciones en `G3G3AI.md`, en la raíz).
+Reglas para que no choque con este chat:
+- G3G3AI solo puede llevar: **`auditoria-taller`** (tarea 11, solo documento), **`blender-rodante`** (bajar el rodante a
+  ≤ 3.500 triángulos) y **`blender-mech`** (cabina del mech como malla propia, punto débil). Nada más.
+- Trabaja en ramas **`g3g3/<id>`** desde `opus/integracion`, nunca en `opus/*`. Su estado va en
+  `docs/informes/G3G3AI_ESTADO.md` de su rama; no edita este traspaso.
+- **Antes de empezar cualquiera de esas tres tareas, este chat comprueba** `git ls-remote origin "refs/heads/g3g3/*"`:
+  si existe la rama, la tarea está cogida y no se toca. Si no existe, este chat puede hacerla (y entonces la apunta aquí
+  como suya para que G3G3AI no la empiece).
+- Este chat **no toca ramas `g3g3/*`**. Unirlas a `opus/integracion` solo cuando el usuario lo pida (revisando el diff).
+- Los guiones de Blender (`.delegaciones/blender/`) y `raw/pack7/` **solo están en la carpeta local del usuario**,
+  no en GitHub: desde la nube no se puede hacer el trabajo de Blender.
+
 ## 3. Siguiente paso concreto
+**Campaña Hack (tarea 3), fases c y d, en `opus/campana`**: entrada desde el hall (el ordenador de modos lanza aún
+el hack antiguo; sustituirlo por un selector de los 5 niveles con estrellas y candados), panel de objetivo propio en el
+HUD, y jefe nuevo del nivel 5 (muy distinto: escala, sala propia, fases y patrón aprendible). Ver `docs/informes/campana.md`
+y `tools/capture/campana.mjs` (juega solo cada nivel). El brief pide parar tras la fase d con informe.
+
+Después, en este orden: **resto de la tarea 2** (abajo), tareas 4, 6, 9, 10, 12 (la 11 puede llevarla G3G3AI).
+
+### Resto de la tarea 2 (enemigos)
 **Tarea 2, resto** en `opus/enemigos` (fases 1 y 2 hechas y unidas en `opus/integracion`; la v0.21.0 lleva solo la fase 1): asesino,
 invocador y berserker (diseños en `.delegaciones/PLAN_ENEMIGOS.md`; incinerador y granadero se quedan como
 están; rodante explosivo = kamikaze actual). Modelos en `raw/pack13_robots/` (bombardero, arañita, mech pesado, con
