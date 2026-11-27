@@ -36,6 +36,7 @@ export interface SaveData {
   progress?: import("./progress").ProgressState;
   /** Súperes desbloqueados con módulos e incursiones completadas (opcional). */ supersOwned?: string[]; raidsDone?: number;
   /** Tarea 5: progreso de retículas (bajas por familia de óptica y formas desbloqueadas; opcional). */ reticles?: unknown;
+  /** Tarea 3: campaña Hack (niveles completados, estrellas, mejores tiempos; opcional: se valida con migrateCampaign). */ campaign?: unknown;
   /** Armaduras guardadas y las puestas por ranura (opcional). */ armors?: import("./armor").ArmorSpec[]; worn?: Partial<Record<import("./armor").ArmorSlot, number | null>>;
 }
 
@@ -148,6 +149,7 @@ export function parseSave(text: string | null): LoadResult {
     reticles: raw.reticles !== undefined ? raw.reticles : undefined,
     armors: Array.isArray(raw.armors) ? (raw.armors as unknown[]).filter((a) => isObj(a) && typeof (a as Raw).slot === "string") as SaveData["armors"] : undefined,
     worn: isObj(raw.worn) ? (raw.worn as SaveData["worn"]) : undefined,
+    campaign: isObj(raw.campaign) ? raw.campaign : undefined,
   };
   return { ok: true, data, dropped: raw.weapons.length - weapons.length + ((raw.bank as unknown[] | undefined)?.length ?? 0) - bank.length };
 }

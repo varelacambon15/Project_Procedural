@@ -1,0 +1,57 @@
+{
+  "_doc": "Campaña «Hack» (tarea 3): 5 niveles definidos SOLO con datos. Cada nivel es una cadena de objetivos repartida en salas (rooms = salas de combate, 3–6). Tipos de objetivo: clear (limpiar la sala), eliminate (objetivo prioritario: 'target' = tipo de enemigo), hack (mantener la posición junto a un terminal 'hold' s mientras llegan oleadas), destroy ('count' generadores con 'hp'), retrieve (recoger un núcleo y llevarlo a la salida), survive (aguantar 'waves' oleadas), boss (jefe del nivel: 'boss' = tipo), extract (llegar a la salida). Opcionales (estrellas): chest (cofre oculto), time (acabar antes de 'limit' s), nodamage (sin recibir más de 'max' de daño). 'mod' = modificador de wavemods.ts o null. 'reward': créditos y rareza mínima del botín al terminar; 'firstBonus' multiplica la primera vez. 'theme' = tema de raidgen.",
+  "levels": [
+    {
+      "id": "h1", "theme": "datacore", "rooms": 3, "difficulty": 0, "mod": null,
+      "objectives": [
+        { "type": "clear" },
+        { "type": "hack", "hold": 20 },
+        { "type": "extract" }
+      ],
+      "optionals": [{ "type": "chest" }, { "type": "time", "limit": 240 }, { "type": "nodamage", "max": 60 }],
+      "reward": { "credits": 300, "rarity": "rara", "firstBonus": 2 }
+    },
+    {
+      "id": "h2", "theme": "foundry", "rooms": 4, "difficulty": 0, "mod": null,
+      "objectives": [
+        { "type": "clear" },
+        { "type": "destroy", "count": 3, "hp": 900 },
+        { "type": "survive", "waves": 2 },
+        { "type": "extract" }
+      ],
+      "optionals": [{ "type": "chest" }, { "type": "time", "limit": 300 }, { "type": "nodamage", "max": 80 }],
+      "reward": { "credits": 420, "rarity": "rara", "firstBonus": 2 }
+    },
+    {
+      "id": "h3", "theme": "labyrinth", "rooms": 4, "difficulty": 1, "mod": "fast",
+      "objectives": [
+        { "type": "eliminate", "target": "commander" },
+        { "type": "retrieve" },
+        { "type": "extract" }
+      ],
+      "optionals": [{ "type": "chest" }, { "type": "time", "limit": 300 }, { "type": "nodamage", "max": 90 }],
+      "reward": { "credits": 560, "rarity": "epica", "firstBonus": 2 }
+    },
+    {
+      "id": "h4", "theme": "biolab", "rooms": 5, "difficulty": 1, "mod": "tough",
+      "objectives": [
+        { "type": "hack", "hold": 30 },
+        { "type": "destroy", "count": 4, "hp": 1200 },
+        { "type": "eliminate", "target": "mech" },
+        { "type": "extract" }
+      ],
+      "optionals": [{ "type": "chest" }, { "type": "time", "limit": 420 }, { "type": "nodamage", "max": 120 }],
+      "reward": { "credits": 720, "rarity": "epica", "firstBonus": 2 }
+    },
+    {
+      "id": "h5", "theme": "arena", "rooms": 4, "difficulty": 2, "mod": null,
+      "objectives": [
+        { "type": "clear" },
+        { "type": "hack", "hold": 25 },
+        { "type": "boss", "boss": "warden" }
+      ],
+      "optionals": [{ "type": "chest" }, { "type": "time", "limit": 480 }, { "type": "nodamage", "max": 150 }],
+      "reward": { "credits": 1200, "rarity": "legendaria", "firstBonus": 2 }
+    }
+  ]
+}
