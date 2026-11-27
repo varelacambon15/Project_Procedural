@@ -29,7 +29,7 @@ Release de prueba publicada: **v0.20.1** (desde `opus/armas`; .exe, AppImage y A
 `.github/workflows/release.yml` (lanzamiento manual sobre una rama; usa la versión de `package.json`).
 
 ## 3. Siguiente paso concreto
-**Tarea 2, resto** en `opus/enemigos` (fases 1 y 2 hechas, NO incluidas aún en `opus/integracion` la fase 2): asesino,
+**Tarea 2, resto** en `opus/enemigos` (fases 1 y 2 hechas y unidas en `opus/integracion`; la v0.21.0 lleva solo la fase 1): asesino,
 invocador y berserker (diseños en `.delegaciones/PLAN_ENEMIGOS.md`; incinerador y granadero se quedan como
 están; rodante explosivo = kamikaze actual). Modelos en `raw/pack13_robots/` (bombardero, arañita, mech pesado, con
 `LEEME`) y `raw/pack14_humanoides/` (asesino…). Patrón a seguir (ya funciona con los tres primeros):
