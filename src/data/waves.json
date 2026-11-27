@@ -26,7 +26,8 @@
     "gunroller": 3.2,
     "bomber": 3.6,
     "swarmling": 6.2,
-    "mech": 1.2
+    "mech": 1.2,
+    "pylon": 0
   },
   "damage": {
     "small": 6,
@@ -52,7 +53,8 @@
     "gunroller": 5,
     "bomber": 22,
     "swarmling": 4,
-    "mech": 30
+    "mech": 30,
+    "pylon": 0
   },
   "healthScale": 1,
   "attackRange": 1.6,

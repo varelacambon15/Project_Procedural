@@ -4,7 +4,10 @@
 import * as THREE from "three";
 import { dataPanel, hexFloor } from "./simtex";
 import { mergeStatic } from "./merge";
-import { CELL, DOOR_W, RAID_THEMES, doorsOf, generateRaid, rng, type RaidMap, type RaidOptions, type RaidRoom } from "./raidgen";
+import { CELL, DOOR_W, RAID_THEMES, doorsOf, generateRaid, roomEnemies, rng, type RaidMap, type RaidOptions, type RaidRoom } from "./raidgen";
+import type { CampaignRun } from "./campaignrun";
+import type { Objective } from "./campaign";
+import type { Dummy } from "./dummies";
 import type { Waves } from "./waves";
 import type { KINDS } from "./dummies";
 
@@ -20,8 +23,11 @@ export interface RaidHooks {
   /** Cofre de una sala de botín abierto. */ onChest(at: THREE.Vector3): void;
   /** Aviso del objetivo de la sala o de una fase del jefe (clave de texto y parámetros). */ announce(key: string, p?: Record<string, string | number>): void;
   /** Fase nueva del jefe (2 o 3): golpe de efecto en main. */ onBossPhase?(n: number): void;
+  /** Campaña: un objetivo de la cadena se ha cumplido (para el aviso y el sonido). */ onObjective?(): void;
 }
-interface RoomState { room: RaidRoom; started: boolean; cleared: boolean; queue: string[]; spawnT: number; second: string[]; t: number; barriers: { mesh: THREE.Mesh; box: THREE.Box3 }[]; chest?: THREE.Group }
+interface RoomState { room: RaidRoom; started: boolean; cleared: boolean; queue: string[]; spawnT: number; second: string[]; t: number; barriers: { mesh: THREE.Mesh; box: THREE.Box3 }[]; chest?: THREE.Group;
+  /** Campaña: objetivo de la sala, oleadas que faltan (survive), objetivo prioritario, generadores y refuerzos del hack. */
+  obj?: Objective | null; more?: string[][]; target?: Dummy; pylons?: Dummy[]; reinforceT?: number }
 
 const PALETTES = [
   // (más oscuras y con neón, como las salas de las referencias de Coded Arms)
@@ -72,10 +78,12 @@ export class Raid {
   get inBoss() { return this.current?.room.kind === "boss" && this.current.started; }
 
   /** Construye el mapa y devuelve dónde aparece el jugador (y hacia dónde mira). */
-  start(seed: number, opt: RaidOptions): { pos: THREE.Vector3; yaw: number } {
+  start(seed: number, opt: RaidOptions, prep?: (map: RaidMap) => void, post?: () => void): { pos: THREE.Vector3; yaw: number } {
     this.end();
     this.opt = opt; this.map = generateRaid(seed, opt); this.active = true; this.won = false; this.fightsDone = 0; this.bossPhase = 1;
+    prep?.(this.map);
     this.build(this.map);
+    post?.();
     const s = this.map.rooms[0], nx = this.map.rooms[1];
     const dir = new THREE.Vector3(nx.cx - s.cx, 0, nx.cz - s.cz).normalize();
     // (yaw 0 mira a −Z)
@@ -119,6 +127,96 @@ export class Raid {
     this.group.traverse((o) => { const i = this.hooks.shootables.indexOf(o); if (i >= 0) this.hooks.shootables.splice(i, 1); if (o instanceof THREE.Mesh) { o.geometry.dispose(); const m = o.material as THREE.MeshStandardMaterial; m.map?.dispose(); m.dispose(); } });
     this.scene.remove(this.group); this.group = new THREE.Group();
     this.boxes = []; this.states = []; this.current = null; this.active = false; this.map = null;
+    this.campaign = null; this.exit = null; this.terminal = null; this.coreItem = null;
+  }
+
+  // ---------- Campaña Hack (tarea 3) ----------
+  /** Cadena de objetivos de la partida de campaña en curso (null fuera de la campaña). */
+  campaign: CampaignRun | null = null;
+  private exit: { state: RoomState; beacon: THREE.Group } | null = null;
+  private terminal: { state: RoomState; g: THREE.Group; ring: THREE.Mesh } | null = null;
+  private coreItem: THREE.Group | null = null;
+  /**
+   * Partida de campaña: el mapa del tema del nivel con tantas salas de combate como pide su plan (más la de inicio y,
+   * si no hay jefe, la de salida). Cada objetivo va en su sala; las demás son de solo combate.
+   */
+  startCampaign(run: CampaignRun, seed: number): { pos: THREE.Vector3; yaw: number } {
+    const L = run.level, hasBoss = L.objectives.some((o) => o.type === "boss");
+    const at = this.start(seed, { rooms: L.rooms + (hasBoss ? 1 : 2), difficulty: L.difficulty, theme: L.theme }, (map) => {
+      const path = map.rooms.filter((r) => r.kind === "fight" || r.kind === "boss").sort((a, b) => a.i - b.i);
+      const fightRooms = hasBoss ? path : path.slice(0, -1);
+      fightRooms.forEach((room, k) => {
+        const o = run.roomObjective(k + 1);
+        room.kind = o?.type === "boss" ? "boss" : "fight";
+        if (o) { room.goal = "purge"; room.limit = 0; }
+        if (o?.type === "boss") room.enemies = [o.boss ?? "warden", ...room.enemies.filter((e) => e !== "warden").slice(0, 3 + L.difficulty * 2)];
+        if (o?.type === "eliminate") room.enemies = [o.target ?? "commander", ...room.enemies.filter((e) => e !== "commander")];
+        // (hack y generadores: menos enemigos al entrar; el resto llega como refuerzos mientras dura)
+        if (o?.type === "hack" || o?.type === "destroy") room.enemies = room.enemies.slice(0, Math.ceil(room.enemies.length * 0.55));
+        if (room.kind === "fight") room.enemies = room.enemies.filter((e) => e !== "warden");
+      });
+      if (!hasBoss) { const ex = path[path.length - 1]; ex.kind = "start"; ex.enemies = []; ex.covers = ex.covers.filter((c) => c.kind === "notch"); }
+    }, () => this.setupCampaign(run));
+    this.campaign = run;
+    return at;
+  }
+  private setupCampaign(run: CampaignRun) {
+    const O = RAID_ORIGIN, path = this.states.filter((s) => s.room.kind === "fight" || s.room.kind === "boss" || (s.room.kind === "start" && s.room.i > 0)).sort((a, b) => a.room.i - b.room.i);
+    const hasBoss = run.level.objectives.some((o) => o.type === "boss");
+    const fights = hasBoss ? path : path.slice(0, -1);
+    fights.forEach((st, k) => { st.obj = run.roomObjective(k + 1); });
+    // Salida: baliza de luz en el centro de la última sala
+    if (!hasBoss) {
+      const st = path[path.length - 1], g = new THREE.Group(); g.position.set(O.x + st.room.cx, 0, O.z + st.room.cz);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(2.6, 3, 40), new THREE.MeshBasicMaterial({ color: 0x7affc8, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; g.add(ring);
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 8, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0x7affc8, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); beam.position.y = 4; g.add(beam);
+      this.group.add(g); this.exit = { state: st, beacon: g };
+    }
+    // Cofre oculto (opcional): en una esquina de su sala, medio escondido
+    if (run.plan.chestRoom > 0) {
+      const st = fights[Math.min(fights.length - 1, run.plan.chestRoom - 1)];
+      if (st) { const r = st.room, sx = r.i % 2 ? 1 : -1, sz = r.i % 3 ? -1 : 1; st.chest = this.chest(new THREE.Vector3(O.x + r.cx + sx * (r.w / 2 - 1.6), 0, O.z + r.cz + sz * (r.d / 2 - 1.6)), 0xffd040); st.chest.userData.campaign = true; }
+    }
+  }
+  /** Terminal del hack: consola con pantalla y un anillo en el suelo (la zona que hay que mantener). */
+  private makeTerminal(st: RoomState) {
+    const O = RAID_ORIGIN, g = new THREE.Group(); g.position.set(O.x + st.room.cx, 0, O.z + st.room.cz);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.2, 0.6), new THREE.MeshStandardMaterial({ color: 0x2a3038, metalness: 0.6, roughness: 0.45 })); body.position.y = 0.6; g.add(body);
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.55), new THREE.MeshBasicMaterial({ color: 0x3fd0d8 })); scr.position.set(0, 1.05, 0.31); scr.rotation.x = -0.35; g.add(scr);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(3.3, 3.5, 48, 1, 0, Math.PI * 2), new THREE.MeshBasicMaterial({ color: 0x3fd0d8, transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; g.add(ring);
+    this.group.add(g); this.terminal = { state: st, g, ring };
+  }
+  /** Núcleo de datos (retrieve): aparece al despejar la sala; se recoge al acercarse. */
+  private makeCore(st: RoomState) {
+    const g = new THREE.Group(); g.position.set(RAID_ORIGIN.x + st.room.cx, 1.1, RAID_ORIGIN.z + st.room.cz);
+    g.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.35, 0), new THREE.MeshStandardMaterial({ color: 0x062026, emissive: 0x7affc8, emissiveIntensity: 2 })));
+    g.add(new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.03, 6, 24), new THREE.MeshBasicMaterial({ color: 0x7affc8 })));
+    this.group.add(g); this.coreItem = g;
+  }
+  /** Lógica de campaña de la sala en curso; devuelve true si la sala NO debe darse por despejada aún. */
+  private campaignTick(st: RoomState, dt: number, player: THREE.Vector3): boolean {
+    const run = this.campaign!, o = st.obj;
+    if (!o) return false;
+    if (o.type === "hack" && run.current?.type === "hack") {
+      const tm = this.terminal; if (!tm) return true;
+      const inside = Math.hypot(player.x - tm.g.position.x, player.z - tm.g.position.z) < 3.5;
+      (tm.ring.material as THREE.MeshBasicMaterial).color.setHex(inside ? 0x7affc8 : 0xff7a3a);
+      if (run.hackTick(dt, inside)) { this.hooks.onObjective?.(); this.hooks.announce("cp.done.hack"); return false; }
+      // Refuerzos mientras dura: siempre hay presión en la zona
+      st.reinforceT = (st.reinforceT ?? 3) - dt;
+      if (st.reinforceT <= 0 && this.hooks.mobs.living < 4 + this.opt.difficulty * 2) { st.reinforceT = 4; for (const k of roomEnemies(rng((Math.random() * 1e9) | 0), 2, 6, this.opt.difficulty).slice(0, 2)) st.queue.push(k); }
+      return true;
+    }
+    if (o.type === "destroy" && st.pylons) {
+      for (const p of st.pylons) if (!p.alive && !p.group.userData.counted) { p.group.userData.counted = true; if (run.destroyedOne()) { this.hooks.onObjective?.(); this.hooks.announce("cp.done.destroy"); } }
+      if (run.current?.type === "destroy") {
+        st.reinforceT = (st.reinforceT ?? 6) - dt;
+        if (st.reinforceT <= 0 && this.hooks.mobs.living - st.pylons.filter((p) => p.alive).length < 3 + this.opt.difficulty) { st.reinforceT = 6; for (const k of roomEnemies(rng((Math.random() * 1e9) | 0), 2, 6, this.opt.difficulty).slice(0, 2)) st.queue.push(k); }
+      }
+    }
+    // Objetivo prioritario: en cuanto cae, la sala se abre (el resto sigue peleando)
+    if (o.type === "eliminate" && st.target && !st.target.alive && run.current?.type === "eliminate") { run.complete("eliminate"); this.hooks.onObjective?.(); this.hooks.announce("cp.done.eliminate"); this.clear(st); return true; }
+    return false;
   }
 
   /** ¿Está este punto dentro del mapa de la incursión? */
@@ -366,13 +464,17 @@ export class Raid {
     for (const s of this.states) if (s.chest && !s.chest.userData.open && s.chest.position.distanceTo(player) < 2.2) {
       s.chest.userData.open = true; s.chest.getObjectByName("lid")!.rotation.x = -1.2; s.chest.getObjectByName("lid")!.position.z = -0.3; this.hooks.onChest(s.chest.position.clone().setY(1));
     }
+    if (this.campaign) this.campaignWorld(dt, player);
     if (!st || st.cleared) return;
     if (!st.started && here === st) this.begin(st, player);
     if (!st.started) return;
     st.t += dt;
     if (st.queue.length) { st.spawnT -= dt; if (st.spawnT <= 0) { st.spawnT = 0.5; this.spawnIn(st, player, st.queue.shift()!); } }
     if (st.room.kind === "boss" || st.room.enemies.includes("warden")) this.bossPhases(st, player);
+    if (this.campaign && this.campaignTick(st, dt, player)) return;
     if (!st.queue.length && this.hooks.mobs.living === 0) {
+      // Campaña, sobrevivir: cada oleada superada cuenta; la siguiente llega tras un respiro
+      if (st.more?.length) { this.campaign?.waveDone(); st.queue = st.more.shift()!; st.spawnT = 2.5; this.hooks.announce("cp.nextWave", { n: (this.campaign?.waves ?? 0) + 1 }); return; }
       // Dos oleadas: al acabar la primera, respiro corto y llega la segunda
       if (st.second.length) { st.queue = st.second; st.second = []; st.spawnT = 2; this.hooks.announce("rd.wave2"); return; }
       this.clear(st);
@@ -386,7 +488,26 @@ export class Raid {
     st.spawnT = 2.5;
     const g = st.room.goal;
     if (g === "waves") { const k = Math.ceil(st.queue.length * 0.55); st.second = st.queue.slice(k); st.queue = st.queue.slice(0, k); }
-    if (st.room.kind === "boss") this.hooks.announce("rd.goal.boss");
+    const o = st.obj;
+    if (o) {
+      // Campaña: lo propio de cada objetivo al entrar en su sala
+      if (o.type === "survive") { const n = Math.max(1, o.waves ?? 1); st.more = Array.from({ length: n - 1 }, () => roomEnemies(rng((Math.random() * 1e9) | 0), 3, 6, this.opt.difficulty)); }
+      if (o.type === "hack") this.makeTerminal(st);
+      if (o.type === "destroy") {
+        st.pylons = [];
+        const r = st.room, n = o.count ?? 3;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2 + 0.4, rr = Math.min(r.w, r.d) * 0.3, p = new THREE.Vector3(RAID_ORIGIN.x + r.cx + Math.cos(a) * rr, 0, RAID_ORIGIN.z + r.cz + Math.sin(a) * rr);
+          const d = this.hooks.mobs.spawnAt("pylon", p); d.chase = null; d.layers[0].max = d.layers[0].value = o.hp ?? 900; st.pylons.push(d);
+        }
+      }
+      if (o.type === "eliminate") {
+        st.target = this.hooks.mobs.list.find((d) => d.kind.key === (o.target ?? "commander"));
+        // (marcador: rombo rojo que flota sobre él y se ve a través de las paredes)
+        if (st.target) { const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), new THREE.MeshBasicMaterial({ color: 0xff3a2a, depthTest: false, transparent: true, opacity: 0.9 })); m.renderOrder = 10; m.position.y = (st.target.kind.top ?? 2.4) * (st.target.kind.scale ?? 1) + 0.6; m.userData.mark = true; st.target.group.add(m); }
+      }
+      this.hooks.announce(`cp.goal.${o.type}`, { s: o.hold ?? 0, n: o.count ?? 0, w: o.waves ?? 0 });
+    } else if (st.room.kind === "boss") this.hooks.announce("rd.goal.boss");
     else this.hooks.announce(`rd.goal.${g}`, { s: st.room.limit });
     // Barreras de energía en las puertas (no se sale hasta acabar)
     const r = st.room, O = RAID_ORIGIN, mat = new THREE.MeshBasicMaterial({ color: 0xff5a3a, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
@@ -426,8 +547,31 @@ export class Raid {
     void player;
   }
 
+  /** Campaña, en todo el mapa: recoger el núcleo, llegar a la salida, cofre oculto, tiempo y animaciones. */
+  private campaignWorld(dt: number, player: THREE.Vector3) {
+    const run = this.campaign!; run.tick(dt);
+    const c = this.coreItem;
+    if (c) { c.rotation.y += dt * 1.5; c.position.y = 1.1 + Math.sin(run.t * 2) * 0.12; if (c.position.distanceTo(player.clone().setY(1.1)) < 1.8 && run.complete("retrieve")) { this.group.remove(c); this.coreItem = null; this.hooks.onObjective?.(); this.hooks.announce("cp.done.retrieve"); } }
+    const ex = this.exit;
+    if (ex) {
+      ex.beacon.visible = run.canExtract; ex.beacon.rotation.y += dt;
+      if (run.canExtract && Math.hypot(player.x - ex.beacon.position.x, player.z - ex.beacon.position.z) < 3 && run.complete("extract")) { this.hooks.onObjective?.(); if (!this.won) { this.won = true; this.hooks.onWin(); } }
+    }
+    if (this.terminal) this.terminal.ring.rotation.z += dt * 0.6;
+    for (const s of this.states) if (s.chest?.userData.campaign && s.chest.userData.open && !run.chest) { run.chest = true; this.hooks.announce("cp.done.chest"); }
+    // (campaña acabada por jefe: la victoria la da clear() de la sala del jefe)
+  }
   private clear(st: RoomState) {
+    if (st.cleared) return;
     st.cleared = true; this.fightsDone++;
+    const run = this.campaign, o = st.obj;
+    if (run && o) {
+      if (o.type === "clear" && run.complete("clear")) this.hooks.onObjective?.();
+      if (o.type === "survive" && run.waveDone()) this.hooks.onObjective?.();
+      if (o.type === "retrieve") { this.makeCore(st); this.hooks.announce("cp.goal.pickCore"); }
+      if (o.type === "boss" && run.complete("boss")) this.hooks.onObjective?.();
+      if (this.terminal?.state === st) { this.group.remove(this.terminal.g); this.terminal = null; }
+    }
     for (const b of st.barriers) { this.group.remove(b.mesh); const i = this.hooks.colliders.indexOf(b.box); if (i >= 0) this.hooks.colliders.splice(i, 1); }
     st.barriers = [];
     if (st.room.kind === "boss") { if (!this.won) { this.won = true; this.hooks.onWin(); } return; }

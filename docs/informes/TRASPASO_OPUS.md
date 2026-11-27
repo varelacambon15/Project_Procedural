@@ -23,7 +23,8 @@ está **en su propia rama**. Se actualiza al cerrar cada tarea o cuando el usuar
 | 4.º | 5 Retículas | `opus/reticulas` (02ce5f8) | ✅ Hecha | `reticulas.md` |
 | 5.º | 1 Físicas Rapier | `opus/rapier` (af8ac4b) | ✅ Prototipo hecho, desactivable (sin fijar: solo en modo desarrollador) | `rapier.md` |
 | 6.º | 2 Enemigos | `opus/enemigos` (sale de `opus/rapier`) | 🔧 **Fases 1 y 2 hechas**: sabueso, dron reparador, centinela, rodante artillero, bombardero, arañitas, mech pesado. Falta: humanoides del pack 14 (asesino, invocador, berserker) | `enemigos.md` |
-| — | 3 Campaña Hack, 4 Ritmo, 6 Miras de hierro, 9 Props, 10 Rendimiento, 11 Auditoría del taller (solo documento), 12 Súperes | — | ⏳ Sin empezar, en ese orden | — |
+| 7.º | 3 Campaña Hack | `opus/campana` (sale de `opus/integracion`) | 🔧 **Fases a y b hechas** (datos, guardado, motor con 8 objetivos; los 5 niveles se completan). Faltan c (UI en el hall) y d (jefe nuevo del nivel 5) | `campana.md` |
+| — | 4 Ritmo, 6 Miras de hierro, 9 Props, 10 Rendimiento, 11 Auditoría del taller (solo documento), 12 Súperes | — | ⏳ Sin empezar, en ese orden | — |
 
 Releases de prueba: **v0.20.1** (desde `opus/armas`) **v0.21.0** (desde `opus/integracion`, todo junto con la fase 1 de enemigos) y **v0.21.1** (más la fase 2 de enemigos y el arreglo del guardado); .exe, AppImage y APK, con
 `.github/workflows/release.yml` (lanzamiento manual sobre una rama; usa la versión de `package.json`).

@@ -11,7 +11,7 @@ export type Zone = "head" | "body" | "limb" | "shield";
 /** Capa de protección. Por ahora solo existe "health". */
 export interface Layer { id: "health"; value: number; max: number }
 /** Forma del enemigo: humanoide (por defecto) o robots de la simulación. */
-export type Shape = "humanoid" | "drone" | "spider" | "roller" | "turret" | "hound" | "repairer" | "sentinel" | "gunroller" | "bomber" | "swarmling" | "mech";
+export type Shape = "humanoid" | "drone" | "spider" | "roller" | "turret" | "hound" | "repairer" | "sentinel" | "gunroller" | "bomber" | "swarmling" | "mech" | "pylon";
 interface Kind {
   key: string; health: number; level: number; scale?: number; boss?: boolean;
   shape?: Shape; /** Altura a la que vuela (drones). */ fly?: number;
@@ -44,6 +44,8 @@ export const KINDS: Record<string, Kind> = {
   gunroller: { key: "gunroller", health: 420, level: 12, shape: "gunroller", cy: 0.75, top: 1.2 },
   bomber: { key: "bomber", health: 380, level: 13, shape: "bomber", fly: 4.2, cy: 0, top: 0.65 },
   swarmling: { key: "swarmling", health: 45, level: 9, shape: "swarmling", cy: 0.27, top: 0.55 },
+  // Campaña: generador/antena que hay que destruir (no se mueve ni ataca; su núcleo de luz es el punto débil)
+  pylon: { key: "pylon", health: 900, level: 12, shape: "pylon", cy: 1.2, top: 2.6 },
   mech: { key: "mech", health: 6500, level: 18, shape: "mech", boss: true, cy: 2.3, top: 3.4 },
   // Pesados y tiradores
   guardian: { key: "guardian", health: 1800, level: 14, scale: 1.25, shield: true },
@@ -439,6 +441,17 @@ export class Dummy {
     });
     for (const c of cache.values()) { const sm = c as THREE.MeshStandardMaterial; if (!sm.emissive) continue; this.mats.push(sm); this.baseEm.push(sm.emissive.clone()); if (sm.emissiveIntensity > 1) this.glowSkip.add(sm); }
   }
+  /** Generador de la campaña: base, columna con aletas de radiador, núcleo que late (cabeza) y antena. */
+  private buildPylon() {
+    const B = this.body, at = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number) => { o.position.set(x, y, z); return o; };
+    const coreMat = new THREE.MeshStandardMaterial({ color: 0x2a0a04, emissive: 0xff5a2a, emissiveIntensity: 2.2 });
+    this.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.9, 0.35, 8), robotDark), 0, 0.17, 0), B, "body");
+    this.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 1.6, 8), robotMetal), 0, 1.15, 0), B, "body");
+    for (let i = 0; i < 4; i++) { const f = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.2, 0.5), robotPlate); f.position.set(Math.cos(i * Math.PI / 2) * 0.42, 1.1, Math.sin(i * Math.PI / 2) * 0.42); f.rotation.y = -i * Math.PI / 2; this.add(f, B, "limb"); }
+    this.add(at(new THREE.Mesh(new THREE.OctahedronGeometry(0.34, 0), coreMat), 0, 2.15, 0), B, "head");
+    this.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.7, 5), robotDark), 0, 2.7, 0), B, null);
+    this.blink = coreMat;
+  }
   /** Animación de los robots con modelo: patas al galope y mordisco, rotores y brazo soldador, anillo y cañón. */
   private animModel(dt: number, moving: number) {
     const m = this.model!, rig = m.rig, P = this.pose, a = this.attackT > 0 ? Math.sin((1 - this.attackT / 0.4) * Math.PI) : 0;
@@ -516,6 +529,7 @@ export class Dummy {
   }
   private buildRobot(shape: Shape) {
     if (isModelShape(shape)) { this.useModel(enemyModelNow(shape), false); return; }
+    if (shape === "pylon") { this.buildPylon(); return; }
     const B = this.body, box = (w: number, h: number, d: number, m: THREE.Material) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
     const cyl = (r0: number, r1: number, h: number, m: THREE.Material, n = 12) => new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, h, n), m);
     const at = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number) => { o.position.set(x, y, z); return o; };

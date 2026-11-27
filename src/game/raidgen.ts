@@ -26,7 +26,7 @@ export const RAID_THEMES: RaidTheme[] = [
 /** Forma de la planta (recortes de suelo a techo en esquinas o lados). */
 export type RoomShape = "box" | "L" | "T" | "cross" | "U";
 export interface RaidMap { seed: number; rooms: RaidRoom[]; corridors: RaidCorridor[]; palette: number; theme: string }
-export interface RaidOptions { rooms: number; difficulty: 0 | 1 | 2 }
+export interface RaidOptions { rooms: number; difficulty: 0 | 1 | 2; /** Tema fijo (campaña); sin él, al azar. */ theme?: string }
 
 export const CELL = 46;
 export const DOOR_W = 5;
@@ -52,7 +52,8 @@ export function roomEnemies(r: () => number, step: number, total: number, diffic
 
 export function generateRaid(seed: number, opt: RaidOptions): RaidMap {
   const r = rng(seed), total = Math.max(3, Math.min(10, opt.rooms));
-  const theme = RAID_THEMES[Math.floor(r() * RAID_THEMES.length)];
+  // (con tema fijo se consume igual el número al azar: el resto del mapa sale idéntico para la misma semilla)
+  const pick = Math.floor(r() * RAID_THEMES.length), theme = RAID_THEMES.find((x) => x.id === opt.theme) ?? RAID_THEMES[pick];
   // Camino principal: paseo aleatorio por la cuadrícula sin repetir celdas (preferencia por avanzar en +Z)
   let path: [number, number][] = [];
   for (let tries = 0; tries < 200 && path.length < total; tries++) {

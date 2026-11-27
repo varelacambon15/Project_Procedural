@@ -38,6 +38,8 @@ import { ARMOR_RARITY, armorTotals, damageTaken, makeArmor, setArmorUid, type Ar
 import { armorObject, fillArmorThumbs } from "./armormodel";
 import { generateArena, mutateArena } from "./arenagen";
 import { Raid, RAID_ORIGIN } from "./raid";
+import { LEVELS, finishLevel, isUnlocked, levelIndex, migrateCampaign, newCampaign, planLevel, type CampaignState } from "./campaign";
+import { CampaignRun } from "./campaignrun";
 import { spawnDummies, DamageNumbers, type Dummy } from "./dummies";
 import { Player } from "./player";
 import { Gun } from "./gun";
@@ -645,7 +647,7 @@ async function boot() {
     const weapons = [...inv.equip.map((it, i) => ({ it, area: "equip" as const, index: i })), ...inv.pack.map((it, i) => ({ it, area: "pack" as const, index: i })), ...inv.storage.map((it, i) => ({ it, area: "storage" as const, index: i }))]
       .filter((x) => x.it).map((x) => ({ spec: x.it!.spec, ammo: x.it!.ammo, area: x.area, index: x.index }));
     return { version: SAVE_VERSION, savedAt: "", name, playSeconds: Math.round(playSeconds), credits: inv.credits, weapons, active: inv.active, bank: inv.bank, shop: shopState,
-      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, gadgets: inv.gadgets, gadgetActive: inv.gadgetActive, furniture: inv.furniture, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone, reticles: inv.reticles, armors: inv.armors, worn: inv.worn };
+      settings: { ...settings }, lang: getLang(), pixelLevel: pixelLevel(), contracts, grenades: inv.grenades, grenadeActive: inv.grenadeActive, gadgets: inv.gadgets, gadgetActive: inv.gadgetActive, furniture: inv.furniture, superId: inv.superId, progress: inv.progress, supersOwned: inv.supersOwned, raidsDone: inv.raidsDone, reticles: inv.reticles, armors: inv.armors, worn: inv.worn, campaign: camp };
   }
   function apply(d: SaveData) {
     rouletteCancel();
@@ -669,7 +671,7 @@ async function boot() {
     if (d.superId === "chrono") d.superId = "timestop";
     inv.superId = (SUPER_IDS as string[]).includes(d.superId ?? "") ? (d.superId as SuperId) : "shockwave"; meter.charge = 0;
     // Súperes: las partidas de antes de los módulos conservan el que tenían elegido
-    inv.supersOwned = (d.supersOwned ?? (d.superId ? [d.superId] : [])).map((x) => (x === "chrono" ? "timestop" : x)).filter((x): x is SuperId => (SUPER_IDS as string[]).includes(x)); inv.raidsDone = d.raidsDone ?? 0; inv.reticles = migrateReticles(d.reticles);
+    inv.supersOwned = (d.supersOwned ?? (d.superId ? [d.superId] : [])).map((x) => (x === "chrono" ? "timestop" : x)).filter((x): x is SuperId => (SUPER_IDS as string[]).includes(x)); inv.raidsDone = d.raidsDone ?? 0; inv.reticles = migrateReticles(d.reticles); camp = migrateCampaign(d.campaign);
     inv.progress = migrateProgress(d.progress, inv.all.map((it) => it.spec.level)); applyPerks();
     replaceSettings(d.settings as Partial<Settings>); if (d.lang === "es" || d.lang === "en") setLang(d.lang as Lang); setPixelLevel(d.pixelLevel);
     inGame = true; php.reset(); inv.changed();
@@ -933,6 +935,7 @@ async function boot() {
     if (sfx.decoyPos) return;
     if (sfx.shieldsPlayer(player.pos)) return;
     dmg *= sfx.guard * curPerks.guard * damageTaken(armorT, kind) * gadgets.guardAt(player.pos); // (la cúpula del equipamiento protege dentro) // (armadura: reducción y resistencias)
+    raid.campaign?.hurt(dmg); // (campaña: daño recibido para la estrella «sin daño»)
     gun.gesture.hurt(dmg); // (el daño recibido nunca cancela el gesto de manos en curso: regla del encargo 34)
     if (curPerks.secondWind && !windUsed && php.value - dmg <= 0) { windUsed = true; php.value = php.max * 0.4; toast(t("pg.secondWind")); return; }
     if (dmg > 0) post.hit(dmg); // (la aberración cromática solo al recibir daño)
@@ -940,6 +943,7 @@ async function boot() {
       windUsed = false;
       // Animación de muerte (la mano se desintegra) y, al acabar, lo que toque según dónde estés
       session.event("muerte", { modo: sessionCtx().modo }); deathFx.start(() => {
+        if (raid.active && raid.campaign) { campaignEnd(); return; }
         if (raid.active && hack.active) { hackEnd(false); return; }
         if (raid.active && dmode.active) { defenseEnd(); return; }
         if (raid.active) { toast(t("rd.lost")); returnHub(false); return; }
@@ -956,14 +960,18 @@ async function boot() {
   mobs.playerLevel = () => inv.progress.level;
   waves.decoy = () => sfx.decoyPos ?? gadgets.decoyPos; mobs.decoy = () => sfx.decoyPos ?? gadgets.decoyPos ?? (dmode.active ? defense.decoyPos : null);
   let raidOpt: { rooms: number; difficulty: 0 | 1 | 2 } = { rooms: 6, difficulty: 0 }, raidReturnT = -1;
+  /** Campaña Hack (tarea 3): niveles completados, estrellas y mejores tiempos (se guarda con la partida). */
+  let camp: CampaignState = newCampaign();
   const RAID_DIFF = [{ rarity: "rara", cr: 1, xp: 0.3 }, { rarity: "epica", cr: 1.6, xp: 0.45 }, { rarity: "legendaria", cr: 2.4, xp: 0.6 }] as const;
   const raid = new Raid(scene, {
     mobs, colliders: world.colliders, shootables: world.shootables, toast,
     announce: (k, p) => toast(t(k, p)),
     onBossPhase: () => { if (settings.screenShake) shake = Math.min(0.8, shake + 0.6); lootChime(2); },
-    onClear: (n, of) => hack.active ? hackRoom() : toast(t("rd.cleared", { n, of: of - 1 })),
+    onClear: (n, of) => raid.campaign ? undefined : hack.active ? hackRoom() : toast(t("rd.cleared", { n, of: of - 1 })),
+    onObjective: () => { lootChime(2); if (settings.screenShake) shake = Math.min(0.4, shake + 0.12); },
     onChest: (at) => { if (Math.random() < MODULE_CHANCE.raidChest) grantModule(); for (let i = 0; i < 2; i++) dropLoot("big", at.clone().add(new THREE.Vector3((i - 0.5) * 0.8, 0, 0))); toast(t("rd.chest")); },
     onWin: () => {
+      if (raid.campaign) { campaignWin(); return; }
       if (hack.active) { hackSectorDone(); return; }
       const D = RAID_DIFF[raidOpt.difficulty], k = raidOpt.rooms / 6;
       const rarity = (D.rarity === "legendaria" && Math.random() < 0.5 ? "epica" : D.rarity) as RarityId;
@@ -979,7 +987,7 @@ async function boot() {
   });
   /** Vuelve al vestíbulo (sala B, junto al ordenador) al ganar o morir. Al ganar, el botín del suelo viene contigo. */
   // ---------- Resumen al acabar una incursión o un hack ----------
-  type Run = { mode: "raid" | "hack"; t0: number; kills: number; heads: number; cr0: number; lv0: number; loot?: string; lootColor?: string; result?: "won" | "lost" | "extracted" | "left"; rooms?: number; fights?: number };
+  type Run = { mode: "raid" | "hack" | "campaign"; level?: string; stars?: string[]; t0: number; kills: number; heads: number; cr0: number; lv0: number; loot?: string; lootColor?: string; result?: "won" | "lost" | "extracted" | "left"; rooms?: number; fights?: number };
   let run: Run | null = null;
   const beginRun = (mode: Run["mode"]) => { run = { mode, t0: playSeconds, kills: 0, heads: 0, cr0: inv.credits, lv0: inv.progress.level }; };
   function showRunSummary() {
@@ -987,7 +995,7 @@ async function boot() {
     const res = r.result ?? "lost", secs = Math.max(0, Math.round(playSeconds - r.t0)), mm = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
     const color = res === "won" || res === "extracted" ? "#7affc8" : res === "left" ? "#e8a040" : "#ff5a5a";
     const row = (k: string, v: string) => `<div class="sumrow"><span>${k}</span><b>${v}</b></div>`;
-    const prog = r.mode === "raid" ? row(t("sum.rooms"), `${r.rooms ?? 0} / ${r.fights || "—"}`) : row(t("sum.depth"), String(hack.depth));
+    const prog = r.mode === "campaign" ? row(t("cp.sum.level"), t(`cp.lv.${r.level}`)) + (r.stars?.length ? row(t("cp.sum.stars"), r.stars.map((x) => `★ ${t(`cp.st.${x}`)}`).join(" · ")) : "") : r.mode === "raid" ? row(t("sum.rooms"), `${r.rooms ?? 0} / ${r.fights || "—"}`) : row(t("sum.depth"), String(hack.depth));
     state = "raidmenu"; input.unlock(); const el = $("raidmenu"); el.hidden = false;
     el.innerHTML = `<div class="term"><header class="termbar"><span class="sim">${r.mode === "raid" ? "RAID//" : "HACK//"}</span><h1 style="color:${color}">${t(`sum.${res}`)}</h1></header>
       <section class="panel ct-list summary">${prog}${row(t("sum.time"), mm)}${row(t("sum.kills"), String(r.kills))}${row(t("sum.heads"), String(r.heads))}
@@ -1060,6 +1068,40 @@ async function boot() {
     else if (raid.active) { toast(t("rd.left2")); if (run) run.result = "left"; returnHub(false); }
     else if (waves.active) leaveSurvival();
     resume();
+  }
+  // ---------- Campaña Hack (tarea 3): 5 niveles con cadena de objetivos, estrellas y jefe final ----------
+  /** Empieza un nivel de la campaña (si está desbloqueado). Devuelve si ha empezado. */
+  function startCampaign(id: string, seed = (Math.random() * 2 ** 31) | 0) {
+    const L = LEVELS.find((l) => l.id === id); if (!L || !isUnlocked(camp, id)) return false;
+    session.event("inicio", { modo: "campana", nivel: id });
+    beginRun("campaign"); if (run) run.level = id;
+    const cr = new CampaignRun(L, planLevel(L, seed));
+    mobs.mod = L.mod; php.noRegen = L.mod === "noregen";
+    const at = raid.startCampaign(cr, seed);
+    mobs.index = L.difficulty * 5 + levelIndex(id) * 2; // (nivel de los enemigos: sube con cada nivel)
+    player.pos.copy(at.pos); player.vel.set(0, 0, 0); player.yaw = at.yaw; player.pitch = 0;
+    php.reset(); waves.stop(); toast(t("cp.start", { n: levelIndex(id) + 1, name: t(`cp.lv.${id}`) }));
+    if (L.mod) setTimeout(() => { if (raid.campaign && mobs.mod) toast(t("wm.start", { m: t(`wm.${mobs.mod}`), d: t(`wm.d.${mobs.mod}`) })); }, 2600);
+    return true;
+  }
+  /** Nivel superado: recompensas (créditos, arma de la rareza del nivel; legendaria garantizada del jefe final), estrellas y desbloqueo. */
+  function campaignWin() {
+    const cr = raid.campaign!, id = cr.level.id, res = finishLevel(camp, id, cr.result()); camp = res.state; const R = res.rewards;
+    const credits = Math.round(R.credits * curPerks.fortune); earn(credits);
+    let loot = "";
+    if (R.rarity) { const it = makeItem(rollWeapon(R.guaranteed ? "legendaria" : R.rarity)); if (!inv.add(it)) { const i = inv.storage.indexOf(null); if (i >= 0) { inv.storage[i] = it; inv.changed(); } } loot = it.spec.name; if (run) { run.loot = it.spec.name; run.lootColor = it.spec.rarity.color; } if (it.spec.rarity.id === "legendaria") session.event("botin-legendario"); }
+    gainXp(xpToNext(inv.progress.level) * (0.35 + 0.1 * levelIndex(id)));
+    lootChime(4); toast(t("cp.won", { c: credits, n: loot }));
+    if (R.guaranteed) setTimeout(() => toast(t("cp.legendary")), 1200);
+    R.newStars.forEach((x, i) => setTimeout(() => toast(t("cp.star", { s: t(`cp.st.${x}`) })), 1800 + i * 900));
+    if (R.unlocked) setTimeout(() => toast(t("cp.unlocked", { n: levelIndex(R.unlocked!) + 1, name: t(`cp.lv.${R.unlocked}`) })), 2400);
+    if (run) { run.result = "won"; run.stars = R.newStars; }
+    raidReturnT = 6;
+  }
+  /** Caída en un nivel de la campaña: cuenta el intento, sin botín. */
+  function campaignEnd() {
+    const cr = raid.campaign; if (cr) { cr.failed = true; camp = finishLevel(camp, cr.level.id, cr.result()).state; }
+    toast(t("cp.lost")); returnHub(false);
   }
   function startRaid() {
     session.event("inicio", { modo: "incursion" });
@@ -1253,7 +1295,7 @@ async function boot() {
     const el = $("phealth"); const show = state === "play";
     el.hidden = !show; if (!show) return;
     el.querySelector<HTMLElement>("i")!.style.width = `${(php.value / php.max) * 100}%`;
-    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}${roulette.active ? ` · ${t("sv.rouletteIn", { s: Math.ceil(ROULETTE_EVERY - roulette.t) })}` : ""}` : raid.active && dmode.active ? `  ·  ${t("df.hud", { w: dmode.wave, hp: Math.ceil(defense.core.hp), max: defense.core.max, c: dmode.credits })}${defense.core.shield > 0 ? ` · 🛡 ${Math.ceil(defense.core.shield)}` : ""}${dmode.phase === "build" ? ` · ${t("df.buildT", { s: Math.ceil(dmode.t) })}` : raid.enemiesLeft || mobs.living ? ` · ${t("rd.left", { n: mobs.living + dmode.queue.length })}` : ""}`: raid.active && hack.active ? `  ·  HACK · ${t("hk.sectorN", { n: hack.depth })}${mobs.mod ? ` · ${t(`wm.${mobs.mod}`)}` : ""} · ${t("rd.hud", { n: raid.cleared, of: raid.fights })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
+    el.querySelector<HTMLElement>("span")!.textContent = `${Math.ceil(php.value)} / ${php.max}` + (waves.active ? `  ·  ${t("ui.waveN", { n: waves.index + 1, of: "∞", left: waves.remaining })}${waves.mod ? ` · ${t(`wm.${waves.mod}`)}` : ""}${roulette.active ? ` · ${t("sv.rouletteIn", { s: Math.ceil(ROULETTE_EVERY - roulette.t) })}` : ""}` : raid.active && dmode.active ? `  ·  ${t("df.hud", { w: dmode.wave, hp: Math.ceil(defense.core.hp), max: defense.core.max, c: dmode.credits })}${defense.core.shield > 0 ? ` · 🛡 ${Math.ceil(defense.core.shield)}` : ""}${dmode.phase === "build" ? ` · ${t("df.buildT", { s: Math.ceil(dmode.t) })}` : raid.enemiesLeft || mobs.living ? ` · ${t("rd.left", { n: mobs.living + dmode.queue.length })}` : ""}`: raid.active && raid.campaign ? (() => { const cr = raid.campaign!, h = cr.hud(), p = { ...h.p }; if (typeof p.k === "string") p.k = t(`dummy.${p.k}`); return `  ·  HACK ${levelIndex(cr.level.id) + 1}/${LEVELS.length} · ${t(h.key, p)}${h.frac !== null && cr.current?.type === "hack" ? ` ${Math.round(h.frac * 100)} %` : ""}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}`; })() : raid.active && hack.active ? `  ·  HACK · ${t("hk.sectorN", { n: hack.depth })}${mobs.mod ? ` · ${t(`wm.${mobs.mod}`)}` : ""} · ${t("rd.hud", { n: raid.cleared, of: raid.fights })} · ${t("hk.data", { n: hack.data })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : raid.active ? `  ·  ${t("rd.hud", { n: raid.cleared, of: raid.fights })}${raid.enemiesLeft ? ` · ${t("rd.left", { n: raid.enemiesLeft })}` : ""}${raid.timeLeft !== null ? ` · ⏱ ${Math.ceil(raid.timeLeft)} s` : ""}` : "");
   }
 
   // ---------- Botín de enemigos ----------
@@ -1691,7 +1733,7 @@ async function boot() {
   frame();
   (window as unknown as Record<string, unknown>).__game = { hallBot, deathFx, hallProps,
     debug, step: (dt = 1 / 60) => frame(dt), gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
-    makeGadget, gadgets, loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, startDefense, defense, dmode, returnHub, mobs, openRaidMenu, arena, mutateArena,
+    makeGadget, gadgets, loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, startCampaign, get camp() { return camp; }, set camp(v: CampaignState) { camp = v; }, startDefense, defense, dmode, returnHub, mobs, openRaidMenu, arena, mutateArena,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };
 }
