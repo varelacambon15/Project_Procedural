@@ -215,6 +215,23 @@ export class Dummy {
 
   /** Aspecto: sin peana (camina con piernas completas) y variante de color y accesorios (enemigos de las oleadas). */
   private look: DummyLook | null = null;
+  /** Tarea 1: el cuerpo ha pasado a ragdoll (física): no se anima la caída ni se tocan sus piezas desde aquí. */
+  ragdolled = false;
+  /** Partes visuales para el ragdoll (solo humanoides con piernas articuladas). */
+  ragdollParts() {
+    if (this.kind.shape || !this.legs.length || !this.armsH.length) return null;
+    const head = (this.body.children as THREE.Object3D[]).filter((m) => (m as THREE.Mesh).isMesh && m.position.y > 2.05);
+    const elbow = (sh: THREE.Object3D) => sh.children.find((c) => !(c as THREE.Mesh).isMesh) ?? sh;
+    const sev = new Set(this.severed);
+    return {
+      body: this.body, head,
+      arms: this.armsH.map((sh) => [sh, elbow(sh)] as [THREE.Object3D, THREE.Object3D]),
+      legs: this.legs.map((h, i) => [h, this.knees[i]] as [THREE.Object3D, THREE.Object3D]),
+      isSevered: (o: THREE.Object3D) => sev.has(o as THREE.Mesh) || !o.visible,
+      /** Empuje de la muerte en el mundo (dirección del disparo y fuerza), para el impulso inicial. */
+      push: new THREE.Vector3(this.deathDir.x, 0, this.deathDir.y).applyQuaternion(this.group.quaternion).multiplyScalar(this.deathV.length()),
+    };
+  }
   private legs: THREE.Object3D[] = []; private knees: THREE.Object3D[] = []; private bobY = 0; private walkT = Math.random() * 6;
   constructor(readonly kind: Kind, readonly id: string, pos: THREE.Vector3, overlay: HTMLElement, onDamage: (d: Dummy, amount: number, color: string, crit: boolean, at: THREE.Vector3) => void, look?: DummyLook) {
     this.look = look ? (kind.paint ? { ...look, ...kind.paint, extras: kind.key === "commander" ? ["helmet", "vest", "pads"] : kind.key === "medic" ? ["pack"] : look.extras } : look) : null;
@@ -672,7 +689,7 @@ export class Dummy {
         let drop = 0;
         this.legs.forEach((l, i) => { const ph = this.walkT + i * Math.PI, a = Math.sin(ph) * A; l.rotation.x = a; drop = Math.max(drop, 1.27 * (1 - Math.cos(a))); if (this.knees[i]) this.knees[i].rotation.x = 0.05 + Math.max(0, Math.cos(ph)) * Math.max(0, Math.sin(ph + 0.6)) * 0.75; });
         this.bobY = -drop * 0.85;
-      } else { this.legs.forEach((l) => (l.rotation.x *= 0.85)); this.knees.forEach((k) => (k.rotation.x *= 0.85)); this.bobY *= 0.85; }
+      } else if (!this.ragdolled) { this.legs.forEach((l) => (l.rotation.x *= 0.85)); this.knees.forEach((k) => (k.rotation.x *= 0.85)); this.bobY *= 0.85; }
     }
     if (this.kind.shape && this.kind.shape !== "humanoid") { this.walkT += dt * (1 + moving * 4); this.animRobot(dt, moving, toTarget); }
     this.buffT = Math.max(0, this.buffT - dt); this.slowT = Math.max(0, this.slowT - dt);
@@ -721,21 +738,21 @@ export class Dummy {
     this.flinchV.addScaledVector(this.flinch, -110 * dt); this.flinchV.multiplyScalar(Math.max(0, 1 - 14 * dt)); this.flinch.addScaledVector(this.flinchV, dt);
     this.flinch.clampScalar(-0.45, 0.45);
     this.headKickV += -140 * this.headKick * dt; this.headKickV *= Math.max(0, 1 - 16 * dt); this.headKick = Math.min(0.12, this.headKick + this.headKickV * dt);
-    for (const h of this.heads) h.m.position.z = h.z - this.headKick;
+    if (!this.ragdolled) for (const h of this.heads) h.m.position.z = h.z - this.headKick;
     this.limpT = Math.max(0, this.limpT - dt); const limp = Math.sin(Math.min(1, this.limpT / 0.45) * Math.PI);
     // Muerte: cae hacia donde le dispararon (rodillas que ceden, golpe contra el suelo con un pequeño rebote)
     if (!this.alive && this.deathTilt === 0 && !this.kind.shape) this.deathTilt = 0.01; // (muertes sin disparo: fuego, súper…)
-    if (!this.alive && this.deathTilt > 0) {
+    if (!this.alive && this.deathTilt > 0 && !this.ragdolled) {
       const k = Math.min(1, this.deadT / 0.62), fall = k < 0.85 ? Math.pow(k / 0.85, 1.8) : 1 - Math.sin((k - 0.85) / 0.15 * Math.PI) * 0.06;
       this.deathTilt = 0.01 + fall * (this.kind.shape ? 0.5 : 1.42);
       this.deathOff.addScaledVector(this.deathV, dt); this.deathV.multiplyScalar(Math.max(0, 1 - 4 * dt));
       this.legs.forEach((l) => (l.rotation.x = -Math.min(0.9, k * 1.6) * 0.6));
     }
     const dt2 = this.deathTilt > 0.02 ? this.deathTilt : 0;
-    this.body.rotation.x = this.flinch.x + dt2 * this.deathDir.y + (this.alive ? this.pose.lean : 0); this.body.rotation.z = this.flinch.y + limp * 0.08 * this.limpSide - dt2 * this.deathDir.x + (this.alive ? this.pose.roll : 0);
+    if (!this.ragdolled) { this.body.rotation.x = this.flinch.x + dt2 * this.deathDir.y + (this.alive ? this.pose.lean : 0); this.body.rotation.z = this.flinch.y + limp * 0.08 * this.limpSide - dt2 * this.deathDir.x + (this.alive ? this.pose.roll : 0); }
     this.hitGlow = Math.max(0, this.hitGlow - dt * 9);
     for (let i = 0; i < this.mats.length; i++) { const m = this.mats[i]; if (this.glowSkip.has(m)) continue; m.emissive.copy(this.baseEm[i]).lerp(this.glowColor, this.hitGlow * 0.55); }
-    this.body.position.set((this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0) + this.pushOff.x + this.deathOff.x, -limp * 0.06 - (this.alive ? this.pose.dip : 0) + this.bobY, this.pushOff.z + this.deathOff.z);
+    if (!this.ragdolled) this.body.position.set((this.stunT > 0 ? (Math.random() - 0.5) * 0.03 : 0) + this.pushOff.x + this.deathOff.x, -limp * 0.06 - (this.alive ? this.pose.dip : 0) + this.bobY, this.pushOff.z + this.deathOff.z);
     // Escaneo: al morir se desintegra de arriba abajo; al reaparecer se compila de abajo arriba
     const wy = this.group.getWorldPosition(new THREE.Vector3()).y;
     const sm = this.scan.material as THREE.MeshBasicMaterial;
@@ -743,12 +760,14 @@ export class Dummy {
       this.deadT += dt;
       let h = this.top;
       // (primero cae; luego se desintegra de arriba abajo)
-      if (this.deadT < 0.85) h = this.top + 1;
-      else if (this.deadT < 1.55) h = this.top * (1 - (this.deadT - 0.85) / 0.7);
+      // (con ragdoll, el cuerpo cae con física y se funde más tarde, a los 4–5 s)
+      const late = this.ragdolled ? 3.4 : 0;
+      if (this.deadT < 0.85 + late) h = this.top + 1;
+      else if (this.deadT < 1.55 + late) h = this.top * (1 - (this.deadT - 0.85 - late) / 0.7);
       else if (this.deadT < 4.0) h = 0;
       else if (this.deadT < 4.8) h = this.top * ((this.deadT - 4.0) / 0.8);
       else if (!this.respawn) { this.gone = true; h = 0; }
-      else { this.alive = true; for (const l of this.layers) l.value = l.max; for (const m of this.severed) m.visible = true; this.severed = []; this.deathTilt = 0; this.deathV.set(0, 0, 0); this.deathOff.set(0, 0, 0); }
+      else { this.alive = true; this.ragdolled = false; for (const l of this.layers) l.value = l.max; for (const m of this.severed) m.visible = true; this.severed = []; this.deathTilt = 0; this.deathV.set(0, 0, 0); this.deathOff.set(0, 0, 0); }
       this.clip.constant = wy + h;
       this.scan.position.y = h; sm.opacity = h > 0.02 && h < this.top - 0.02 ? 0.9 : 0;
     } else { this.clip.constant = wy + this.top + 1; sm.opacity = 0; }

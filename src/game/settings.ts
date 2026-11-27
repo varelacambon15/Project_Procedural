@@ -19,6 +19,7 @@ export interface Settings {
   mapV: number;          // versión del mapa (migración de ajustes)
   /** Registro de sesión (solo con el modo desarrollador): capturas y notas para revisar después. */ sessionLog: boolean;
   dev: boolean;          // modo desarrollador: todos los súperes y su carga, y atajos para probar
+  /** Tarea 1: físicas con Rapier (ragdolls, explosiones y objetos sueltos). Sin fijar, siguen al modo desarrollador. */ physics?: boolean;
   sprintToggle: boolean; // correr: pulsar para activar/desactivar (si no, mantener)
   aimToggle: boolean;    // apuntar: pulsar para activar/desactivar
   crouchToggle: boolean; // agacharse: pulsar para activar/desactivar

@@ -45,6 +45,7 @@ import { VM_FOV } from "./anim";
 import { VM_BACK } from "./vmfit";
 import { RETICLES, reticleFor } from "./reticles";
 import { Inventory, makeItem, type Item } from "./inventory";
+import type { PhysicsLayer } from "./physworld";
 import { Pickups, type Pickup } from "./pickups";
 import { LOOT, LootDirector, type LootSource } from "../weapons/loot";
 import { lootChime } from "./audio";
@@ -1392,13 +1393,36 @@ async function boot() {
   // ---------- Bucle ----------
   const clock = new THREE.Clock();
   let shownPickup: object | null = null;
-  const debug = { fire: false, aim: false }; // usado por las pruebas automáticas
+  // usado por las pruebas automáticas; `manual`: el bucle se detiene y solo avanza con `__game.step(dt)` (capturas
+  // fotograma a fotograma con un paso fijo, tools/capture/)
+  const debug = { fire: false, aim: false, manual: false, noDraw: false };
+  const loop = () => frame();
   let frameNo = 0;
   sessionCtx = () => ({ modo: hack.active ? "hack" : dmode.active ? "defensa" : raid.active ? "incursion" : waves.active ? "supervivencia" : "hall", arma: inv.current ? displayName(inv.current.spec) : "puños", nivel: inv.progress.level });
-  function frame() {
-    const dt = Math.min(clock.getDelta(), 0.05);
+  // ---------- Tarea 1: física con Rapier (prototipo; solo si está activa: por defecto, en modo desarrollador) ----------
+  let phys: PhysicsLayer | null = null, physLoading = false;
+  function physicsTick(dt: number) {
+    if (!phys && !physLoading && (settings.physics ?? settings.dev)) {
+      physLoading = true;
+      // (carga perezosa: Rapier y la capa solo se descargan al activar la física)
+      void import("./physworld").then(({ PhysicsLayer }) => {
+        phys = new PhysicsLayer(scene, world.shootables, camera);
+        // Explosiones: se engancha a las de las armas y las granadas sin tocar su código (envolviendo el método)
+        const gx = gun.explode.bind(gun);
+        gun.explode = (at, dmg, el, except, color) => { phys?.explode(at, 5, 6); return gx(at, dmg, el, except, color); };
+        const nx = (nades as unknown as { explode: (g: { radius: number }, at: THREE.Vector3, scale: number) => void });
+        const ng = nx.explode.bind(nades);
+        nx.explode = (g, at, scale) => { phys?.explode(at, g.radius * 1.3, 7 * scale); return ng(g, at, scale); };
+        (window as unknown as Record<string, unknown>).__phys = phys;
+      });
+    }
+    phys?.update(dt, [...dummies, ...waves.list, ...mobs.list]);
+  }
+  function frame(manualDt?: number) {
+    if (debug.manual && manualDt === undefined) { clock.getDelta(); requestAnimationFrame(loop); return; }
+    const dt = manualDt ?? Math.min(clock.getDelta(), 0.05);
     if (settings.sessionLog && inGame && !session.active) session.start(); else if (session.active && (!settings.sessionLog || !inGame)) session.stop();
-    if (session.noteOpen) { requestAnimationFrame(frame); return; } // escribiendo una nota: el juego espera
+    if (session.noteOpen) { if (manualDt === undefined) requestAnimationFrame(loop); return; } // escribiendo una nota: el juego espera
     session.tick(dt);
     const edges = input.padEdges();
     if (session.active && edges[8]) session.mark(); // botón Atrás del mando = marca
@@ -1567,6 +1591,7 @@ async function boot() {
         if (inZone && !wasInZone) toast(t("ui.testZone")); wasInZone = inZone; }
       syncGadget(); gpouch.update(dt); gadgets.update(state === "play" ? dt : 0); gadgetHud();
       if (injectT > 0 && (injectT -= dt) <= 0) applyPerks();
+      physicsTick(dt);
       pouch.update(dt * curPerks.nadeRecharge * armorNade); updateArmorDrops(dt); updateGadgetDrops(dt); updateFlyers(dt); nades.update(dt); nadeHud(); updateNadeDrops(dt); php.update(dt); gameTime += dt; loot.tick(dt, gameTime);
     }
     healthHud(); xpHud(dt);
@@ -1600,8 +1625,8 @@ async function boot() {
     frameNo++; fpsTick();
     // Sombras: solo en el complejo (la luz que las proyecta no llega a la incursión) y cada 2 fotogramas
     renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = !raid.active && frameNo % 2 === 0;
-    if (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0) draw(dt);
-    requestAnimationFrame(frame);
+    if (!debug.noDraw && (state === "play" || state === "title" || state === "pause" || frameNo % 4 === 0)) draw(dt);
+    if (manualDt === undefined) requestAnimationFrame(loop);
   }
   player.applyCamera(camera, 0);
   await refreshLatest();
@@ -1628,7 +1653,7 @@ async function boot() {
   }, 1500);
   frame();
   (window as unknown as Record<string, unknown>).__game = { hallBot, deathFx, hallProps,
-    debug, gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
+    debug, step: (dt = 1 / 60) => frame(dt), gen, inv, gun, nades, pickups, pickUp, player, setSetting, renderer, scene, dummies, waves, php, bench, shop, start, invScreen, dialog, nav, saves,
     makeGadget, gadgets, loot, dropLoot, openScreen, openStart, resume, newGame, collect, apply, autosave, setLang, earn, meter, sfx, gainXp, applyPerks, world, raid, startRaid, startHack, startDefense, defense, dmode, returnHub, mobs, openRaidMenu, arena, mutateArena,
     cardHTML: (s: WeaponSpec) => weaponCard(s), openChest: () => openScreen("shop"), get state() { return state; }, set state(v: State) { state = v; }, get shopState() { return shopState; },
   };
