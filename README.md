@@ -1,6 +1,6 @@
 # Project Procedural
 
-Shooter en primera persona, low poly y post-apocalíptico, donde todo es procedural:
+Shooter en primera persona, low poly, donde todo es procedural:
 mundo, enemigos, botín y, sobre todo, armas montadas a partir de piezas.
 
 Diseño y decisiones: [`docs/DISENO.md`](docs/DISENO.md).
